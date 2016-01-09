@@ -1,0 +1,2 @@
+vsf_ico ICON "videosubfinder.ico"
+#include "wx/msw/wx.rc"

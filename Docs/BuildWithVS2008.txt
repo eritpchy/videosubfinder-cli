@@ -1,0 +1,24 @@
+1) Microsoft Visual Studio 2008
+
+2) wxWidgets (wxMSW-2.8.10-Setup.exe)
+link to package (12.3 MB): http://sourceforge.net/projects/wxwindows/files/wxMSW/2.8.10/wxMSW-2.8.10-Setup.exe/download
+Setup Env: WX_WIDGETS_PATH=C:\wxWidgets
+Open "%WX_WIDGETS_PATH%\build\msw\wx.dsw" in VS 2008 with conversion.
+Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/Win32" mode and /MT in "Release/Win32" mode.
+Build all projects in "Debug/Win32" mode and in "Release/Win32" mode.
+
+3) Microsoft DirectX SDK (August 2006)
+link to package (506.5 MB): http://www.microsoft.com/downloads/details.aspx?displaylang=en&FamilyID=c72d9f1e-53f3-4747-8490-6801d8e8b4ef
+Setup Env: DXSDK_DIR=C:\Program Files\Microsoft DirectX SDK (August 2006)
+
+4) Microsoft DirectShow SDK (dxsdk_feb2005_extras.exe)
+link to package (35.6 MB): http://www.microsoft.com/downloads/details.aspx?FamilyId=8AF0AFA9-1383-44B4-BC8B-7D6315212323&displaylang=en
+Setup Env: DSHOW_DIR=C:\DirectShow\Extras\DirectShow
+Setup Env: DSHOW_BASE_ClASSES=C:\DirectShow\Extras\DirectShow\Samples\C++\DirectShow\BaseClasses
+Open "%DSHOW_BASE_ClASSES%\baseclasses.sln" in VS 2008 with conversion.
+Set in project "C++\Code Generation\Runtime Library" to /MTd in "Debug/Win32" mode and /MT in "Release/Win32" mode.
+Build project in "Debug/Win32" mode and in "Release/Win32" mode.
+Where appear errors C4430 make setting int type of variable or output type.
+
+5) Open "Source\Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2008.
+Build solution in "Debug/Win32" mode and in "Release/Win32" mode.
