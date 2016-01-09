@@ -1792,11 +1792,11 @@ string VideoTimeToStr(s64 pos)
 	vl -= min*60;
 	sec = vl;
 	
-	itoa(hour,str,10);
+	_itoa(hour,str,10);
 	Str += string(str);
     Str += string("_");
 	
-	itoa(min,str,10);
+	_itoa(min,str,10);
 	if (min<=9)
 	{
 		Str += string("0");
@@ -1809,7 +1809,7 @@ string VideoTimeToStr(s64 pos)
         Str += string("_");
     }
 
-	itoa(sec,str,10);
+	_itoa(sec,str,10);
 	if (sec<=9)
 	{
 		Str += string("0");
@@ -1823,7 +1823,7 @@ string VideoTimeToStr(s64 pos)
     }
 
 	sec_1000 = (int)((pos%10000000)/10000);
-	itoa(sec_1000,str,10);
+	_itoa(sec_1000,str,10);
 	if (sec_1000<=9)
 	{
 		Str += string("00");

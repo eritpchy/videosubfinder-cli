@@ -334,7 +334,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		}
 	}
 	
-	itoa((int)t, str, 10);
+	_itoa((int)t, str, 10);
 	//this->MessageBox(str);
 	
 	if (S > 0)
@@ -359,7 +359,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	for (i=0; i<m_n; i++) 
 	{		
-		itoa(i, str, 10);
+		_itoa(i, str, 10);
 		SaveImage(g_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), g_W, g_H);
 	}
 }

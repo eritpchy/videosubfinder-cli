@@ -55,7 +55,7 @@ string IntToCStr(int n)
 {
 	char str[100];
 
-	itoa(n, str, 10);
+	_itoa(n, str, 10);
 
 	return string(str);
 }

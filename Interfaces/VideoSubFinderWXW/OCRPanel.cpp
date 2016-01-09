@@ -364,10 +364,10 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		sec = (int)(dt/1000);
 		msec = (int)(dt%1000);
 		
-		itoa(sec, str, 10);
+		_itoa(sec, str, 10);
 		sec1 = str;
 
-		itoa(msec, str, 10);
+		_itoa(msec, str, 10);
 		if (msec < 10) msec1 = wxString("00")+str; 
 		else
 		{
@@ -491,10 +491,10 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		sec = (int)(dt/1000);
 		msec = (int)(dt%1000);
 		
-		itoa(sec, str, 10);
+		_itoa(sec, str, 10);
 		sec1 = str;
 
-		itoa(msec, str, 10);
+		_itoa(msec, str, 10);
 		if (msec < 10) msec1 = wxString("00")+str; 
 		else
 		{
@@ -781,10 +781,10 @@ void COCRPanel::CreateSubFromTXTResults()
 		sec = (int)(dt/1000);
 		msec = (int)(dt%1000);
 		
-		itoa(sec, str, 10);
+		_itoa(sec, str, 10);
 		sec1 = str;
 
-		itoa(msec, str, 10);
+		_itoa(msec, str, 10);
 		if (msec < 10) msec1 = wxString("00")+str; 
 		else
 		{
