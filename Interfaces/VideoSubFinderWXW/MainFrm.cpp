@@ -183,6 +183,10 @@ void CMainFrame::Init()
 
 	wxMenuBar *pMenuBar = new wxMenuBar;
 
+	m_GeneralSettingsFileName = m_Dir + string("/settings/general.cfg");
+
+	LoadSettings();
+
 	cnt = pMenuBar->GetMenuCount();
 
 	wxMenu *pMenu5 = new wxMenu;
@@ -220,10 +224,7 @@ void CMainFrame::Init()
 	pMenu4->Append(ID_APP_ABOUT, _T("&About..."));
 	pMenuBar->Append(pMenu4, _T("&Help"));
 
-	cnt = pMenuBar->GetMenuCount();		
-
-	m_SettingsFileName = m_Dir+string("/settings.cfg");
-	LoadSettings(m_SettingsFileName);
+	cnt = pMenuBar->GetMenuCount();			
 
 	if (IsMMX_and_SSE() == true)
 	{
@@ -566,11 +567,11 @@ void CMainFrame::PauseVideo()
 	}
 }
 
-void CMainFrame::LoadSettings(string fname)
+void CMainFrame::LoadSettings()
 {
 	ifstream fin;
 
-	fin.open(fname.c_str(), ios::in);
+	fin.open(m_GeneralSettingsFileName.c_str(), ios::in);
 	
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mvthr, "moderate_threshold_for_VEdges");
@@ -602,17 +603,38 @@ void CMainFrame::LoadSettings(string fname)
 	ReadProperty(fin, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
 
 	ReadProperty(fin, g_DefStringForEmptySub, "def_string_for_empty_sub");
+
+	ReadProperty(fin, m_cfg.m_prefered_locale, "prefered_locale");
+
+	ReadProperty(fin, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
 	
+	ReadProperty(fin, m_cfg.m_txt_dw, "txt_dw");
+	ReadProperty(fin, m_cfg.m_txt_dy, "txt_dy");
+
+	ReadProperty(fin, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
+	ReadProperty(fin, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
+
+	fin.close();
+
+	fin.open((m_Dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);	
+	
+	ReadProperty(fin, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
+	ReadProperty(fin, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
+	ReadProperty(fin, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
+	ReadProperty(fin, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
+	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
+	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
+
 	fin.close();
 
 	//m_pPanel->m_pSSPanel->Refresh();
 }
 
-void CMainFrame::SaveSettings(string fname)
+void CMainFrame::SaveSettings()
 {
 	ofstream fout;
 
-	fout.open(fname.c_str(), ios::out);
+	fout.open(m_GeneralSettingsFileName.c_str(), ios::out);
 
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mvthr, "moderate_threshold_for_VEdges");
@@ -644,6 +666,16 @@ void CMainFrame::SaveSettings(string fname)
 	WriteProperty(fout, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
 
 	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
+
+	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
+
+	WriteProperty(fout, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
+
+	WriteProperty(fout, m_cfg.m_txt_dw, "txt_dw");
+	WriteProperty(fout, m_cfg.m_txt_dy, "txt_dy");
+
+	WriteProperty(fout, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
+	WriteProperty(fout, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
 
 	fout.close();
 }
@@ -688,10 +720,10 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 			return;
 		}
 
-		m_SettingsFileName = fd.GetPath();
+		m_GeneralSettingsFileName = fd.GetPath();
 	}
 
-	LoadSettings(m_SettingsFileName);
+	LoadSettings();
 }
 
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
@@ -706,15 +738,15 @@ void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 			return;
 		}
 
-		m_SettingsFileName = fd.GetPath();
+		m_GeneralSettingsFileName = fd.GetPath();
 	}
 
-	SaveSettings(m_SettingsFileName);
+	SaveSettings();
 }
 
 void CMainFrame::OnFileSaveSettings(wxCommandEvent& event)
 {
-	SaveSettings(m_SettingsFileName);
+	SaveSettings();
 }
 
 void CMainFrame::OnTimer(wxTimerEvent& event)

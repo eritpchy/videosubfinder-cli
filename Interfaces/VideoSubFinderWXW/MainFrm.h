@@ -39,6 +39,27 @@ class CSSOWnd;
 class CVideoBox;
 class CImageBox;
 
+class Settings
+{
+public:
+	wxString	m_prefered_locale;
+
+	int			m_txt_dw;
+	int			m_txt_dy;
+
+	int			m_fount_size_ocr_lbl;
+	int			m_fount_size_ocr_btn;
+
+	double		m_ocr_min_sub_duration;
+
+	wxString	m_ocr_label_msd_text;
+	wxString	m_ocr_button_ces_text;
+	wxString	m_ocr_button_ccti_text;
+	wxString	m_ocr_button_csftr_text;
+	wxString	m_ocr_button_cesfcti_text;
+	wxString	m_ocr_button_test_text;
+};
+
 class CMainFrame : public wxMDIParentFrame
 {
 public:
@@ -80,21 +101,23 @@ public:
 	s64			m_BegTime;
 	s64			m_EndTime;
 
-	string		m_SettingsFileName;
+	string		m_GeneralSettingsFileName;
 
 	bool		m_blnReopenVideo;
 
 	int			m_type;
 
 	bool		m_blnOpenVideoThreadStateFlag;
-	bool		m_blnOpenVideoResult;
+	bool		m_blnOpenVideoResult;	
+
+	Settings	m_cfg;
 
 public:
 	void Init();
 
 	void PauseVideo();
-	void LoadSettings(string fname);
-	void SaveSettings(string fname);
+	void LoadSettings();
+	void SaveSettings();
 	void OnFileOpenVideo(int type);
 	void ClearDir(string DirName);
 

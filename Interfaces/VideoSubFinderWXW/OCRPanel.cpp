@@ -16,7 +16,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "OCRPanel.h"
+#include "CommonFunctions.h"
 #include <algorithm>
+#include <vector>
 using namespace std;
 
 bool g_use_FRD_images = false;
@@ -163,26 +165,28 @@ void COCRPanel::Init()
 	m_CLOCR = wxColour(170, 170, 170);
 
 	//"Times New Roman"
-	m_BTNFont = wxFont(10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+	m_BTNFont = wxFont(m_pMF->m_cfg.m_fount_size_ocr_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
                     wxFONTWEIGHT_BOLD, false /* !underlined */,
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 	//"Microsoft Sans Serif"
-	m_LBLFont = wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
+	m_LBLFont = wxFont(m_pMF->m_cfg.m_fount_size_ocr_lbl, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
                     wxFONTWEIGHT_NORMAL, false /* !underlined */,
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rcTEST, rcCSCTI, rcCSTXT;
-	int w, w2, h, dw, dh;
+	int w, w2, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 
-	//wxClientDC dc(this);
-	//dc.SetFont(m_BTNFont);
-	//wxSize size = dc.GetTextExtent(mytext);
-
+	wxClientDC dc(this);
+	dc.SetFont(m_BTNFont);
+	wxSize min_ocr_btn_size = get_max_wxSize({ dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_ces_text),
+									dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_ccti_text),
+									dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_csftr_text),
+									dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_cesfcti_text) });
 	w2 = 700;
-	w = 400;
-	h = 25;
+	w = min_ocr_btn_size.x + txt_dw*2;
+	h = min_ocr_btn_size.y + txt_dy*2;
 
 	rcCCTI.x = w2/2 - w/2;
 	rcCCTI.y = 20;
@@ -241,32 +245,32 @@ void COCRPanel::Init()
 	m_pP3->SetBackgroundColour( m_CLOCR );
 
 	m_plblMSD = new wxStaticText( m_pP3, wxID_ANY,
-		wxT(" Min Sub Duration:"), rlMSD.GetPosition(), rlMSD.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+		m_pMF->m_cfg.m_ocr_label_msd_text, rlMSD.GetPosition(), rlMSD.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_plblMSD->SetFont(m_LBLFont);
 	m_plblMSD->SetBackgroundColour( m_CL1 );
 
 	m_pMSD = new wxTextCtrl( m_pP3, wxID_ANY,
-		wxT("0.000"), reMSD.GetPosition(), reMSD.GetSize());
+		wxString::Format(wxT("%f"), m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_LBLFont);
 
 	m_pCES = new wxButton( m_pP3, ID_BTN_CES,
-		wxT("Create Empty Sub"), rcCES.GetPosition(), rcCES.GetSize() );
+		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
 	m_pCES->SetFont(m_BTNFont);
 
 	m_pCCTI = new wxButton( m_pP3, ID_BTN_CCTI,
-		wxT("Create Cleared TXT Images"), rcCCTI.GetPosition(), rcCCTI.GetSize() );
+		m_pMF->m_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
 	m_pCCTI->SetFont(m_BTNFont);
 
 	m_pCSTXT = new wxButton( m_pP3, ID_BTN_CSTXT,
-		wxT("Create Sub From TXT Results"), rcCSTXT.GetPosition(), rcCSTXT.GetSize() );
+		m_pMF->m_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
 	m_pCSTXT->SetFont(m_BTNFont);
 
 	m_pCSCTI = new wxButton( m_pP3, ID_BTN_CSCTI,
-		wxT("Create Empty Sub From Cleared TXT Images"), rcCSCTI.GetPosition(), rcCSCTI.GetSize() );
+		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_BTNFont);
 
 	m_pTEST = new wxButton( m_pP3, ID_BTN_TEST,
-		wxT("Test"), rcTEST.GetPosition(), rcTEST.GetSize() );
+		m_pMF->m_cfg.m_ocr_button_test_text, rcTEST.GetPosition(), rcTEST.GetSize());
 	m_pTEST->SetFont(m_BTNFont);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );

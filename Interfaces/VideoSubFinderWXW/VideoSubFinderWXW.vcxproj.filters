@@ -51,6 +51,9 @@
     <ClCompile Include="VideoSubFinderWXW.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CommonFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataGrid.h">
@@ -96,6 +99,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VideoSubFinderWXW.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

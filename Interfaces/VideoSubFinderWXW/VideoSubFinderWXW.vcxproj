@@ -116,6 +116,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommonFunctions.cpp" />
     <ClCompile Include="DataGrid.cpp" />
     <ClCompile Include="ImageBox.cpp" />
     <ClCompile Include="MainFrm.cpp" />
@@ -130,6 +131,7 @@
     <ClCompile Include="VideoSubFinderWXW.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CommonFunctions.h" />
     <ClInclude Include="DataGrid.h" />
     <ClInclude Include="..\..\Components\Include\DataTypes.h" />
     <ClInclude Include="ImageBox.h" />
