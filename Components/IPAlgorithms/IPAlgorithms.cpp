@@ -1398,6 +1398,7 @@ void ImprovedSobelMEdge(int *ImIn, int *ImMOE, int w, int h)
 
 void ImprovedSobelAllEdge_MMX_SSE(s64 *ImYIQ, int *ImMOE1, int *ImMOE2, int *ImVOE, int *ImNOE, int *ImHOE, double vthr, double nthr, double hthr, int w, int h)
 {
+#ifndef WIN64
 	int x, y, mx, my;
 	int vth1, vth2, nth1, nth2, hth1, hth2;
 	__m64 voe, noe, hoe, soe, moe;
@@ -1578,6 +1579,7 @@ void ImprovedSobelAllEdge_MMX_SSE(s64 *ImYIQ, int *ImMOE1, int *ImMOE2, int *ImV
 	}
 
 	_mm_empty();
+#endif
 }
 
 void SobelHEdge(int *ImIn, int *ImHOE, int w, int h)
@@ -2208,6 +2210,7 @@ void ApplyModerateThreshold(int *Im, double mthr, int w, int h)
 
 void ApplyModerateThreshold_MMX_SSE(int *Im, double mthr, int w, int h)
 {
+#ifndef WIN64
 	int thr;
 	int mx;
 	__m64 mmx1, mmx2, mmx3 = _mm_setzero_si64();
@@ -2241,6 +2244,7 @@ void ApplyModerateThreshold_MMX_SSE(int *Im, double mthr, int w, int h)
 		if (*pIm < thr) *pIm = 0;
 		else *pIm = 255;
 	}
+#endif
 }
 
 void AplyESS(int *ImIn, int* ImOut, int w, int h)

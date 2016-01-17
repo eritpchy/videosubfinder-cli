@@ -54,8 +54,8 @@ void CSearchPanel::Init()
 
 	rcBT1.x = 20;
 	rcBT1.y = 20;
-	rcBT1.width = 80;
-	rcBT1.height = 16;
+	rcBT1.width = 90;
+	rcBT1.height = 20;
 	
 	rcBTA1.x = rcBT1.GetRight()+4;
 	rcBTA1.y = rcBT1.y;

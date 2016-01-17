@@ -47,6 +47,7 @@ void ViewRGBImage(int *Im, int w, int h)
 
 static bool _IsFeature(DWORD dwRequestFeature)
 {
+#ifndef WIN64
 	// This	bit	flag can get set on	calling	cpuid
 	// with	register eax set to	1
 	DWORD dwFeature	= 0;
@@ -83,6 +84,7 @@ static bool _IsFeature(DWORD dwRequestFeature)
 		}
 		return(true);
 	}
+#endif
 
 	return false;
 }

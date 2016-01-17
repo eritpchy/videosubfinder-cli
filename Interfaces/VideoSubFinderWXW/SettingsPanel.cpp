@@ -90,7 +90,7 @@ void CSettingsPanel::Init()
 
 	rcGB1.x = 10;
 	rcGB1.y = 2;
-	rcGB1.width = 370;
+	rcGB1.width = 400;
 	rcGB1.height = 200;
 
 	rcOI.x = rcGB1.x + 3;
@@ -231,6 +231,9 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty("Min HEdges points density (per half line) : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mphd, 0.0, 1.0);
 	m_pOI->AddProperty("Min NEdges points density (per half line) : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpnd, 0.0, 1.0);
 
+	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.75);
+	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.25);
+
 	////////////////////////////////////////////////////////////////////////
 
 	m_pOIM = new CDataGrid( m_pP2, ID_OIM,
@@ -254,6 +257,9 @@ void CSettingsPanel::Init()
 	m_pOIM->AddSubGroup("Настройки Для Проверки Саба", m_CL1, m_LBLFont);
 	m_pOIM->AddProperty("Text Procent : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
 	m_pOIM->AddProperty("Min Text Length : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);
+
+	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.75);
+	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.25);
 }
 
 

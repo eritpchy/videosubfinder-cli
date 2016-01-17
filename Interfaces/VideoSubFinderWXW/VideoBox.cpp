@@ -297,7 +297,7 @@ void CVideoBox::OnSize(wxSizeEvent& event)
 
 	m_pVBar->GetClientSize(&w, &h);
 
-	rlTIME.width = 150;
+	rlTIME.width = 170;
 	rlTIME.height = 22;
 	rlTIME.x = w - rlTIME.width;
 	rlTIME.y = (h - rlTIME.height)/2-2;
