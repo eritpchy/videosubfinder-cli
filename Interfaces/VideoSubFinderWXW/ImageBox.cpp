@@ -58,12 +58,13 @@ END_EVENT_TABLE()
 
 CImageBox::CImageBox(CMainFrame* pMF)
 		: wxMDIChildFrame(pMF, wxID_ANY, "", 
-		          wxDefaultPosition, wxDefaultSize, 
-				  wxTHICK_FRAME 
-				  | wxCLIP_CHILDREN
+		          wxDefaultPosition, wxDefaultSize, 				  
+				  wxCLIP_CHILDREN
 				  | wxRESIZE_BORDER 
 				  | wxCAPTION 
-				  | wxWANTS_CHARS )
+				  | wxWANTS_CHARS
+				  //| wxTHICK_FRAME
+				  )
 {
 	m_pMF = pMF;
 

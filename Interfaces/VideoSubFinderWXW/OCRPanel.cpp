@@ -16,6 +16,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "OCRPanel.h"
+#include <algorithm>
+using namespace std;
 
 bool g_use_FRD_images = false;
 
@@ -161,7 +163,7 @@ void COCRPanel::Init()
 	m_CLOCR = wxColour(170, 170, 170);
 
 	//"Times New Roman"
-	m_BTNFont = wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+	m_BTNFont = wxFont(10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
                     wxFONTWEIGHT_BOLD, false /* !underlined */,
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
@@ -173,6 +175,10 @@ void COCRPanel::Init()
 
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rcTEST, rcCSCTI, rcCSTXT;
 	int w, w2, h, dw, dh;
+
+	//wxClientDC dc(this);
+	//dc.SetFont(m_BTNFont);
+	//wxSize size = dc.GetTextExtent(mytext);
 
 	w2 = 700;
 	w = 400;
@@ -684,7 +690,7 @@ void COCRPanel::CreateSubFromTXTResults()
                     + wxString("Please run \"Create Cleared Text Images\" again.");
 
 				#ifdef WIN32
-				::MessageBox(NULL, Str, "CreateSubFromTXTResults", MB_ICONERROR);			
+				::MessageBox(NULL, Str, L"CreateSubFromTXTResults", MB_ICONERROR);			
 				#endif
 
 				return;
@@ -1606,14 +1612,14 @@ void *ThreadCreateClearedTextImages::Entry()
 				{
 					for (i=0; i<(int)SavedFiles.size(); i++)
 					{
-						DeleteFile(prevSavedFiles[i].c_str());
+						DeleteFile(wxString(prevSavedFiles[i].c_str()));
 						
 						Str = prevSavedFiles[i].c_str();
 						i = Str.length()-1;
 						while ((Str[i] != '\\') && (Str[i] != '/')) i--;
 						Str = Str.Mid(0,i+1+11)+wxString(SavedFiles[i].c_str()).Mid(i+1+11);
 
-						MoveFile(SavedFiles[i].c_str(), Str);
+						MoveFile(wxString(SavedFiles[i].c_str()), Str);
 					}
 				}
 			}

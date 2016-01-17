@@ -1,0 +1,21 @@
+1) Microsoft Visual Studio Ultimate 2013
+
+2) wxWidgets (wxMSW-3.0.2-Setup.exe)
+https://www.wxwidgets.org/downloads/
+Setup Env: WX_WIDGETS_PATH=C:\wxWidgets-3.0.2
+Open "%WX_WIDGETS_PATH%\build\msw\wx.dsw" in VS 2013 with conversion.
+Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/Win32" mode and /MT in "Release/Win32" mode.
+Build all projects in "Debug/Win32" mode and in "Release/Win32" mode.
+
+3) Microsoft DirectShow Base Classes
+https://www.artoolworks.com/support/library/Building_libARvideo_using_DirectShow#Visual_Studio_2013
+Visual Studio 2013 is supplied with Windows SDK 8.1, which includes the required DirectShow link libraries, and some of the required headers. Interestingly, it also includes strmbase.lib, the library implementing the DirectShow base classes, but unfortunately neither the Debug version of this library (strmbasd.lib) nor the header files. These would normally be required to be manually installed from the Windows SDK 7.1 samples package, however we have made a package which includes the DirectShow base classes source and compiled libraries for 32-bit and 64-bit architectures.
+Click here to download the DirectShow base classes package:
+http://www.artoolworks.com/support/attachments/Microsoft%20DirectShow%20Base%20Classes%20(from%20Windows%20SDK%20v7.1%20samples).rar
+Setup Env: DSHOW_BASE_ClASSES=F:\Public\Programs\VideoSubFinder\directshow\baseclasses
+Open "%DSHOW_BASE_ClASSES%\baseclasses.sln" in VS 2013 with conversion.
+Set in project "C++\Code Generation\Runtime Library" to /MTd in "Debug/Win32" mode and /MT in "Release/Win32" mode.
+Build project in "Debug/Win32" mode and in "Release/Win32" mode.
+
+4) Open "Source\Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2013.
+Build solution in "Debug/Win32" mode and in "Release/Win32" mode.

@@ -173,12 +173,13 @@ END_EVENT_TABLE()
 
 CVideoBox::CVideoBox(CMainFrame* pMF)
 		: wxMDIChildFrame(pMF, wxID_ANY, "", 
-		          wxDefaultPosition, wxDefaultSize, 
-				  wxTHICK_FRAME 
-				  | wxCLIP_CHILDREN
+		          wxDefaultPosition, wxDefaultSize,				  
+				  wxCLIP_CHILDREN
 				  | wxRESIZE_BORDER 
 				  | wxCAPTION 
-				  | wxWANTS_CHARS )
+				  | wxWANTS_CHARS
+				  //| wxTHICK_FRAME
+				  )
 {
 	m_w = 0;
 	m_h = 0;
@@ -230,9 +231,7 @@ void CVideoBox::Init()
 	m_pVBar->AddTool(ID_TB_PAUSE, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
 	
 	LoadToolBarImage(bmp, "bitmaps/tb_stop.bmp", m_CLVBar);
-	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
-
-	m_pVBar->Realize();
+	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);	
 
 	m_plblVB = new CTextBox( this, ID_LBL_VB, wxT("Video Box") );
 	m_plblVB->SetSize(0, 0, 390, 30);
@@ -255,6 +254,8 @@ void CVideoBox::Init()
 	m_pSB->SetScrollRange(0, 255);
 
 	this->SetSize(20,20,402,300);
+
+	m_pVBar->Realize();
 
 	m_WasInited = true;
 }

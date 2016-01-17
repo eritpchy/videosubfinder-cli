@@ -28,7 +28,7 @@
 #include <uuids.h>
 #include <errors.h>
 #include <amvideo.h>
-#include <qedit.h>
+//#include <qedit.h>
 #include <dmodshow.h>
 #include <fstream>
 #include <vector>
@@ -62,7 +62,7 @@ public:
     HRESULT CheckInputType(const CMediaType *mtIn);
 };
 
-class MySampleGrabberCallback :	public ISampleGrabberCB
+/*class MySampleGrabberCallback :	public ISampleGrabberCB
 {
 public:
 	int             **m_ppBuffer;
@@ -104,7 +104,7 @@ public:
 	}
 
 	HRESULT STDMETHODCALLTYPE BufferCB(double SampleTime, BYTE *pBuffer, long BufferLen);
-};
+};*/
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -133,7 +133,7 @@ public:
 	IBasicAudio     *m_pBA;
 	IMediaFilter	*m_pMF;
 
-	ISampleGrabber	*m_pGrabber;
+	//ISampleGrabber	*m_pGrabber;
 
 	IBaseFilter		*m_pDecoder;
 	IBaseFilter		*m_pSourceFilter;
@@ -144,7 +144,7 @@ public:
 
 	ICaptureGraphBuilder2  *m_pBuilder;
 
-	MySampleGrabberCallback *m_pSGCallback;
+	//MySampleGrabberCallback *m_pSGCallback;
 
 public:
 	IBaseFilter* GetDecoder();

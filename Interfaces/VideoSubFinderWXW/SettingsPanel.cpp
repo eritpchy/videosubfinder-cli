@@ -188,7 +188,7 @@ void CSettingsPanel::Init()
 		bmp_na, rcRight.GetPosition(), rcRight.GetSize() );
 	m_pRight->SetBitmapSelected(bmp_od);
 
-	m_plblIF = new CTextBox( m_pP2, wxID_ANY, wxT(StrFN[m_cn]));
+	m_plblIF = new CTextBox( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
 	m_plblIF->SetFont(m_LBLFont);
 	m_plblIF->SetBackgroundColour( m_CL3 );
 	m_plblIF->SetSize(rlIF);

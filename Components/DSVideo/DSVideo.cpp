@@ -19,9 +19,9 @@
 #include <Dvdmedia.h>
 
 static CLSID CLSID_TransNull32 = {0x1916c5c7, 0x2aa, 0x415f, 0x89, 0xf, 0x76, 0xd9, 0x4c, 0x85, 0xaa, 0xf1};
-
 static CLSID CLSID_DivX = {0x78766964, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71};
 static CLSID CLSID_ffdshow = {0x04FE9017, 0xF873, 0x410E, 0x87, 0x1E, 0xAB, 0x91 , 0x66, 0x1A, 0x4E, 0xF7};
+static CLSID CLSID_NullRenderer = { 0xc1f400a4, 0x3f08, 0x11d3, 0x9f, 0x0b, 0x00, 0x60, 0x08, 0x03, 0x9e, 0x37 };
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -231,7 +231,7 @@ HRESULT CTransNull32::Transform(IMediaSample *pSample)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
+/*
 MySampleGrabberCallback::MySampleGrabberCallback( int **ppBuffer, s64 *pST, 
                                                   bool *pImageGeted, DSVideo *pVideo,
                                                   bool *pIsSetNullRender )
@@ -290,7 +290,7 @@ HRESULT STDMETHODCALLTYPE MySampleGrabberCallback::BufferCB(double SampleTime, B
 	}
 
 	return S_OK;
-}
+}*/
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -368,13 +368,13 @@ DSVideo::DSVideo()
 	m_pBA=NULL;
 	m_pMF=NULL;
 	m_pDecoder=NULL;
-	m_pGrabber=NULL;
+	//m_pGrabber=NULL;
 	m_pSourceFilter=NULL;
 	m_pSampleGrabberFilter=NULL;
     m_pTransNull32Filter=NULL;
 	m_pVideoRenderFilter=NULL;
 	m_pBuilder=NULL;
-	m_pSGCallback=NULL;
+	//m_pSGCallback=NULL;
 	m_IsMSSuported = true;
 	m_IsSetNullRender = false;
     
@@ -393,7 +393,7 @@ DSVideo::~DSVideo()
 
 bool DSVideo::OpenMovieAllDefault(string csMovieName, void *pHWnd)
 { 	
-	HRESULT hr;
+	/*HRESULT hr;
 	string Str;
 	vector<CLSID> cls;
 	vector<string> fnames;
@@ -545,18 +545,14 @@ bool DSVideo::OpenMovieAllDefault(string csMovieName, void *pHWnd)
 	
 	hr = m_pVW->put_MessageDrain(*((OAHWND*)pHWnd));
 
-	hr = m_pBV->GetVideoSize(&m_Width, &m_Height);
-
-    /*m_Width = 480;
-    m_Height = 576;    
-    if (m_pBuffer != NULL) delete[] m_pBuffer;
-    m_pBuffer = new int[m_Width*m_Height];*/
+	hr = m_pBV->GetVideoSize(&m_Width, &m_Height);    
 
 	hr = m_pMS->GetStopPosition(&m_Duration);
 
 	m_Inited = true;
 
-	return true;
+	return true;*/
+	return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1183,8 +1179,8 @@ HRESULT DSVideo::CleanUp()
 	if(m_pDecoder != NULL) i = m_pDecoder->Release();
 	m_pDecoder = NULL;
 	
-	if(m_pGrabber != NULL) i = m_pGrabber->Release();
-	m_pGrabber = NULL;
+	//if(m_pGrabber != NULL) i = m_pGrabber->Release();
+	//m_pGrabber = NULL;
 
 	if(m_pSampleGrabberFilter != NULL) i = m_pSampleGrabberFilter->Release(); 	
 	m_pSampleGrabberFilter = NULL;
@@ -1198,43 +1194,14 @@ HRESULT DSVideo::CleanUp()
 	if(m_pVideoRenderFilter != NULL) i = m_pVideoRenderFilter->Release();
 	m_pVideoRenderFilter = NULL;
 
-	/*if(m_pGB != NULL)
-	{
-		n = 0;
-
-		IEnumFilters *pEnum = NULL;
-		hr = m_pGB->EnumFilters(&pEnum);
-		if (SUCCEEDED(hr))
-		{			
-			IBaseFilter *pFilter = NULL;
-			while (S_OK == pEnum->Next(1, &pFilter, NULL))
-			{
-				n++;
-				hr = m_pGB->RemoveFilter(pFilter);
-				hr = pEnum->Reset();
-				hr = pFilter->Release();
-				pFilter = NULL;
-
-				if (n > max_n) 
-				{
-					break;
-				}
-			}
-			hr = pEnum->Release();
-		}
-	}
-
-	if (n <=max_n) log += "PASS: Delete All Filters n:=" + IntToCStr(n) + "\n";
-	else log += "FAIL: Delete All Filters\n";*/
-
 	if(m_pGB != NULL) i = m_pGB->Release();
 	m_pGB = NULL;
 
 	if(m_pBuilder != NULL) i = m_pBuilder->Release();
 	m_pBuilder = NULL;
 
-    if (m_pSGCallback != NULL) delete m_pSGCallback;
-    m_pSGCallback = NULL;
+    //if (m_pSGCallback != NULL) delete m_pSGCallback;
+    //m_pSGCallback = NULL;
     
 	CoUninitialize();
 	

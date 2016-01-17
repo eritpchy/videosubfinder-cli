@@ -16,6 +16,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "MyClosedFigure.h"
+#include <algorithm>
+using namespace std;
 
 CMyClosedFigure::CMyClosedFigure()
 {

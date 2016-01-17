@@ -193,7 +193,7 @@ void CMainFrame::Init()
 	pMenu5->Append(ID_SETPRIORITY_IDLE, _T("IDLE"), _T(""), wxITEM_CHECK);
 
 	wxMenu *pMenu1 = new wxMenu;	
-	pMenu1->Append(ID_FILE_OPENVIDEOALLDEFAULT, _T("Open Video All Default"));
+	//pMenu1->Append(ID_FILE_OPENVIDEOALLDEFAULT, _T("Open Video All Default"));
 	pMenu1->Append(ID_FILE_OPENVIDEONORMALLY, _T("Open Video Normally"));
 	pMenu1->Append(ID_FILE_OPENVIDEOHARD, _T("Open Video Hard"));
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
@@ -220,9 +220,7 @@ void CMainFrame::Init()
 	pMenu4->Append(ID_APP_ABOUT, _T("&About..."));
 	pMenuBar->Append(pMenu4, _T("&Help"));
 
-	cnt = pMenuBar->GetMenuCount();
-
-	this->SetMenuBar(pMenuBar);
+	cnt = pMenuBar->GetMenuCount();		
 
 	m_SettingsFileName = m_Dir+string("/settings.cfg");
 	LoadSettings(m_SettingsFileName);
@@ -239,33 +237,41 @@ void CMainFrame::Init()
 	m_pPanel = new CSSOWnd(this);
 	m_pPanel->Init();
 
+	this->SetMenuBar(pMenuBar);
+
 	m_pImageBox = new CImageBox(this);
 	m_pImageBox->Init();
 
-	m_pImageBox->SetSize(508, 22, 408, 354);
-	m_pImageBox->Show(true);
-
+	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+	int dx = 20, dy = 20;
+	m_ph = 250;
+	
 	m_pVideoBox = new CVideoBox(this);
 	m_pVideoBox->Init();
 
-	m_pVideoBox->SetSize(80, 22, 408, 404);
-	m_pVideoBox->Show(true);
+	this->SetSize(0, 0, w, h - 50);
 
-	this->SetSize(0, 0, 1024, 768-30);
+	int cw, ch;
+	this->GetClientSize(&cw, &ch);
+
+	m_pImageBox->SetSize(cw / 2 + dx, dy, cw / 2 - 2 * dx, ch - m_ph - 2 * dy);
+	m_pImageBox->Show(true);
+
+	m_pVideoBox->SetSize(dx, dy, cw / 2 - 2 * dx, ch - m_ph - 2 * dy);
+	m_pVideoBox->Show(true);
 
 	m_WasInited = true;
 }
 
 void CMainFrame::OnSize(wxSizeEvent& event)
 {
-	int w, h, ph;
+	int w, h;
     this->GetClientSize(&w, &h);
 
-	ph = 250;
+	m_pPanel->SetSize(0, h - m_ph, w, m_ph);
 
-	m_pPanel->SetSize(0, h-ph, w, ph);
-
-    GetClientWindow()->SetSize(0, 0, w, h-ph);
+	GetClientWindow()->SetSize(0, 0, w, h - m_ph);
 }
 
 void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)

@@ -69,8 +69,10 @@ public:
 	enum {Play, Pause, Stop} m_vs;
 
 	int			m_BufferSize;
-	int			m_w;
-	int			m_h;
+	int			m_w; //video width
+	int			m_h; //video height
+
+	int			m_ph; //panel height
 
 	s64			m_dt;
 	s64         m_ct;

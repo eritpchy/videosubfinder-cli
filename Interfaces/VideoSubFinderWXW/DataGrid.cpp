@@ -30,15 +30,16 @@ public:
 		grid->SetCellValue( row, col, *m_pstr );
 	}
 
-	bool EndEdit(int row, int col, wxGrid* grid)
+	
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
 	{
 		bool res;
 
-		res = wxGridCellTextEditor::EndEdit(row, col, grid);
+		res = wxGridCellTextEditor::EndEdit(row, col, grid, oldval, newval);
 
 		if (res == true)
 		{
-			*m_pstr = grid->GetCellValue(row, col);			
+			*m_pstr = *newval;
 		}
 
 		return res;
@@ -70,17 +71,17 @@ public:
 		grid->SetCellValue( row, col, Str );
 	}
 
-	bool EndEdit(int row, int col, wxGrid* grid)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
 	{
 		bool res;
 		wxString Str;
 		int val;
 		
-		res = wxGridCellNumberEditor::EndEdit(row, col, grid);
+		res = wxGridCellNumberEditor::EndEdit(row, col, grid, oldval, newval);
 
 		if (res == true)
 		{
-			Str = grid->GetCellValue(row, col);
+			Str = *newval;
 			val = (int)strtod(Str, NULL);
 			
 			if ( (val >= m_vmin) && (val <= m_vmax) )
@@ -91,7 +92,7 @@ public:
 			{
 				Str = "";
 				Str << *m_pval;
-				grid->SetCellValue( row, col, Str );
+				*newval = Str;
 			}
 		}
 
@@ -126,17 +127,17 @@ public:
 		grid->SetCellValue( row, col, Str );
 	}
 
-	bool EndEdit(int row, int col, wxGrid* grid)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
 	{
 		bool res;
 		wxString Str;
 		double val;
 		
-		res = wxGridCellFloatEditor::EndEdit(row, col, grid);
+		res = wxGridCellFloatEditor::EndEdit(row, col, grid, oldval, newval);
 
 		if (res == true)
 		{
-			Str = grid->GetCellValue(row, col);
+			Str = *newval;
 			val = strtod(Str, NULL);
 			
 			if ( (val >= m_vmin) && (val <= m_vmax) )
@@ -147,7 +148,7 @@ public:
 			{
 				Str = "";
 				Str << *m_pval;
-				grid->SetCellValue( row, col, Str );
+				*newval = Str;
 			}
 		}
 
@@ -188,28 +189,24 @@ public:
 		grid->SetCellValue( row, col, Str );
 	}
 
-	bool EndEdit(int row, int col, wxGrid* grid)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
 	{
 		bool res;
 		wxString Str;
 		
-		res = wxGridCellBoolEditor::EndEdit(row, col, grid);
+		res = wxGridCellBoolEditor::EndEdit(row, col, grid, oldval, newval);
 
 		if (res == true)
 		{
-			*m_pbln = !(*m_pbln);			
+			if (IsTrueValue(*newval))
+			{
+				*m_pbln = true;
+			}
+			else
+			{
+				*m_pbln = false;
+			}
 		}
-
-		if (*m_pbln)
-		{
-			Str = "1";
-		}
-		else
-		{
-			Str = "";
-		}
-
-		grid->SetCellValue( row, col, Str );
 
 		return res;
 	}
