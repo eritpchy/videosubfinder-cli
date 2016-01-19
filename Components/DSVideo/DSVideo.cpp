@@ -162,7 +162,7 @@ HRESULT CTransNull32::Transform(IMediaSample *pSample)
 			hr = pIn->ConnectionMediaType(&mt);
 			pmt = &mt;
 	        
-			if (hr == S_OK)
+			if (SUCCEEDED(hr))
 			{
 				if (pmt->formattype == FORMAT_VideoInfo2)
 				{
@@ -303,8 +303,8 @@ HRESULT DSVideo::GetPin(IBaseFilter *pFilter, PIN_DIRECTION PinDir, IPin **ppPin
     IPin       *pPin;
     HRESULT hr = pFilter->EnumPins(&pEnum);
     if (FAILED(hr)) return hr;
-
-    while(pEnum->Next(1, &pPin, 0) == S_OK)
+		
+	while (pEnum->Next(1, &pPin, 0) == S_OK) // SUCCEEDED is incorrect here
     {
         PIN_DIRECTION PinDirThis;
         hr = pPin->QueryDirection(&PinDirThis);
@@ -568,214 +568,288 @@ bool DSVideo::OpenMovieNormally(string csMovieName, void *pHWnd)
 	ULONG res;
 	int i;
 	
-	if (m_type == -3)
+	try
 	{
-		m_type = 3;
-	}
-	else
-	{
-		m_type = 2;
-	}
-
-	m_MovieName = csMovieName;
-
-	if (m_Inited) 
-	{
-		hr = CleanUp();
-	}
-
-	hr = CoInitialize(NULL);
-
-	hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, 
-							IID_IGraphBuilder, (void **)&m_pGB);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-	hr = CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL,
-							CLSCTX_INPROC_SERVER, IID_ICaptureGraphBuilder2, 
-							(void **)&m_pBuilder);
-    if (FAILED(hr)) { CleanUp(); return false; }
-    
-    hr = m_pBuilder->SetFiltergraph(m_pGB);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-    hr = m_pGB->QueryInterface(IID_IMediaControl, (void **)&m_pMC);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-	hr = m_pGB->QueryInterface(IID_IMediaEventEx, (void **)&m_pME);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-	hr = m_pGB->QueryInterface(IID_IMediaSeeking,(void **)&m_pMS);
-    if (FAILED(hr)) { CleanUp(); return false; }
-	
-	hr = CoCreateInstance(CLSID_VideoMixingRenderer, NULL, CLSCTX_INPROC_SERVER,
-							IID_IBaseFilter,(void**)&m_pVideoRenderFilter);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-    m_pTransNull32 = new CTransNull32(&m_pBuffer, &m_st, 
-                                                  &m_ImageGeted, m_pMC,
-                                                  &m_IsSetNullRender, NULL, &hr); 
-	if (FAILED(hr)) { CleanUp(); return false; }
-	   
-	hr = m_pTransNull32->QueryInterface(IID_IBaseFilter, 
-							reinterpret_cast<void**>(&m_pTransNull32Filter));
-	if (FAILED(hr)) { CleanUp(); return false; }
-   
-	hr = m_pGB->AddSourceFilter(StringToLPCWSTR(m_MovieName), L"Source1", &m_pSourceFilter);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-    hr = m_pGB->AddFilter(m_pTransNull32Filter, L"MyColorSpaceConverter");
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-	hr = m_pGB->AddFilter(m_pVideoRenderFilter, L"Video Renderer");
-    if (FAILED(hr)) { CleanUp(); return false; }	
-
-	try	
-	{
-		hr = m_pBuilder->RenderStream(0, 0, m_pSourceFilter, m_pTransNull32Filter, m_pVideoRenderFilter);
-	}
-	catch(...) 
-	{
-		hr = E_FAIL;
-	}
-
-    if (FAILED(hr))
-    {
-        try	
-	    {
-            hr = m_pBuilder->RenderStream(0, 0, m_pSourceFilter, 0, m_pTransNull32Filter);
-        }
-        catch(...) 
-	    {
-		    hr = E_FAIL;
-	    }
-
-        if (SUCCEEDED(hr))
-	    {
-            try	
-	        {
-		        hr = m_pBuilder->RenderStream(0, 0, m_pTransNull32Filter, 0, m_pVideoRenderFilter);
-	        }
-	        catch(...) 
-	        {
-		        hr = E_FAIL;
-	        }		    
-	    }
-    }	
-
-	if (FAILED(hr))
-	{		
-		cls.push_back(CLSID_AVIDec);
-		fnames.push_back("AVI Decoder");
-
-		cls.push_back(CLSID_ffdshow);
-		fnames.push_back("ffdshow MPEG-4 Video Decoder");
-
-		cls.push_back(CLSID_DivX);
-		fnames.push_back("DivX Decoder Filter");
-		
-		for (i=0; i < (int)cls.size(); i++)
+		if (m_type == -3)
 		{
-			hr = CoCreateInstance(cls[i], NULL, CLSCTX_INPROC_SERVER,
-								IID_IBaseFilter, (void**)&m_pDecoder);
+			m_type = 3;
+		}
+		else
+		{
+			m_type = 2;
+		}
 
-			hr = m_pGB->AddFilter(m_pDecoder, L"Video Decoder");
+		m_MovieName = csMovieName;
 
-			try	
+		m_log += "OpenMovieNormally(...)\n";
+
+		if (m_Inited)
+		{
+			hr = CleanUp();
+			if (FAILED(hr)) { return false; }
+		}
+
+		m_log += "CoInitialize(NULL)\n";
+		hr = CoInitialize(NULL);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "CoCreateInstance(CLSID_FilterGraph,...)\n";
+		hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER,
+			IID_IGraphBuilder, (void **)&m_pGB);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "CoCreateInstance(CLSID_CaptureGraphBuilder2,...)\n";
+		hr = CoCreateInstance(CLSID_CaptureGraphBuilder2, NULL,
+			CLSCTX_INPROC_SERVER, IID_ICaptureGraphBuilder2,
+			(void **)&m_pBuilder);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pBuilder->SetFiltergraph(m_pGB)\n";
+		hr = m_pBuilder->SetFiltergraph(m_pGB);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pGB->QueryInterface(IID_IMediaControl,...)\n";
+		hr = m_pGB->QueryInterface(IID_IMediaControl, (void **)&m_pMC);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pGB->QueryInterface(IID_IMediaEventEx,...)\n";
+		hr = m_pGB->QueryInterface(IID_IMediaEventEx, (void **)&m_pME);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pGB->QueryInterface(IID_IMediaSeeking,...)\n";
+		hr = m_pGB->QueryInterface(IID_IMediaSeeking, (void **)&m_pMS);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "CoCreateInstance(CLSID_VideoMixingRenderer,...)\n";
+		hr = CoCreateInstance(CLSID_VideoMixingRenderer, NULL, CLSCTX_INPROC_SERVER,
+			IID_IBaseFilter, (void**)&m_pVideoRenderFilter);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "new CTransNull32(...)\n";
+		m_pTransNull32 = new CTransNull32(&m_pBuffer, &m_st,
+			&m_ImageGeted, m_pMC,
+			&m_IsSetNullRender, NULL, &hr);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pTransNull32->QueryInterface(IID_IBaseFilter,...)\n";
+		hr = m_pTransNull32->QueryInterface(IID_IBaseFilter,
+			reinterpret_cast<void**>(&m_pTransNull32Filter));
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pGB->AddSourceFilter(...,m_pSourceFilter)\n";
+		hr = m_pGB->AddSourceFilter(StringToLPCWSTR(m_MovieName), L"Source1", &m_pSourceFilter);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pGB->AddFilter(m_pTransNull32Filter,...)\n";
+		hr = m_pGB->AddFilter(m_pTransNull32Filter, L"MyColorSpaceConverter");
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pGB->AddFilter(m_pVideoRenderFilter,...)\n";
+		hr = m_pGB->AddFilter(m_pVideoRenderFilter, L"Video Renderer");
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		try
+		{
+			m_log += "m_pBuilder->RenderStream(0, 0, m_pSourceFilter, m_pTransNull32Filter, m_pVideoRenderFilter)\n";
+			hr = m_pBuilder->RenderStream(0, 0, m_pSourceFilter, m_pTransNull32Filter, m_pVideoRenderFilter);
+		}
+		catch (...)
+		{
+			m_log += "got exception...\n";
+			hr = E_FAIL;
+		}			
+		
+		if (FAILED(hr))
+		{
+			m_log += "Failed to RenderStream.\n";
+
+			try
 			{
-				hr = ConnectFilters(m_pGB, m_pSourceFilter, m_pDecoder);
+				m_log += "m_pBuilder->RenderStream(0, 0, m_pSourceFilter, 0, m_pTransNull32Filter)\n";
+				hr = m_pBuilder->RenderStream(0, 0, m_pSourceFilter, 0, m_pTransNull32Filter);
 			}
-			catch(...) 
+			catch (...)
 			{
+				m_log += "got exception...\n";
 				hr = E_FAIL;
-			}			
+			}
 
 			if (SUCCEEDED(hr))
 			{
-				hr = ConnectFilters(m_pGB, m_pDecoder, m_pTransNull32Filter);
+				m_log += "Passed to RenderStream.\n";
+
+				try
+				{
+					m_log += "m_pBuilder->RenderStream(0, 0, m_pTransNull32Filter, 0, m_pVideoRenderFilter)\n";
+					hr = m_pBuilder->RenderStream(0, 0, m_pTransNull32Filter, 0, m_pVideoRenderFilter);
+				}
+				catch (...)
+				{
+					m_log += "got exception...\n";
+					hr = E_FAIL;
+				}
 			}
-			
+		}
+
+		if (FAILED(hr))
+		{
+			m_log += "Failed to RenderStream.\n";
+
+			m_log += "Trying to use alternative decoders...\n";
+
+			cls.push_back(CLSID_AVIDec);
+			fnames.push_back("AVI Decoder");
+
+			cls.push_back(CLSID_ffdshow);
+			fnames.push_back("ffdshow MPEG-4 Video Decoder");
+
+			cls.push_back(CLSID_DivX);
+			fnames.push_back("DivX Decoder Filter");
+
+			for (i = 0; i < (int)cls.size(); i++)
+			{
+				m_log += "CoCreateInstance(" + fnames[i] + ")\n";
+
+				hr = CoCreateInstance(cls[i], NULL, CLSCTX_INPROC_SERVER,
+					IID_IBaseFilter, (void**)&m_pDecoder);
+
+				if (SUCCEEDED(hr))
+				{
+					m_log += "Passed CoCreateInstance\n";
+
+					m_log += "AddFilter(m_pDecoder,...)\n";
+					hr = m_pGB->AddFilter(m_pDecoder, L"Video Decoder");
+
+					if (SUCCEEDED(hr))
+					{
+						m_log += "Passed AddFilter\n";
+						try
+						{
+							m_log += "ConnectFilters(m_pGB, m_pSourceFilter, m_pDecoder)\n";
+							hr = ConnectFilters(m_pGB, m_pSourceFilter, m_pDecoder);
+						}
+						catch (...)
+						{
+							m_log += "got exception...\n";
+							hr = E_FAIL;
+						}
+
+						if (SUCCEEDED(hr))
+						{
+							m_log += "ConnectFilters(m_pGB, m_pDecoder, m_pTransNull32Filter)\n";
+							hr = ConnectFilters(m_pGB, m_pDecoder, m_pTransNull32Filter);
+						}
+
+						if (FAILED(hr))
+						{
+							m_log += "Failed ConnectFilters\n";
+							hr = m_pGB->RemoveFilter(m_pDecoder);
+							res = m_pDecoder->Release();
+							m_pDecoder = NULL;
+							hr = E_FAIL;
+						}
+						else
+						{
+							break;
+						}
+					}
+				}
+			}
+
 			if (FAILED(hr))
 			{
-				hr = m_pGB->RemoveFilter(m_pDecoder);
-				res = m_pDecoder->Release();
-				m_pDecoder = NULL;
-				hr = E_FAIL;
+				m_log += "[DSHOW] Can't render stream SourceFilter to TransNull32Filter.\n";
+				MessageBox(NULL, "[DSHOW] Can't render stream SourceFilter to TransNull32Filter.", "ERROR MESSAGE", MB_ICONERROR);
+				CleanUp();
+				return false;
 			}
-			else
+
+			if (SUCCEEDED(hr))
 			{
-				break;
+				m_log += "m_pBuilder->RenderStream(0, 0, m_pTransNull32Filter, 0, m_pVideoRenderFilter)\n";
+				hr = m_pBuilder->RenderStream(0, 0, m_pTransNull32Filter, 0, m_pVideoRenderFilter);
+			}
+
+			if (FAILED(hr))
+			{
+				m_log += "[DSHOW] Can't render stream TransNull32Filter to VideoRenderFilter.\n";
+				MessageBox(NULL, "[DSHOW] Can't render stream TransNull32Filter to VideoRenderFilter.", "ERROR MESSAGE", MB_ICONERROR);
+				CleanUp();
+				return false;
 			}
 		}
 
-		if (FAILED(hr)) 
-		{ 
-			MessageBox(NULL, "[DSHOW] Can't render stream SourceFilter to TransNull32Filter.", "ERROR MESSAGE", MB_ICONERROR); 
-			CleanUp(); 
-			return false; 
-		}
+		m_log += "m_pGB->QueryInterface(IID_IMediaFilter,...)\n";
+		hr = m_pGB->QueryInterface(IID_IMediaFilter, (void **)&m_pMF);
+		if (FAILED(hr)) { CleanUp(); return false; }
 
-		if (SUCCEEDED(hr))
+		m_log += "m_pGB->QueryInterface(IID_IVideoWindow,...)\n";
+		hr = m_pGB->QueryInterface(IID_IVideoWindow, (void **)&m_pVW);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "m_pVW->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS)\n";
+		hr = m_pVW->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS);
+		if (FAILED(hr)) { m_log += "failed m_pVW->put_WindowStyle\n"; }
+
+		m_log += "m_pVW->put_Owner(*((OAHWND*)pHWnd))\n";
+		hr = m_pVW->put_Owner(*((OAHWND*)pHWnd));
+		if (FAILED(hr)) { m_log += "failed m_pVW->put_Owner\n"; }
+
+		m_log += "m_pVW->put_MessageDrain(*((OAHWND*)pHWnd))\n";
+		hr = m_pVW->put_MessageDrain(*((OAHWND*)pHWnd));
+		if (FAILED(hr)) { m_log += "failed m_pVW->put_MessageDrain\n"; }
+
+		m_log += "m_pMS->GetStopPosition(&m_Duration)\n";
+		hr = m_pMS->GetStopPosition(&m_Duration);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "GetPin(m_pTransNull32Filter, PINDIR_INPUT, &pIn)\n";
+		hr = GetPin(m_pTransNull32Filter, PINDIR_INPUT, &pIn);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_log += "pIn->ConnectionMediaType(&mt)\n";
+		hr = pIn->ConnectionMediaType(&mt);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		if (mt.formattype == FORMAT_VideoInfo)
 		{
-			hr = m_pBuilder->RenderStream(0, 0, m_pTransNull32Filter, 0, m_pVideoRenderFilter);
+			m_log += "mt.formattype == FORMAT_VideoInfo\n";
+
+			VIDEOINFOHEADER  *pVi = (VIDEOINFOHEADER*)mt.pbFormat;
+
+			m_Width = abs(pVi->bmiHeader.biWidth);
+			m_Height = abs(pVi->bmiHeader.biHeight);
+		}
+		else if (mt.formattype == FORMAT_VideoInfo2)
+		{
+			m_log += "mt.formattype == FORMAT_VideoInfo2\n";
+
+			VIDEOINFOHEADER2 *pVi = (VIDEOINFOHEADER2*)mt.pbFormat;
+
+			m_Width = abs(pVi->bmiHeader.biWidth);
+			m_Height = abs(pVi->bmiHeader.biHeight);
+		}
+		else
+		{
+			m_log += "Unsupported video format\n";
+			CleanUp();
+			return false;
 		}
 
-		if (FAILED(hr)) 
-		{ 
-			MessageBox(NULL, "[DSHOW] Can't render stream TransNull32Filter to VideoRenderFilter.", "ERROR MESSAGE", MB_ICONERROR); 
-			CleanUp(); 
-			return false; 
-		}
+		m_log += "m_pMS->SetTimeFormat(&TIME_FORMAT_MEDIA_TIME)\n";
+		hr = m_pMS->SetTimeFormat(&TIME_FORMAT_MEDIA_TIME);
+		if (FAILED(hr)) { CleanUp(); return false; }
+
+		m_pTransNull32->m_blnReInit = 1;
+
+		m_Inited = true;
 	}
-	
-	hr = m_pGB->QueryInterface(IID_IMediaFilter, (void **)&m_pMF); 
-
-	hr = m_pGB->QueryInterface(IID_IVideoWindow,(void **)&m_pVW);
-	
-	hr = m_pVW->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS);
-	
-	hr = m_pVW->put_Owner(*((OAHWND*)pHWnd));
-	
-	hr = m_pVW->put_MessageDrain(*((OAHWND*)pHWnd));
-
-	hr = m_pMS->GetStopPosition(&m_Duration);
-
-    hr = GetPin(m_pTransNull32Filter, PINDIR_INPUT, &pIn);
-	if (FAILED(hr)) { CleanUp(); return false; }
-
-    hr = pIn->ConnectionMediaType(&mt);
-    if (FAILED(hr)) { CleanUp(); return false; }
-
-    if (mt.formattype == FORMAT_VideoInfo)
-    {        
-        VIDEOINFOHEADER  *pVi = (VIDEOINFOHEADER*)mt.pbFormat;
-        
-        m_Width = abs(pVi->bmiHeader.biWidth);
-        m_Height = abs(pVi->bmiHeader.biHeight);
-    }
-    else if (mt.formattype == FORMAT_VideoInfo2)
-    {
-        VIDEOINFOHEADER2 *pVi = (VIDEOINFOHEADER2*)mt.pbFormat;
-
-        m_Width = abs(pVi->bmiHeader.biWidth);
-        m_Height = abs(pVi->bmiHeader.biHeight);
-    }
-    else
-    {
-        CleanUp(); 
-        return false;
-    }
-    
-    m_pMS->SetTimeFormat(&TIME_FORMAT_MEDIA_TIME);
-
-    /*m_Width = 640;
-    m_Height = 480;
-
-    if (m_pBuffer == NULL) delete[] m_pBuffer;
-	m_pBuffer = new int[m_Width*m_Height];*/
-
-	m_pTransNull32->m_blnReInit = 1;
-
-	m_Inited = true;
+	catch (...)
+	{
+		m_log += "got global exception...\n";
+		CleanUp();
+		return false;
+	}
 
 	return true;
 }
@@ -798,15 +872,15 @@ bool DSVideo::SetVideoWindowPlacement(void *pHWnd)
 	while(1)
 	{
 		hr = m_pVideoRenderFilter->GetClassID(&classID);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		pIn = NULL;
 		hr = GetPin(m_pVideoRenderFilter, PINDIR_INPUT, &pIn);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 	
 		pOut = NULL;
 		hr = pIn->ConnectedTo(&pOut);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		hr = m_pVW->put_Visible(false);
 
@@ -822,24 +896,24 @@ bool DSVideo::SetVideoWindowPlacement(void *pHWnd)
 		hr = pOut->Disconnect();
 
 		hr = m_pGB->RemoveFilter(m_pVideoRenderFilter);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		m_pVideoRenderFilter->Release();
 		
 		m_pVideoRenderFilter = NULL;
 		hr = CoCreateInstance(classID, NULL, CLSCTX_INPROC_SERVER,
 								IID_IBaseFilter,(void**)&m_pVideoRenderFilter);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		hr = m_pGB->AddFilter(m_pVideoRenderFilter, L"Video Render");
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 		
 		pIn = NULL;
 		hr = GetPin(m_pVideoRenderFilter, PINDIR_INPUT, &pIn);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		hr = m_pGB->ConnectDirect(pOut, pIn, NULL);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		break;
 	}
@@ -854,7 +928,7 @@ bool DSVideo::SetVideoWindowPlacement(void *pHWnd)
 	
 	hr = m_pVW->put_MessageDrain(*((OAHWND*)pHWnd));
 
-	if (hr == S_OK) result = true;
+	if (SUCCEEDED(hr)) result = true;
 
 	return result;
 }
@@ -872,14 +946,14 @@ IBaseFilter* DSVideo::GetDecoder()
 
 		pIn = NULL;
 		hr = GetPin(m_pSampleGrabberFilter, PINDIR_INPUT, &pIn);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		pOut = NULL;
 		hr = pIn->ConnectedTo(&pOut);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		hr = pOut->QueryPinInfo(&PinInfo);
-		if (hr != S_OK) break;
+		if (FAILED(hr)) break;
 
 		pFilter = PinInfo.pFilter;
 
@@ -903,14 +977,14 @@ IBaseFilter* DSVideo::GetSourceFilter()
 		pIn = NULL;
 		hr = GetPin(m_pSampleGrabberFilter, PINDIR_INPUT, &pIn);
 		
-		while (hr == S_OK)
+		while (SUCCEEDED(hr))
 		{
 			pOut = NULL;
 			hr = pIn->ConnectedTo(&pOut);
-			if (hr != S_OK) { pFilter = NULL; break; }
+			if (FAILED(hr)) { pFilter = NULL; break; }
 
 			hr = pOut->QueryPinInfo(&PinInfo);
-			if (hr != S_OK) { pFilter = NULL; break; }
+			if (FAILED(hr)) { pFilter = NULL; break; }
 
 			pFilter = PinInfo.pFilter;
 
@@ -950,17 +1024,17 @@ bool DSVideo::SetNullRender()
 		hr = m_pVW->put_Owner(NULL);
 
 		hr = m_pGB->RemoveFilter(m_pVideoRenderFilter);
-		if (hr != S_OK) { CleanUp(); return false; }
+		if (FAILED(hr)) { CleanUp(); return false; }
 
 		if (m_pSampleGrabberFilter != NULL)
 		{
 			hr = GetPin(m_pSampleGrabberFilter, PINDIR_OUTPUT, &pOutGB);
-			if (hr != S_OK) { CleanUp(); return false; }
+			if (FAILED(hr)) { CleanUp(); return false; }
 		}
 		else
 		{
 			hr = GetPin(m_pTransNull32Filter, PINDIR_OUTPUT, &pOutGB);
-			if (hr != S_OK) { CleanUp(); return false; }
+			if (FAILED(hr)) { CleanUp(); return false; }
 		}
 
 		m_pVideoRenderFilter = NULL;
@@ -970,14 +1044,14 @@ bool DSVideo::SetNullRender()
 		hr = m_pGB->AddFilter(m_pVideoRenderFilter, L"Video Render");
 
 		hr = GetPin(m_pVideoRenderFilter, PINDIR_INPUT, &pInVR);
-		if (hr != S_OK) { CleanUp(); return false; }
+		if (FAILED(hr)) { CleanUp(); return false; }
 
 		hr = pInVR->Disconnect();
 
 		hr = pOutGB->Disconnect();
 
 		hr = m_pGB->Connect(pOutGB, pInVR);
-		if (hr != S_OK) { CleanUp(); return false; }
+		if (FAILED(hr)) { CleanUp(); return false; }
 
 		if (m_pTransNull32Filter != NULL)
 		{
@@ -1099,126 +1173,136 @@ HRESULT DSVideo::CleanUp()
 	fstream fout;
 	string fname;
 
-	fname = m_Dir + string("/clean_video.log");
-	fout.open(fname.c_str(), ios_base::out | ios_base::app);
-	fout <<	"";
-	fout.close();
+	m_log += "Performing CleanUp...\n";
 
-	this->Stop();
-
-	log += "PASS: m_pME->WaitForCompletion(...)\n";
-	
-	if (m_pVW != NULL)
+	try
 	{
-		hr = m_pVW->put_Visible(OAFALSE);
-		hr = m_pVW->put_MessageDrain(NULL);
-		hr = m_pVW->put_Owner(NULL);
-	}
+		fname = m_Dir + string("/clean_video.log");
+		fout.open(fname.c_str(), ios_base::out | ios_base::app);
+		fout << "";
+		fout.close();
 
-	if (m_pDecoder == NULL)
+		this->Stop();
+
+		log += "PASS: m_pME->WaitForCompletion(...)\n";
+
+		if (m_pVW != NULL)
+		{
+			hr = m_pVW->put_Visible(OAFALSE);
+			hr = m_pVW->put_MessageDrain(NULL);
+			hr = m_pVW->put_Owner(NULL);
+		}
+
+		if (m_pDecoder == NULL)
+		{
+			m_pDecoder = GetDecoder();
+		}
+
+		if (m_pDecoder != NULL)	log += "PASS: GetDecoder()\n";
+		else log += "FAIL: GetDecoder()\n";
+
+		if (m_pVideoRenderFilter != NULL)
+		{
+			pOut = NULL;
+			hr = GetPin(m_pVideoRenderFilter, PINDIR_OUTPUT, &pOut);
+			pIn = NULL;
+			hr = GetPin(m_pVideoRenderFilter, PINDIR_INPUT, &pIn);
+
+			if (pOut != NULL) hr = pOut->Disconnect();
+			if (pIn != NULL) hr = pIn->Disconnect();
+
+			hr = m_pGB->RemoveFilter(m_pVideoRenderFilter);
+
+			if (SUCCEEDED(hr)) log += "PASS: Delete VideoRenderFilter\n";
+			else log += "FAIL: Delete VideoRenderFilter\n";
+		}
+
+		if (m_pSampleGrabberFilter != NULL)
+		{
+			hr = m_pGB->RemoveFilter(m_pSampleGrabberFilter);
+
+			if (SUCCEEDED(hr)) log += "PASS: Delete SampleGrabberFilter\n";
+			else log += "FAIL: Delete SampleGrabberFilter\n";
+		}
+
+		if (m_pDecoder != NULL)
+		{
+			hr = m_pGB->RemoveFilter(m_pDecoder);
+
+			if (SUCCEEDED(hr)) log += "PASS: Delete Decoder\n";
+			else log += "FAIL: Delete Decoder\n";
+		}
+
+		if (m_pMC != NULL) i = m_pMC->Release();
+		m_pMC = NULL;
+
+		if (m_pME != NULL) i = m_pME->Release();
+		m_pME = NULL;
+
+		if (m_pMS != NULL) i = m_pMS->Release();
+		m_pMS = NULL;
+
+		if (m_pMF != NULL) i = m_pMF->Release();
+		m_pMF = NULL;
+
+		if (m_pVW != NULL) i = m_pVW->Release();
+		m_pVW = NULL;
+
+		if (m_pBV != NULL) i = m_pBV->Release();
+		m_pBV = NULL;
+
+		if (m_pBA != NULL) i = m_pBA->Release();
+		m_pBA = NULL;
+
+		if (m_pDecoder != NULL) i = m_pDecoder->Release();
+		m_pDecoder = NULL;
+
+		//if(m_pGrabber != NULL) i = m_pGrabber->Release();
+		//m_pGrabber = NULL;
+
+		if (m_pSampleGrabberFilter != NULL) i = m_pSampleGrabberFilter->Release();
+		m_pSampleGrabberFilter = NULL;
+
+		if (m_pTransNull32Filter != NULL) i = m_pTransNull32Filter->Release();
+		m_pTransNull32Filter = NULL;
+
+		if (m_pSourceFilter != NULL) i = m_pSourceFilter->Release();
+		m_pSourceFilter = NULL;
+
+		if (m_pVideoRenderFilter != NULL) i = m_pVideoRenderFilter->Release();
+		m_pVideoRenderFilter = NULL;
+
+		if (m_pGB != NULL) i = m_pGB->Release();
+		m_pGB = NULL;
+
+		if (m_pBuilder != NULL) i = m_pBuilder->Release();
+		m_pBuilder = NULL;
+
+		//if (m_pSGCallback != NULL) delete m_pSGCallback;
+		//m_pSGCallback = NULL;
+
+		CoUninitialize();
+
+		if (m_pBuffer != NULL) delete[] m_pBuffer;
+		m_pBuffer = NULL;
+
+		m_Inited = false;
+
+		m_IsMSSuported = true;
+		m_st = 0;
+
+		m_IsSetNullRender = false;
+
+		fname = m_Dir + string("/clean_video.log");
+		fout.open(fname.c_str(), ios::out);
+		fout << log;
+		fout.close();
+	}
+	catch (...)
 	{
-		m_pDecoder = GetDecoder();
+		m_log += "got exception on CleanUp...\n";
+		return S_FALSE;
 	}
-
-	if (m_pDecoder != NULL)	log += "PASS: GetDecoder()\n";
-	else log += "FAIL: GetDecoder()\n";
-
-	if (m_pVideoRenderFilter != NULL)
-	{
-		pOut = NULL;
-		hr = GetPin(m_pVideoRenderFilter, PINDIR_OUTPUT, &pOut);
-		pIn = NULL;
-		hr = GetPin(m_pVideoRenderFilter, PINDIR_INPUT, &pIn);
-
-		if (pOut != NULL) hr = pOut->Disconnect();
-		if (pIn != NULL) hr = pIn->Disconnect();
-
-		hr = m_pGB->RemoveFilter(m_pVideoRenderFilter);
-
-		if (hr == S_OK) log += "PASS: Delete VideoRenderFilter\n";
-		else log += "FAIL: Delete VideoRenderFilter\n";
-	}
-
-	if (m_pSampleGrabberFilter != NULL)
-	{
-		hr = m_pGB->RemoveFilter(m_pSampleGrabberFilter);
-		
-		if (hr == S_OK) log += "PASS: Delete SampleGrabberFilter\n";
-		else log += "FAIL: Delete SampleGrabberFilter\n";
-	}
-
-	if (m_pDecoder != NULL)
-	{
-		hr = m_pGB->RemoveFilter(m_pDecoder);
-
-		if (hr == S_OK) log += "PASS: Delete Decoder\n";
-		else log += "FAIL: Delete Decoder\n";
-	}
-
-	if(m_pMC != NULL) i = m_pMC->Release(); 
-	m_pMC = NULL;
-
-	if(m_pME != NULL) i = m_pME->Release();
-	m_pME = NULL;
-
-	if(m_pMS != NULL) i = m_pMS->Release();
-	m_pMS = NULL;
-
-	if(m_pMF != NULL) i = m_pMF->Release(); 
-	m_pMF = NULL;
-
-	if(m_pVW != NULL) i = m_pVW->Release();	
-	m_pVW = NULL;
-
-	if(m_pBV != NULL) i = m_pBV->Release();
-	m_pBV = NULL;
-
-	if(m_pBA != NULL) i = m_pBA->Release();
-	m_pBA = NULL;
-
-	if(m_pDecoder != NULL) i = m_pDecoder->Release();
-	m_pDecoder = NULL;
-	
-	//if(m_pGrabber != NULL) i = m_pGrabber->Release();
-	//m_pGrabber = NULL;
-
-	if(m_pSampleGrabberFilter != NULL) i = m_pSampleGrabberFilter->Release(); 	
-	m_pSampleGrabberFilter = NULL;
-
-    if(m_pTransNull32Filter != NULL) i = m_pTransNull32Filter->Release(); 	
-	m_pTransNull32Filter = NULL;
-    
-	if(m_pSourceFilter != NULL) i = m_pSourceFilter->Release();
-	m_pSourceFilter = NULL;
-
-	if(m_pVideoRenderFilter != NULL) i = m_pVideoRenderFilter->Release();
-	m_pVideoRenderFilter = NULL;
-
-	if(m_pGB != NULL) i = m_pGB->Release();
-	m_pGB = NULL;
-
-	if(m_pBuilder != NULL) i = m_pBuilder->Release();
-	m_pBuilder = NULL;
-
-    //if (m_pSGCallback != NULL) delete m_pSGCallback;
-    //m_pSGCallback = NULL;
-    
-	CoUninitialize();
-	
-	if (m_pBuffer != NULL) delete[] m_pBuffer;
-	m_pBuffer = NULL;
-
-	m_Inited = false;
-
-	m_IsMSSuported = true;
-	m_st = 0;
-
-	m_IsSetNullRender = false;
-
-	fname = m_Dir + string("\\clean_video.log");
-	fout.open(fname.c_str(), ios::out);
-	fout <<	log;
-	fout.close();
 
 	return hr;
 }
