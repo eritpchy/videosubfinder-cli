@@ -26,7 +26,6 @@
 using namespace std;
 
 #include <stdio.h>
-#include <wx/image.h>
 
 extern void     (*g_pViewRGBImage)(int *Im, int w, int h);
 extern void     (*g_pViewImage[2])(int *Im, int w, int h);

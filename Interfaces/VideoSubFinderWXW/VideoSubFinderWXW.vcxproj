@@ -106,10 +106,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswd;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\Debug\strmbasd.lib;wxmsw30ud_aui.lib;wxmsw30ud_media.lib;wxmsw30ud_core.lib;wxmsw30ud_adv.lib;wxbase30ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\Debug\DSVideo.lib;..\..\Components\OCVVideo\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\Debug\IPAlgorithms.lib;opencv_imgcodecs310d.lib;opencv_imgproc310d.lib;opencv_ml310d.lib;opencv_objdetect310d.lib;opencv_photo310d.lib;opencv_shape310d.lib;opencv_stitching310d.lib;opencv_superres310d.lib;opencv_ts310d.lib;opencv_video310d.lib;opencv_videoio310d.lib;opencv_videostab310d.lib;opencv_calib3d310d.lib;opencv_core310d.lib;opencv_features2d310d.lib;opencv_flann310d.lib;opencv_highgui310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\Debug\strmbasd.lib;wxmsw30ud_aui.lib;wxmsw30ud_media.lib;wxmsw30ud_core.lib;wxmsw30ud_adv.lib;wxbase30ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\Debug\DSVideo.lib;..\..\Components\OCVVideo\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\Debug\IPAlgorithms.lib;opencv_core310d.lib;opencv_videoio310d.lib;opencv_imgproc310d.lib;opencv_imgcodecs310d.lib;vfw32.lib;ippicvmt.lib;zlibd.lib;libwebpd.lib;libpngd.lib;libtiffd.lib;libjasperd.lib;IlmImfd.lib;libjpegd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;$(OPENCV_CUSTOM_BUILD)\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;$(OPENCV_DIR)\Win32\lib\Debug;$(OPENCV_DIR)\Win32\3rdparty\lib\Debug;$(OPENCV_DIR)\sources\3rdparty\ippicv\unpack\ippicv_win\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)VideoSubFinderWXW.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -156,7 +156,7 @@
     <ClCompile>
       <AdditionalOptions>/EHsc %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\DSVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\DSVideo;..\..\Components\OCVVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WXMSW__;_WINDOWS;NOPCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -170,10 +170,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\msw;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\Release\strmbase.lib;wxmsw30u_aui.lib;wxmsw30u_media.lib;wxmsw30u_core.lib;wxmsw30u_adv.lib;wxbase30u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\Release\DSVideo.lib;..\..\Components\IPAlgorithms\Release\IPAlgorithms.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\Release\strmbase.lib;wxmsw30u_aui.lib;wxmsw30u_media.lib;wxmsw30u_core.lib;wxmsw30u_adv.lib;wxbase30u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\Release\DSVideo.lib;..\..\Components\OCVVideo\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\Release\IPAlgorithms.lib;opencv_core310.lib;opencv_videoio310.lib;opencv_imgproc310.lib;opencv_imgcodecs310.lib;vfw32.lib;ippicvmt.lib;zlib.lib;libjpeg.lib;libwebp.lib;libpng.lib;libtiff.lib;libjasper.lib;IlmImf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;$(OPENCV_DIR)\Win32\lib\Release;$(OPENCV_DIR)\Win32\3rdparty\lib\Release;$(OPENCV_DIR)\sources\3rdparty\ippicv\unpack\ippicv_win\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences />
@@ -187,7 +187,7 @@
     <ClCompile>
       <AdditionalOptions>/EHsc %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\DSVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\DSVideo;..\..\Components\OCVVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;__WXMSW__;_WINDOWS;NOPCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -203,10 +203,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\msw;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\x64\Release\strmbase.lib;wxmsw30u_aui.lib;wxmsw30u_media.lib;wxmsw30u_core.lib;wxmsw30u_adv.lib;wxbase30u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\x64\Release\DSVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\x64\Release\strmbase.lib;wxmsw30u_aui.lib;wxmsw30u_media.lib;wxmsw30u_core.lib;wxmsw30u_adv.lib;wxbase30u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\x64\Release\DSVideo.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;opencv_core310.lib;opencv_videoio310.lib;opencv_imgproc310.lib;opencv_imgcodecs310.lib;vfw32.lib;ippicvmt.lib;zlib.lib;libjpeg.lib;libwebp.lib;libpng.lib;libtiff.lib;libjasper.lib;IlmImf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\x64;$(OPENCV_DIR)\Win64\lib\Release;$(OPENCV_DIR)\Win64\3rdparty\lib\Release;$(OPENCV_DIR)\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>

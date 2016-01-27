@@ -1783,7 +1783,7 @@ string VideoTimeToStr(s64 pos)
 	int hour, min, sec, msec, val;
 
 	val = (int)(pos / 1000); // seconds
-	msec = pos - (s64)val * 1000;
+	msec = pos - ((s64)val * (s64)1000);
 	hour = val / 3600;
 	val -= hour * 3600;
 	min = val / 60;

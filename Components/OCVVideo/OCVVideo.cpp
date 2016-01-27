@@ -47,6 +47,7 @@ OCVVideo::~OCVVideo()
 	if (m_VC.isOpened() && m_play_video)
 	{
 		Pause();
+		m_VC.release();
 	}
 
 	if (m_pBmp != NULL)

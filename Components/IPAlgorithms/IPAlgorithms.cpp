@@ -19,6 +19,9 @@
 #include <math.h>
 #include <assert.h>
 #include <emmintrin.h>
+#include <wx/wx.h>
+#include <opencv2/opencv.hpp>
+
 #include <algorithm>
 using namespace std;
 
@@ -10137,132 +10140,91 @@ int CompareTXTImages(int *Im1, int *Im2, int w1, int h1, int w2, int h2, int YB1
 
 void GetImageSize(string name, int &w, int &h)
 {
-	if (!g_wxImageHandlersInitialized)
-	{
-		wxImage::AddHandler(new wxJPEGHandler);	
-		g_wxImageHandlersInitialized = true;
-	}
-
-	wxImage wxIm(name);
-
-	w = wxIm.GetWidth();
-	h = wxIm.GetHeight();
+	cv::Mat im = cv::imread(name, 1);
+	w = im.cols;
+	h = im.rows;
 }
 
 void SaveRGBImage(int *Im, string name, int w, int h)
 {	
-	wxImage wxIm(w, h, true);
-	int i, x, y;
-	u8 *color;
-	string full_name;
+	cv::Mat im(h, w, CV_8UC4);
 
-	if (!g_wxImageHandlersInitialized)
-	{
-		wxImage::AddHandler(new wxJPEGHandler);	
-		g_wxImageHandlersInitialized = true;
+	memcpy(im.data, Im, w*h * 4);
+
+	vector<int> compression_params;
+	compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+	compression_params.push_back(100);
+
+	try {
+		cv::imwrite(g_dir + name, im, compression_params);
 	}
-
-    full_name = g_dir;
-    full_name += name; 	
-
-	for (y=0, i=0; y<h; y++)
-	for (x=0; x<w; x++, i++)
-	{
-		color = (u8*)(&Im[i]);
-		wxIm.SetRGB(x, y, color[2], color[1], color[0]);		
+	catch (runtime_error& ex) {
+		char msg[500];
+		sprintf(msg, "Exception saving image to JPG format: %s\n", ex.what());		
+		wxMessageBox(msg, "ERROR: SaveRGBImage");
 	}
-
-	wxIm.SetOption(wxIMAGE_OPTION_QUALITY, 100);
-	wxIm.SaveFile(full_name, wxBITMAP_TYPE_JPEG);
 }
 
 void LoadRGBImage(int *Im, string name, int &w, int &h)
 {
-	if (!g_wxImageHandlersInitialized)
-	{
-		wxImage::AddHandler(new wxJPEGHandler);	
-		g_wxImageHandlersInitialized = true;
-	}
-
-	wxImage wxIm(name);
-	int i, x, y;
+	cv::Mat im = cv::imread(name, 1);
 	u8 *color;
+	w = im.cols;
+	h = im.rows;
 
-	w = wxIm.GetWidth();
-	h = wxIm.GetHeight();
-
-	for (y=0, i=0; y<h; y++)
-	for (x=0; x<w; x++, i++)
+	for (int i = 0; i < w*h; i++)
 	{		
-		Im[i] = 0;
 		color = (u8*)(&Im[i]);
-		color[2] = wxIm.GetRed(x, y);
-		color[1] = wxIm.GetGreen(x, y);
-		color[0] = wxIm.GetBlue(x, y);
-	}
+		color[0] = im.data[i * 3 + 2];
+		color[1] = im.data[i * 3 + 1];
+		color[2] = im.data[i * 3];
+		color[3] = 0;
+	}	
 }
 
 void SaveGreyscaleImage(int *Im, string name, int w, int h, int quality, int dpi)
 {
-	wxImage wxIm(w, h, true);
-	int i, x, y;
+	cv::Mat im(h, w, CV_8UC4);
 	u8 *color;
-	string full_name;
 
-	if (!g_wxImageHandlersInitialized)
-	{
-		wxImage::AddHandler(new wxJPEGHandler);	
-		g_wxImageHandlersInitialized = true;
-	}
-
-    full_name = g_dir;
-    full_name += name; 	
-
-	for (y=0, i=0; y<h; y++)
-	for (x=0; x<w; x++, i++)
+	for (int i = 0; i < w*h; i++)
 	{
 		color = (u8*)(&Im[i]);
-		wxIm.SetRGB(x, y, color[0], color[0], color[0]);		
+		im.data[i * 4] = color[0];
+		im.data[i * 4 + 1] = color[0];
+		im.data[i * 4 + 2] = color[0];
+		im.data[i * 4 + 3] = 0;
 	}
 
-	if (dpi != -1)
-	{
-		wxIm.SetOption(wxIMAGE_OPTION_RESOLUTIONX, dpi);
-		wxIm.SetOption(wxIMAGE_OPTION_RESOLUTIONY, dpi);
+	vector<int> compression_params;
+	compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+	compression_params.push_back(100);
+
+	try {
+		cv::imwrite(g_dir + name, im, compression_params);
 	}
-	
-	if (quality != -1)
-	{
-		wxIm.SetOption(wxIMAGE_OPTION_QUALITY, 100);
+	catch (runtime_error& ex) {
+		char msg[500];
+		sprintf(msg, "Exception saving image to JPG format: %s\n", ex.what());
+		wxMessageBox(msg, "ERROR: SaveRGBImage");
 	}
-	
-	wxIm.SaveFile(full_name, wxBITMAP_TYPE_JPEG);
 }
 
 void LoadGreyscaleImage(int *Im, string name, int &w, int &h)
 {
-	if (!g_wxImageHandlersInitialized)
+	cv::Mat im = cv::imread(name, 1);
+	w = im.cols;
+	h = im.rows;
+
+	for (int i = 0; i < w*h; i++)
 	{
-		wxImage::AddHandler(new wxJPEGHandler);	
-		g_wxImageHandlersInitialized = true;
-	}
-
-	wxImage wxIm(name);
-	int i, x, y;
-
-	w = wxIm.GetWidth();
-	h = wxIm.GetHeight();
-
-	for (y=0, i=0; y<h; y++)
-	for (x=0; x<w; x++, i++)
-	{		
-		if (wxIm.GetRed(x, y) != 0)
+		if (im.data[i * 4] != 0)
 		{
 			Im[i] = 255;
 		}
 		else
-		{
-			Im[i] = 0;
+		{ 
+			Im[i] = 0; 
 		}
-	}
+	}	
 }
