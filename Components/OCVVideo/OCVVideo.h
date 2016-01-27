@@ -19,92 +19,23 @@
 
 #include "DataTypes.h"
 #include "Video.h"
-
-#include <streams.h>
-#include <limits.h>
-#include <Dshow.h>
-#include <strmif.h>
-#include <control.h>
-#include <uuids.h>
-#include <errors.h>
-#include <amvideo.h>
-//#include <qedit.h>
-#include <dmodshow.h>
-#include <fstream>
-#include <vector>
-#include <string>
-
-using namespace std;
+#include "opencv2/opencv.hpp"
+#include <wx/wx.h>
 
 class OCVVideo;
 
-class CTransNull32 : public CTransInPlaceFilter
+/////////////////////////////////////////////////////////////////////////////
+
+class ThreadRunVideo : public wxThread
 {
 public:
-    int             **m_ppBuffer;
-    bool            *m_pImageGeted;
-    bool            *m_pIsSetNullRender;
-	bool			 m_TriengToGetImage; 
-    s64             *m_pST;
-    IMediaControl	*m_pMC;
-    int             m_ft;
-    int             m_w;
-    int             m_h;
-	int				m_blnReInit;
+	ThreadRunVideo(OCVVideo *pVideo);
 
-    CTransNull32( int **ppBuffer, s64 *pST, 
-                  bool *pImageGeted, IMediaControl *pMC,
-                  bool *pIsSetNullRender, LPUNKNOWN punk, HRESULT *phr );
+	virtual void *Entry();
 
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
-
-    HRESULT Transform(IMediaSample *pSample);
-    HRESULT CheckInputType(const CMediaType *mtIn);
+public:
+	OCVVideo	*m_pVideo;
 };
-
-/*class MySampleGrabberCallback :	public ISampleGrabberCB
-{
-public:
-	int             **m_ppBuffer;
-    bool            *m_pImageGeted;
-    bool            *m_pIsSetNullRender;
-    s64             *m_pST;
-    OCVVideo	        *m_pVideo;
-	
-	MySampleGrabberCallback( int **ppBuffer, s64 *pST, 
-                             bool *pImageGeted, OCVVideo *pVideo,
-                             bool *pIsSetNullRender);
-
-	STDMETHODIMP_(ULONG) AddRef() { return 1; }
-	
-	STDMETHODIMP_(ULONG) Release() { return 2; }
-
-	STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject)
-	{
-		if (NULL == ppvObject) return E_POINTER;
-		
-		if (riid == __uuidof(IUnknown))
-		{
-			*ppvObject = static_cast<IUnknown*>(this);
-			return S_OK;
-		}
-		
-		if (riid == __uuidof(ISampleGrabberCB))
-		{
-			*ppvObject = static_cast<ISampleGrabberCB*>(this);
-			return S_OK;
-		}
-		
-		return E_NOTIMPL;
-	}
-
-	HRESULT STDMETHODCALLTYPE SampleCB(double SampleTime, IMediaSample *pSample)
-	{
-		return E_NOTIMPL;
-	}
-
-	HRESULT STDMETHODCALLTYPE BufferCB(double SampleTime, BYTE *pBuffer, long BufferLen);
-};*/
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -115,46 +46,31 @@ public:
 	~OCVVideo();
 	
 public:		
-	bool			m_IsMSSuported;
 	bool			m_IsSetNullRender;
+
+	cv::VideoCapture m_VC;
 
     int     *m_pBuffer;
     int     m_BufferSize;
     bool    m_ImageGeted;
     s64     m_st;
 	int		m_type; //video open type
+	bool	m_show_video;
+	bool	m_play_video;
+	wxBitmap	*m_pBmp;	
+	wxBitmap	*m_pBmpScaled;
+	double m_frameNumbers;
+	double m_fps;
+	cv::Mat m_cur_frame;
 
-	IGraphBuilder	*m_pGB;
-	IMediaControl	*m_pMC; 
-	IMediaEventEx	*m_pME;
-	IMediaSeeking	*m_pMS;
-	IVideoWindow	*m_pVW;	
-	IBasicVideo		*m_pBV;
-	IBasicAudio     *m_pBA;
-	IMediaFilter	*m_pMF;
-
-	//ISampleGrabber	*m_pGrabber;
-
-	IBaseFilter		*m_pDecoder;
-	IBaseFilter		*m_pSourceFilter;
-	IBaseFilter		*m_pSampleGrabberFilter; 
-	IBaseFilter		*m_pVideoRenderFilter;
-    IBaseFilter		*m_pTransNull32Filter;
-	CTransNull32	*m_pTransNull32;
-
-	ICaptureGraphBuilder2  *m_pBuilder;
-
-	//MySampleGrabberCallback *m_pSGCallback;
+	ThreadRunVideo *m_pThreadRunVideo;
 
 public:
-	IBaseFilter* GetDecoder();
-	IBaseFilter* GetSourceFilter();
+	void ShowFrame(cv::Mat &img);
 
-	bool OpenMovieNormally(string csMovieName, void *pHWnd);
-	bool OpenMovieAllDefault(string csMovieName, void *pHWnd);
-	bool OpenMovieHard(string csMovieName, void *pHWnd);
+	bool OpenMovie(string csMovieName, void *pVideoWindow, int type);
 
-	bool SetVideoWindowPlacement(void *pHWnd);
+	bool SetVideoWindowPlacement(void *pVideoWindow);
 	bool SetNullRender();
 
 	bool CloseMovie();
@@ -178,22 +94,9 @@ public:
     void OneStep();
 	s64  OneStepWithTimeout();
 	s64  GetPos();
-    void GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax);
-
-	s64 PosToMilliSeconds(s64 pos);
+    void GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax);	
 
 	void SetVideoWindowPosition(int left, int top, int width, int height);
 
 	void ErrorMessage(string str);
-
-	HRESULT CheckMediaType(IPin *pPinIn, IPin *pPinOut, AM_MEDIA_TYPE *pmtOut);
-
-public:
-	HRESULT CleanUp();
-	HRESULT ConnectFilters(IGraphBuilder *pGraph,IBaseFilter *pFirst,IBaseFilter *pSecond);
-	HRESULT GetPin(IBaseFilter *pFilter, PIN_DIRECTION PinDir, IPin **ppPin);
 };
-
-LPCWSTR StringToLPCWSTR(string csStr);
-string IntToCStr(int n);
-string WCSToStr(WCHAR *wstr);

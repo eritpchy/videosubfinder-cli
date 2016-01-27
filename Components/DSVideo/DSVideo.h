@@ -28,7 +28,6 @@
 #include <uuids.h>
 #include <errors.h>
 #include <amvideo.h>
-//#include <qedit.h>
 #include <dmodshow.h>
 #include <fstream>
 #include <vector>
@@ -62,50 +61,6 @@ public:
     HRESULT CheckInputType(const CMediaType *mtIn);
 };
 
-/*class MySampleGrabberCallback :	public ISampleGrabberCB
-{
-public:
-	int             **m_ppBuffer;
-    bool            *m_pImageGeted;
-    bool            *m_pIsSetNullRender;
-    s64             *m_pST;
-    DSVideo	        *m_pVideo;
-	
-	MySampleGrabberCallback( int **ppBuffer, s64 *pST, 
-                             bool *pImageGeted, DSVideo *pVideo,
-                             bool *pIsSetNullRender);
-
-	STDMETHODIMP_(ULONG) AddRef() { return 1; }
-	
-	STDMETHODIMP_(ULONG) Release() { return 2; }
-
-	STDMETHODIMP QueryInterface(REFIID riid, void **ppvObject)
-	{
-		if (NULL == ppvObject) return E_POINTER;
-		
-		if (riid == __uuidof(IUnknown))
-		{
-			*ppvObject = static_cast<IUnknown*>(this);
-			return S_OK;
-		}
-		
-		if (riid == __uuidof(ISampleGrabberCB))
-		{
-			*ppvObject = static_cast<ISampleGrabberCB*>(this);
-			return S_OK;
-		}
-		
-		return E_NOTIMPL;
-	}
-
-	HRESULT STDMETHODCALLTYPE SampleCB(double SampleTime, IMediaSample *pSample)
-	{
-		return E_NOTIMPL;
-	}
-
-	HRESULT STDMETHODCALLTYPE BufferCB(double SampleTime, BYTE *pBuffer, long BufferLen);
-};*/
-
 /////////////////////////////////////////////////////////////////////////////
 
 class DSVideo: public CVideo
@@ -133,8 +88,6 @@ public:
 	IBasicAudio     *m_pBA;
 	IMediaFilter	*m_pMF;
 
-	//ISampleGrabber	*m_pGrabber;
-
 	IBaseFilter		*m_pDecoder;
 	IBaseFilter		*m_pSourceFilter;
 	IBaseFilter		*m_pSampleGrabberFilter; 
@@ -144,17 +97,12 @@ public:
 
 	ICaptureGraphBuilder2  *m_pBuilder;
 
-	//MySampleGrabberCallback *m_pSGCallback;
-
 public:
 	IBaseFilter* GetDecoder();
 	IBaseFilter* GetSourceFilter();
 
-	bool OpenMovieNormally(string csMovieName, void *pHWnd);
-	bool OpenMovieAllDefault(string csMovieName, void *pHWnd);
-	bool OpenMovieHard(string csMovieName, void *pHWnd);
-
-	bool SetVideoWindowPlacement(void *pHWnd);
+	bool OpenMovie(string csMovieName, void	*pVideoWindow, int type);
+	bool SetVideoWindowPlacement(void *pVideoWindow);
 	bool SetNullRender();
 
 	bool CloseMovie();

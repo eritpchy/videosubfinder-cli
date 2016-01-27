@@ -18,7 +18,6 @@
 #pragma once
 
 #include "DataTypes.h"
-#include <Windows.h>
 #include <fstream>
 
 using namespace std;
@@ -54,25 +53,16 @@ public:
 
 	string		m_log;
 	string		m_Dir;
+	void	*m_pVideoWindow;
 
 public:
 
-	virtual bool OpenMovieNormally(string csMovieName, void *pHWnd)
-	{
-		return false;
-
-	}
-	virtual bool OpenMovieAllDefault(string csMovieName, void *pHWnd)
+	virtual bool OpenMovie(string csMovieName, void	*pVideoWindow, int type)
 	{
 		return false;
 	}
 
-	virtual bool OpenMovieHard(string csMovieName, void *pHWnd)
-	{
-		return false;
-	}
-
-	virtual bool SetVideoWindowPlacement(void *pHWnd)
+	virtual bool SetVideoWindowPlacement(void *pVideoWindow)
 	{
 		return false;
 	}

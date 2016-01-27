@@ -3,10 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoSubFinderWXW", "VideoSubFinderWXW.vcxproj", "{6786A82F-9596-45FF-9A44-7C1AF39EDE35}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B369FFAB-FB94-4F88-A374-39A604762D4B} = {B369FFAB-FB94-4F88-A374-39A604762D4B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DSVideo", "..\..\Components\DSVideo\DSVideo.vcxproj", "{B3908609-590E-4361-8E90-8EDC3CD2442C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IPAlgorithms", "..\..\Components\IPAlgorithms\IPAlgorithms.vcxproj", "{BFE25C0A-EA0C-484D-B426-6D7511C9958B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OCVVideo", "..\..\Components\OCVVideo\OCVVideo.vcxproj", "{B369FFAB-FB94-4F88-A374-39A604762D4B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,6 +45,14 @@ Global
 		{BFE25C0A-EA0C-484D-B426-6D7511C9958B}.Release|Win32.Build.0 = Release|Win32
 		{BFE25C0A-EA0C-484D-B426-6D7511C9958B}.Release|x64.ActiveCfg = Release|x64
 		{BFE25C0A-EA0C-484D-B426-6D7511C9958B}.Release|x64.Build.0 = Release|x64
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Debug|Win32.Build.0 = Debug|Win32
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Debug|x64.ActiveCfg = Debug|x64
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Debug|x64.Build.0 = Debug|x64
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Release|Win32.ActiveCfg = Release|Win32
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Release|Win32.Build.0 = Release|Win32
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Release|x64.ActiveCfg = Release|x64
+		{B369FFAB-FB94-4F88-A374-39A604762D4B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

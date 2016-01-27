@@ -19,6 +19,8 @@
 #include <math.h>
 #include <assert.h>
 #include <emmintrin.h>
+#include <algorithm>
+using namespace std;
 
 void    (*g_pViewRGBImage)(int *Im, int w, int h);
 void    (*g_pViewImage[2])(int *Im, int w, int h);
@@ -5303,8 +5305,8 @@ int FindTextLines(int *ImRGB, int *ImF, int *ImNF, vector<string> &SavedFiles, i
 	mthr = 0.3;
 	segh = g_segh;
 
-	if (g_show_results == 1) SaveImage(ImF, "\\TestImages\\Image0_F.jpeg", W, H);
-	if (g_show_results == 1) SaveImage(ImNF, "\\TestImages\\Image0_NF.jpeg", W, H);
+	if (g_show_results == 1) SaveGreyscaleImage(ImF, "\\TestImages\\Image0_F.jpeg", W, H);
+	if (g_show_results == 1) SaveGreyscaleImage(ImNF, "\\TestImages\\Image0_NF.jpeg", W, H);
 
 	N = 0;
 	LLB[0] = -1;
@@ -5573,12 +5575,12 @@ int FindTextLines(int *ImRGB, int *ImF, int *ImNF, vector<string> &SavedFiles, i
 			memcpy(&g_ImRES2[j], &ImF[i], w*sizeof(int));
 		}
 		SimpleResizeImage4x(g_ImRES2, g_ImSF, w, h);
-		if (g_show_results == 1) SaveImage(g_ImSF, "\\TestImages\\Image2_SF.jpeg", w*4, h*4);
+		if (g_show_results == 1) SaveGreyscaleImage(g_ImSF, "\\TestImages\\Image2_SF.jpeg", w*4, h*4);
 		//g_pMF->m_pImageBox->g_pViewImage(ImSF, w*4, h*4);
 		//break;
 
 		GetFirstFilteredImage(g_ImRES1, g_ImSF, g_ImFF, w, h, (LL[k]-XB)*4, (LR[k]-XB)*4, (LLB[k]-YB)*4, (LLE[k]-YB)*4);
-		if (g_show_results == 1) SaveImage(g_ImFF, "\\TestImages\\Image3_FF.jpeg", w*4, h*4);
+		if (g_show_results == 1) SaveGreyscaleImage(g_ImFF, "\\TestImages\\Image3_FF.jpeg", w*4, h*4);
 		//g_pMF->m_pImageBox->g_pViewImage(ImFF, w*4, h*4);
 		//break;
 			
@@ -5587,7 +5589,7 @@ int FindTextLines(int *ImRGB, int *ImF, int *ImNF, vector<string> &SavedFiles, i
 		
 		memcpy(g_ImRES1, g_ImFF, (w*h)*sizeof(int));
 		IntersectTwoImages(g_ImRES1, g_ImSF, w, h);
-		if (g_show_results == 1) SaveImage(g_ImRES1, "\\TestImages\\Image4_IF.jpeg", w, h);
+		if (g_show_results == 1) SaveGreyscaleImage(g_ImRES1, "\\TestImages\\Image4_IF.jpeg", w, h);
 		//g_pMF->m_pImageBox->g_pViewImage(g_ImRES1, w, h);
 		//break;
 
@@ -5717,7 +5719,7 @@ int FindTextLines(int *ImRGB, int *ImF, int *ImNF, vector<string> &SavedFiles, i
 				g_ImRES3[i] = 0;	
 			}
 		}
-		if (g_show_results == 1) SaveImage(g_ImRES3, "\\TestImages\\Image7_IF.jpeg", w, h);
+		if (g_show_results == 1) SaveGreyscaleImage(g_ImRES3, "\\TestImages\\Image7_IF.jpeg", w, h);
 		//g_pMF->m_pImageBox->g_pViewImage(g_ImRES3, w, h);
 		//break;
 
@@ -5726,7 +5728,7 @@ int FindTextLines(int *ImRGB, int *ImF, int *ImNF, vector<string> &SavedFiles, i
 		xb = (LL[k]-XB)*4;
 		xe = (LR[k]-XB)*4;
 		ClearImageSpecific1(g_ImRES3, w, h, yb, ye, xb, xe, 255);
-		if (g_show_results == 1) SaveImage(g_ImRES3, "\\TestImages\\Image7_IFB.jpeg", w, h);
+		if (g_show_results == 1) SaveGreyscaleImage(g_ImRES3, "\\TestImages\\Image7_IFB.jpeg", w, h);
 		
 		delta = 40;
 		
@@ -6864,7 +6866,7 @@ int FindTextLines(int *ImRGB, int *ImF, int *ImNF, vector<string> &SavedFiles, i
 
 		SavedFiles.push_back(FullName);
 
-		SaveImage(g_ImRES1, FullName, ww, hh, -1, 300);
+		SaveGreyscaleImage(g_ImRES1, FullName, ww, hh, -1, 300);
 
 		res = 1;
 	}
@@ -10200,7 +10202,7 @@ void LoadRGBImage(int *Im, string name, int &w, int &h)
 	}
 }
 
-void SaveImage(int *Im, string name, int w, int h, int quality, int dpi)
+void SaveGreyscaleImage(int *Im, string name, int w, int h, int quality, int dpi)
 {
 	wxImage wxIm(w, h, true);
 	int i, x, y;
@@ -10237,7 +10239,7 @@ void SaveImage(int *Im, string name, int w, int h, int quality, int dpi)
 	wxIm.SaveFile(full_name, wxBITMAP_TYPE_JPEG);
 }
 
-void LoadImage(int *Im, string name, int &w, int &h)
+void LoadGreyscaleImage(int *Im, string name, int &w, int &h)
 {
 	if (!g_wxImageHandlersInitialized)
 	{

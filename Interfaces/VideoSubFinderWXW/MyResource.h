@@ -151,10 +151,10 @@
 #define ID_MSD                          43
 #define ID_FILE_OPENPREVIOUSVIDEO       44
 #define ID_Menu                         45
-#define ID_FILE_OPENVIDEOALLDEFAULT     46
-#define ID_FILE_OPENVIDEOHARD           47
+#define ID_FILE_OPEN_VIDEO_OPENCV       46
+#define ID_FILE_OPEN_VIDEO_DIRECTSHOW   47
 #define ID_FILE_REOPENVIDEO             48
-#define ID_FILE_OPENVIDEONORMALLY       49
+#define ID_FILE_EXIT					49
 #define ID_Menu57808                    50
 #define ID_SETPRIORITY                  51
 #define ID_SETPRIORITY_IDLE             52
@@ -170,5 +170,4 @@
 #define _APS_NEXT_CONTROL_VALUE         62
 #define _APS_NEXT_SYMED_VALUE           63
 #define TIMER_ID						64
-#define ID_FILE_EXIT					65
 

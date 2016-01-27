@@ -493,7 +493,7 @@ void CVideoBox::OnHScroll(wxScrollEvent& event)
 		{
 			m_pMF->PauseVideo();
 			
-			Pos = SP*(s64)10000;
+			Pos = SP;
 
 			endPos = m_pMF->m_pVideo->m_Duration;
 			Cur = m_pMF->m_pVideo->GetPos();

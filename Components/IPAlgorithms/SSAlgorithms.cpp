@@ -104,7 +104,6 @@ s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	size = w*h;
 	BufferSize = size*sizeof(int);
 
-//	if (g_debug == 1) Begin = GetVideoTime(9, 56, 000);
 	pV->SetPos(Begin);
 
     pV->OneStep();
@@ -171,7 +170,7 @@ s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{	
 		Str = VideoTimeToStr(CurPos);
-		/*if (CurPos >= (s64)((1*60+25)*1000+250)*(s64)10000)
+		/*if (CurPos >= (s64)((1*60+25)*1000+250))
 		{
 			pTime->SetWindowText(Str);	
 		}*/
@@ -200,10 +199,10 @@ L:				bf = fn;
 			{
 				if (fn-bf < DL)
 				{
-					/*g_pMF->SaveImage(ImS, "\\TestImages\\Cmb1!.jpeg", w, h);
-					g_pMF->SaveImage(Im, "\\TestImages\\Cmb2!.jpeg", w, h);
-					g_pMF->SaveImage(ImNFFS, "\\TestImages\\Cmb3!.jpeg", w, h);
-					g_pMF->SaveImage(ImNFF, "\\TestImages\\Cmb4!.jpeg", w, h);*/
+					/*g_pMF->SaveGreyscaleImage(ImS, "\\TestImages\\Cmb1!.jpeg", w, h);
+					g_pMF->SaveGreyscaleImage(Im, "\\TestImages\\Cmb2!.jpeg", w, h);
+					g_pMF->SaveGreyscaleImage(ImNFFS, "\\TestImages\\Cmb3!.jpeg", w, h);
+					g_pMF->SaveGreyscaleImage(ImNFF, "\\TestImages\\Cmb4!.jpeg", w, h);*/
 
 					//GetGrayscaleImage(ImFS, ImRES, w, h);
 					//SobelVEdge(ImRES, ImVES, w, h);
@@ -295,7 +294,7 @@ L2:							if (finded_prev == 1)
 									)
 								{
 									pef = fn-1;
-									pet = CurPos-10000;
+									pet = CurPos-1;
 								}
 								else
 								{
@@ -306,13 +305,13 @@ L2:							if (finded_prev == 1)
 									g_pViewImage[0](ImFSP, g_W, g_H);									
 									g_pViewImage[1](ImSP, g_W, g_H);									
 									SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-									SaveImage(ImVESSP, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
-									SaveImage(ImSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);
+									SaveGreyscaleImage(ImVESSP, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
+									SaveGreyscaleImage(ImSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);
 									
 									pbf = bf;
 									pbt = bt;
 									pef = fn-1;
-									pet = CurPos-10000;
+									pet = CurPos-1;
 								}
 							}	
 							else
@@ -320,7 +319,7 @@ L2:							if (finded_prev == 1)
 								pbf = bf;
 								pbt = bt;
 								pef = fn-1;
-								pet = CurPos-10000;
+								pet = CurPos-1;
 							}
 
 							if (pef-pbf+1 >= DL)
@@ -375,8 +374,8 @@ L2:							if (finded_prev == 1)
 						g_pViewImage[0](ImFSP, g_W, g_H);									
 						g_pViewImage[1](ImSP, g_W, g_H);	
 						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-						SaveImage(ImVESSP, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
-						SaveImage(ImSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);						
+						SaveGreyscaleImage(ImVESSP, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
+						SaveGreyscaleImage(ImSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);						
 						finded_prev = 0;
 						bf = -2;
 					}
@@ -409,8 +408,8 @@ L2:							if (finded_prev == 1)
 						g_pViewImage[0](ImFSP, g_W, g_H);									
 						g_pViewImage[1](ImSP, g_W, g_H);									
 						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-						SaveImage(ImVESSP, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
-						SaveImage(ImSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);						
+						SaveGreyscaleImage(ImVESSP, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
+						SaveGreyscaleImage(ImSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);						
 					}
 				}
 			}
@@ -419,7 +418,7 @@ L2:							if (finded_prev == 1)
 			{
 				if (fn-bf > DL)
 				{			
-					et = CurPos-10000;
+					et = CurPos-1;
 					Str = VideoTimeToStr(bt)+string("__")+VideoTimeToStr(et);
 					ImToNativeSize(ImFS, w, h);
 					ImToNativeSize(ImS, w, h);
@@ -427,8 +426,8 @@ L2:							if (finded_prev == 1)
 					g_pViewImage[0](ImFS, g_W, g_H);									
 					g_pViewImage[1](ImS, g_W, g_H);									
 					SaveRGBImage(ImFS, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-					SaveImage(ImVESS, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
-					SaveImage(ImS, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);						
+					SaveGreyscaleImage(ImVESS, string("\\FRDImages\\")+Str+string("!!.jpeg"), g_W, g_H);
+					SaveGreyscaleImage(ImS, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);						
 				}
 			}
 
@@ -555,7 +554,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	size = w*h;
 	BufferSize = size*sizeof(int);
 
-	//if (g_debug == 1) Begin = GetVideoTime(9, 56, 000);
 	pV->SetPos(Begin);
 
     pV->OneStep();
@@ -731,10 +729,10 @@ L:				bf = fn;
 				{
 					/*if (g_debug == 1)
 					{
-						g_pMF->SaveImage(ImS, "\\TestImages\\Cmb1!.jpeg", w, h);
-						g_pMF->SaveImage(Im, "\\TestImages\\Cmb2!.jpeg", w, h);
-						g_pMF->SaveImage(ImVES, "\\TestImages\\Cmb3!.jpeg", w, h);
-						g_pMF->SaveImage(ImVE, "\\TestImages\\Cmb4!.jpeg", w, h);
+						g_pMF->SaveGreyscaleImage(ImS, "\\TestImages\\Cmb1!.jpeg", w, h);
+						g_pMF->SaveGreyscaleImage(Im, "\\TestImages\\Cmb2!.jpeg", w, h);
+						g_pMF->SaveGreyscaleImage(ImVES, "\\TestImages\\Cmb3!.jpeg", w, h);
+						g_pMF->SaveGreyscaleImage(ImVE, "\\TestImages\\Cmb4!.jpeg", w, h);
 					}*/
 
 					if(CompareTwoImages(ImS, ImVES, pIm, pImVE, size) == 0) 
@@ -811,7 +809,7 @@ L2:							if (finded_prev == 1)
 								if (bln == 1)
 								{
 									pef = fn-1;
-									pet = CurPos-10000;
+									pet = CurPos-1;
 
 									SimpleCombineTwoImages(ImSSP, ImSS, size);
 								}
@@ -823,12 +821,12 @@ L2:							if (finded_prev == 1)
 									g_pViewImage[0](ImFSP, g_W, g_H);									
 									g_pViewImage[1](ImSSP, g_W, g_H);									
 									SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-									SaveImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);								
+									SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);								
 
 									pbf = bf;
 									pbt = bt;
 									pef = fn-1;
-									pet = CurPos-10000;
+									pet = CurPos-1;
 
 									memcpy(ImSSP, ImSS, BufferSize);
 								}
@@ -838,7 +836,7 @@ L2:							if (finded_prev == 1)
 								pbf = bf;
 								pbt = bt;
 								pef = fn-1;
-								pet = CurPos-10000;
+								pet = CurPos-1;
 
 								memcpy(ImSSP, ImSS, BufferSize);
 							}
@@ -889,7 +887,7 @@ L2:							if (finded_prev == 1)
 						g_pViewImage[0](ImFSP, g_W, g_H);									
 						g_pViewImage[1](ImSSP, g_W, g_H);									
 						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-						SaveImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);														
+						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);														
 						finded_prev = 0;
 						bf = -2;
 					}
@@ -921,7 +919,7 @@ L2:							if (finded_prev == 1)
 						g_pViewImage[0](ImFSP, g_W, g_H);									
 						g_pViewImage[1](ImSSP, g_W, g_H);									
 						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-						SaveImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);														
+						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);														
 					}
 				}
 			}
@@ -930,14 +928,14 @@ L2:							if (finded_prev == 1)
 			{
 				if (fn-bf > DL)
 				{			
-					et = CurPos-10000;
+					et = CurPos-1;
 					Str = VideoTimeToStr(bt)+string("__")+VideoTimeToStr(et);
 					ImToNativeSize(ImFS, w, h);
 					ImToNativeSize(ImSS, w, h);
 					g_pViewImage[0](ImFS, g_W, g_H);									
 					g_pViewImage[1](ImSS, g_W, g_H);									
 					SaveRGBImage(ImFS, string("\\RGBImages\\")+Str+string(".jpeg"), g_W, g_H);
-					SaveImage(ImSS, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);														
+					SaveGreyscaleImage(ImSS, string("\\FRDImages\\")+Str+string("!.jpeg"), g_W, g_H);														
 				}
 			}
 
@@ -1283,9 +1281,9 @@ int FinalCompareTwoSubs1(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *
 	int bln;
 	double veple;
 
-	//g_pMF->SaveImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
-	//g_pMF->SaveImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
-	//g_pMF->SaveImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
 
 	veple = g_veple;
 
@@ -1337,9 +1335,9 @@ int FinalCompareTwoSubs2(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *
 
 	/*if (g_debug == 1) 
 	{
-		g_pMF->SaveImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
-		g_pMF->SaveImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
-		g_pMF->SaveImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
+		g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
+		g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
+		g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
 	}*/
 
 	veple = g_veple;
@@ -1468,9 +1466,9 @@ int CompareTwoSubs(int *Im1, int *ImVE1, int *Im2, int *ImVE2, int w, int h)
 
 	AddTwoImages(Im1, Im2, ImRES, w*h);
 	
-	//g_pMF->SaveImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
-	//g_pMF->SaveImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
-	//g_pMF->SaveImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
 	
 	bln = 0;
 	l = 0;
@@ -1781,63 +1779,18 @@ void ImToNativeSize(int *Im, int w, int h)
 
 string VideoTimeToStr(s64 pos)
 {
-	string Str;
 	static char str[100];
-	int hour, min, sec, sec_1000, vl;
-	
-	vl = (int)(pos/10000000);
-	hour = vl/3600;
-	vl -= hour*3600;
-	min = vl/60;
-	vl -= min*60;
-	sec = vl;
-	
-	_itoa(hour,str,10);
-	Str += string(str);
-    Str += string("_");
-	
-	_itoa(min,str,10);
-	if (min<=9)
-	{
-		Str += string("0");
-        Str += string(str);
-        Str += string("_");
-	}
-	else 
-    {
-        Str += string(str);
-        Str += string("_");
-    }
+	int hour, min, sec, msec, val;
 
-	_itoa(sec,str,10);
-	if (sec<=9)
-	{
-		Str += string("0");
-        Str += string(str);
-        Str += string("_");
-	}
-	else 
-    {
-        Str += string(str);
-        Str += string("_");
-    }
+	val = (int)(pos / 1000); // seconds
+	msec = pos - (s64)val * 1000;
+	hour = val / 3600;
+	val -= hour * 3600;
+	min = val / 60;
+	val -= min * 60;
+	sec = val;
 
-	sec_1000 = (int)((pos%10000000)/10000);
-	_itoa(sec_1000,str,10);
-	if (sec_1000<=9)
-	{
-		Str += string("00");
-        Str += string(str);
-	}
-	else 
-	{
-		if (sec_1000<=99)
-		{
-			Str += string("0");
-            Str += string(str);
-		}
-		else Str += string(str);
-	}
+	sprintf(str, "%d_%02d_%02d_%03d", hour, min, sec, msec);
 
-	return Str;
+	return string(str);
 }

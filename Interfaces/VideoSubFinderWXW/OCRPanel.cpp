@@ -366,9 +366,9 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		bt = BT[k];
 		et = ET[k];
 
-		Str = VideoTimeToStr2(bt*(u64)10000)+
+		Str = VideoTimeToStr2(bt)+
 			  " --> "+
-			  VideoTimeToStr2(et*(u64)10000);
+			  VideoTimeToStr2(et);
 
 		dt = et - bt;
 		sec = (int)(dt/1000);
@@ -493,9 +493,9 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		bt = BT[k];
 		et = ET[k];
 
-		Str = VideoTimeToStr2(bt*(u64)10000)+
+		Str = VideoTimeToStr2(bt)+
 			  " --> "+
-			  VideoTimeToStr2(et*(u64)10000);
+			  VideoTimeToStr2(et);
 
 		dt = et - bt;
 		sec = (int)(dt/1000);
@@ -783,9 +783,9 @@ void COCRPanel::CreateSubFromTXTResults()
 		bt = BT[k];
 		et = ET[k];
 
-		Str = VideoTimeToStr2(bt*(u64)10000)+
+		Str = VideoTimeToStr2(bt)+
 			  " --> "+
-			  VideoTimeToStr2(et*(u64)10000);
+			  VideoTimeToStr2(et);
 
 		dt = et - bt;
 		sec = (int)(dt/1000);
@@ -1308,8 +1308,8 @@ void COCRPanel::CreateSubFromTXTResults()
 		fout << "\n";
 
 		fout << "Dialogue: 0,";
-		fout << VideoTimeToStr3(AssTXTVector[i].m_BT*(u64)10000) << ",";
-		fout << VideoTimeToStr3(AssTXTVector[i].m_ET*(u64)10000) << ",";
+		fout << VideoTimeToStr3(AssTXTVector[i].m_BT) << ",";
+		fout << VideoTimeToStr3(AssTXTVector[i].m_ET) << ",";
 		fout << AssTXTVector[i].m_pAssStyle->m_Name << ",";
 		fout << ",0000,0000,0000,,";
 
@@ -1511,7 +1511,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			Str = FileNamesVector[k];
 			Str = Str.Mid(0, Str.length()-5);
 			Str = m_pMF->m_Dir+"/FRDImages/"+Str+"!.jpeg";
-			LoadImage(g_ImF[5], string(Str), w, h);		
+			LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
 			//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
 		}
 		
@@ -1534,7 +1534,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 			memset(g_ImRES1, 0, ((w*4)*(h/4))*sizeof(int));
 
-			SaveImage(g_ImRES1, string(Str), w*4, h/4);
+			SaveGreyscaleImage(g_ImRES1, string(Str), w*4, h/4);
 			
 			val = 14; //LH
 			SaveTextLineParameters(	string(Str), 0, 
@@ -1587,8 +1587,8 @@ void *ThreadCreateClearedTextImages::Entry()
 				bln = 1;
 				for (i=0; i<(int)SavedFiles.size(); i++)
 				{
-					LoadImage(g_ImF[0], prevSavedFiles[i], w1, h1);
-					LoadImage(g_ImF[1], SavedFiles[i], w2, h2);
+					LoadGreyscaleImage(g_ImF[0], prevSavedFiles[i], w1, h1);
+					LoadGreyscaleImage(g_ImF[1], SavedFiles[i], w2, h2);
 
 					Str = prevSavedFiles[i].c_str();
 					i = Str.length()-1;

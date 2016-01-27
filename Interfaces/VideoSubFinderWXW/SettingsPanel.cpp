@@ -273,8 +273,6 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	if (m_pMF->m_VIsOpen == false) return;
 
-	//m_pMF->m_Video.SetPos(GetVideoTime(4, 03, 519));
-
 	pVideo = m_pMF->m_pVideo;
 	
 	SetVideoWindowSettins(m_pMF->m_pVideo, 
@@ -366,7 +364,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	for (i=0; i<m_n; i++) 
 	{		
 		_itoa(i, str, 10);
-		SaveImage(g_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), g_W, g_H);
+		SaveGreyscaleImage(g_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), g_W, g_H);
 	}
 }
 

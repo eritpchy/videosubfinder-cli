@@ -112,9 +112,8 @@ BEGIN_EVENT_TABLE(CMainFrame, wxMDIParentFrame)
 	EVT_MENU(ID_PLAY_PAUSE, CMainFrame::OnPlayPause)
 	EVT_MENU(ID_PLAY_STOP, CMainFrame::OnStop)
 	EVT_MENU(ID_FILE_REOPENVIDEO, CMainFrame::OnFileReOpenVideo)
-	EVT_MENU(ID_FILE_OPENVIDEONORMALLY, CMainFrame::OnFileOpenVideoNormally)
-	EVT_MENU(ID_FILE_OPENVIDEOALLDEFAULT, CMainFrame::OnFileOpenVideoAllDefault)
-	EVT_MENU(ID_FILE_OPENVIDEOHARD, CMainFrame::OnFileOpenVideoHard)
+	EVT_MENU(ID_FILE_OPEN_VIDEO_OPENCV, CMainFrame::OnFileOpenVideoOpenCV)
+	EVT_MENU(ID_FILE_OPEN_VIDEO_DIRECTSHOW, CMainFrame::OnFileOpenVideoDirectShow)
 	EVT_MENU(ID_EDIT_SETBEGINTIME, CMainFrame::OnEditSetBeginTime)
 	EVT_MENU(ID_EDIT_SETENDTIME, CMainFrame::OnEditSetEndTime)
 	EVT_MENU(ID_FILE_SAVESETTINGS, CMainFrame::OnFileSaveSettings)
@@ -152,15 +151,12 @@ CMainFrame::CMainFrame(const wxString& title)
 
 	// set frame icon
 	this->SetIcon(wxIcon("vsf_ico"));
-
-	m_pVideo = GetDSVideoObject();
-
+	
 	Str = wxGetCwd();
 	Str.Replace("\\", "/"); 
 	m_Dir = Str;
 
-	g_dir = m_Dir;
-	m_pVideo->m_Dir = m_Dir;
+	g_dir = m_Dir;	
 
 	g_pMF = this;
 	g_pViewImage[0] = ViewImageInVideoBox;
@@ -199,9 +195,8 @@ void CMainFrame::Init()
 	pMenu5->Append(ID_SETPRIORITY_IDLE, _T("IDLE"), _T(""), wxITEM_CHECK);
 
 	wxMenu *pMenu1 = new wxMenu;	
-	//pMenu1->Append(ID_FILE_OPENVIDEOALLDEFAULT, _T("Open Video All Default"));
-	pMenu1->Append(ID_FILE_OPENVIDEONORMALLY, _T("Open Video Normally"));
-	pMenu1->Append(ID_FILE_OPENVIDEOHARD, _T("Open Video Hard"));
+	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, _T("Open Video (OpenCV)"));
+	pMenu1->Append(ID_FILE_OPEN_VIDEO_DIRECTSHOW, _T("Open Video (DirectShow)"));
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
 	pMenu1->AppendSeparator();
 	pMenu1->AppendSubMenu( pMenu5, _T("Set Priority"));
@@ -283,19 +278,14 @@ void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)
 	OnFileOpenVideo(m_type);
 }
 
-void CMainFrame::OnFileOpenVideoNormally(wxCommandEvent& event)
+void CMainFrame::OnFileOpenVideoDirectShow(wxCommandEvent& event)
 {
 	OnFileOpenVideo(0);
 }
 
-void CMainFrame::OnFileOpenVideoAllDefault(wxCommandEvent& event)
+void CMainFrame::OnFileOpenVideoOpenCV(wxCommandEvent& event)
 {
 	OnFileOpenVideo(1);
-}
-
-void CMainFrame::OnFileOpenVideoHard(wxCommandEvent& event)
-{
-	OnFileOpenVideo(2);
 }
 
 void CMainFrame::OnFileOpenVideo(int type)
@@ -313,6 +303,11 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	m_type = type;
 	csFileName = m_FileName;
+
+	if (m_type == 1) m_pVideo = GetOCVVideoObject();
+	else m_pVideo = GetDSVideoObject();
+
+	m_pVideo->m_Dir = m_Dir;
 
 	if (m_blnReopenVideo == false)
 	{
@@ -341,15 +336,11 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	if (type == 0)
 	{
-		m_blnOpenVideoResult = m_pVideo->OpenMovieNormally(m_FileName, (void*)&hWnd);
+		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)&hWnd, 0);
 	}
 	else if (type == 1)
 	{
-		m_blnOpenVideoResult = m_pVideo->OpenMovieAllDefault(m_FileName, (void*)&hWnd);
-	}
-	else if (type == 2)
-	{
-		m_blnOpenVideoResult = m_pVideo->OpenMovieHard(m_FileName, (void*)&hWnd);
+		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox->m_pVideoWnd, 0);
 	}
 
 	fstream fout;
@@ -373,7 +364,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	InitIPData((int)m_pVideo->m_Width, (int)m_pVideo->m_Height, 1);
 
 	m_pVideoBox->m_pSB->SetScrollPos(0);
-	m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration/(s64)10000));
+	m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration));
 
 	i=csFileName.size()-1;
 	while (csFileName[i] != '\\') i--;
@@ -479,7 +470,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 		m_dt = Cur-m_dt;
 	}
 
-	if ((m_dt >= 10000000/10) || (m_dt <= 0)) m_dt = 10000000/25;
+	if ((m_dt >= 500) || (m_dt <= 0)) m_dt = 1000.0/25.0;
 
 	Cur = m_BegTime;
 	m_pVideo->SetPos(Cur);
@@ -763,7 +754,7 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 		m_ct = Cur;
 	}
 
-	m_pVideoBox->m_pSB->SetScrollPos((int)(Cur/(s64)10000));
+	m_pVideoBox->m_pSB->SetScrollPos((int)Cur);
 
 	//m_pVideoBox->m_pVBox->m_pHSL1->Refresh(true);
 	//m_pVideoBox->m_pVBox->m_pHSL2->Refresh(true);
@@ -773,65 +764,34 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 
 string VideoTimeToStr2(s64 pos)
 {
-	string Str;
 	static char str[100];
-	int hour, min, sec, sec_1000, vl;
-	
-	vl = (int)(pos/10000000);
-	hour = vl/3600;
-	vl -= hour*3600;
-	min = vl/60;
-	vl -= min*60;
-	sec = vl;
-	
-	_itoa(hour,str,10);
-	Str += string("0")+string(str)+string(":");
-	
-	_itoa(min,str,10);
-	if (min<=9)
-	{
-		Str += string("0")+string(str)+string(":");
-	}
-	else Str += string(str)+string(":");
+	int hour, min, sec, msec, val;
 
-	_itoa(sec,str,10);
-	if (sec<=9)
-	{
-		Str += string("0")+string(str)+string(",");
-	}
-	else Str += string(str)+string(",");
+	val = (int)(pos / 1000); // seconds
+	msec = pos - (s64)val * 1000;
+	hour = val / 3600;
+	val -= hour * 3600;
+	min = val / 60;
+	val -= min * 60;
+	sec = val;
 
-	sec_1000 = (int)((pos%10000000)/10000);
-	_itoa(sec_1000,str,10);
-	if (sec_1000<=9)
-	{
-		Str += string("00")+string(str);
-	}
-	else 
-	{
-		if (sec_1000<=99)
-		{
-			Str += string("0")+string(str);
-		}
-		else Str += string(str);
-	}
+	sprintf(str, "%02d:%02d:%02d,%03d", hour, min, sec, msec);
 
-	return Str;
+	return string(str);
 }
 
 string VideoTimeToStr3(s64 pos)
 {
 	static char str[100];
-	int hour, min, sec, sec_100, vl;
-	
-	vl = (int)(pos/10000000);
-	hour = vl/3600;
-	vl -= hour*3600;
-	min = vl/60;
-	vl -= min*60;
-	sec = vl;
+	int hour, min, sec, sec_100, val;
 
-	sec_100 = (int)((pos%10000000)/10000)/10;
+	val = (int)(pos / 1000); // seconds
+	sec_100 = (pos - (s64)val * 1000)/10;
+	hour = val / 3600;
+	val -= hour * 3600;
+	min = val / 60;
+	val -= min * 60;
+	sec = val;
 
 	sprintf(str, "%.1d:%.2d:%.2d.%.2d", hour, min, sec, sec_100);
 
@@ -841,42 +801,26 @@ string VideoTimeToStr3(s64 pos)
 s64 GetVideoTime(int minute, int sec, int mili_sec)
 {
 	s64 res;
-	res = (s64)((minute*60+sec)*1000+mili_sec)*(s64)10000;
+	res = (s64)((minute*60+sec)*1000+mili_sec);
 	return res;
 }
 
 string ConvertVideoTime(s64 pos)
 {
-	string Str;
 	static char str[100];
-	int hour, min, sec, sec_1000, vl;
+	int hour, min, sec, msec, val;
 	
-	vl = (int)(pos/10000000);
-	hour = vl/3600;
-	vl -= hour*3600;
-	min = vl/60;
-	vl -= min*60;
-	sec = vl;
+	val = (int)(pos / 1000); // seconds
+	msec = pos - (s64)val * 1000;
+	hour = val / 3600;
+	val -= hour * 3600;
+	min = val / 60;
+	val -= min * 60;
+	sec = val;
+
+	sprintf(str, "%02d:%02d:%02d:%03d", hour, min, sec, msec);
 	
-	_itoa(hour,str,10);
-	if (hour<10) Str = "0";
-	Str += string(str)+":";
-	
-	_itoa(min,str,10);
-	if (min<10)	Str += "0";
-	Str += string(str)+":";
-
-	_itoa(sec,str,10);
-	if (sec<10) Str += "0";
-	Str += string(str)+",";
-
-	sec_1000 = (int)((pos%10000000)/10000);
-	_itoa(sec_1000,str,10);
-	if (sec_1000<100) Str += "0";
-	if (sec_1000<10) Str += "0";
-	Str += string(str);
-
-	return Str;
+	return string(str);
 }
 
 void CMainFrame::OnQuit(wxCommandEvent& event)
