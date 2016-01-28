@@ -1,6 +1,5 @@
-                              //MyVideo.h//                                
+                              //OCVVideo.h//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -66,7 +65,7 @@ public:
 	ThreadRunVideo *m_pThreadRunVideo;
 
 public:
-	void ShowFrame(cv::Mat &img);
+	void ShowFrame(cv::Mat &img, void *dc = NULL);
 
 	bool OpenMovie(string csMovieName, void *pVideoWindow, int type);
 
@@ -96,7 +95,7 @@ public:
 	s64  GetPos();
     void GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax);	
 
-	void SetVideoWindowPosition(int left, int top, int width, int height);
+	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 
 	void ErrorMessage(string str);
 };

@@ -1,6 +1,5 @@
-                              //MyVideo.cpp//                                
+                              //OCVVideo.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -65,9 +64,9 @@ OCVVideo::~OCVVideo()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::ShowFrame(cv::Mat &img)
+void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 {
-	if (m_show_video)
+	if (m_VC.isOpened() && m_show_video)
 	{
 		int wnd_w, wnd_h, img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
 		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
@@ -81,8 +80,15 @@ void OCVVideo::ShowFrame(cv::Mat &img)
 			img_data[i * 3 + 2] = img.data[i * 3];
 		}
 
-		wxClientDC dc((wxWindow*)m_pVideoWindow);
-		dc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+		if (dc != NULL)
+		{
+			((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+		}
+		else
+		{
+			wxClientDC cdc((wxWindow*)m_pVideoWindow);
+			cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+		}
 	}
 }
 
@@ -344,12 +350,9 @@ void OCVVideo::WaitForCompletion(s64 timeout)
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::SetVideoWindowPosition(int left, int top, int width, int height)
+void OCVVideo::SetVideoWindowPosition(int left, int top, int width, int height, void *dc)
 {
-	/*if (m_VideoWindowHwnd != 0)
-	{
-		SetWindowPos((HWND)m_VideoWindowHwnd, NULL, left, top, width, height, SWP_SHOWWINDOW);
-	}*/
+	ShowFrame(m_cur_frame, dc);
 }
 
 ThreadRunVideo::ThreadRunVideo(OCVVideo *pVideo) : wxThread()

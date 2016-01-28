@@ -1,6 +1,5 @@
                               //SearchPanel.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.80              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -235,10 +234,10 @@ void *ThreadSearchSubtitles::Entry()
 
 	m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
 
-	if (m_pMF->m_pVideoBox->m_pBmp != NULL)
+	if (m_pMF->m_pVideoBox->m_pImage != NULL)
 	{
-		delete m_pMF->m_pVideoBox->m_pBmp;
-		m_pMF->m_pVideoBox->m_pBmp = NULL;
+		delete m_pMF->m_pVideoBox->m_pImage;
+		m_pMF->m_pVideoBox->m_pImage = NULL;
 	}
 
 	m_pMF->m_pPanel->m_pSSPanel->Enable();

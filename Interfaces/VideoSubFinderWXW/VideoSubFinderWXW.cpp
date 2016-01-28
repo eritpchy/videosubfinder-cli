@@ -1,6 +1,5 @@
 						    //VideoSubFinder.h//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -19,12 +18,11 @@
 
 bool CVideoSubFinderApp::OnInit() 
 {
-	m_pMainWnd = new CMainFrame("VideoSubFinder 2.0 version");
+	m_pMainWnd = new CMainFrame("VideoSubFinder " VSF_VERSION " Version");
 	
 	m_pMainWnd->Init();	
 
 	m_pMainWnd->Show(true);
-	//m_pMainWnd->m_pPanel->Show(true);
 
 	return true;
 }

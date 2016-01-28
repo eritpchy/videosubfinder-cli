@@ -1,6 +1,5 @@
                               //MyVideo.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -1342,7 +1341,7 @@ void DSVideo::WaitForCompletion(s64 timeout)
 
 /////////////////////////////////////////////////////////////////////////////
 
-void DSVideo::SetVideoWindowPosition(int left, int top, int width, int height)
+void DSVideo::SetVideoWindowPosition(int left, int top, int width, int height, void *dc)
 {
 	m_pVW->SetWindowPosition(left, top, width, height);
 }

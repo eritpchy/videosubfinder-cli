@@ -1,6 +1,5 @@
                               //MainFrm.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.80              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -942,7 +941,7 @@ void CMainFrame::ClearDir(string DirName)
 
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
-	(void)wxMessageBox("This program was developed and \nimplemented by Simeon Kosnitsky. \nPublished under GPL license.", "VideoSubFinder Version 2.0");
+	(void)wxMessageBox("This program was developed and \nimplemented by Simeon Kosnitsky. \nPublished under GPL license.", "VideoSubFinder " VSF_VERSION " Version");
 }
 
 void CMainFrame::OnSetPriorityIdle(wxCommandEvent& event)

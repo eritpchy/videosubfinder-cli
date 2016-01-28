@@ -1,6 +1,5 @@
                               //Video.h//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -135,7 +134,7 @@ public:
 	{
 	}
 
-	virtual void SetVideoWindowPosition(int left, int top, int width, int height)
+	virtual void SetVideoWindowPosition(int left, int top, int width, int height, void *dc)
 	{
 	}
 };

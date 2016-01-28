@@ -1,6 +1,5 @@
                               //ImageBox.h//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -56,12 +55,7 @@ public:
 
 	bool		m_WasInited;
 
-	wxBitmap	*m_pBmp;
-	wxBitmap	*m_pBmpScaled;
-	int			m_w;
-	int			m_h;
-	int			m_wScaled;
-	int			m_hScaled;
+	wxImage		*m_pImage;
 
 	CMainFrame*	m_pMF;
 

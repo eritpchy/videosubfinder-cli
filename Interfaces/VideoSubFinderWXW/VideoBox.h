@@ -1,6 +1,5 @@
                               //VideoBox.h//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -40,6 +39,7 @@ public:
 public:
 	void	OnPaint( wxPaintEvent &event );
 	void	OnSetFocus( wxFocusEvent &event );
+	void	OnEraseBackGround(wxEraseEvent& event);
 
 private:
    DECLARE_EVENT_TABLE()
@@ -91,12 +91,7 @@ public:
 	wxColour	m_CL2;
 	wxColour	m_CLVBar;
 
-	wxBitmap	*m_pBmp;
-	wxBitmap	*m_pBmpScaled;
-	int			m_w;
-	int			m_h;
-	int			m_wScaled;
-	int			m_hScaled;
+	wxImage	*m_pImage;	
 
 	CMainFrame	*m_pMF;
 	bool		m_WasInited;

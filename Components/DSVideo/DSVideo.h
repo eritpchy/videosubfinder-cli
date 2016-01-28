@@ -1,6 +1,5 @@
-                              //MyVideo.h//                                
+                              //DSVideo.h//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -130,7 +129,7 @@ public:
 
 	s64 PosToMilliSeconds(s64 pos);
 
-	void SetVideoWindowPosition(int left, int top, int width, int height);
+	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 
 	void ErrorMessage(string str);
 

@@ -1,6 +1,5 @@
                               //VideoBox.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
-//							  Version 1.76              						//
 //																				//
 // Author:  Simeon Kosnitsky													//
 //          skosnits@gmail.com													//
@@ -20,6 +19,7 @@
 BEGIN_EVENT_TABLE(CVideoWnd, wxWindow)
 	EVT_PAINT(CVideoWnd::OnPaint)
 	EVT_SET_FOCUS(CVideoWnd::OnSetFocus)
+	EVT_ERASE_BACKGROUND(CVideoWnd::OnEraseBackGround)
 END_EVENT_TABLE()
 
 CVideoWnd::CVideoWnd(CVideoWindow *pVW)
@@ -35,24 +35,45 @@ CVideoWnd::~CVideoWnd()
 {
 }
 
+void CVideoWnd::OnEraseBackGround(wxEraseEvent& event)
+{
+	bool do_erase = true;
+
+	if (m_pVB)
+	{
+		if (m_pVB->m_pImage || m_pVB->m_pMF->m_VIsOpen)
+		{
+			do_erase = false;
+		}
+	}
+	
+	if (do_erase)
+	{
+		int w, h;
+		this->GetClientSize(&w, &h);
+		event.GetDC()->SetBrush(wxBrush(wxColor(125, 125, 125)));
+		event.GetDC()->DrawRectangle(0, 0, w, h);
+	}
+}
+
 void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
 	wxPaintDC dc(this);	
 
-	if ( (m_pVB != NULL) && (m_pVB->m_pBmp != NULL) )
+	if (m_pVB != NULL) 
 	{
-		int w, h;
-
-		this->GetClientSize(&w, &h);
-
-		if ( (w != m_pVB->m_wScaled) || (h != m_pVB->m_hScaled) )
+		if (m_pVB->m_pImage != NULL)
 		{
-			*m_pVB->m_pBmpScaled = wxBitmap(m_pVB->m_pBmp->ConvertToImage().Scale(w, h));
-			m_pVB->m_wScaled = w;
-			m_pVB->m_hScaled = h;
+			int w, h;
+			this->GetClientSize(&w, &h);
+			dc.DrawBitmap(m_pVB->m_pImage->Scale(w, h), 0, 0);
 		}
-
-		dc.DrawBitmap(*m_pVB->m_pBmpScaled, 0, 0);
+		else if (m_pVB->m_pMF->m_VIsOpen)
+		{
+			int w, h;
+			this->GetClientSize(&w, &h);
+			m_pVB->m_pMF->m_pVideo->SetVideoWindowPosition(0, 0, w, h, &dc);
+		}
 	}
 }
 
@@ -108,12 +129,12 @@ void CVideoWindow::Update()
 
 void CVideoWindow::OnPaint( wxPaintEvent &event )
 {
-	wxPaintDC dc(this);
+	wxPaintDC dc(this);	
 }
 
 void CVideoWindow::OnSize(wxSizeEvent& event)
 {
-	int w, h, vwnd_w, vwnd_h;
+	int w, h;
 	wxRect rcCL, rcVWND;
 
 	this->GetClientSize(&w, &h);
@@ -124,12 +145,6 @@ void CVideoWindow::OnSize(wxSizeEvent& event)
 	rcVWND.height = h - rcVWND.y*2;
 
 	m_pVideoWnd->SetSize(rcVWND);
-
-	if (m_pVB->m_pMF->m_VIsOpen) 
-	{
-		m_pVideoWnd->GetClientSize(&vwnd_w, &vwnd_h);
-		m_pVB->m_pMF->m_pVideo->SetVideoWindowPosition(0, 0, vwnd_w, vwnd_h);
-	}
 
 	m_pHSL1->m_offset = rcVWND.x - 2;
 	m_pHSL1->m_w = rcVWND.width + 4;
@@ -178,28 +193,19 @@ CVideoBox::CVideoBox(CMainFrame* pMF)
 				  | wxRESIZE_BORDER 
 				  | wxCAPTION 
 				  | wxWANTS_CHARS
-				  //| wxTHICK_FRAME
 				  )
 {
-	m_w = 0;
-	m_h = 0;
-	m_pBmp = NULL;
-	m_pBmpScaled = NULL;
-
+	m_pImage = NULL;
 	m_pMF = pMF;
-
 	m_WasInited = false;
 }
 
 CVideoBox::~CVideoBox()
 {
-	if (m_pBmp != NULL)
+	if (m_pImage != NULL)
 	{
-		delete m_pBmp;
-		m_pBmp = NULL;
-
-		delete m_pBmpScaled;
-		m_pBmpScaled = NULL;
+		delete m_pImage;
+		m_pImage = NULL;
 	}
 }
 
@@ -433,49 +439,21 @@ void CVideoBox::OnMouseWheel(wxMouseEvent& event)
 
 void CVideoBox::ViewImage(int *Im, int w, int h)
 {
-	int i, x, y;
+	int num_pixels = w*h;
 	u8 *color;
-	wxMemoryDC dc;
 
-	if (m_pBmp == NULL) 
-	{
-		m_pBmp = new wxBitmap(w, h);
-		m_w = w;
-		m_h = h;
-	}
-	else
-	{
-		if ((m_w!=w) || (m_h!=h))
-		{
-			delete m_pBmp;
-			
-			m_pBmp = new wxBitmap(w, h);
-			m_w = w;
-			m_h = h;
-		}
-	}
+	unsigned char *img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
 
-	dc.SelectObject(*m_pBmp);
-
-	for(y=0, i=0; y<h; y++)
-	for(x=0; x<w; x++, i++)
+	for (int i = 0; i < num_pixels; i++)
 	{
 		color = (u8*)(&Im[i]);
-
-		dc.SetPen(wxPen(wxColor(color[2], color[1], color[0])));
-		dc.DrawPoint(x, y);
+		img_data[i * 3] = color[0];
+		img_data[i * 3 + 1] = color[1];
+		img_data[i * 3 + 2] = color[2];
 	}
 
-	if (m_pBmpScaled == NULL)
-	{
-		m_pBmpScaled = new wxBitmap(*m_pBmp);
-	}
-	else
-	{
-		*m_pBmpScaled = *m_pBmp;
-	}
-	m_wScaled = w;
-	m_hScaled = h;
+	if (m_pImage != NULL) delete m_pImage;
+	m_pImage = new wxImage(w, h, img_data);
 
 	m_pVBox->m_pVideoWnd->Refresh(false);
 	m_pVBox->m_pVideoWnd->Update();
