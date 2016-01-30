@@ -267,7 +267,8 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	int i, k, w, h, S=0;
 	char str[30];
 	clock_t t;
-	
+		
+	g_show_results = 1;
 
 	if (m_pMF->m_VIsOpen == false) return;
 

@@ -125,7 +125,7 @@ void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_bu
 void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset);
 void FindMaxStr(custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &max_i, int &max_val, int N);
 
-int AnalizeAndClearImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, int w, int h, int j1_min, int j1_max, int r, int g, int yb, int ye, int xb, int xe, int &cnt1, int &cnt2);
+int AnalizeAndClearImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &ImRES1, custom_buffer<int> &ImRES3, int w, int h, int j1_min, int j1_max, int r, int g, int yb, int ye, int xb, int xe, int &cnt1, int &cnt2);
 
 void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int offset);
@@ -138,12 +138,12 @@ int ClearImage(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 int ClearImageDetailed(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 
-int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, 
-					int &jY_min, int &jY_max, int &jI_min, int &jI_max, int &jQ_min, int &jQ_max,
-					int &mY, int &dY, int &mI, int &dI, int &mQ, int &dQ,
-					int &mmY, int &ddY1, int &ddY2, int &mmI, int &ddI, int &mmQ, int &ddQ);
+int ClearImageOpt2(custom_buffer<int> &Im, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h, int white, int &LH, int &LMAXY,
+	int &jY_min, int &jY_max, int &jI_min, int &jI_max, int &jQ_min, int &jQ_max,
+	int &mY, int &dY, int &mI, int &dI, int &mQ, int &dQ,
+	int &mmY, int &ddY1, int &ddY2, int &mmI, int &ddI, int &mmQ, int &ddQ);
 
-void ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int jI_min, int jI_max, int jQ_min, int jQ_max, int white);
+void ClearImageOpt3(custom_buffer<int> &Im, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h, int LH, int LMAXY, int jI_min, int jI_max, int jQ_min, int jQ_max, int white);
 
 int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white);
 

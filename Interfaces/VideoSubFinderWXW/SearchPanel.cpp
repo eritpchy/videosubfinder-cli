@@ -194,6 +194,8 @@ void *ThreadSearchSubtitles::Entry()
 {
 	wxEvtHandler *handler;
 
+	g_show_results = 0;
+
 	g_IsSearching = 1;
 
 	if (g_fast_search == true)
