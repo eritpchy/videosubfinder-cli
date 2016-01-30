@@ -106,6 +106,11 @@ void CVideoWindow::Init()
 	m_pVSL2 = new CSeparatingLine(this, 3, 100, 3, 7, 140, 150, 50, 1);
 	m_pVSL2->m_pos = 1;
 
+	m_pHSL1->Raise();
+	m_pHSL2->Raise();
+	m_pVSL1->Raise();
+	m_pVSL2->Raise();
+
 	this->SetSize(50,50,200,200);
 }
 

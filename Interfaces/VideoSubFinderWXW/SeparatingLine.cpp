@@ -27,7 +27,8 @@ END_EVENT_TABLE()
 CSeparatingLine::CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxWindowID id)
 		: wxWindow( parent, id, wxDefaultPosition, wxDefaultSize, 
 							0
-							| wxTRANSPARENT_WINDOW )
+							| wxTRANSPARENT_WINDOW							
+							)
 {
 	m_bDown = false;
 	m_pParent = parent;
