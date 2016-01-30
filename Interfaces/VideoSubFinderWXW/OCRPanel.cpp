@@ -596,7 +596,6 @@ void COCRPanel::CreateSubFromTXTResults()
 
     image_name = g_dir+string("/RGBImages/")+string(FileNamesVector[0]).substr(0, 24) + string(".jpeg");
     GetImageSize(image_name, g_W, g_H);    
-	InitIPData(g_W, g_H, 1);
 
     //--------------
     
@@ -1356,9 +1355,10 @@ void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	w = g_w;
 	h = g_h;
-
-	InitIPData((int)m_pMF->m_pVideo->m_Width, (int)m_pMF->m_pVideo->m_Height, 3);
 	
+	custom_buffer<int> g_ImRGB(w*h*3, 0);
+	custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h*3, 0));
+
 	S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], m_pMF->m_pVideo, w, h);
 
 	SavedFiles.clear();
@@ -1479,6 +1479,8 @@ void *ThreadCreateClearedTextImages::Entry()
     w = 0;
     h = 0;
 
+	custom_buffer<int> g_ImRES1(w*h*3, 0);
+
 	for (k=0; k<(int)FileNamesVector.size(); k++)
 	{
 		if (g_RunCreateClearedTextImages == 0) break;
@@ -1495,10 +1497,11 @@ void *ThreadCreateClearedTextImages::Entry()
             g_xmin = 0;
 	        g_xmax = w-1;
 	        g_ymin = 0;
-	        g_ymax = h-1;
-            
-	        InitIPData(w, h, 3);
+	        g_ymax = h-1;           	        
         }
+
+		custom_buffer<int> g_ImRGB(w*h, 0);
+		custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h, 0));
 
 		LoadRGBImage(g_ImRGB, string(Str), w, h);		
 		//m_pMF->m_pVideoBox->ViewImage(ImRGB, w, h);		
@@ -1531,7 +1534,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			Str = Str.Mid(0, Str.length()-5);
 			Str = wxString("/TXTImages/") + Str + wxString("_01.jpeg");
 
-			memset(g_ImRES1, 0, ((w*4)*(h/4))*sizeof(int));
+			memset(g_ImRES1.m_pData, 0, ((w*4)*(h/4))*sizeof(int));
 
 			SaveGreyscaleImage(g_ImRES1, string(Str), w*4, h/4);
 			

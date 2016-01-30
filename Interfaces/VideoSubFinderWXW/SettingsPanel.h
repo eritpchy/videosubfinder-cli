@@ -18,6 +18,7 @@
 #include "SSOWnd.h"
 #include "TextBox.h"
 #include "DataGrid.h"
+#include "DataTypes.h"
 #include <wx/panel.h>
 #include <wx/bmpbuttn.h>
 
@@ -64,6 +65,8 @@ public:
 	CSSOWnd		*m_pParent;
 
 	CMainFrame	*m_pMF;
+
+	custom_buffer<custom_buffer<int>> m_ImF;
 
 	void Init();
 

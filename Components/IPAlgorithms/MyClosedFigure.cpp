@@ -391,7 +391,7 @@ void CMyClosedFigure::AlignPoints()
 
 /////////////////////////////////////////////////////////////////////////////
 
-clock_t SearchClosedFigures(int *Im, int w, int h, int white, CMyClosedFigure* &FiguresArray, int &Number)
+clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, CMyClosedFigure* &FiguresArray, int &Number)
 {
 	int N;
 	int *m, *key, *key2, *NN, *I, *minX, *maxX, *minY, *maxY;
@@ -633,7 +633,7 @@ clock_t SearchClosedFigures(int *Im, int w, int h, int white, CMyClosedFigure* &
 	return (clock()-start);
 }
 
-clock_t CreateIndexedImage(int *Im, int *ImRES, int w, int h, int white, int &Number)
+clock_t CreateIndexedImage(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int white, int &Number)
 {
 	int N;
 	int *m, *key, *key2;
@@ -645,7 +645,7 @@ clock_t CreateIndexedImage(int *Im, int *ImRES, int w, int h, int white, int &Nu
 	start = clock();
 	size = w*h;
 
-	m = ImRES;
+	m = &ImRES[0];
 	key = new int[size];
 	key2 = new int[size];
 	index=0;

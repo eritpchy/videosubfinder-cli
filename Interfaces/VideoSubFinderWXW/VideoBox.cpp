@@ -437,7 +437,7 @@ void CVideoBox::OnMouseWheel(wxMouseEvent& event)
 	}
 }
 
-void CVideoBox::ViewImage(int *Im, int w, int h)
+void CVideoBox::ViewImage(custom_buffer<int> &Im, int w, int h)
 {
 	int num_pixels = w*h;
 	u8 *color;
@@ -447,9 +447,9 @@ void CVideoBox::ViewImage(int *Im, int w, int h)
 	for (int i = 0; i < num_pixels; i++)
 	{
 		color = (u8*)(&Im[i]);
-		img_data[i * 3] = color[0];
-		img_data[i * 3 + 1] = color[1];
-		img_data[i * 3 + 2] = color[2];
+		img_data[i * 3] = color[2]; //r
+		img_data[i * 3 + 1] = color[1]; //g
+		img_data[i * 3 + 2] = color[0]; //b
 	}
 
 	if (m_pImage != NULL) delete m_pImage;

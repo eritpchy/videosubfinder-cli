@@ -1254,7 +1254,7 @@ s64 DSVideo::GetPos()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void DSVideo::GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax)
+void DSVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	long evCode;
 	int w, h, x, y, i, j, di;
@@ -1275,7 +1275,7 @@ void DSVideo::GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax)
 
     if ((w == m_Width) && (h == m_Height))
     {
-        memcpy(ImRGB, pBuffer, m_Width*m_Height*sizeof(int));
+        memcpy(ImRGB.m_pData, pBuffer, m_Width*m_Height*sizeof(int));
     }
     else
     {    

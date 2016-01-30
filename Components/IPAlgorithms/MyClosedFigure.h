@@ -18,6 +18,7 @@
 
 #include "DataTypes.h"
 #include <vector>
+#include <wx/wx.h>
 
 using namespace std;
 
@@ -84,5 +85,5 @@ public:
 	//void AlignPoints();
 };
 
-clock_t SearchClosedFigures(int *Im, int w, int h, int white, CMyClosedFigure* &FiguresArray, int &Number);
-clock_t CreateIndexedImage(int *Im, int *ImRES, int w, int h, int white, int &Number);
+clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, CMyClosedFigure* &FiguresArray, int &Number);
+clock_t CreateIndexedImage(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int white, int &Number);

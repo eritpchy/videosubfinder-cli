@@ -18,6 +18,7 @@
 
 #include "IPAlgorithms.h"
 #include "DataTypes.h"
+#include "MyClosedFigure.h"
 #include "Video.h"
 #include <string>
 
@@ -38,30 +39,30 @@ void SetVideoWindowSettins(CVideo *pV, double dx_min, double dx_max, double dy_m
 s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
-int CompareTwoImages(int *Im1, int *ImNFF1, int *Im2, int *ImNFF2, int size);
+int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom_buffer<int> &Im2, custom_buffer<int> &ImNFF2, int size);
 
-int AnalyseImage(int *Im, int w, int h);
+int AnalyseImage(custom_buffer<int> &Im, int w, int h);
 
-int CompareTwoSubs(int *Im1, int *ImVE1, int *Im2, int *ImVE2, int w, int h);
+int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_buffer<int> &Im2, custom_buffer<int> &ImVE2, int w, int h);
 
-int PreCompareTwoSubs(int *Im1, int *Im2, int *ImRES, int *lb, int *le, int w, int h); // return ln
+int PreCompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int w, int h); // return ln
 
-int FinalCompareTwoSubs1(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *ImVE2, int w, int h); // return 0 or 1
-int FinalCompareTwoSubs2(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *ImVE2, int w, int h);
+int FinalCompareTwoSubs1(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int ln, custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2, int w, int h); // return 0 or 1
+int FinalCompareTwoSubs2(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int ln, custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2, int w, int h);
 
-int DifficultCompareTwoSubs(int *ImRGB1, int *ImF1, int *ImRGB2, int *ImF2, int w, int h);
+int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h);
 
-int SimpleCombineTwoImages(int *Im1, int *Im2, int size);
+int SimpleCombineTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
 
-int GetCombinedSquare(int *Im1, int *Im2, int size);
+int GetCombinedSquare(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
 
-void AddTwoImages(int *Im1, int *Im2, int *ImRES, int size);
-void AddTwoImages(int *Im1, int *Im2, int size);
+void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, int size);
+void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
 
-int ConvertImage(int *ImRGB, int *ImF, int *ImVE, int w, int h);
+int ConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h);
 
-int GetAndConvertImage(int *ImRGB, int *ImFF, int *ImSF, int *ImTF, int *ImVE, int *ImNE, int *ImHE, CVideo *pVideo, int w, int h);
+int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, CVideo *pVideo, int w, int h);
 
-void ImToNativeSize(int *Im, int w, int h);
+void ImToNativeSize(custom_buffer<int> &Im, int w, int h);
 
 string VideoTimeToStr(s64 pos);

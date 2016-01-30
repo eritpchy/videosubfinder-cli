@@ -23,21 +23,21 @@ const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
 /////////////////////////////////////////////////////////////////////////////
 
-void  ViewImageInImageBox(int *Im, int w, int h)
+void  ViewImageInImageBox(custom_buffer<int> &Im, int w, int h)
 {
 	g_pMF->m_pImageBox->ViewImage(Im, w, h);	
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void  ViewImageInVideoBox(int *Im, int w, int h)
+void  ViewImageInVideoBox(custom_buffer<int> &Im, int w, int h)
 {
 	g_pMF->m_pVideoBox->ViewImage(Im, w, h);	
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void ViewRGBImage(int *Im, int w, int h)
+void ViewRGBImage(custom_buffer<int> &Im, int w, int h)
 {
 	g_pMF->m_pImageBox->ViewRGBImage(Im, w, h);	
 }
@@ -86,22 +86,6 @@ static bool _IsFeature(DWORD dwRequestFeature)
 #endif
 
 	return false;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-bool IsMMX_and_SSE()
-{
-	static bool bMMX = _IsFeature(_MMX_FEATURE_BIT);
-	return(bMMX);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-bool IsSSE2()
-{
-	static bool bSSE2 = _IsFeature(_SSE2_FEATURE_BIT);
-	return(bSSE2);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -221,15 +205,6 @@ void CMainFrame::Init()
 	pMenuBar->Append(pMenu4, _T("&Help"));
 
 	cnt = pMenuBar->GetMenuCount();			
-
-	if (IsMMX_and_SSE() == true)
-	{
-		g_MMX_SSE = true;
-	}
-	else
-	{
-		g_MMX_SSE = false;
-	}
 
 	m_pPanel = new CSSOWnd(this);
 	m_pPanel->Init();
@@ -359,8 +334,6 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 		return;
 	}
-
-	InitIPData((int)m_pVideo->m_Width, (int)m_pVideo->m_Height, 1);
 
 	m_pVideoBox->m_pSB->SetScrollPos(0);
 	m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration));
@@ -878,8 +851,6 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 	{
 		//TerminateThread(m_pPanel->m_OCRPanel.m_hSearchThread, 0);
 	}
-
-	ReleaseIPData();
 
 	Destroy();
 }

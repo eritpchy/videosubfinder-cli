@@ -160,8 +160,6 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		m_pMF->m_pImageBox->ClearScreen();
 
-		InitIPData((int)m_pMF->m_pVideo->m_Width, (int)m_pMF->m_pVideo->m_Height, 1);
-
 		m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
 		m_pSearchThread->Create();
 		m_pSearchThread->Run();

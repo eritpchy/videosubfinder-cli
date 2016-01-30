@@ -125,7 +125,7 @@ public:
     void OneStep();
 	s64  OneStepWithTimeout();
 	s64  GetPos();
-    void GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax);
 
 	s64 PosToMilliSeconds(s64 pos);
 

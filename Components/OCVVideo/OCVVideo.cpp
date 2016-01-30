@@ -235,7 +235,7 @@ s64 OCVVideo::GetPos()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax)
+void OCVVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	if (m_VC.isOpened())
 	{
@@ -254,7 +254,7 @@ void OCVVideo::GetRGBImage(int *ImRGB, int xmin, int xmax, int ymin, int ymax)
 		{
 			for (x = 0; x < w; x++)
 			{
-				color = (u8*)(&ImRGB[j]);
+				color = (u8*)(ImRGB.m_pData+j);
 
 				color[3] = 0;
 				color[2] = img_data[i * 3 + 2]; //r

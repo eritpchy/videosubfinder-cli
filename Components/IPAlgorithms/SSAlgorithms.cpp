@@ -27,10 +27,6 @@ double	g_veple = 0.35; //vedges points line error
 //double	g_de;	 //density error
 //double	g_lle;	 //line length error
 
-int **g_lb; // lines begins
-int **g_le; // lines ends
-int	*g_ln;
-
 bool g_fast_search = true;
 
 CVideo *g_pV;
@@ -51,36 +47,11 @@ void SetVideoWindowSettins(CVideo *pV, double dx_min, double dx_max, double dy_m
 
 s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 {	
-	int *ImRGB;
-	int	*Im;
-	int *ImSF;
-	int	*ImNFF;
-	int	*ImNFFS;
-	int *ImSP; //store image prev
-	int *ImS; //store image
-	int *ImFSP; //image for save prev
-	int *ImFS; //image for save
-	int *ImVE;
-	int *ImVES;
-	int *ImVESS;
-	int *ImVESP;
-	int *ImVESSP;
-	int *ImNE;
-	int *ImNES;
-	int *ImNESP;
-	int *ImHE;
-	int *ImRES;
-	int **ImS_SQ;
-	int **ImVES_SQ;
-	int **ImNES_SQ;
-	int *lb=g_pLB8;
-	int *le=g_pLE8;
-
 	string Str;
 	
 	s64 CurPos;
 	int fn; //frame num
-	int i, k, n, nn, ln;
+	int i, n, nn, ln;
 	int S, SP, w, h, size, BufferSize;
 	int mtl, DL, segh;
 	double sse;
@@ -101,7 +72,7 @@ s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	h = g_h;
 
 	size = w*h;
-	BufferSize = size*sizeof(int);
+	BufferSize = size*sizeof(int);	
 
 	pV->SetPos(Begin);
 
@@ -123,58 +94,26 @@ s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	int SIZE = g_W*g_H;
 
-	ImRGB = new int[SIZE];
-	Im = new int[SIZE];
-	ImSF = new int[SIZE];
-	ImNFF = new int[SIZE];
-	ImNFFS = new int[SIZE];
-	ImS = new int[SIZE];
-	ImSP = new int[SIZE];
-	ImFS = new int[SIZE];
-	ImFSP = new int[SIZE];
-	ImVE = new int[SIZE];
-	ImVES = new int[SIZE];
-	ImVESS = new int[SIZE];
-	ImVESP = new int[SIZE];
-	ImVESSP = new int[SIZE];
-	ImNE = new int[SIZE];
-	ImNES = new int[SIZE];
-	ImNESP = new int[SIZE];
-	ImHE = new int[SIZE];
-	ImRES = new int[SIZE];
+	custom_buffer<int> lb(g_H, 0), le(g_H, 0);
 
-	ImS_SQ = new int*[DL];
-	ImVES_SQ = new int*[DL];
-	ImNES_SQ = new int*[DL];
+	custom_buffer<int> ImRGB(SIZE, 0), Im(SIZE, 0), ImSF(SIZE, 0), ImNFF(SIZE, 0), ImNFFS(SIZE, 0);
+	custom_buffer<int> ImS(SIZE, 0); //store image
+	custom_buffer<int> ImSP(SIZE, 0); //store image prev
+	custom_buffer<int> ImFS(SIZE, 0); //image for save
+	custom_buffer<int> ImFSP(SIZE, 0); //image for save prev
+	custom_buffer<int> ImVE(SIZE, 0), ImVES(SIZE, 0), ImVESS(SIZE, 0), ImVESP(SIZE, 0), ImVESSP(SIZE, 0);
+	custom_buffer<int> ImNE(SIZE, 0), ImNES(SIZE, 0), ImNESP(SIZE, 0), ImHE(SIZE, 0), ImRES(SIZE, 0);
+	custom_buffer<custom_buffer<int>> ImS_SQ(DL, custom_buffer<int>(SIZE, 0)), ImVES_SQ(DL, custom_buffer<int>(SIZE, 0)), ImNES_SQ(DL, custom_buffer<int>(SIZE, 0));
 
-	for (i=0; i<DL; i++)
-	{
-		ImS_SQ[i] = new int[SIZE];
-		ImVES_SQ[i] = new int[SIZE];
-		ImNES_SQ[i] = new int[SIZE];
-	}
-
-	g_lb = new int*[n];
-	g_le = new int*[n];
-	g_ln = new int[n];
-
-	for(k=0; k<n; k++)
-	{
-		g_lb[k] = new int[w]; 
-		g_le[k] = new int[w]; 
-	}
+	custom_buffer<custom_buffer<int>> g_lb(n, custom_buffer<int>(w, 0)), g_le(n, custom_buffer<int>(w, 0));	
+	custom_buffer<int> g_ln(n, 0);
 
 	prevPos = -2;
 
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{	
 		Str = VideoTimeToStr(CurPos);
-		/*if (CurPos >= (s64)((1*60+25)*1000+250))
-		{
-			pTime->SetWindowText(Str);	
-		}*/
 
-		//*******
 		S = GetAndConvertImage(ImRGB, ImNFF, ImSF, Im, ImVE, ImNE, ImHE, pV, w, h);
 
 		if ( (S > 0) && (CurPos != prevPos) )
@@ -185,12 +124,12 @@ L:				bf = fn;
 				bt = CurPos;
 
 				SP = S;
-				memcpy(ImS, Im, BufferSize);
-				memcpy(ImNFFS, ImNFF, BufferSize);
-				memcpy(ImVES, ImVE, BufferSize);
-				memcpy(ImNES, ImNE, BufferSize);
-				memcpy(ImFS, ImRGB, BufferSize);				
-				memcpy(ImVESS, ImVE, BufferSize);
+				memcpy(&ImS[0], &Im[0], BufferSize);
+				memcpy(&ImNFFS[0], &ImNFF[0], BufferSize);
+				memcpy(&ImVES[0], &ImVE[0], BufferSize);
+				memcpy(&ImNES[0], &ImNE[0], BufferSize);
+				memcpy(&ImFS[0], &ImRGB[0], BufferSize);
+				memcpy(&ImVESS[0], &ImVE[0], BufferSize);
 
 				nn = 0;
 			}
@@ -226,24 +165,24 @@ L:				bf = fn;
 
 					if ((finded_prev == 0) && (fn-bf == 1))
 					{
-						memcpy(ImS, Im, BufferSize);
-						memcpy(ImNFFS, ImNFF, BufferSize);
-						memcpy(ImVES, ImVE, BufferSize);
-						memcpy(ImNES, ImNE, BufferSize);
+						memcpy(&ImS[0], &Im[0], BufferSize);
+						memcpy(&ImNFFS[0], &ImNFF[0], BufferSize);
+						memcpy(&ImVES[0], &ImVE[0], BufferSize);
+						memcpy(&ImNES[0], &ImNE[0], BufferSize);
 					}
 					else
 					{
-						memcpy(ImS_SQ[nn], Im, BufferSize);
-						memcpy(ImVES_SQ[nn], ImVE, BufferSize);
-						memcpy(ImNES_SQ[nn], ImNE, BufferSize);
+						memcpy(&(ImS_SQ[nn][0]), &Im[0], BufferSize);
+						memcpy(&(ImVES_SQ[nn][0]), &ImVE[0], BufferSize);
+						memcpy(&(ImNES_SQ[nn][0]), &ImNE[0], BufferSize);
 						nn++;
 					}
 
 					if (fn-bf == 3)
 					{
-						memcpy(ImFS, ImRGB, BufferSize);
-						memcpy(ImVESS, ImVE, BufferSize);
-						memcpy(ImNES, ImNE, BufferSize);
+						memcpy(&ImFS[0], &ImRGB[0], BufferSize);
+						memcpy(&ImVESS[0], &ImVE[0], BufferSize);
+						memcpy(&ImNES[0], &ImNE[0], BufferSize);
 					}
 				}
 				else
@@ -323,11 +262,11 @@ L2:							if (finded_prev == 1)
 
 							if (pef-pbf+1 >= DL)
 							{
-								memcpy(ImSP, ImS, BufferSize);
-								memcpy(ImFSP, ImFS, BufferSize);
-								memcpy(ImVESP, ImVES, BufferSize);
-								memcpy(ImVESSP, ImVESS, BufferSize);
-								memcpy(ImNESP, ImNES, BufferSize);
+								memcpy(&ImSP[0], &ImS[0], BufferSize);
+								memcpy(&ImFSP[0], &ImFS[0], BufferSize);
+								memcpy(&ImVESP[0], &ImVES[0], BufferSize);
+								memcpy(&ImVESSP[0], &ImVESS[0], BufferSize);
+								memcpy(&ImNESP[0], &ImNES[0], BufferSize);
 											
 								finded_prev = 1;
 							}
@@ -392,9 +331,9 @@ L2:							if (finded_prev == 1)
 							(FinalCompareTwoSubs2(ImRES, lb, le, ln, ImVESSP, ImVES, w, h) == 1)
 						)
 					{
-						memcpy(ImS, ImRES, BufferSize);
-						memcpy(ImFS, ImFSP, BufferSize);
-						memcpy(ImVESS, ImVESSP, BufferSize);
+						memcpy(&ImS[0], &ImRES[0], BufferSize);
+						memcpy(&ImFS[0], &ImFSP[0], BufferSize);
+						memcpy(&ImVESS[0], &ImVESSP[0], BufferSize);
 						bf = pbf;
 						bt = pbt;
 					}
@@ -441,46 +380,6 @@ L2:							if (finded_prev == 1)
 		fn++;
 	}
 
-	delete[] ImRGB;
-	delete[] Im;
-	delete[] ImSF;
-	delete[] ImNFF;
-	delete[] ImNFFS;
-	delete[] ImS;
-	delete[] ImSP;
-	delete[] ImFS;
-	delete[] ImFSP;
-	delete[] ImVE;
-	delete[] ImVES;
-	delete[] ImVESS;
-	delete[] ImVESP;
-	delete[] ImVESSP;
-	delete[] ImNE;
-	delete[] ImNES;
-	delete[] ImNESP;
-	delete[] ImHE;
-	delete[] ImRES;
-
-	for (i=0; i<DL; i++)
-	{
-		delete[] ImS_SQ[i];
-		delete[] ImVES_SQ[i];
-		delete[] ImNES_SQ[i];
-	}
-	
-	delete[] ImS_SQ;
-	delete[] ImVES_SQ;
-	delete[] ImNES_SQ;
-
-	for(int k=0; k<n; k++)
-	{
-		delete[] g_lb[k]; 
-		delete[] g_le[k]; 
-	}
-	delete[] g_lb;
-	delete[] g_le;
-	delete[] g_ln;
-
 	if (g_RunSubSearch == 0)
 	{
 		if (bf != -2)
@@ -499,34 +398,11 @@ L2:							if (finded_prev == 1)
 
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 {	
-	int *ImRGB;
-	int *pImRGB;
-	int	*Im;
-	int	*ImT;
-	int	*pIm;
-	int *ImSF;
-	int *ImSP; //store image prev
-	int *ImSSP;
-	int *ImS; //store image
-	int *ImSS;
-	int *ImFSP; //image for save prev
-	int *ImFS; //image for save
-	int *ImVE;
-	int	*ImVET;
-	int	*pImVE;
-	int *ImVES;
-	int *ImVESP;
-	int *ImRES;
-	int **ImS_SQ;
-	int **mImRGB;
-	int *lb=g_pLB9;
-	int *le=g_pLE9;
-
 	string Str;
 	
 	s64 CurPos, pos;
 	int fn; //frame num
-	int i, k, n, nn, ln;
+	int i, n, nn, ln;
 	int w, h, size, BufferSize;
 	int mtl, DL, segh;
 	double sse;
@@ -537,8 +413,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	s64 pbt, pet;
 	s64 prevPos;
 
-	int found_sub, n_fs;
-	s64 *mPrevPos;
+	int found_sub, n_fs;	
 	s64 prev_pos;
 
 	int bln, finded_prev;
@@ -573,41 +448,21 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	int SIZE = g_W*g_H;
 
-	ImRGB = new int[SIZE];
-	Im = new int[SIZE];
-	ImT = new int[SIZE];
-	ImSF = new int[SIZE];
-	ImS = new int[SIZE];
-	ImSS = new int[SIZE];
-	ImSP = new int[SIZE];
-	ImSSP = new int[SIZE];
-	ImFS = new int[SIZE];
-	ImFSP = new int[SIZE];
-	ImVE = new int[SIZE];
-	ImVET = new int[SIZE];
-	ImVES = new int[SIZE];
-	ImVESP = new int[SIZE];
-	ImRES = new int[SIZE];
+	custom_buffer<int> lb(g_H, 0), le(g_H, 0);
 
-	ImS_SQ = new int*[DL];
-	mImRGB = new int*[DL];
-	mPrevPos = new s64[DL];
+	custom_buffer<int> ImRGB(SIZE, 0), Im(SIZE, 0), ImSF(SIZE, 0), ImNFF(SIZE, 0), ImNFFS(SIZE, 0);
+	custom_buffer<int> ImS(SIZE, 0); //store image
+	custom_buffer<int> ImSP(SIZE, 0); //store image prev
+	custom_buffer<int> ImFS(SIZE, 0); //image for save
+	custom_buffer<int> ImFSP(SIZE, 0); //image for save prev
+	custom_buffer<int> ImVE(SIZE, 0), ImVES(SIZE, 0), ImVESS(SIZE, 0), ImVESP(SIZE, 0), ImVESSP(SIZE, 0), ImVET(SIZE, 0), ImT(SIZE, 0), ImSS(SIZE, 0), ImSSP(SIZE, 0);
+	custom_buffer<int> ImNE(SIZE, 0), ImNES(SIZE, 0), ImNESP(SIZE, 0), ImHE(SIZE, 0), ImRES(SIZE, 0);
+	custom_buffer<custom_buffer<int>> mImRGB(DL, custom_buffer<int>(SIZE, 0)), ImS_SQ(DL, custom_buffer<int>(SIZE, 0)), ImVES_SQ(DL, custom_buffer<int>(SIZE, 0)), ImNES_SQ(DL, custom_buffer<int>(SIZE, 0));
 
-	for (i=0; i<DL; i++)
-	{
-		ImS_SQ[i] = new int[SIZE];
-		mImRGB[i] = new int[SIZE];
-	}
-
-	g_lb = new int*[n];
-	g_le = new int*[n];
-	g_ln = new int[n];
-
-	for(k=0; k<n; k++)
-	{
-		g_lb[k] = new int[w]; 
-		g_le[k] = new int[w]; 
-	}
+	custom_buffer<custom_buffer<int>> g_lb(n, custom_buffer<int>(w, 0)), g_le(n, custom_buffer<int>(w, 0));
+	custom_buffer<int> g_ln(n, 0);
+	custom_buffer<int> *pImRGB, *pIm, *pImVE;
+	custom_buffer<s64> mPrevPos(DL, 0);
 
 	found_sub = 0;
 	prev_pos = -2;
@@ -628,7 +483,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			{			
 				mPrevPos[n_fs] = pos = pV->OneStepWithTimeout();
 
-                pV->GetRGBImage(mImRGB[n_fs], g_xmin, g_xmax, g_ymin, g_ymax);
+				pV->GetRGBImage(mImRGB[n_fs], g_xmin, g_xmax, g_ymin, g_ymax);
 
 				fn++;
 				n_fs++;
@@ -638,7 +493,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				while(n_fs < DL)
 				{
 					mPrevPos[n_fs] = pos;
-					memcpy(mImRGB[n_fs], mImRGB[n_fs-1], BufferSize);
+					memcpy(&(mImRGB[n_fs][0]), &(mImRGB[n_fs-1][0]), BufferSize);
 
 					fn++;
 					n_fs++;
@@ -673,7 +528,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 		if (n_fs < DL)
 		{
-			pImRGB = mImRGB[n_fs];
+			pImRGB = &(mImRGB[n_fs]);
 			CurPos = mPrevPos[n_fs];
 
 			if (n_fs == 0) prevPos = prev_pos;
@@ -690,22 +545,22 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
             pV->GetRGBImage(ImRGB, g_xmin, g_xmax, g_ymin, g_ymax);
 
-			pImRGB = ImRGB;
+			pImRGB = &ImRGB;
 
 			fn++;
 		}
 
 		if (n_fs != DL)
 		{
-			bln = ConvertImage(pImRGB, Im, ImVE, w, h);
-			pIm = Im;
-			pImVE = ImVE;
+			bln = ConvertImage(*pImRGB, Im, ImVE, w, h);
+			pIm = &Im;
+			pImVE = &ImVE;
 		}
 		else
 		{
 			bln = 1;
-			pIm = ImT;
-			pImVE = ImVET;
+			pIm = &ImT;
+			pImVE = &ImVET;
 			n_fs++;
 		}
 
@@ -716,9 +571,9 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 L:				bf = fn;
 				bt = CurPos;
 
-				memcpy(ImS, pIm, BufferSize);
-				memcpy(ImVES, pImVE, BufferSize);
-				memcpy(ImFS, pImRGB, BufferSize);				
+				memcpy(ImS.m_pData, pIm->m_pData, BufferSize);
+				memcpy(ImVES.m_pData, pImVE->m_pData, BufferSize);
+				memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
 
 				nn = 0;
 			}
@@ -734,11 +589,11 @@ L:				bf = fn;
 						g_pMF->SaveGreyscaleImage(ImVE, "\\TestImages\\Cmb4!.jpeg", w, h);
 					}*/
 
-					if(CompareTwoImages(ImS, ImVES, pIm, pImVE, size) == 0) 
+					if(CompareTwoImages(ImS, ImVES, *pIm, *pImVE, size) == 0) 
 					{
 						if (finded_prev == 1) 
 						{
-							memcpy(ImSS, ImS, BufferSize);
+							memcpy(ImSS.m_pData, ImS.m_pData, BufferSize);
 
 							for(i=0; i<nn; i++)
 							{
@@ -753,19 +608,19 @@ L:				bf = fn;
 
 					if ((finded_prev == 0) && (fn-bf == 1))
 					{
-						memcpy(ImS, pIm, BufferSize);
-						memcpy(ImVES, pImVE, BufferSize);
+						memcpy(ImS.m_pData, pIm->m_pData, BufferSize);
+						memcpy(ImVES.m_pData, pImVE->m_pData, BufferSize);
 					}
 					else
 					{
-						memcpy(ImS_SQ[nn], pIm, BufferSize);
+						memcpy(ImS_SQ[nn].m_pData, pIm->m_pData, BufferSize);
 						nn++;
 					}
 
 					if (fn-bf == 3)
 					{
-						memcpy(ImFS, pImRGB, BufferSize);
-						memcpy(ImVES, pImVE, BufferSize);
+						memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
+						memcpy(ImVES.m_pData, pImVE->m_pData, BufferSize);
 					}
 				}
 				else
@@ -786,14 +641,14 @@ L:				bf = fn;
 						}
 						else
 						{
-							if (finded_prev == 0) memcpy(ImSS, ImS_SQ[nn-1], BufferSize);
-							else memcpy(ImSS, ImS, BufferSize);
+							if (finded_prev == 0) memcpy(ImSS.m_pData, ImS_SQ[nn - 1].m_pData, BufferSize);
+							else memcpy(ImSS.m_pData, ImS.m_pData, BufferSize);
 						}
 					}
 
 					if (fn-bf >= DL)
 					{												
-						if (CompareTwoSubs(ImS, ImVES, pIm, pImVE, w, h) == 0)
+						if (CompareTwoSubs(ImS, ImVES, *pIm, *pImVE, w, h) == 0)
 						{
 L2:							if (finded_prev == 1)
 							{
@@ -827,7 +682,7 @@ L2:							if (finded_prev == 1)
 									pef = fn-1;
 									pet = CurPos-1;
 
-									memcpy(ImSSP, ImSS, BufferSize);
+									memcpy(ImSSP.m_pData, ImSS.m_pData, BufferSize);
 								}
 							}	
 							else
@@ -837,14 +692,14 @@ L2:							if (finded_prev == 1)
 								pef = fn-1;
 								pet = CurPos-1;
 
-								memcpy(ImSSP, ImSS, BufferSize);
+								memcpy(ImSSP.m_pData, ImSS.m_pData, BufferSize);
 							}
 
 							if (pef-pbf+1 >= DL)
 							{
-								memcpy(ImSP, ImS, BufferSize);
-								memcpy(ImFSP, ImFS, BufferSize);
-								memcpy(ImVESP, ImVES, BufferSize);											
+								memcpy(ImSP.m_pData, ImS.m_pData, BufferSize);
+								memcpy(ImFSP.m_pData, ImFS.m_pData, BufferSize);
+								memcpy(ImVESP.m_pData, ImVES.m_pData, BufferSize);
 								finded_prev = 1;
 							}
 							else
@@ -856,7 +711,7 @@ L2:							if (finded_prev == 1)
 						}
 						else
 						{
-							SimpleCombineTwoImages(ImSS, pIm, size);
+							SimpleCombineTwoImages(ImSS, *pIm, size);
 						}
 					}
 				}
@@ -869,7 +724,7 @@ L2:							if (finded_prev == 1)
 			{
 				if (fn-bf <= DL)
 				{
-					memcpy(ImSS, ImS, BufferSize);
+					memcpy(ImSS.m_pData, ImS.m_pData, BufferSize);
 
 					for(i=0; i<nn; i++)
 					{
@@ -905,8 +760,8 @@ L2:							if (finded_prev == 1)
 					if (bln == 1)
 					{		
 						SimpleCombineTwoImages(ImSS, ImSSP, size);
-						memcpy(ImS, ImRES, BufferSize);
-						memcpy(ImFS, ImFSP, BufferSize);
+						memcpy(ImS.m_pData, ImRES.m_pData, BufferSize);
+						memcpy(ImFS.m_pData, ImFSP.m_pData, BufferSize);
 						bf = pbf;
 						bt = pbt;
 					}
@@ -948,42 +803,7 @@ L2:							if (finded_prev == 1)
 				n_fs = 0;			
 			}
 		}
-	}
-
-	delete[] ImRGB;
-	delete[] Im;
-	delete[] ImT;
-	delete[] ImSF;
-	delete[] ImS;
-	delete[] ImSS;
-	delete[] ImSP;
-	delete[] ImSSP;
-	delete[] ImFS;
-	delete[] ImFSP;
-	delete[] ImVE;
-	delete[] ImVET;
-	delete[] ImVES;
-	delete[] ImVESP;
-	delete[] ImRES;
-
-	for (i=0; i<DL; i++)
-	{
-		delete[] ImS_SQ[i];
-		delete[] mImRGB[i];
-	}
-	
-	delete[] ImS_SQ;
-	delete[] mImRGB;
-	delete[] mPrevPos;
-
-	for(int k=0; k<n; k++)
-	{
-		delete[] g_lb[k]; 
-		delete[] g_le[k]; 
-	}
-	delete[] g_lb;
-	delete[] g_le;
-	delete[] g_ln;
+	}	
 
 	if (g_RunSubSearch == 0)
 	{
@@ -1001,7 +821,7 @@ L2:							if (finded_prev == 1)
 	return 0;
 }
 
-int CompareTwoImages(int *Im1, int *ImNFF1, int *Im2, int *ImNFF2, int size)
+int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom_buffer<int> &Im2, custom_buffer<int> &ImNFF2, int size)
 {
 	int i, dif1, dif2, cmp, val1, val2;
 
@@ -1035,10 +855,10 @@ int CompareTwoImages(int *Im1, int *ImNFF1, int *Im2, int *ImNFF2, int size)
 	return 1;
 }
 
-int AnalyseImage(int *Im, int w, int h)
+int AnalyseImage(custom_buffer<int> &Im, int w, int h)
 {
 	int i, k, l, x, y, ia, da, pl, mpl, i_mpl, len, len2, val1, val2, n, bln;
-	int segh, mtl;
+	int segh, mtl;	
 	double tp;
 	
 	segh = g_segh;
@@ -1047,6 +867,9 @@ int AnalyseImage(int *Im, int w, int h)
 	
 	n = h/segh;
 	da = w*segh;
+	
+	custom_buffer<custom_buffer<int>> g_lb(n, custom_buffer<int>(w, 0)), g_le(n, custom_buffer<int>(w, 0));
+	custom_buffer<int> g_ln(n, 0);
 
 	mpl = 0;
 	i_mpl = 0;
@@ -1153,7 +976,7 @@ int AnalyseImage(int *Im, int w, int h)
 	return 0;
 }
 
-int PreCompareTwoSubs(int *Im1, int *Im2, int *ImRES, int *lb, int *le, int w, int h) // return ln
+int PreCompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int w, int h) // return ln
 {
 	int i, ib, ie, y, l, ln, bln, val1, val2, segh, dn;
 	
@@ -1274,7 +1097,7 @@ int PreCompareTwoSubs(int *Im1, int *Im2, int *ImRES, int *lb, int *le, int w, i
 	return ln;
 }
 
-int FinalCompareTwoSubs1(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *ImVE2, int w, int h)
+int FinalCompareTwoSubs1(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int ln, custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2, int w, int h)
 {
 	int i, ib, ie, k, val1, val2, dif1, dif2, cmb;	
 	int bln;
@@ -1326,7 +1149,7 @@ int FinalCompareTwoSubs1(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *
 	return bln;
 }
 
-int FinalCompareTwoSubs2(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *ImVE2, int w, int h)
+int FinalCompareTwoSubs2(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int ln, custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2, int w, int h)
 {
 	int i, ib, ie, k, val1, val2, dif, dif1, dif2, cmb;
 	int bln;
@@ -1417,12 +1240,12 @@ int FinalCompareTwoSubs2(int *ImRES, int *lb, int *le, int ln, int *ImVE1, int *
 	return bln;
 }
 
-int DifficultCompareTwoSubs(int *ImRGB1, int *ImF1, int *ImRGB2, int *ImF2, int w, int h)
+int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h)
 {
-	int *ImFF1=g_pImFF1, *ImVE1=g_pImVE1, *ImNE1=g_pImNE1;
-	int *ImFF2=g_pImFF2, *ImVE2=g_pImVE2, *ImNE2=g_pImNE2;
-	int *ImTEMP1=g_pImTEMP1, *ImTEMP2=g_pImTEMP2, *ImTEMP3=g_pImTEMP3;
-	int *lb=g_pLB6, *le=g_pLE6;
+	custom_buffer<int> ImFF1(w*h, 0), ImVE1(w*h, 0), ImNE1(w*h, 0);
+	custom_buffer<int> ImFF2(w*h, 0), ImVE2(w*h, 0), ImNE2(w*h, 0);
+	custom_buffer<int> ImTEMP1(w*h, 0), ImTEMP2(w*h, 0), ImTEMP3(w*h, 0);
+	custom_buffer<int> lb(h, 0), le(h, 0);
 	int res, size, ln, i;
 
 	res = 0;
@@ -1454,9 +1277,9 @@ int DifficultCompareTwoSubs(int *ImRGB1, int *ImF1, int *ImRGB2, int *ImF2, int 
 	return res;
 }
 
-int CompareTwoSubs(int *Im1, int *ImVE1, int *Im2, int *ImVE2, int w, int h)
+int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_buffer<int> &Im2, custom_buffer<int> &ImVE2, int w, int h)
 {
-	int *ImRES=g_ImRES10, *lb=g_pLB7, *le=g_pLE7;
+	custom_buffer<int> ImRES(w*h, 0), lb(h, 0), le(h, 0);
 	int i, ib, ie, k, y, l, ln, bln, val1, val2, dif, dif1, dif2, cmb, segh, dn;
 	double veple;
 
@@ -1655,7 +1478,7 @@ int CompareTwoSubs(int *Im1, int *ImVE1, int *Im2, int *ImVE2, int w, int h)
 	return bln;
 }
 
-int SimpleCombineTwoImages(int *Im1, int *Im2, int size)
+int SimpleCombineTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size)
 {	
 	int i, S;
 
@@ -1672,7 +1495,7 @@ int SimpleCombineTwoImages(int *Im1, int *Im2, int size)
 	return S;
 }
 
-int GetCombinedSquare(int *Im1, int *Im2, int size)
+int GetCombinedSquare(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size)
 {
 	int i, S;
 
@@ -1689,11 +1512,11 @@ int GetCombinedSquare(int *Im1, int *Im2, int size)
 	return S;
 }
 
-void AddTwoImages(int *Im1, int *Im2, int *ImRES, int size)
+void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, int size)
 {	
 	int i;
 
-	memcpy(ImRES, Im1, size*sizeof(int));
+	memcpy(ImRES.m_pData, Im1.m_pData, size*sizeof(int));
 
 	for(i=0; i<size; i++) 
 	{
@@ -1701,7 +1524,7 @@ void AddTwoImages(int *Im1, int *Im2, int *ImRES, int size)
 	}
 }
 
-void AddTwoImages(int *Im1, int *Im2, int size)
+void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size)
 {
 	int i;
 
@@ -1711,25 +1534,15 @@ void AddTwoImages(int *Im1, int *Im2, int size)
 	}
 }
 
-int ConvertImage(int *ImRGB, int *ImF, int *ImVE, int w, int h)
+int ConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h)
 {
-	int res;
-
-	if (g_MMX_SSE == true)
-	{
-		res = GetVeryFastTransformedImage(ImRGB, ImF, ImVE, w, h);
-	}
-	else
-	{
-		res = GetFastTransformedImage(ImRGB, ImF, ImVE, w, h);
-	}
-
+	int res = GetFastTransformedImage(ImRGB, ImF, ImVE, w, h);
 	return res;
 }
 
-int GetAndConvertImage(int *ImRGB, int *ImFF, int *ImSF, int *ImTF, int *ImVE, int *ImNE, int *ImHE, CVideo *pVideo, int w, int h)
+int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, CVideo *pVideo, int w, int h)
 {
-	int *ImRES=g_ImRES11;
+	custom_buffer<int> ImRES(w*h, 0);
 	int i, wh, S;
 	int res;
 	
@@ -1752,14 +1565,14 @@ int GetAndConvertImage(int *ImRGB, int *ImFF, int *ImSF, int *ImTF, int *ImVE, i
 	return S;
 }
 
-void ImToNativeSize(int *Im, int w, int h)
+void ImToNativeSize(custom_buffer<int> &Im, int w, int h)
 {
-	int *ImRES=g_ImRES12;
+	custom_buffer<int> ImRES(w*h, 0);
 	int i, j, dj, x, y;
 
-	memcpy(ImRES, Im, w*h*sizeof(int));
+	memcpy(ImRES.m_pData, Im.m_pData, w*h*sizeof(int));
 
-	memset(Im, 255, g_W*g_H*sizeof(int));
+	memset(Im.m_pData, 255, g_W*g_H*sizeof(int));
 				
 	i = 0;
 	j = g_ymin*g_W + g_xmin;

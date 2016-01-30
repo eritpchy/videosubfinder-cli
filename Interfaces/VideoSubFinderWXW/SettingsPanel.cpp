@@ -197,7 +197,6 @@ void CSettingsPanel::Init()
 
     m_pOI->AddGroup("Глобальные Настройки Обработки Изображений", m_CLGG, m_LBLFont);
 	m_pOI->AddProperty("Using fast version (partially reduced) : ", m_CL2, m_CL4, m_LBLFont, &g_fast_search);
-	m_pOI->AddProperty("Using MMX and SSE optimization : ", m_CL2, m_CL4, m_LBLFont, &g_MMX_SSE);
 	
 	m_pOI->AddGroup("Первичная Обработка Изображения", m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup("Настройки Для Операторов Собеля", m_CL1, m_LBLFont);
@@ -283,55 +282,49 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	m_w = w = g_w;
 	m_h = h = g_h;
 
-	InitIPData((int)m_pMF->m_pVideo->m_Width, (int)m_pMF->m_pVideo->m_Height, 1);
+	custom_buffer<int> g_ImRGB(g_W*g_H, 0), g_ImRES2(g_W*g_H, 0), g_ImRES3(g_W*g_H, 0);
+	m_ImF = custom_buffer<custom_buffer<int>> (6, custom_buffer<int>(g_W*g_H, 0));	
 
 	if (g_fast_search == true)
 	{
-		memset(g_ImF[0], 0, (g_W*g_H)*sizeof(int));
-		memset(g_ImF[1], 0, (g_W*g_H)*sizeof(int));
-		memset(g_ImF[2], 0, (g_W*g_H)*sizeof(int));
-		memset(g_ImF[3], 0, (g_W*g_H)*sizeof(int));
-		memset(g_ImF[4], 0, (g_W*g_H)*sizeof(int));
-		memset(g_ImF[5], 0, (g_W*g_H)*sizeof(int));
-
 		t = clock();
 		m_pMF->m_pVideo->GetRGBImage(g_ImRGB, g_xmin, g_xmax, g_ymin, g_ymax);
-		S = ConvertImage(g_ImRGB, g_ImF[5], g_ImF[0], w, h);
+		S = ConvertImage(g_ImRGB, m_ImF[5], m_ImF[0], w, h);
 		t = clock()-t;
 		
 		if (S > 0)
 		{
-			memcpy(g_ImF[3], g_ImF[5], (w*h)*sizeof(int));
-			memcpy(g_ImF[4], g_ImF[5], (w*h)*sizeof(int));
-			UnpackImage(g_ImRES2, g_ImF[1], g_pLB, g_pLE, g_LN, w, h);
-			UnpackImage(g_ImRES3, g_ImF[2], g_pLB, g_pLE, g_LN, w, h);			
+			memcpy(m_ImF[3].m_pData, m_ImF[5].m_pData, (w*h)*sizeof(int));
+			memcpy(m_ImF[4].m_pData, m_ImF[5].m_pData, (w*h)*sizeof(int));
+			//UnpackImage(g_ImRES2, m_ImF[1], g_pLB, g_pLE, g_LN, w, h);
+			//UnpackImage(g_ImRES3, m_ImF[2], g_pLB, g_pLE, g_LN, w, h);			
 		}
 		else
 		{
 			if (g_blnVNE == 1) 
 			{
-				UnpackImage(g_ImRES1, g_ImF[0], g_pLB, g_pLE, g_LN, w, h);
-				UnpackImage(g_ImRES2, g_ImF[1], g_pLB, g_pLE, g_LN, w, h);
+				//UnpackImage(g_ImRES1, g_ImF[0], g_pLB, g_pLE, g_LN, w, h);
+				//UnpackImage(g_ImRES2, g_ImF[1], g_pLB, g_pLE, g_LN, w, h);
 			}
 			if (g_blnVNE == 1) 
 			{
-				UnpackImage(g_ImRES3, g_ImF[2], g_pLB, g_pLE, g_LN, w, h);			
+				//UnpackImage(g_ImRES3, g_ImF[2], g_pLB, g_pLE, g_LN, w, h);			
 			}
 		}
 	}
 	else
 	{
 		t = clock();
-		S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], pVideo, w, h);
+		S = GetAndConvertImage(g_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[0], m_ImF[1], m_ImF[2], pVideo, w, h);
 		t = clock()-t;
 
 		if (S == 0)
 		{
 			for(i=0; i<m_n; i++) 
 			{
-				if (g_ImF[i][0] == -1)
+				if (m_ImF[i][0] == -1)
 				{
-					memset(g_ImF[i], 0, g_W*g_H*sizeof(int));
+					memset(m_ImF[i].m_pData, 0, g_W*g_H*sizeof(int));
 				}
 			}
 		}
@@ -348,7 +341,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			
 			for(k=0; k<m_n; k++)
 			{
-				ImToNativeSize(g_ImF[k], w, h);
+				ImToNativeSize(m_ImF[k], w, h);
 			}
 		}
 	}	
@@ -356,14 +349,14 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	//GetFastTransformedImage(Im, g_ImF[5], g_ImF[0], w, h);
 	//GetVeryFastTransformedImage(Im, g_ImF[5], g_ImF[0], w, h);
 
-	m_pMF->m_pImageBox->ViewImage(g_ImF[m_cn], g_W, g_H);
+	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], g_W, g_H);
 	
 	SaveRGBImage(g_ImRGB, "/TSTImages/RGBImage.jpeg", g_W, g_H);
 	
 	for (i=0; i<m_n; i++) 
 	{		
 		_itoa(i, str, 10);
-		SaveGreyscaleImage(g_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), g_W, g_H);
+		SaveGreyscaleImage(m_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), g_W, g_H);
 	}
 }
 
@@ -376,7 +369,7 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 
 	if (m_pMF->m_VIsOpen == true)
 	{
-		m_pMF->m_pImageBox->ViewImage(g_ImF[m_cn], g_W, g_H);
+		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], g_W, g_H);
 	}
 }
 
@@ -389,7 +382,7 @@ void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 
 	if (m_pMF->m_VIsOpen == true)
 	{
-		m_pMF->m_pImageBox->ViewImage(g_ImF[m_cn], g_W, g_H);
+		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], g_W, g_H);
 	}
 }
 
