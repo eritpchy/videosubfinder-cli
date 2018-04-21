@@ -1,0 +1,15 @@
+1) Microsoft Visual Studio Professional 2017
+
+2) wxWidgets (wxMSW-3.1.1-Setup.exe)
+https://www.wxwidgets.org/downloads/
+Setup Env: WX_WIDGETS_PATH=C:\wxWidgets-3.1.1
+Open "%WX_WIDGETS_PATH%\build\msw\wx_vc15.sln" in Visual Studio 2017.
+Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/x64" mode and /MT in "Release/x64" mode.
+Build all projects in "Debug/x64" mode and in "Release/x64" mode.
+
+3) OpenCV (opencv-3.4.1-vc14_vc15.exe)
+Setup Env: OPENCV_DIR=C:\opencv-3.4.1-vc14_vc15
+should exist: %OPENCV_DIR%\build\include
+
+4) Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2017.
+Build solution in "Debug/x64" mode and in "Release/x64" mode.

@@ -1519,12 +1519,6 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 
 	ColorFiltration(ImRGB, LB, LE, N, W, H);
 
-	//char msg[100];
-	//sprintf(msg, "t1: %d vs t2: %d", (int)t1, (int)t2);
-	//wxMessageBox(msg);
-
-	//wxASSERT_MSG(N == N_, "N != N_");	
-
 	ImVE[0] = -1;
 	ImNE[0] = -1;
 	ImHE[0] = -1;
@@ -2168,7 +2162,7 @@ int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, 
 
 int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h)
 {
-	custom_buffer<int> lb(h, 0), le(h, 0);
+	custom_buffer<int> lb(w, 0), le(w, 0);
 	int segh, ln;
 	int x, y, da, ia, ib, ic, ie, i, k, l, ll, val, val1, val2, offset;
 	int bln, res;

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -22,26 +22,27 @@
     <ProjectGuid>{6786A82F-9596-45FF-9A44-7C1AF39EDE35}</ProjectGuid>
     <RootNamespace>VideoSubFinderWXW</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -74,6 +75,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IntDir>x64\Debug\</IntDir>
+    <OutDir>..\..\Build\Debug_x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>..\..\Build\Release\</OutDir>
@@ -121,8 +124,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswud;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\DSVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;__WXMSW__;__WXDEBUG__;_WINDOWS;NOPCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswud;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\OCVVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN64;_DEBUG;__WXMSW__;__WXDEBUG__;_WINDOWS;NOPCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -140,10 +143,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswd;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\Debug\strmbasd.lib;wxmsw30ud_aui.lib;wxmsw30ud_media.lib;wxmsw30ud_core.lib;wxmsw30ud_adv.lib;wxbase30ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\Debug\DSVideo.lib;..\..\Components\IPAlgorithms\Debug\IPAlgorithms.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31ud_aui.lib;wxmsw31ud_media.lib;wxmsw31ud_core.lib;wxmsw31ud_adv.lib;wxbase31ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Debug\IPAlgorithms.lib;opencv_world341d.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)VideoSubFinderWXW.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -187,7 +190,7 @@
     <ClCompile>
       <AdditionalOptions>/EHsc %(AdditionalOptions)</AdditionalOptions>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\DSVideo;..\..\Components\OCVVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswu;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\OCVVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;__WXMSW__;_WINDOWS;NOPCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -203,10 +206,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\msw;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\x64\Release\strmbase.lib;wxmsw30u_aui.lib;wxmsw30u_media.lib;wxmsw30u_core.lib;wxmsw30u_adv.lib;wxbase30u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\x64\Release\DSVideo.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;opencv_core310.lib;opencv_videoio310.lib;opencv_imgproc310.lib;opencv_imgcodecs310.lib;vfw32.lib;ippicvmt.lib;zlib.lib;libjpeg.lib;libwebp.lib;libpng.lib;libtiff.lib;libjasper.lib;IlmImf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;opencv_world341.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\x64;$(OPENCV_DIR)\Win64\lib\Release;$(OPENCV_DIR)\Win64\3rdparty\lib\Release;$(OPENCV_DIR)\sources\3rdparty\ippicv\unpack\ippicv_win\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>
@@ -255,10 +258,6 @@
     <ResourceCompile Include="VideoSubFinderWXW.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Components\DSVideo\DSVideo.vcxproj">
-      <Project>{b3908609-590e-4361-8e90-8edc3cd2442c}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\..\Components\IPAlgorithms\IPAlgorithms.vcxproj">
       <Project>{bfe25c0a-ea0c-484d-b426-6d7511c9958b}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

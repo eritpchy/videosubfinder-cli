@@ -1,13 +1,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2037
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoSubFinderWXW", "VideoSubFinderWXW.vcxproj", "{6786A82F-9596-45FF-9A44-7C1AF39EDE35}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B369FFAB-FB94-4F88-A374-39A604762D4B} = {B369FFAB-FB94-4F88-A374-39A604762D4B}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DSVideo", "..\..\Components\DSVideo\DSVideo.vcxproj", "{B3908609-590E-4361-8E90-8EDC3CD2442C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IPAlgorithms", "..\..\Components\IPAlgorithms\IPAlgorithms.vcxproj", "{BFE25C0A-EA0C-484D-B426-6D7511C9958B}"
 EndProject
@@ -29,14 +27,6 @@ Global
 		{6786A82F-9596-45FF-9A44-7C1AF39EDE35}.Release|Win32.Build.0 = Release|Win32
 		{6786A82F-9596-45FF-9A44-7C1AF39EDE35}.Release|x64.ActiveCfg = Release|x64
 		{6786A82F-9596-45FF-9A44-7C1AF39EDE35}.Release|x64.Build.0 = Release|x64
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Debug|Win32.Build.0 = Debug|Win32
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Debug|x64.ActiveCfg = Debug|x64
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Debug|x64.Build.0 = Debug|x64
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Release|Win32.ActiveCfg = Release|Win32
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Release|Win32.Build.0 = Release|Win32
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Release|x64.ActiveCfg = Release|x64
-		{B3908609-590E-4361-8E90-8EDC3CD2442C}.Release|x64.Build.0 = Release|x64
 		{BFE25C0A-EA0C-484D-B426-6D7511C9958B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{BFE25C0A-EA0C-484D-B426-6D7511C9958B}.Debug|Win32.Build.0 = Debug|Win32
 		{BFE25C0A-EA0C-484D-B426-6D7511C9958B}.Debug|x64.ActiveCfg = Debug|x64
@@ -56,5 +46,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {14CAA284-EF5C-4ABF-8564-1720A684E6E6}
 	EndGlobalSection
 EndGlobal

@@ -26,7 +26,6 @@
 #include "SSOWnd.h"
 #include "VideoBox.h"
 #include "ImageBox.h"
-#include "DSVideoLoader.h"
 #include "OCVVideoLoader.h"
 #include "SSAlgorithms.h"
 #include "IPAlgorithms.h"
@@ -127,7 +126,6 @@ public:
 	void OnStop(wxCommandEvent& event);
 	void OnFileReOpenVideo(wxCommandEvent& event);
 	void OnFileOpenVideoOpenCV(wxCommandEvent& event);
-	void OnFileOpenVideoDirectShow(wxCommandEvent& event);
 	void OnEditSetBeginTime(wxCommandEvent& event);
 	void OnEditSetEndTime(wxCommandEvent& event);
 	void OnFileSaveSettings(wxCommandEvent& event);

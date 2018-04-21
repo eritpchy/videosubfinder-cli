@@ -626,13 +626,17 @@ L:				bf = fn;
 				else
 				{
 					if (fn-bf == DL)
-					{						
-						for(i=0; i<nn; i++)
+					{	
+						//'bln' here is combined size of interesting pixels
+						for(i=0, bln=1; (i<nn) && (bln>0); i++)
 						{
-							SimpleCombineTwoImages(ImS, ImS_SQ[i], size);							
+							bln = SimpleCombineTwoImages(ImS, ImS_SQ[i], size);
 						}
 
-						bln = AnalyseImage(ImS, w, h);
+						if (bln > 0)
+						{
+							bln = AnalyseImage(ImS, w, h);
+						}
 
 						if (bln == 0) 						
 						{
@@ -923,6 +927,11 @@ int AnalyseImage(custom_buffer<int> &Im, int w, int h)
 		}
 	}
 
+	if (mpl == 0)
+	{
+		return 0;
+	}
+
 	// находим cоотнощение длины текста к занимаемому им месту
 	k = i_mpl;
 	len = 0;
@@ -932,7 +941,7 @@ int AnalyseImage(custom_buffer<int> &Im, int w, int h)
 	}
 	l--;
 	
-	while(l)
+	while(l>0)
 	{
 		if (g_lb[k][0]*2 >= w) return 0;
 		if (g_le[k][l]*2 <= w) return 0;

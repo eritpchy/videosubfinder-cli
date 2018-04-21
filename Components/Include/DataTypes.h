@@ -17,6 +17,7 @@
 
 #include <time.h>
 #include <memory.h>
+#include <wx/wx.h>
 
 typedef unsigned char		u8;
 typedef unsigned short		u16;
@@ -45,7 +46,7 @@ public:
 
 	custom_buffer(int size)
 	{
-		//wxASSERT_MSG(size > 0, "custom_buffer(int size): not: size > 0");
+		wxASSERT_MSG(size > 0, "custom_buffer(int size): not: size > 0");
 
 		m_pData = new T[size];
 		m_size = size;
@@ -54,7 +55,7 @@ public:
 
 	custom_buffer(int size, T val)
 	{
-		//wxASSERT_MSG(size > 0, "custom_buffer(int size, T val): not: size > 0");
+		wxASSERT_MSG(size > 0, "custom_buffer(int size, T val): not: size > 0");
 
 		m_pData = new T[size];
 		m_size = size;
@@ -127,7 +128,7 @@ public:
 
 	custom_buffer<T> get_sub_buffer(int offset)
 	{
-		//wxASSERT_MSG(offset < m_size, "get_sub_buffer(int offset): not: offset < m_size");
+		wxASSERT_MSG(offset < m_size, "get_sub_buffer(int offset): not: offset < m_size");
 
 		return custom_buffer<T>(m_pData + offset, m_size - offset);
 	}
@@ -139,8 +140,8 @@ public:
 
 	inline T& operator[](int idx)
 	{
-		//wxASSERT_MSG(idx >= 0, "operator[](int idx): not: idx >= 0");
-		//wxASSERT_MSG(idx < m_size, "operator[](int idx): not: idx < m_size");
+		wxASSERT_MSG(idx >= 0, "operator[](int idx): not: idx >= 0");
+		wxASSERT_MSG(idx < m_size, "operator[](int idx): not: idx < m_size");
 
 		return m_pData[idx];
 	}
@@ -149,7 +150,7 @@ public:
 template<>
 custom_buffer<int>::custom_buffer(int size, int val)
 {
-	//wxASSERT_MSG(size > 0, "custom_buffer(int size, T val): not: size > 0");
+	wxASSERT_MSG(size > 0, "custom_buffer(int size, T val): not: size > 0");
 	m_pData = new int[size];
 	m_size = size;
 	m_need_to_release = true;
@@ -170,7 +171,7 @@ custom_buffer<int>::custom_buffer(int size, int val)
 template<>
 custom_buffer<s64>::custom_buffer(int size, s64 val)
 {
-	//wxASSERT_MSG(size > 0, "custom_buffer(int size, T val): not: size > 0");
+	wxASSERT_MSG(size > 0, "custom_buffer(int size, T val): not: size > 0");
 	m_pData = new s64[size];
 	m_size = size;
 	m_need_to_release = true;

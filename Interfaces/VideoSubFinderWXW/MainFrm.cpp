@@ -96,7 +96,6 @@ BEGIN_EVENT_TABLE(CMainFrame, wxMDIParentFrame)
 	EVT_MENU(ID_PLAY_STOP, CMainFrame::OnStop)
 	EVT_MENU(ID_FILE_REOPENVIDEO, CMainFrame::OnFileReOpenVideo)
 	EVT_MENU(ID_FILE_OPEN_VIDEO_OPENCV, CMainFrame::OnFileOpenVideoOpenCV)
-	EVT_MENU(ID_FILE_OPEN_VIDEO_DIRECTSHOW, CMainFrame::OnFileOpenVideoDirectShow)
 	EVT_MENU(ID_EDIT_SETBEGINTIME, CMainFrame::OnEditSetBeginTime)
 	EVT_MENU(ID_EDIT_SETENDTIME, CMainFrame::OnEditSetEndTime)
 	EVT_MENU(ID_FILE_SAVESETTINGS, CMainFrame::OnFileSaveSettings)
@@ -179,7 +178,6 @@ void CMainFrame::Init()
 
 	wxMenu *pMenu1 = new wxMenu;	
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, _T("Open Video (OpenCV)"));
-	pMenu1->Append(ID_FILE_OPEN_VIDEO_DIRECTSHOW, _T("Open Video (DirectShow)"));
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
 	pMenu1->AppendSeparator();
 	pMenu1->AppendSubMenu( pMenu5, _T("Set Priority"));
@@ -252,14 +250,9 @@ void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)
 	OnFileOpenVideo(m_type);
 }
 
-void CMainFrame::OnFileOpenVideoDirectShow(wxCommandEvent& event)
-{
-	OnFileOpenVideo(0);
-}
-
 void CMainFrame::OnFileOpenVideoOpenCV(wxCommandEvent& event)
 {
-	OnFileOpenVideo(1);
+	OnFileOpenVideo(0);
 }
 
 void CMainFrame::OnFileOpenVideo(int type)
@@ -278,8 +271,12 @@ void CMainFrame::OnFileOpenVideo(int type)
 	m_type = type;
 	csFileName = m_FileName;
 
-	if (m_type == 1) m_pVideo = GetOCVVideoObject();
-	else m_pVideo = GetDSVideoObject();
+	if (m_type == 0) m_pVideo = GetOCVVideoObject();
+	else
+	{
+		(void)wxMessageBox("ERROR: Unknown video type for OnFileOpenVideo");
+		return;
+	}	
 
 	m_pVideo->m_Dir = m_Dir;
 
@@ -308,11 +305,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	this->Disable();
 
-	if (type == 0)
-	{
-		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)&hWnd, 0);
-	}
-	else if (type == 1)
+	if (m_type == 0)
 	{
 		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox->m_pVideoWnd, 0);
 	}
@@ -912,7 +905,7 @@ void CMainFrame::ClearDir(string DirName)
 
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
-	(void)wxMessageBox("This program was developed and \nimplemented by Simeon Kosnitsky. \nPublished under GPL license.", "VideoSubFinder " VSF_VERSION " Version");
+	(void)wxMessageBox("This program was written by Simeon Kosnitsky. \nPublished under GPL license.", "VideoSubFinder " VSF_VERSION " Version");
 }
 
 void CMainFrame::OnSetPriorityIdle(wxCommandEvent& event)
