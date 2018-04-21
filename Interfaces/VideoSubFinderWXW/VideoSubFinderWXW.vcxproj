@@ -220,6 +220,9 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.* $(OutDir)Docs\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CommonFunctions.cpp" />

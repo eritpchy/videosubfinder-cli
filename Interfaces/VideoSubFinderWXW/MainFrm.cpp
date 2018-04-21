@@ -238,6 +238,8 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 {
 	int w, h;
     this->GetClientSize(&w, &h);
+	m_cw = w;
+	m_ch = h;
 
 	m_pPanel->SetSize(0, h - m_ph, w, m_ph);
 
@@ -257,7 +259,7 @@ void CMainFrame::OnFileOpenVideoOpenCV(wxCommandEvent& event)
 
 void CMainFrame::OnFileOpenVideo(int type)
 {
-	string csFileName;
+	wxString csFileName;
 	s64 Cur;
 	bool was_open_before = false;
 	int i;
@@ -300,8 +302,6 @@ void CMainFrame::OnFileOpenVideo(int type)
 	}
 
 	m_FileName = csFileName;
-
-	WXHWND hWnd = m_pVideoBox->m_pVBox->m_pVideoWnd->GetHandle();
 
 	this->Disable();
 
@@ -353,10 +353,9 @@ void CMainFrame::OnFileOpenVideo(int type)
 	wxRect rc, rcP, rcVB, rVB, rcVW, rVW, rcIW, rImB;
 	int w, wmax, h, ww, hh, dw, dh, dwi, dhi;
 
-	this->GetClientSize(&w, &h);
 	rc.x = rc.y = 0; 
-	rc.width = w;
-	rc.height = h;
+	rc.width = m_cw;
+	rc.height = m_ch;
 
 	rcP = m_pPanel->GetRect();
 
@@ -531,6 +530,12 @@ void CMainFrame::LoadSettings()
 
 	fin.open(m_GeneralSettingsFileName.c_str(), ios::in);
 	
+	if (fin.bad())
+	{
+		(void)wxMessageBox("ERROR: Can't open settings file: " + m_GeneralSettingsFileName);
+		exit(1);
+	}
+
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mvthr, "moderate_threshold_for_VEdges");
 	ReadProperty(fin, g_mhthr, "moderate_threshold_for_HEdges");
@@ -806,7 +811,7 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		//SetThreadPriority(m_pPanel->m_OCRPanel.m_hSearchThread, THREAD_PRIORITY_HIGHEST);
 	}
 
-	if ( (g_IsSearching == 0) && (m_FileName != string("")) )
+	if ( (g_IsSearching == 0) && (m_FileName != wxString("")) )
 	{
 		fstream fout;
 		string pvi_path = m_Dir+string("/previous_video.inf");
@@ -857,7 +862,7 @@ void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 	fin.open(pvi_path.c_str(), ios::in);
 	
 	fin.getline(str, 300);
-	m_FileName = string(str);
+	m_FileName = wxString::FromUTF8(str);
 
 	fin.getline(str, 300);
 	m_BegTime = (s64)strtod(str, NULL);

@@ -67,7 +67,7 @@ public:
 public:
 	void ShowFrame(cv::Mat &img, void *dc = NULL);
 
-	bool OpenMovie(string csMovieName, void *pVideoWindow, int type);
+	bool OpenMovie(wxString csMovieName, void *pVideoWindow, int type);
 
 	bool SetVideoWindowPlacement(void *pVideoWindow);
 	bool SetNullRender();

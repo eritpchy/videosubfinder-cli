@@ -2202,9 +2202,9 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 	for(k=0; k<N; k++)
 	{
 		ia = LB[k]*w;
-		ie = LE[k]*w;
+		ie = (LB[k] + (int)((min(LE[k]+segh,h-1)-LB[k])/segh)*segh)*w;
 
-		for(; ia<=ie;  ia+=da)
+		for(; ia<ie;  ia+=da)
 		{
 			l = 0;
 			bln = 0;

@@ -80,7 +80,7 @@ public:
 
 	bool	    m_VIsOpen;
 	//CDocManager m_DocManager;
-	string		m_FileName;
+	wxString	m_FileName;
 
 	string		m_EndTimeStr;
 
@@ -91,6 +91,9 @@ public:
 	int			m_BufferSize;
 	int			m_w; //video width
 	int			m_h; //video height
+
+	int			m_cw; //client width
+	int			m_ch; //client height
 
 	int			m_ph; //panel height
 

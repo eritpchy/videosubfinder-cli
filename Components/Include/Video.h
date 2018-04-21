@@ -42,7 +42,7 @@ public:
 	}
 	
 public:	
-	string		m_MovieName;
+	wxString	m_MovieName;
 	bool		m_Inited;
 
 	long		m_Width;
@@ -56,7 +56,7 @@ public:
 
 public:
 
-	virtual bool OpenMovie(string csMovieName, void	*pVideoWindow, int type)
+	virtual bool OpenMovie(wxString csMovieName, void	*pVideoWindow, int type)
 	{
 		return false;
 	}

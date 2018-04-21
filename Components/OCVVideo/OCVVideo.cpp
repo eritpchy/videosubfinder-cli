@@ -71,32 +71,35 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 		int wnd_w, wnd_h, img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
 		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
 
-		unsigned char *img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
+		if ((wnd_w > 0) && (wnd_h > 0))
+		{
+			unsigned char *img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
 
-		for (int i = 0; i < num_pixels; i++)
-		{
-			img_data[i * 3] = img.data[i * 3 + 2];
-			img_data[i * 3 + 1] = img.data[i * 3 + 1];
-			img_data[i * 3 + 2] = img.data[i * 3];
-		}
+			for (int i = 0; i < num_pixels; i++)
+			{
+				img_data[i * 3] = img.data[i * 3 + 2];
+				img_data[i * 3 + 1] = img.data[i * 3 + 1];
+				img_data[i * 3 + 2] = img.data[i * 3];
+			}
 
-		if (dc != NULL)
-		{
-			((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
-		}
-		else
-		{
-			wxClientDC cdc((wxWindow*)m_pVideoWindow);
-			cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+			if (dc != NULL)
+			{
+				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+			}
+			else
+			{
+				wxClientDC cdc((wxWindow*)m_pVideoWindow);
+				cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+			}
 		}
 	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool OCVVideo::OpenMovie(string csMovieName, void *pVideoWindow, int type)
+bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 { 
-	cv::String movie_name(csMovieName);
+	cv::String movie_name(csMovieName.ToUTF8());
 	m_VC.open(movie_name);
 	bool res = m_VC.isOpened();
 
