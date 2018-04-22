@@ -567,6 +567,8 @@ void COCRPanel::CreateSubFromTXTResults()
         res = dir.GetNext(&filename);
     }
 
+	if (FileNamesVector.size() == 0) return;
+
 	for (i=0; i<(int)FileNamesVector.size()-1; i++)
 	for (j=i+1; j<(int)FileNamesVector.size(); j++)
 	{
@@ -1479,8 +1481,6 @@ void *ThreadCreateClearedTextImages::Entry()
     w = 0;
     h = 0;
 
-	custom_buffer<int> g_ImRES1(w*h*3, 0);
-
 	for (k=0; k<(int)FileNamesVector.size(); k++)
 	{
 		if (g_RunCreateClearedTextImages == 0) break;
@@ -1500,6 +1500,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	        g_ymax = h-1;           	        
         }
 
+		custom_buffer<int> g_ImRES1(w*h * 3, 0);
 		custom_buffer<int> g_ImRGB(w*h, 0);
 		custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h, 0));
 
