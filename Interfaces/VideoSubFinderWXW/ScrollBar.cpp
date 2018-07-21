@@ -82,7 +82,7 @@ void CScrollBar::OnPaint(wxPaintEvent& WXUNUSED(event))
 	new_tw = (int)((double)(tw*new_th)/(double)th);	
 
 	dr = w - 2*new_aw - new_tw;
-	tx = new_aw + (int)((double)((m_pos-m_min_pos)*dr)/(double)m_range);
+	tx = new_aw + ((double)dr/(double)m_range)*(double)(m_pos - m_min_pos);
 
 	m_rcSBLA.x = 0;
 	m_rcSBLA.y = 0;
@@ -177,7 +177,7 @@ void CScrollBar::OnLButtonDown( wxMouseEvent& event )
 		m_ld = true;
 		this->CaptureMouse();
 
-		m_pos = m_min_pos + ((double)((x - m_rcSBT.width/2 - m_rcSBLA.width)*m_range)/(double)(w - 2*m_rcSBLA.width - m_rcSBT.width));
+		m_pos = m_min_pos + ((double)(x - m_rcSBT.width/2 - m_rcSBLA.width)/(double)(w - 2*m_rcSBLA.width - m_rcSBT.width))*(double)m_range;
 		if (m_pos < m_min_pos) m_pos = m_min_pos;
 		if (m_pos > m_max_pos) m_pos = m_max_pos;
 		
@@ -213,7 +213,7 @@ void CScrollBar::OnMouseMove( wxMouseEvent& event )
 		int x = event.m_x, y = event.m_y, w, h;
 		this->GetClientSize(&w, &h);
 
-		m_pos = m_min_pos + ((double)((x - m_rcSBT.width/2 - m_rcSBLA.width)*m_range)/(double)(w - 2*m_rcSBLA.width - m_rcSBT.width));
+		m_pos = m_min_pos + ((double)(x - m_rcSBT.width/2 - m_rcSBLA.width)/(double)(w - 2*m_rcSBLA.width - m_rcSBT.width))*(double)m_range;
 		if (m_pos < m_min_pos) m_pos = m_min_pos;
 		if (m_pos > m_max_pos) m_pos = m_max_pos;
 		

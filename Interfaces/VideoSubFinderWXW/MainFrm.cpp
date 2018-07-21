@@ -138,7 +138,9 @@ CMainFrame::CMainFrame(const wxString& title)
 	Str.Replace("\\", "/"); 
 	m_Dir = Str;
 
-	g_dir = m_Dir;	
+	g_dir = m_Dir;
+
+	g_pV = NULL;
 
 	g_pMF = this;
 	g_pViewImage[0] = ViewImageInVideoBox;
@@ -766,6 +768,15 @@ string VideoTimeToStr3(s64 pos)
 	sprintf(str, "%.1d:%.2d:%.2d.%.2d", hour, min, sec, sec_100);
 
 	return string(str);
+}
+
+s64 GetVideoTime(string time)
+{
+	s64 res;
+	int hour, min, sec, msec;
+	wxASSERT_MSG(sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) == 4, wxString::Format(wxT("Wrong video time format '%s'"), time.c_str()));
+	res = (s64)(((hour * 60 + min) * 60 + sec) * 1000 + msec);
+	return res;
 }
 
 s64 GetVideoTime(int minute, int sec, int mili_sec)

@@ -380,6 +380,8 @@ L2:							if (finded_prev == 1)
 		fn++;
 	}
 
+	g_pV = NULL;
+
 	if (g_RunSubSearch == 0)
 	{
 		if (bf != -2)
@@ -808,6 +810,8 @@ L2:							if (finded_prev == 1)
 			}
 		}
 	}	
+
+	g_pV = NULL;
 
 	if (g_RunSubSearch == 0)
 	{
@@ -1598,7 +1602,7 @@ void ImToNativeSize(custom_buffer<int> &Im, int w, int h)
 	}
 }
 
-string VideoTimeToStr(s64 pos)
+inline std::string VideoTimeToStr(s64 pos)
 {
 	static char str[100];
 	int hour, min, sec, msec, val;
@@ -1615,3 +1619,4 @@ string VideoTimeToStr(s64 pos)
 
 	return string(str);
 }
+

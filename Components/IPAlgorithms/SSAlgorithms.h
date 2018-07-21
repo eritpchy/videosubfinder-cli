@@ -65,4 +65,4 @@ int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cust
 
 void ImToNativeSize(custom_buffer<int> &Im, int w, int h);
 
-string VideoTimeToStr(s64 pos);
+std::string VideoTimeToStr(s64 pos);

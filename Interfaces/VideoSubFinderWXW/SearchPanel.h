@@ -17,6 +17,7 @@
 #pragma once
 #include <wx/panel.h>
 #include <wx/stattext.h>
+#include <wx/textctrl.h>
 #include "SSOWnd.h"
 #include "MyResource.h"
 
@@ -52,9 +53,9 @@ public:
 	wxPanel		*m_pP1;
 
 	wxStaticText  *m_plblBT1;
-	wxStaticText  *m_plblBTA1;
+	wxTextCtrl  *m_plblBTA1;
 	wxStaticText  *m_plblBT2;
-	wxStaticText  *m_plblBTA2;
+	wxTextCtrl  *m_plblBTA2;
 	
 	wxColour   m_CLP;
 	wxColour   m_CL1;

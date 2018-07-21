@@ -95,10 +95,10 @@ void CSearchPanel::Init()
 	m_plblBT2 = new wxStaticText( m_pP1, wxID_ANY,
 		wxT("  End Time:"), rcBT2.GetPosition(), rcBT2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
-	m_plblBTA1 = new wxStaticText( m_pP1, wxID_ANY,
-		wxT(""), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+	m_plblBTA1 = new wxTextCtrl(m_pP1, wxID_ANY,
+		wxT(""), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 
-	m_plblBTA2 = new wxStaticText( m_pP1, wxID_ANY,
+	m_plblBTA2 = new wxTextCtrl( m_pP1, wxID_ANY,
 		wxT(""), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
 	m_pClear = new wxButton( m_pP1, ID_BTN_CLEAR,
@@ -159,6 +159,9 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_pPanel->m_pSSPanel->Disable();
 		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		m_pMF->m_pImageBox->ClearScreen();
+
+		m_pMF->m_BegTime = GetVideoTime(string(m_plblBTA1->GetValue().c_str()));
+		m_pMF->m_EndTime = GetVideoTime(string(m_plblBTA2->GetValue().c_str()));
 
 		m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
 		m_pSearchThread->Create();

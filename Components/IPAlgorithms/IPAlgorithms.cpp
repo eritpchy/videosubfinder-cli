@@ -100,8 +100,6 @@ int g_debug = 1;
 int g_debug = 0;
 #endif
 
-bool g_MMX_SSE = false;
-
 void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)
 {
 	custom_buffer<int> line(h, 0), lb(h, 0), le(h, 0);
@@ -112,9 +110,9 @@ void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buff
 	int sbegin, n, k;
 	u8 *color;
 
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
-	wxASSERT_MSG(LB.size() >= h, "not: LB.size() >= H");
-	wxASSERT_MSG(LE.size() >= h, "not: LE.size() >= H");
+	custom_assert(Im.size() >= w*h, "ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(LB.size() >= h, "ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)\nnot: LB.size() >= H");
+	custom_assert(LE.size() >= h, "ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)\nnot: LE.size() >= H");
 
 	scd = g_scd;
 	segw = g_segw;
@@ -248,10 +246,10 @@ void RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer
 	u8 *color;
 	int i, r, g, b, y, u, v;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImY.size() >= w*h, "not: ImY.size() >= w*h");
-	wxASSERT_MSG(ImU.size() >= w*h, "not: ImU.size() >= w*h");
-	wxASSERT_MSG(ImV.size() >= w*h, "not: ImV.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImY.size() >= w*h");
+	custom_assert(ImU.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImU.size() >= w*h");
+	custom_assert(ImV.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImV.size() >= w*h");
 
 	for (i = 0; i<w*h; i++)
 	{
@@ -332,10 +330,10 @@ void RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer
 	u8 *color;
 	int i, r, g, b, Y, I, Q;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImY.size() >= w*h, "not: ImY.size() >= w*h");
-	wxASSERT_MSG(ImI.size() >= w*h, "not: ImI.size() >= w*h");
-	wxASSERT_MSG(ImQ.size() >= w*h, "not: ImQ.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImY.size() >= w*h");
+	custom_assert(ImI.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImI.size() >= w*h");
+	custom_assert(ImQ.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImQ.size() >= w*h");
 
 	for(i=0; i<w*h; i++)
 	{
@@ -383,8 +381,8 @@ void GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w,
 	u8 *color;
 	int i, r, g, b, wh;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImY.size() >= w*h, "not: ImY.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w, int h)\nnot: ImY.size() >= w*h");
 
 	wh = w*h;
 
@@ -404,8 +402,8 @@ void SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int 
 {
 	int i, x, y, mx, my, val, val1, val2, val3, val4, max;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImMOE.size() >= w*h, "not: ImMOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImMOE.size() >= w*h, "SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -450,8 +448,8 @@ void ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int
 {
 	int x, y, mx, my, val, val1, val2, val3, val4, max;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImMOE.size() >= w*h, "not: ImMOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
 
 	int* pIm = &ImIn[0];
 	int* pImMOE = &ImMOE[0];
@@ -500,8 +498,8 @@ void SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int 
 {
 	int i, ii, x, y, mx, my, val;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImHOE.size() >= w*h, "not: ImHOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImHOE.size() >= w*h, "SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -527,8 +525,8 @@ void FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE,
 {
 	int x, y, mx, my, val, val1, val2;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImHOE.size() >= w*h, "not: ImHOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImHOE.size() >= w*h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
 
 	int* pIm = &ImIn[0];
 	int* pImHOE = &ImHOE[0];
@@ -557,8 +555,8 @@ void FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, 
 {
 	int i, ii, x, y, mx, my, val;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImVOE.size() >= w*h, "not: ImVOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImVOE.size() >= w*h, "FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -584,8 +582,8 @@ void FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE,
 {
 	int x, y, mx, my, val, val1, val2, val3;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImVOE.size() >= w*h, "not: ImVOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImVOE.size() >= w*h, "FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
 
 	int* pIm = &ImIn[0];
 	int* pImVOE = &ImVOE[0];
@@ -619,9 +617,9 @@ void FullSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE1, custom
 {
 	int i, ii, x, y, mx, my, val, size, hvt, rhvt, MX;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImVOE1.size() >= w*h, "not: ImVOE1.size() >= w*h");
-	wxASSERT_MSG(ImVOE2.size() >= w*h, "not: ImVOE2.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FullSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE1, custom_buffer<int> &ImVOE2, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImVOE1.size() >= w*h, "FullSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE1, custom_buffer<int> &ImVOE2, int w, int h)\nnot: ImVOE1.size() >= w*h");
+	custom_assert(ImVOE2.size() >= w*h, "FullSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE1, custom_buffer<int> &ImVOE2, int w, int h)\nnot: ImVOE2.size() >= w*h");
 
 	MX = 0;
 	mx = w-1;
@@ -665,8 +663,8 @@ void SobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int 
 {
 	int i, ii, x, y, mx, my, val, size, hvt, rhvt, MX;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImVOE.size() >= w*h, "not: ImVOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImVOE.size() >= w*h, "SobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
 
 	MX = 0;
 	mx = w-1;
@@ -708,8 +706,8 @@ void SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int 
 	int lt,mt,rt, lm,mm,rm, lb,mb,rb;
 	int blt,bmt,brt, blm,bmm,brm, blb,bmb,brb;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImNOE.size() >= w*h, "not: ImNOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImNOE.size() >= w*h, "SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
 
 	mx = 0;
 
@@ -764,8 +762,8 @@ void FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE,
 {
 	int x, y, mx, my, val, val1, val2;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImNOE.size() >= w*h, "not: ImNOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImNOE.size() >= w*h, "FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
 
 	int* pIm = &ImIn[0];
 	int* pImNOE = &ImNOE[0];
@@ -799,8 +797,8 @@ void SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int 
 	int lt,mt,rt, lm,mm,rm, lb,mb,rb;
 	int blt,bmt,brt, blm,bmm,brm, blb,bmb,brb;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImSOE.size() >= w*h, "not: ImSOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImSOE.size() >= w*h, "SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h)\nnot: ImSOE.size() >= w*h");
 
 	mx = 0;
 
@@ -855,8 +853,8 @@ void IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRE
 {
 	int i, ii, x, y, mx, my, val;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImRES.size() >= w*h, "not: ImRES.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImRES.size() >= w*h, "IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, int w, int h)\nnot: ImRES.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -886,10 +884,10 @@ void CEDOperator(custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer
 	int i, x, y, mx, my, l1, l2, l3;
 	int val, dy1, dy2, di1, di2, dq1, dq2; 
 
-	wxASSERT_MSG(ImY.size() >= w*h, "not: ImY.size() >= w*h");
-	wxASSERT_MSG(ImI.size() >= w*h, "not: ImI.size() >= w*h");
-	wxASSERT_MSG(ImQ.size() >= w*h, "not: ImQ.size() >= w*h");
-	wxASSERT_MSG(ImCED.size() >= w*h, "not: ImCED.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "CEDOperator(custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, custom_buffer<int> &ImCED, int w, int h)\nnot: ImY.size() >= w*h");
+	custom_assert(ImI.size() >= w*h, "CEDOperator(custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, custom_buffer<int> &ImCED, int w, int h)\nnot: ImI.size() >= w*h");
+	custom_assert(ImQ.size() >= w*h, "CEDOperator(custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, custom_buffer<int> &ImCED, int w, int h)\nnot: ImQ.size() >= w*h");
+	custom_assert(ImCED.size() >= w*h, "CEDOperator(custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, custom_buffer<int> &ImCED, int w, int h)\nnot: ImCED.size() >= w*h");
 
 	l1 = 1; //?
 	l2 = 1; //?
@@ -920,7 +918,7 @@ void FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h)
 	int i, imx, mx, start=3, dx=5;
 	int beg, end, val, MX, thr;
 
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h)\nnot: Im.size() >= w*h");
 
 	MX = 0;
 
@@ -977,7 +975,7 @@ void FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w
 	int i, di, ia, da, x, y, nx, ny, mx, my, MX;
 	int val, min, max, mid, lmax, rmax, li, ri, thr;
 	
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w, int h)\nnot: Im.size() >= w*h");
 
 	MX = 0;
 
@@ -1151,7 +1149,7 @@ void ApplyModerateThreshold(custom_buffer<int> &Im, double mthr, int w, int h)
 	int *pIm = &Im[0];
 	int *pImMAX = pIm + w*h;
 	
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "ApplyModerateThreshold(custom_buffer<int> &Im, double mthr, int w, int h)\nnot: Im.size() >= w*h");
 
 	for(; pIm < pImMAX; pIm++)
 	{
@@ -1171,8 +1169,8 @@ void AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
 {
 	int i, x, y, mx, my, val;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImOut.size() >= w*h, "not: ImOut.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImOut.size() >= w*h, "AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	mx = w-2;
 	my = h-2;
@@ -1195,8 +1193,8 @@ void AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
 {
 	int i, ii, x, y, mx, my, val;
 
-	wxASSERT_MSG(ImIn.size() >= w*h, "not: ImIn.size() >= w*h");
-	wxASSERT_MSG(ImOut.size() >= w*h, "not: ImOut.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImOut.size() >= w*h, "AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	mx = w-2;
 	my = h-2;
@@ -1244,8 +1242,8 @@ void ColorFiltration2(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, 
 	int y, x, mx;
 	u8 *color;
 
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
-	wxASSERT_MSG(ImRES.size() >= w*h, "not: ImRES.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "ColorFiltration2(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int scd)\nnot: Im.size() >= w*h");
+	custom_assert(ImRES.size() >= w*h, "ColorFiltration2(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int scd)\nnot: ImRES.size() >= w*h");
 
 	memset(&ImRES[0], 0, (w*h)*sizeof(int));
 
@@ -1303,7 +1301,7 @@ void BorderClear(custom_buffer<int> &Im, int dd, int w, int h)
 {
 	int i, di, x, y;
 
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "BorderClear(custom_buffer<int> &Im, int dd, int w, int h)\nnot: Im.size() >= w*h");
 
 	memset(&Im[0], 0, w*dd*sizeof(int));
 	memset(&Im[w*(h-dd)], 0, w*dd*sizeof(int));
@@ -1328,7 +1326,7 @@ void EasyBorderClear(custom_buffer<int> &Im, int w, int h)
 {
 	int i, y;
 
-	wxASSERT_MSG(Im.size() >= w*h, "not: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "BorderClear(custom_buffer<int> &Im, int dd, int w, int h)\nnot: Im.size() >= w*h");
 
 	memset(&Im[0], 0, w*sizeof(int));
 	memset(&Im[w*(h-1)], 0, w*sizeof(int));
@@ -4169,6 +4167,16 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 
 			if ((double)val2/val1 <= 0.5)
 			{	
+				for (i = N; i>k+1; i--)
+				{
+					LL[i] = LL[i - 1];
+					LR[i] = LR[i - 1];
+					LLB[i] = LLB[i - 1];
+					LLE[i] = LLE[i - 1];
+					memcpy(&(LN[i][0]), &(LN[i - 1][0]), LNN[i - 1] * sizeof(int));
+					LNN[i] = LNN[i - 1];
+				}
+
 				LL[k+1] = LL[k];
 				LR[k+1] = LR[k];
 				LLB[k+1] = val3+1;
@@ -8845,3 +8853,17 @@ void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h)
 	}	
 }
 
+inline wxString get_add_info()
+{
+	wxString msg;
+	if (g_pV != NULL)
+	{
+		msg += "\nMovieName: " + g_pV->m_MovieName;
+		msg += "\nCurPos: " + VideoTimeToStr(g_pV->GetPos());
+		msg += "\nDuration: " + VideoTimeToStr(g_pV->m_Duration);
+		msg += "\nWidth: " + wxString::Format(wxT("%i"), (int)g_pV->m_Width);
+		msg += "\nHeight: " + wxString::Format(wxT("%i"), (int)g_pV->m_Height);
+	}
+
+	return msg;
+}

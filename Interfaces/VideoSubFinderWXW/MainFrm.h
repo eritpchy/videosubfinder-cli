@@ -149,6 +149,7 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
+s64 GetVideoTime(string time);
 s64 GetVideoTime(int minute, int sec, int mili_sec);
 string ConvertVideoTime(s64 pos);
 string VideoTimeToStr2(s64 pos);

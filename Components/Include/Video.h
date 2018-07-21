@@ -21,8 +21,6 @@
 
 using namespace std;
 
-/////////////////////////////////////////////////////////////////////////////
-
 class CVideo
 {
 public:
@@ -138,3 +136,5 @@ public:
 	{
 	}
 };
+
+extern CVideo *g_pV;
