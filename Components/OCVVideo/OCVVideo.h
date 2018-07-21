@@ -61,6 +61,8 @@ public:
 	double m_frameNumbers;
 	double m_fps;
 	cv::Mat m_cur_frame;
+	long		m_origWidth;
+	long		m_origHeight;
 
 	ThreadRunVideo *m_pThreadRunVideo;
 

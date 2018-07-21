@@ -106,12 +106,25 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 	if (res)
 	{
 		m_MovieName = csMovieName;
-		m_Width = m_VC.get(cv::CAP_PROP_FRAME_WIDTH);
-		m_Height = m_VC.get(cv::CAP_PROP_FRAME_HEIGHT);
+
+		m_origWidth = m_VC.get(cv::CAP_PROP_FRAME_WIDTH);
+		m_origHeight = m_VC.get(cv::CAP_PROP_FRAME_HEIGHT);
+
+		m_Width = m_origWidth;
+		m_Height = m_origHeight;
+
+		if (m_origWidth > 1280)
+		{
+			double zoum = (double)1280 / (double)m_origWidth;
+			m_Width = 1280;
+			m_Height = (double)m_origHeight*zoum;
+		}
+
 		m_pVideoWindow = pVideoWindow;
 		m_show_video = true;		
 
 		m_VC >> m_cur_frame;
+		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 
 		m_frameNumbers = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
 		m_fps = m_VC.get(cv::CAP_PROP_FPS);
@@ -171,6 +184,7 @@ void OCVVideo::SetPos(s64 Pos)
 		m_VC.set(cv::CAP_PROP_POS_MSEC, Pos);
 		if (Pos == 0) m_VC >> m_cur_frame;
 		else m_VC.retrieve(m_cur_frame);
+		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 		m_ImageGeted = true;
 		ShowFrame(m_cur_frame);
 	}
@@ -202,6 +216,7 @@ void OCVVideo::OneStep()
 		}
 
 		m_VC >> m_cur_frame;
+		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 		m_ImageGeted = true;
 		ShowFrame(m_cur_frame);
 	}
@@ -369,6 +384,7 @@ void *ThreadRunVideo::Entry()
 	{		
 		clock_t start_t = clock();
 		m_pVideo->m_VC >> m_pVideo->m_cur_frame;
+		if ((m_pVideo->m_Width != m_pVideo->m_origWidth) || (m_pVideo->m_Height != m_pVideo->m_origHeight)) cv::resize(m_pVideo->m_cur_frame, m_pVideo->m_cur_frame, cv::Size(m_pVideo->m_Width, m_pVideo->m_Height), 0, 0, cv::INTER_LINEAR);
 		m_pVideo->ShowFrame(m_pVideo->m_cur_frame);
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);
 		if (dt > 0) wxMilliSleep(dt);
