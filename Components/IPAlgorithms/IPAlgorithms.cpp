@@ -1,4 +1,4 @@
-                              //IPAlgorithms.cpp//                                
+п»ї                              //IPAlgorithms.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -20,6 +20,7 @@
 #include <emmintrin.h>
 #include <wx/wx.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgcodecs/legacy/constants_c.h>
 
 #include <algorithm>
 using namespace std;
@@ -63,12 +64,12 @@ double	g_mpned = 0.4; //0.4
 int g_min_color = 5;
 
 int g_dmaxy = 8;
-int g_dminy = 8;
 
-int g_minpw = 4;
-int g_maxpw = 18;
-int g_minph = 4;
-int g_maxph = 18; 
+/// min-max point size for resolution ~ 480p=640Г—480 scaled to x4 == 4-18p (1-4.5p in original size)
+double g_minpw = 4.0/640.0;
+double g_maxpw = 18.0/640.0;
+double g_minph = 4.0/480.0;
+double g_maxph = 18.0/480.0;
 double g_minpwh = 2.0/3.0;
 
 int g_min_dI = 9;
@@ -76,7 +77,7 @@ int g_min_dQ = 9;
 int g_min_ddI = 14;
 int g_min_ddQ = 14;
 
-#define MAX_EDGE_STR 786432 //на сам деле ~ 32*3*255
+#define MAX_EDGE_STR 786432 //РЅР° СЃР°Рј РґРµР»Рµ ~ 32*3*255
 
 int g_edgeStr[MAX_EDGE_STR];
 
@@ -713,7 +714,7 @@ void SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int 
 
 	k = w + 1;
 
-	// специально несоответствие затем все сдвинется
+	// СЃРїРµС†РёР°Р»СЊРЅРѕ РЅРµСЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ Р·Р°С‚РµРј РІСЃРµ СЃРґРІРёРЅРµС‚СЃСЏ
 	blm = ImIn[k - w - 1];
 	bmm = ImIn[k - w];
 	brm = ImIn[k - w + 1];
@@ -804,7 +805,7 @@ void SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int 
 
 	k = w + 1;
 
-	// специально несоответствие затем все сдвинется
+	// СЃРїРµС†РёР°Р»СЊРЅРѕ РЅРµСЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ Р·Р°С‚РµРј РІСЃРµ СЃРґРІРёРЅРµС‚СЃСЏ
 	blm = ImIn[k - w - 1];
 	bmm = ImIn[k - w];
 	brm = ImIn[k - w + 1];
@@ -1632,6 +1633,8 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 		i += cnt;
 	}
 
+	if (g_show_results == 1) SaveGreyscaleImage(ImFF, "\\TestImages\\GetTransformedImage_ImFF.jpeg", W, H);
+
 	memcpy(&ImSF[0], &ImFF[0], W*H*sizeof(int));
 
 	RGB_to_YIQ(ImRGB, ImY, ImU, ImV, W, H);
@@ -1734,14 +1737,27 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 
 	t2 = clock()-t2;
 
+	if (g_show_results == 1) SaveGreyscaleImage(ImSF, "\\TestImages\\GetTransformedImage_ImSF_ImSF.jpeg", W, H);
+	if (g_show_results == 1) SaveGreyscaleImage(ImVE, "\\TestImages\\GetTransformedImage_ImSF_ImVE.jpeg", W, H);
+	if (g_show_results == 1) SaveGreyscaleImage(ImNE, "\\TestImages\\GetTransformedImage_ImSF_ImNE.jpeg", W, H);
+
 	res = SecondFiltration(ImSF, ImRGB, ImVE, ImNE, LB, LE, N, W, H);
+
+	if (g_show_results == 1) SaveGreyscaleImage(ImSF, "\\TestImages\\GetTransformedImage_ImSF_2.jpeg", W, H);
+
 	memcpy(&ImTF[0], &ImSF[0], W*H*sizeof(int));
 
 	if (res == 1) res = ThirdFiltration(ImTF, ImVE, ImNE, ImHE, LB, LE, N, W, H);
 
+	if (g_show_results == 1) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_ImTF_1.jpeg", W, H);
+
 	if (res == 1) res = SecondFiltration(ImTF, ImRGB, ImVE, ImNE, LB, LE, N, W, H);
 
+	if (g_show_results == 1) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_ImTF_2.jpeg", W, H);
+
 	if (res == 1) res = ThirdFiltration(ImTF, ImVE, ImNE, ImHE, LB, LE, N, W, H);
+
+	if (g_show_results == 1) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_ImTF_3.jpeg", W, H);
 
 	return res;
 }
@@ -2226,17 +2242,22 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 					}
 				}
 
-				if(bln == 1)
-				if(le[l] != x)
+				if (bln == 1)
 				{
-					bln = 0;
-					l++;
+					if (le[l] != x)
+					{
+						bln = 0;
+						l++;
+					}
 				}
 			}
-			if(bln == 1)
-			if(le[l] == w-1) 
+
+			if (bln == 1)
 			{
-				l++;
+				if (le[l] == w - 1)
+				{
+					l++;
+				}
 			}
 			ln = l;
 
@@ -2245,10 +2266,10 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 			l=0;
 			while(l<ln-1)
 			{
-				//проверяем расстояние между соседними подстроками
+				//РїСЂРѕРІРµСЂСЏРµРј СЂР°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ СЃРѕСЃРµРґРЅРёРјРё РїРѕРґСЃС‚СЂРѕРєР°РјРё
 				if ((lb[l+1]-le[l])>dw)
 				{
-					//определяем подстроку наиболее удаленую от центра
+					//РѕРїСЂРµРґРµР»СЏРµРј РїРѕРґСЃС‚СЂРѕРєСѓ РЅР°РёР±РѕР»РµРµ СѓРґР°Р»РµРЅСѓСЋ РѕС‚ С†РµРЅС‚СЂР°
 					val1 = lb[l]+le[l]-w;
 					val2 = lb[l+1]+le[l+1]-w;
 					if (val1<0) val1 = -val1;
@@ -2257,7 +2278,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 					if (val1>val2) ll = l;
 					else ll = l+1;
 					
-					//удаляем наиболее удаленую подстроку
+					//СѓРґР°Р»СЏРµРј РЅР°РёР±РѕР»РµРµ СѓРґР°Р»РµРЅСѓСЋ РїРѕРґСЃС‚СЂРѕРєСѓ
 					val = (le[ll]-lb[ll]+1)*sizeof(int);
 					for(y=0, i=ia+lb[ll]; y<segh; y++, i+=w)
 					{
@@ -2282,12 +2303,12 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 			if(ln==0) continue;
 
-			// есть не удаленые подстроки
+			// РµСЃС‚СЊ РЅРµ СѓРґР°Р»РµРЅС‹Рµ РїРѕРґСЃС‚СЂРѕРєРё
 			
-			// потенциальный текст не расположен в обоих половинах изображения ?
+			// РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ С‚РµРєСЃС‚ РЅРµ СЂР°СЃРїРѕР»РѕР¶РµРЅ РІ РѕР±РѕРёС… РїРѕР»РѕРІРёРЅР°С… РёР·РѕР±СЂР°Р¶РµРЅРёСЏ ?
 			if ((lb[0]>=w_2)||(le[ln-1]<=w_2))
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2300,7 +2321,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 			offset = le[ln-1]+lb[0]-w;			
 			if (offset<0) offset = -offset;
 			
-			// потенциальный текст слишком сильно сдвинут от центра изображения ?
+			// РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ С‚РµРєСЃС‚ СЃР»РёС€РєРѕРј СЃРёР»СЊРЅРѕ СЃРґРІРёРЅСѓС‚ РѕС‚ С†РµРЅС‚СЂР° РёР·РѕР±СЂР°Р¶РµРЅРёСЏ ?
 			if (offset>dw2)
 			{
 				l = ln-1;
@@ -2374,7 +2395,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				ln = l+1;
 			}
 
-			// текст состоит всего из 2-х подстрок растояние между которыми больше их размеров ?
+			// С‚РµРєСЃС‚ СЃРѕСЃС‚РѕРёС‚ РІСЃРµРіРѕ РёР· 2-С… РїРѕРґСЃС‚СЂРѕРє СЂР°СЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ РєРѕС‚РѕСЂС‹РјРё Р±РѕР»СЊС€Рµ РёС… СЂР°Р·РјРµСЂРѕРІ ?
 			if (ln == 2)
 			{
 				val1 = le[0]-lb[0]+1;
@@ -2385,7 +2406,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				
 				if (val2 > val1)
 				{
-					//удаляем эти под строки
+					//СѓРґР°Р»СЏРµРј СЌС‚Рё РїРѕРґ СЃС‚СЂРѕРєРё
 					val = (le[1]-lb[0]+1)*sizeof(int);
 					for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 					{
@@ -2406,7 +2427,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 				if ((double)S/(double)SS < mpd)
 				{					
-					//определяем подстроку наиболее удаленую от центра
+					//РѕРїСЂРµРґРµР»СЏРµРј РїРѕРґСЃС‚СЂРѕРєСѓ РЅР°РёР±РѕР»РµРµ СѓРґР°Р»РµРЅСѓСЋ РѕС‚ С†РµРЅС‚СЂР°
 					val1 = lb[ln-1]+le[ln-1]-w;
 					val2 = lb[0]+le[0]-w;
 					if (val1<0) val1 = -val1;
@@ -2415,7 +2436,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 					if (val1>val2) ll = ln-1;
 					else ll = 0;
 					
-					//удаляем наиболее удаленую подстроку
+					//СѓРґР°Р»СЏРµРј РЅР°РёР±РѕР»РµРµ СѓРґР°Р»РµРЅСѓСЋ РїРѕРґСЃС‚СЂРѕРєСѓ
 					val = (le[ll]-lb[ll]+1)*sizeof(int);
 					for(y=0, i=ia+lb[ll]; y<segh; y++, i+=w)
 					{
@@ -2441,10 +2462,10 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 			offset = le[ln-1]+lb[0]-w;			
 			if (offset<0) offset = -offset;
 			
-			// потенциальный текст слишком сильно сдвинут от центра изображения ?
+			// РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ С‚РµРєСЃС‚ СЃР»РёС€РєРѕРј СЃРёР»СЊРЅРѕ СЃРґРІРёРЅСѓС‚ РѕС‚ С†РµРЅС‚СЂР° РёР·РѕР±СЂР°Р¶РµРЅРёСЏ ?
 			if (offset>dw2)
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2454,10 +2475,10 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				continue;
 			}
 
-			// потенциальный текст не расположен в обоих половинах изображения ?
+			// РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ С‚РµРєСЃС‚ РЅРµ СЂР°СЃРїРѕР»РѕР¶РµРЅ РІ РѕР±РѕРёС… РїРѕР»РѕРІРёРЅР°С… РёР·РѕР±СЂР°Р¶РµРЅРёСЏ ?
 			if ((lb[0]>=w_2)||(le[ln-1]<=w_2))
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2480,7 +2501,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 			if ((double)offset/(double)val > tcpo)
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2510,7 +2531,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 				if ( ((double)S1/(double)SS < mpved) && ((double)S2/(double)SS < mpned) )
 				{					
-					//определяем подстроку наиболее удаленую от центра
+					//РѕРїСЂРµРґРµР»СЏРµРј РїРѕРґСЃС‚СЂРѕРєСѓ РЅР°РёР±РѕР»РµРµ СѓРґР°Р»РµРЅСѓСЋ РѕС‚ С†РµРЅС‚СЂР°
 					val1 = lb[ln-1]+le[ln-1]-w;
 					val2 = lb[0]+le[0]-w;
 					if (val1<0) val1 = -val1;
@@ -2519,7 +2540,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 					if (val1>val2) ll = ln-1;
 					else ll = 0;
 					
-					//удаляем наиболее удаленую подстроку
+					//СѓРґР°Р»СЏРµРј РЅР°РёР±РѕР»РµРµ СѓРґР°Р»РµРЅСѓСЋ РїРѕРґСЃС‚СЂРѕРєСѓ
 					val = (le[ll]-lb[ll]+1)*sizeof(int);
 					for(y=0, i=ia+lb[ll]; y<segh; y++, i+=w)
 					{
@@ -2545,10 +2566,10 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 			offset = le[ln-1]+lb[0]-w;			
 			if (offset<0) offset = -offset;
 			
-			// потенциальный текст слишком сильно сдвинут от центра изображения ?
+			// РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ С‚РµРєСЃС‚ СЃР»РёС€РєРѕРј СЃРёР»СЊРЅРѕ СЃРґРІРёРЅСѓС‚ РѕС‚ С†РµРЅС‚СЂР° РёР·РѕР±СЂР°Р¶РµРЅРёСЏ ?
 			if (offset>dw2)
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2558,10 +2579,10 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				continue;
 			}
 
-			// потенциальный текст не расположен в обоих половинах изображения ?
+			// РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ С‚РµРєСЃС‚ РЅРµ СЂР°СЃРїРѕР»РѕР¶РµРЅ РІ РѕР±РѕРёС… РїРѕР»РѕРІРёРЅР°С… РёР·РѕР±СЂР°Р¶РµРЅРёСЏ ?
 			if ((lb[0]>=w_2)||(le[ln-1]<=w_2))
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2584,7 +2605,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 			if ((double)offset/(double)val > tcpo)
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2594,8 +2615,8 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				continue;
 			}
 
-			// определяем число течек в строке толщиной segh
-			// а также их плотность
+			// РѕРїСЂРµРґРµР»СЏРµРј С‡РёСЃР»Рѕ С‚РµС‡РµРє РІ СЃС‚СЂРѕРєРµ С‚РѕР»С‰РёРЅРѕР№ segh
+			// Р° С‚Р°РєР¶Рµ РёС… РїР»РѕС‚РЅРѕСЃС‚СЊ
 			ib = ia;
 			
 			S = 0;
@@ -2619,7 +2640,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 			if ((nVE < mpn) || ((double)nVE/(double)S < mpved))
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2631,7 +2652,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 			if ((nNE < mpn) || ((double)nNE/(double)S < mpned))
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -2641,7 +2662,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				continue;
 			}
 
-			// цветовая фильтрация		
+			// С†РІРµС‚РѕРІР°СЏ С„РёР»СЊС‚СЂР°С†РёСЏ		
 
 			/*val = msegc*segw - (le[ln-1]-lb[0]+1);
 
@@ -2723,7 +2744,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 			if (ngs < msegc)
 			{
-				//удаляем оставшиеся подстроки
+				//СѓРґР°Р»СЏРµРј РѕСЃС‚Р°РІС€РёРµСЃСЏ РїРѕРґСЃС‚СЂРѕРєРё
 				val = (le[ln-1]-lb[0]+1)*sizeof(int);
 				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
 				{
@@ -3980,11 +4001,15 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 	if (g_show_results == 1) SaveGreyscaleImage(ImF, "\\TestImages\\FindTextLines_01_F.jpeg", W, H);
 	if (g_show_results == 1) SaveGreyscaleImage(ImNF, "\\TestImages\\FindTextLines_02_NF.jpeg", W, H);
 
-	N = 0;
-	LLB[0] = -1;
-	LLE[0] = -1;
-	LL[0] = W-1;
-	LR[0] = 0;
+	// Getting info about text lines position in ImF
+	// -----------------------------------------------------
+	// LW[y] contain number of text pixels in 'y' of ImF image
+	N = 0; // number of lines
+	LLB[0] = -1; // line 'i' begin by 'y'
+	LLE[0] = -1; // line 'i' end by 'y'
+	LL[0] = W-1; // line 'i' begin by 'x'
+	LR[0] = 0; // line 'i' end by 'x'
+
 	for (y=0, ib=0; y<H; y++, ib+=W)
 	{
 		bln = 0;
@@ -4032,8 +4057,10 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		LW[y] = cnt;
 	}
 	if (LLE[N] == H-1) N++;
+	// -----------------------------------------------------
 
-	
+	// Removing from image 0.3 from left and 0.3 from rigt side (in the middle "0.4 of frame width" there should text present as min)
+	// -----------------------------------------------------
 	val = (int)((double)W*0.3);
 	for(y=0, ib=0; y<H; y++, ib+=W)
 	{
@@ -4047,11 +4074,13 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			ImNF[i] = 0;
 		}
 	}
+	// -----------------------------------------------------
 
-	//g_pMF->m_pImageBox->g_pViewImage(ImNF, W, H);
-	//return;
+	if (g_show_results == 1) SaveGreyscaleImage(ImNF, "\\TestImages\\FindTextLines_02_NF_2.jpeg", W, H);
 
 	CreateIndexedImage(ImNF, ImRES1, W, H, 255, val);
+
+	if (g_show_results == 1) SaveGreyscaleImage(ImRES1, "\\TestImages\\FindTextLines_02_ImRES1.jpeg", W, H);
 
 	for (k=0; k<N; k++)
 	{
@@ -4674,7 +4703,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		j1_min_prev = j1_min;
 		j1_max_prev = j1_max;
 
-		//-----применяем первый метод отделения текста-----//
+		//-----РїСЂРёРјРµРЅСЏРµРј РїРµСЂРІС‹Р№ РјРµС‚РѕРґ РѕС‚РґРµР»РµРЅРёСЏ С‚РµРєСЃС‚Р°-----//
 		if (g_hard_sub_mining == true) while(1)
 		{
 			if ( j1_max-j1_min+1 > 60 )
@@ -5153,7 +5182,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		}
 		///////////////////////////////////////////////////////////////////////
 
-		//-----применяем второй метод отделения текста-----//
+		//-----РїСЂРёРјРµРЅСЏРµРј РІС‚РѕСЂРѕР№ РјРµС‚РѕРґ РѕС‚РґРµР»РµРЅРёСЏ С‚РµРєСЃС‚Р°-----//
 		while(1)
 		{			
 			j1_min = j1_min_prev;
@@ -6634,11 +6663,11 @@ int IsPoint(CMyClosedFigure *pFigure, int LMAXY, int LLH)
 	if (pFigure->m_h < pFigure->m_w) dval = (double)pFigure->m_h/pFigure->m_w;
 	else dval = (double)pFigure->m_w/pFigure->m_h;
 
-	if ( (pFigure->m_w >= g_minpw) && (pFigure->m_w <= g_maxpw) &&
-	     (pFigure->m_h >= g_minph) && (pFigure->m_h <= g_maxph) && 
+	if ( (pFigure->m_w >= g_minpw * g_W) && (pFigure->m_w <= g_maxpw * g_W) &&
+	     (pFigure->m_h >= g_minph * g_H) && (pFigure->m_h <= g_maxph * g_H) &&
 	     (dval >= g_minpwh) ) 
 	{
-		if ( ( (pFigure->m_maxY <= LMAXY) && 
+		if ( ( (pFigure->m_maxY <= LMAXY + 4) && 
 			   (pFigure->m_maxY >= LMAXY-g_dmaxy) ) ||
 			 ( (pFigure->m_maxY <= LMAXY-LLH) && 
 			   (pFigure->m_maxY >= LMAXY-LLH*1.25) )
@@ -6661,7 +6690,7 @@ int IsComma(CMyClosedFigure *pFigure, int LMAXY, int LLH)
 	if (pFigure->m_h < pFigure->m_w) dval = (double)pFigure->m_h/pFigure->m_w;
 	else dval = (double)pFigure->m_w/pFigure->m_h;
 
-	if ( (pFigure->m_w >= g_minpw) && (pFigure->m_w <= g_maxpw+4) &&
+	if ( (pFigure->m_w >= g_minpw * g_W) && (pFigure->m_w <= 2 * g_maxpw * g_W) &&
 	     (dval <= (2.0/3.0)) && (pFigure->m_h <= (int)((double)LLH*0.8)) )
 	{
 		if ( ( (pFigure->m_minY <= LMAXY-LLH) &&
@@ -6758,7 +6787,7 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom
 		pImageQ[j] = ImQ[ii];
 	}
 
-	//находим все точки границы
+	//РЅР°С…РѕРґРёРј РІСЃРµ С‚РѕС‡РєРё РіСЂР°РЅРёС†С‹
 	for(y=0, i=0; y<h; y++)
 	{
 		for(x=0; x<w; x++, i++)
@@ -6790,7 +6819,7 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom
 
 	do
 	{
-		//помечаем все точки символа отстоящие от границы не более чем на r
+		//РїРѕРјРµС‡Р°РµРј РІСЃРµ С‚РѕС‡РєРё СЃРёРјРІРѕР»Р° РѕС‚СЃС‚РѕСЏС‰РёРµ РѕС‚ РіСЂР°РЅРёС†С‹ РЅРµ Р±РѕР»РµРµ С‡РµРј РЅР° r
 		for(y=0, i=0; y<h; y++)
 		{
 			for(x=0; x<w; x++, i++)
@@ -6900,7 +6929,6 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 	int i, j, k, l, N, val, val1, val2, val3, val4;
 	int *maxY = NULL, *NN = NULL, *NY = NULL, *NH = NULL, NNY, min_h, min_w, prev_min_w;
 	int dmaxy = g_dmaxy;
-	int dminy = g_dminy;
 	clock_t t;
 
 	LH = 14*4;
@@ -6928,7 +6956,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 		ppFigures[i] = &(pFigures[i]);
 	}
 
-	// определяем цвет текста
+	// РѕРїСЂРµРґРµР»СЏРµРј С†РІРµС‚ С‚РµРєСЃС‚Р°
 
 	k = 0;
 	min_w = prev_min_w = min_h;
@@ -6980,7 +7008,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 	mI = val2/val;
 	mQ = val3/val;
 
-	// определяем размеры символов и расположение текста по высоте
+	// РѕРїСЂРµРґРµР»СЏРµРј СЂР°Р·РјРµСЂС‹ СЃРёРјРІРѕР»РѕРІ Рё СЂР°СЃРїРѕР»РѕР¶РµРЅРёРµ С‚РµРєСЃС‚Р° РїРѕ РІС‹СЃРѕС‚Рµ
 
 	maxY = new int[N];
 	NN = new int[N];
@@ -7009,8 +7037,8 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 		}
 	}
 
-	// отыскиваем группы символов, чья высота различается не более чем на dmaxy по всевозможным высотам
-	// (такие группы могут частично содержать одни и теже символы)
+	// РѕС‚С‹СЃРєРёРІР°РµРј РіСЂСѓРїРїС‹ СЃРёРјРІРѕР»РѕРІ, С‡СЊСЏ РІС‹СЃРѕС‚Р° СЂР°Р·Р»РёС‡Р°РµС‚СЃСЏ РЅРµ Р±РѕР»РµРµ С‡РµРј РЅР° dmaxy РїРѕ РІСЃРµРІРѕР·РјРѕР¶РЅС‹Рј РІС‹СЃРѕС‚Р°Рј
+	// (С‚Р°РєРёРµ РіСЂСѓРїРїС‹ РјРѕРіСѓС‚ С‡Р°СЃС‚РёС‡РЅРѕ СЃРѕРґРµСЂР¶Р°С‚СЊ РѕРґРЅРё Рё С‚РµР¶Рµ СЃРёРјРІРѕР»С‹)
 	j=0;
 	k=0;
 	i=0;
@@ -7183,8 +7211,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 	CMyPoint *PA = NULL, *PA1 = NULL, *PA2 = NULL;
 	clock_t t;
 	int dmaxy = g_dmaxy;
-	int dminy = g_dminy;
-	int minpw, maxpw, minph, maxph; 
+	double minpw, maxpw, minph, maxph;
 	double minpwh;
 	double dval;
 
@@ -7199,8 +7226,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 	maxph = g_maxph;
 	minpwh = g_minpwh;
 
-	// Увеличиваем область основных текстовых симоволов
-	// если её длина меньше 120 пикселов на оригинальном изображении
+	// РЈРІРµР»РёС‡РёРІР°РµРј РѕР±Р»Р°СЃС‚СЊ РѕСЃРЅРѕРІРЅС‹С… С‚РµРєСЃС‚РѕРІС‹С… СЃРёРјРѕРІРѕР»РѕРІ
+	// РµСЃР»Рё РµС‘ РґР»РёРЅР° РјРµРЅСЊС€Рµ 120 РїРёРєСЃРµР»РѕРІ РЅР° РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРј РёР·РѕР±СЂР°Р¶РµРЅРёРё
 
 	val = 120*4 - (xe-xb+1);
 	if (val > 0)
@@ -7213,8 +7240,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		if (xe > w-1) xe = w-1;
 	}
 
-	// Убиваем все горизонтальные отрезки чья длина <= 2
-	// (что означает что в оригинале их длина меньше 1-го пиксела)
+	// РЈР±РёРІР°РµРј РІСЃРµ РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅС‹Рµ РѕС‚СЂРµР·РєРё С‡СЊСЏ РґР»РёРЅР° <= 2
+	// (С‡С‚Рѕ РѕР·РЅР°С‡Р°РµС‚ С‡С‚Рѕ РІ РѕСЂРёРіРёРЅР°Р»Рµ РёС… РґР»РёРЅР° РјРµРЅСЊС€Рµ 1-РіРѕ РїРёРєСЃРµР»Р°)
 
 	for (y=0, ib=0; y<h; y++, ib+=w)
 	{
@@ -7246,8 +7273,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
-	// Убиваем все вертикальные отрезки чья длина <= 2
-	// (что означает что в оригинале их длина меньше 1-го пиксела)
+	// РЈР±РёРІР°РµРј РІСЃРµ РІРµСЂС‚РёРєР°Р»СЊРЅС‹Рµ РѕС‚СЂРµР·РєРё С‡СЊСЏ РґР»РёРЅР° <= 2
+	// (С‡С‚Рѕ РѕР·РЅР°С‡Р°РµС‚ С‡С‚Рѕ РІ РѕСЂРёРіРёРЅР°Р»Рµ РёС… РґР»РёРЅР° РјРµРЅСЊС€Рµ 1-РіРѕ РїРёРєСЃРµР»Р°)
 
 	for (x=0; x<w; x++)
 	{
@@ -7278,6 +7305,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			}
 		}
 	}
+
+	if (g_show_results == 1) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_Im.jpeg", w, h);
 
 	t = SearchClosedFigures(Im, w, h, white, pFigures, N);
 
@@ -7337,8 +7366,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
-	// отыскиваем группы символов, чья высота различается не более чем на dmaxy по всевозможным высотам
-	// (такие группы могут частично содержать одни и теже символы)
+	// РѕС‚С‹СЃРєРёРІР°РµРј РіСЂСѓРїРїС‹ СЃРёРјРІРѕР»РѕРІ, С‡СЊСЏ РІС‹СЃРѕС‚Р° СЂР°Р·Р»РёС‡Р°РµС‚СЃСЏ РЅРµ Р±РѕР»РµРµ С‡РµРј РЅР° dmaxy РїРѕ РІСЃРµРІРѕР·РјРѕР¶РЅС‹Рј РІС‹СЃРѕС‚Р°Рј
+	// (С‚Р°РєРёРµ РіСЂСѓРїРїС‹ РјРѕРіСѓС‚ С‡Р°СЃС‚РёС‡РЅРѕ СЃРѕРґРµСЂР¶Р°С‚СЊ РѕРґРЅРё Рё С‚РµР¶Рµ СЃРёРјРІРѕР»С‹)
 	j=0;
 	k=0;
 	i=0;
@@ -7439,11 +7468,11 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 		is_point = IsPoint(pFigure, LMAXY, LH);
 		is_comma = IsComma(pFigure, LMAXY, LH);
-
-		if (pFigure->m_h < pFigure->m_w) dval = (double)pFigure->m_h/pFigure->m_w;
-		else dval = (double)pFigure->m_w/pFigure->m_h;
+	
+		// add 'Р™' support for not filter
 
 		if ( ( (pFigure->m_maxY < LMAXY-LH) && 
+			   (pFigure->m_minY < LMAXY - (LH*1.5)) &&
 			   (is_point == 0) && (is_comma == 0) ) ||
 			 ( pFigure->m_maxY >= LMAXY+((3*LH)/4) ) )
 		{
@@ -7493,7 +7522,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 				if (val < 0) val = -val;
 				val = (pFigure->m_maxX-pFigure->m_minX)+(pFigure2->m_maxX-pFigure2->m_minX)+2 - val;
 
-				if (val >= 2)//наезжают друг на друга минимум на 2 пиксела
+				if (val >= 2)//РЅР°РµР·Р¶Р°СЋС‚ РґСЂСѓРі РЅР° РґСЂСѓРіР° РјРёРЅРёРјСѓРј РЅР° 2 РїРёРєСЃРµР»Р°
 				{
 					ppFgs[k] = pFigure2;
 					k++;
@@ -7564,7 +7593,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			}
 			else
 			{
-				if ( !( (pFigure->m_minY >= LM1) && (pFigure->m_maxY <= LM2) && (k==2) && (pFigure->m_w <= maxpw) ) )
+				if ( !( (pFigure->m_minY >= LM1) && (pFigure->m_maxY <= LM2) && (k==2) && (pFigure->m_w <= maxpw * g_W) ) )
 				{
 					bln = 1;
 				}
@@ -7613,9 +7642,9 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 				if (val < 0) val = -val;				
 				val = (pFigure->m_maxX-pFigure->m_minX)+(ppFgs[0]->m_maxX-ppFgs[0]->m_minX)+2 - val;
 
-				bln1 = ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY-dmaxy) &&
-						 (pFigure->m_w >= minpw) && (pFigure->m_w <= maxpw) && 
-					     (pFigure->m_h >= minph) && (pFigure->m_h <= maxph) && 
+				bln1 = ( (pFigure->m_maxY <= LMAXY + 4) && (pFigure->m_maxY >= LMAXY-dmaxy) &&
+						 (pFigure->m_w >= minpw *g_W) && (pFigure->m_w <= maxpw * g_W) &&
+					     (pFigure->m_h >= minph * g_H) && (pFigure->m_h <= maxph * g_H) &&
 				         (dval >= minpwh) );
 
 				if ( ( (pFigure->m_minY >= ppFgs[0]->m_minY) && (pFigure->m_maxY <= ppFgs[0]->m_maxY) && (bln1 == 0) ) ||
@@ -7625,8 +7654,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 					 ( (pFigure->m_h >= 0.6*LH) && !( (pFigure->m_maxY < LMAXY) && (pFigure->m_minY <= LMAXY-LH) && (pFigure->m_h <= LH*1.5) && (pFigure->m_maxX > ppFgs[0]->m_maxX) ) ) ||
 					 ( (pFigure->m_h < pFigure->m_w) && 
 					   ( (pFigure->m_maxY > LMAXY) || (pFigure->m_minY > LMAXY-0.25*LH) ) &&
-					   !( (pFigure->m_w >= minpw) && (pFigure->m_w <= maxpw) &&
-					      (pFigure->m_h >= minph) && (pFigure->m_h <= maxph) && 
+					   !( (pFigure->m_w >= minpw * g_W) && (pFigure->m_w <= maxpw * g_W) &&
+					      (pFigure->m_h >= minph * g_H) && (pFigure->m_h <= maxph * g_H) &&
 				          (dval >= minpwh) && ((double)val/ppFgs[0]->m_w < 0.25)
 						)
 					 )
@@ -7653,8 +7682,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 					   !( (pFigure->m_h < 0.8*LH) && (is_comma == 1) ) ) ||
 					 ( (pFigure->m_h < pFigure->m_w) && 
 					   ( (pFigure->m_maxY > LMAXY) || (pFigure->m_minY > LMAXY-0.2*LH) ) &&
-					   !( (pFigure->m_w >= minpw) && (pFigure->m_w <= maxpw) &&
-				          (pFigure->m_h >= minph) && (pFigure->m_h <= maxph) && 
+					   !( (pFigure->m_w >= minpw * g_W) && (pFigure->m_w <= maxpw * g_W) &&
+				          (pFigure->m_h >= minph * g_H) && (pFigure->m_h <= maxph * g_H) &&
 				          (dval >= minpwh) 
 						)
 					 )
@@ -7665,8 +7694,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			}
 		}
 
-		if ( (pFigure->m_h < minph) || ( (pFigure->m_w < minpw) && ( pFigure->m_h < 2*pFigure->m_w) ) ||
-			 ( (pFigure->m_w < minpw) && 
+		if ( (pFigure->m_h < minph * g_H) || ( (pFigure->m_w < minpw * g_W) && ( pFigure->m_h < 2*pFigure->m_w) ) ||
+			 ( (pFigure->m_w < minpw * g_W) &&
 			   ( !( (pFigure->m_maxY < LMAXY-0.2*LH) && ((pFigure->m_minY + pFigure->m_maxY)/2 >= LMINY) ) && 
 			     !( (pFigure->m_maxY > LMAXY) && (pFigure->m_minY < LMAXY) ) 
 			   ) 
@@ -7764,7 +7793,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 	min_h = (int)((double)LH*0.6);
 
-	//-----очищаем с левого края-----//
+	//-----РѕС‡РёС‰Р°РµРј СЃ Р»РµРІРѕРіРѕ РєСЂР°СЏ-----//
 	i=0;
 	while(i < N)
 	{
@@ -7800,7 +7829,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
-	//-----очищаем с правого края-----//
+	//-----РѕС‡РёС‰Р°РµРј СЃ РїСЂР°РІРѕРіРѕ РєСЂР°СЏ-----//
 	i=N-1;
 	while(i >= 0)
 	{
@@ -7812,9 +7841,9 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 		if ( (pFigure->m_minY < LMAXY - 2*LH) ||
 		     ( (pFigure->m_h < min_h) && 
-			   !( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY-dmaxy) &&
-				  (pFigure->m_w >= minpw) && (pFigure->m_w <= maxpw) &&
-				  (pFigure->m_h >= minph) && (pFigure->m_h <= maxph) && 
+			   !( (pFigure->m_maxY <= LMAXY + 4) && (pFigure->m_maxY >= LMAXY-dmaxy) &&
+				  (pFigure->m_w >= minpw * g_W) && (pFigure->m_w <= maxpw * g_W) &&
+				  (pFigure->m_h >= minph * g_H) && (pFigure->m_h <= maxph * g_H) &&
 				  (dval >= minpwh) 
 				 ) &&
 			   (is_comma == 0)
@@ -7848,7 +7877,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
-	//--определяем минимальную высоту нормальных символов--//
+	//--РѕРїСЂРµРґРµР»СЏРµРј РјРёРЅРёРјР°Р»СЊРЅСѓСЋ РІС‹СЃРѕС‚Сѓ РЅРѕСЂРјР°Р»СЊРЅС‹С… СЃРёРјРІРѕР»РѕРІ--//
 	NH = new int[N];
 
 	k = 0;
@@ -7883,7 +7912,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 	delete[] NH;
 
-	//-----финальная упорядоченная очистка-----//
+	//-----С„РёРЅР°Р»СЊРЅР°СЏ СѓРїРѕСЂСЏРґРѕС‡РµРЅРЅР°СЏ РѕС‡РёСЃС‚РєР°-----//
 	i=0;
 	while(i < N) 
 	{
@@ -7910,7 +7939,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 				if (val < 0) val = -val;
 				val = (pFigure->m_maxX-pFigure->m_minX)+(pFigure2->m_maxX-pFigure2->m_minX)+1 - val;
 
-				if (val >= 1)//наезжают друг на друга минимум на 1 пиксела
+				if (val >= 1)//РЅР°РµР·Р¶Р°СЋС‚ РґСЂСѓРі РЅР° РґСЂСѓРіР° РјРёРЅРёРјСѓРј РЅР° 1 РїРёРєСЃРµР»Р°
 				{
 					ppFgs[k] = pFigure2;
 					k++;
@@ -8007,7 +8036,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 				if ( (pFigure->m_minY <= LMAXY-LLH) &&
 					 (pFigure->m_maxY >= LMAXY) )
 				{
-					if (val >= 5)//наезжают друг на друга минимум на 2 пиксела
+					if (val >= 5)//РЅР°РµР·Р¶Р°СЋС‚ РґСЂСѓРі РЅР° РґСЂСѓРіР° РјРёРЅРёРјСѓРј РЅР° 2 РїРёРєСЃРµР»Р°
 					{
 						ppFgs[k] = pFigure2;
 						k++;
@@ -8017,13 +8046,14 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 						  (pFigure->m_maxY <= LMAXY) &&
 						  (pFigure->m_maxY >= LMAXY-dmaxy) )
 				{
-					if (val >= 3)//наезжают друг на друга минимум на 3 пиксела
+					//if (val >= 3)//РЅР°РµР·Р¶Р°СЋС‚ РґСЂСѓРі РЅР° РґСЂСѓРіР° РјРёРЅРёРјСѓРј РЅР° 3 РїРёРєСЃРµР»Р°
+					if (val*2 >= pFigure2->m_maxX - pFigure2->m_minX + 1)
 					{
 						ppFgs[k] = pFigure2;
 						k++;
 					}
 				}
-				else if (val >= 1)//наезжают друг на друга минимум на 1 пиксела
+				else if (val >= 1)//РЅР°РµР·Р¶Р°СЋС‚ РґСЂСѓРі РЅР° РґСЂСѓРіР° РјРёРЅРёРјСѓРј РЅР° 1 РїРёРєСЃРµР»Р°
 				{
 					ppFgs[k] = pFigure2;
 					k++;
@@ -8109,8 +8139,6 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 	//////////////////////////////
 	i=0;
-	k=0;
-	i=0;
 	while(i < N) 
 	{
 		pFigure = ppFigures[i];
@@ -8152,6 +8180,23 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			 (pFigure->m_maxX - w/2 <= (120*4)/2) )
 		{
 			res = 1;
+		}
+	}
+
+	// checking that on image present normal symbols which are not like big point '.'
+	if ((res == 1) && (N >= 2))
+	{
+		res = 0;
+		i = 0;
+		while (i < N)
+		{
+			pFigure = ppFigures[i];
+			if (((double)pFigure->m_Square / (double)(pFigure->m_w * pFigure->m_h)) <= 0.6)
+			{
+				res = 1;
+				break;
+			}
+			i++;
 		}
 	}
 	//////////////////////////////

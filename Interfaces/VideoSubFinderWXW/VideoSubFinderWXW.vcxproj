@@ -22,7 +22,7 @@
     <ProjectGuid>{6786A82F-9596-45FF-9A44-7C1AF39EDE35}</ProjectGuid>
     <RootNamespace>VideoSubFinderWXW</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>$(WinSDKVersion)</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -109,10 +109,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswd;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>$(DSHOW_BASE_ClASSES)\Debug\strmbasd.lib;wxmsw30ud_aui.lib;wxmsw30ud_media.lib;wxmsw30ud_core.lib;wxmsw30ud_adv.lib;wxbase30ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\DSVideo\Debug\DSVideo.lib;..\..\Components\OCVVideo\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\Debug\IPAlgorithms.lib;opencv_core310d.lib;opencv_videoio310d.lib;opencv_imgproc310d.lib;opencv_imgcodecs310d.lib;vfw32.lib;ippicvmt.lib;zlibd.lib;libwebpd.lib;libpngd.lib;libtiffd.lib;libjasperd.lib;IlmImfd.lib;libjpegd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31ud_aui.lib;wxmsw31ud_media.lib;wxmsw31ud_core.lib;wxmsw31ud_adv.lib;wxbase31ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\Debug\IPAlgorithms.lib;opencv_world401d.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;$(OPENCV_DIR)\Win32\lib\Debug;$(OPENCV_DIR)\Win32\3rdparty\lib\Debug;$(OPENCV_DIR)\sources\3rdparty\ippicv\unpack\ippicv_win\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;$(OPENCV_DIR)\builds\Win32\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)VideoSubFinderWXW.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -143,10 +143,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswd;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wxmsw31ud_aui.lib;wxmsw31ud_media.lib;wxmsw31ud_core.lib;wxmsw31ud_adv.lib;wxbase31ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Debug\IPAlgorithms.lib;opencv_world341d.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31ud_aui.lib;wxmsw31ud_media.lib;wxmsw31ud_core.lib;wxmsw31ud_adv.lib;wxbase31ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Debug\IPAlgorithms.lib;opencv_world401d.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)VideoSubFinderWXW.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -173,10 +173,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\msw;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\Release\IPAlgorithms.lib;opencv_world341.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\Release\IPAlgorithms.lib;opencv_world401.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;F:\Soft\Programming\opencv-3.4.1\build\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib;$(OPENCV_DIR)\builds\Win32\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences />
@@ -206,10 +206,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\msw;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;opencv_world341.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;opencv_world401.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>

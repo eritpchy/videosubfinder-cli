@@ -1,15 +1,40 @@
 1) Microsoft Visual Studio Professional 2017
 
-2) wxWidgets (wxMSW-3.1.1-Setup.exe)
+2) wxWidgets (wxMSW-3.1.2-Setup.exe)
 https://www.wxwidgets.org/downloads/
-Setup Env: WX_WIDGETS_PATH=C:\wxWidgets-3.1.1
+Setup Env: WX_WIDGETS_PATH=C:\wxWidgets-3.1.2
 Open "%WX_WIDGETS_PATH%\build\msw\wx_vc15.sln" in Visual Studio 2017.
-Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/x64" mode and /MT in "Release/x64" mode.
-Build all projects in "Debug/x64" mode and in "Release/x64" mode.
+Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/(x64/Win32)" mode and /MT in "Release/(x64/Win32)" mode.
+Build all projects in "(Debug/Release)/(x64/Win32)" mode.
 
-3) OpenCV (opencv-3.4.1-vc14_vc15.exe)
-Setup Env: OPENCV_DIR=C:\opencv-3.4.1-vc14_vc15
-should exist: %OPENCV_DIR%\build\include
+3) OpenCV
+https://docs.opencv.org/4.0.1/d8/dfe/classcv_1_1VideoCapture.html#a85b55cf6a4a50451367ba96b65218ba1
+https://github.com/opencv/opencv/wiki/OE-25.-Fast-VideoIO
 
-4) Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2017.
+Download from
+https://sourceforge.net/projects/opencvlibrary/files/4.0.1/
+OpenCV 4.0.1.zip + opencv-4.0.1-vc14_vc15.exe
+Extract OpenCV 4.0.1.zip to C:\OpenCV 4.0.1
+Extract opencv-4.0.1-vc14_vc15.exe to C:\OpenCV 4.0.1\opencv-opencv-d26b7dd
+
+Setup Env: OPENCV_DIR=C:\OpenCV 4.0.1\opencv-opencv-d26b7dd
+should exist: %OPENCV_DIR%\opencv\build\include
+
+https://perso.uclouvain.be/allan.barrea/opencv/cmake_config.html
+Run: C:\Program Files\CMake\bin\cmake-gui.exe
+select source directory: C:/OpenCV 4.0.1/opencv-opencv-d26b7dd
+select build directory: C:/OpenCV 4.0.1/opencv-opencv-d26b7dd/builds/Win32
+Enable the Grouped and Advanced checkboxes just below the build directory name.
+Press the “Configure” button.
+Pick Visual Studio 15 2017
+Platform Win32
+!!! * Select BUILD_opencv_world=ON *
+Press again Configure
+Press generate
+Press open project
+Build in Debug and Release mode for Platform Win32
+
+4)
+Setup Env: WinSDKVersion=10.0.17134.0
+Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2017.
 Build solution in "Debug/x64" mode and in "Release/x64" mode.

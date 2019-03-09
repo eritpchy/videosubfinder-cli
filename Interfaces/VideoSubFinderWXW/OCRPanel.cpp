@@ -1396,6 +1396,8 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 
 		m_pCCTI->SetLabel("Stop CCTXTImages");
 
+		if (g_debug == 1) m_pMF->ClearDir("TestImages");
+
 		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF);
 		m_pSearchThread->Create();
 		m_pSearchThread->Run();
