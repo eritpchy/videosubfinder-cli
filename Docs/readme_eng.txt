@@ -130,7 +130,7 @@ Sum Color Difference - used at the very beginning of the initial processing for
    in the line are "Min Segments Count" of neighboring blocks with "swings"> = "Sum
    Color Difference ", then the line is assumed to be text-containing.
 
-Sum Multiple Color Diff - used at the end of the secondary processing. How are you
+Min Sum Multiple Color Diff - used at the end of the secondary processing. How are you
    should still remember at the end of the secondary processing we possibly have in any of the
    line "Line Height" still left some blocks
    (potentially text-containing blocks). The whole area from their beginning to the end
@@ -140,6 +140,12 @@ Sum Multiple Color Diff - used at the end of the secondary processing. How are y
    Color Diff ", then such a block is considered potentially text containing.
    If as a result in this area there are "Min Segments Count" of such
    neighboring blocks, then the entire line is assumed to be text-based.
+
+OCR Settings
+
+Clear Images Logical (Remove Garbage) - performe cleaned image analyzes on present symbols and garbage.
+	In case of turned off it will not try to remove potential garbage on cleaned images,
+	sometimes this produce better results.
 
 Sub Frames Length - the minimum duration of the sub.
 

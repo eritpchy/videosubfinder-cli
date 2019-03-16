@@ -157,11 +157,11 @@ void CSettingsPanel::Init()
 	this->SetSizer(top_sizer);
 
 	m_pGB1 = new wxStaticBox( m_pP2, wxID_ANY,
-		wxT("Параметры Влияющие На Обработку Изображения"), rcGB1.GetPosition(), rcGB1.GetSize() );
+		m_pMF->m_cfg.m_ssp_label_parameters_influencing_image_processing, rcGB1.GetPosition(), rcGB1.GetSize() );
 	m_pGB1->SetFont(m_LBLFont);
 
 	m_pGB2 = new wxStaticBox( m_pP2, wxID_ANY,
-		wxT("OCR и Мультифреймовая Обработка Потока Изображений"), rcGB2.GetPosition(), rcGB2.GetSize() );
+		m_pMF->m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, rcGB2.GetPosition(), rcGB2.GetSize() );
 	m_pGB2->SetFont(m_LBLFont);
 
 	m_pGB3 = new wxStaticBox( m_pP2, wxID_ANY,
@@ -195,39 +195,39 @@ void CSettingsPanel::Init()
 	m_pOI = new CDataGrid( m_pP2, ID_OI,
                            rcOI.GetPosition(), rcOI.GetSize() );
 
-    m_pOI->AddGroup("Глобальные Настройки Обработки Изображений", m_CLGG, m_LBLFont);
-	m_pOI->AddProperty("Using fast version (partially reduced) : ", m_CL2, m_CL4, m_LBLFont, &g_fast_search);
+    m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_using_fast_version, m_CL2, m_CL4, m_LBLFont, &g_fast_search);
 	
-	m_pOI->AddGroup("Первичная Обработка Изображения", m_CLGG, m_LBLFont);
-	m_pOI->AddSubGroup("Настройки Для Операторов Собеля", m_CL1, m_LBLFont);
-	m_pOI->AddProperty("Moderate Threshold : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mthr, 0.0, 1.0);
-	m_pOI->AddProperty("Moderate VEdges Threshold : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mvthr, 0.0, 1.0);
-	m_pOI->AddProperty("Moderate NEdges Threshold : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mnthr, 0.0, 1.0);
-	m_pOI->AddProperty("Moderate HEdges Threshold : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mhthr, 0.0, 1.0);
-	m_pOI->AddSubGroup("Настройки Для Цветовой Фильтрации", m_CL1, m_LBLFont);	
-	m_pOI->AddProperty("Segment Width : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segw, 4, 50);
-	m_pOI->AddProperty("Min Segments Count : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msegc, 1, 10);
-	m_pOI->AddProperty("Min Sum Color Difference : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scd, 0, 10000);
+	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mthr, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_vedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mvthr, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_nedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mnthr, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_hedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mhthr, 0.0, 1.0);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1, m_LBLFont);	
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_segment_width, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segw, 4, 50);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_segments_count, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msegc, 1, 10);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_sum_color_difference, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scd, 0, 10000);
 
-	m_pOI->AddGroup("Вторичная Обработка Изображения", m_CLGG, m_LBLFont);
-	m_pOI->AddSubGroup("Настройки Для Линейной Фильтрации", m_CL1, m_LBLFont);
-	m_pOI->AddProperty("Line Height : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segh, 1, 50);
-	m_pOI->AddProperty("Max Between Text Distance : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
-	m_pOI->AddProperty("Max Text Centre Offset : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);
-	m_pOI->AddProperty("Max Text Centre Percent Offset : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tcpo, 0.0, 1.0);
-	m_pOI->AddSubGroup("Настройки Для Точек Цветовых Границ", m_CL1, m_LBLFont);
-	m_pOI->AddProperty("Min Points Number : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
-	m_pOI->AddProperty("Min Points Density : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);
-	m_pOI->AddProperty("Min VEdges points density : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpved, 0.0, 1.0);
-	m_pOI->AddProperty("Min NEdges points density : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpned, 0.0, 1.0);
-	m_pOI->AddSubGroup("Настройки Для Цветовой Фильтрации", m_CL1, m_LBLFont);
-	m_pOI->AddProperty("Min Sum Multiple Color Difference : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smcd, 0, 10000);
+	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_secondary_image_processing, m_CLGG, m_LBLFont);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segh, 1, 50);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_percent_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tcpo, 0.0, 1.0);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_vedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpved, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpned, 0.0, 1.0);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_sum_multiple_color_difference, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smcd, 0, 10000);
 
-	m_pOI->AddGroup("Третичная Обработка Изображения", m_CLGG, m_LBLFont);
-	m_pOI->AddSubGroup("Настройки Для Линейной Фильтрации", m_CL1, m_LBLFont);
-	m_pOI->AddProperty("Min VEdges points density (per half line) : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpvd, 0.0, 1.0);
-	m_pOI->AddProperty("Min HEdges points density (per half line) : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mphd, 0.0, 1.0);
-	m_pOI->AddProperty("Min NEdges points density (per half line) : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpnd, 0.0, 1.0);
+	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG, m_LBLFont);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_vedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpvd, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_hedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mphd, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpnd, 0.0, 1.0);
 
 	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.75);
 	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.25);
@@ -237,24 +237,25 @@ void CSettingsPanel::Init()
 	m_pOIM = new CDataGrid( m_pP2, ID_OIM,
                            rcOIM.GetPosition(), rcOIM.GetSize() );
 
-	m_pOIM->AddGroup("OCR настройки", m_CLGG, m_LBLFont);
-	m_pOIM->AddProperty("Clear RGBImages after search subtitles : ", m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
-	m_pOIM->AddProperty("Using hard algorithm for text mining : ", m_CL2, m_CL4, m_LBLFont, &g_hard_sub_mining);
-	m_pOIM->AddProperty("Using FRDImages for getting TXT areas : ", m_CL2, m_CL4, m_LBLFont, &g_use_FRD_images);
-	m_pOIM->AddProperty("Validate And Compare Cleared TXT Images : ", m_CL2, m_CL4, m_LBLFont, &g_ValidateAndCompareTXTImages);
-	m_pOIM->AddProperty("Dont Delete Unrecognized Images (First) : ", m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
-	m_pOIM->AddProperty("Dont Delete Unrecognized Images (Second) : ", m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages2);
-	m_pOIM->AddProperty("Default string for empty sub : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DefStringForEmptySub);
+	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, m_CL2, m_CL4, m_LBLFont, &g_hard_sub_mining);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_frdimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_FRD_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CL2, m_CL4, m_LBLFont, &g_ValidateAndCompareTXTImages);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages2);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DefStringForEmptySub);
 	
-	m_pOIM->AddGroup("Настройки Мультифреймовой Обработки Изображений", m_CLGG, m_LBLFont);
-	m_pOIM->AddSubGroup("Настройки Для Обнаружения Саба", m_CL1, m_LBLFont);
-	m_pOIM->AddProperty("Sub Frames Length : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DL, 1, 100);
-	m_pOIM->AddProperty("Sub Square Error : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_sse, 0.0, 1.0);
-	m_pOIM->AddSubGroup("Настройки Для Сравнения Сабов", m_CL1, m_LBLFont);
-	m_pOIM->AddProperty("VEdges Points line error : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 1.0);
-	m_pOIM->AddSubGroup("Настройки Для Проверки Саба", m_CL1, m_LBLFont);
-	m_pOIM->AddProperty("Text Procent : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
-	m_pOIM->AddProperty("Min Text Length : ", m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);
+	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_frames_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DL, 1, 100);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_square_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_sse, 0.0, 1.0);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 1.0);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_procent, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);
 
 	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.75);
 	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.25);

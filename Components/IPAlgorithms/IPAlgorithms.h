@@ -70,6 +70,8 @@ extern int		g_blnHE;
 extern int		g_debug;
 
 extern bool		g_hard_sub_mining;
+extern bool		g_clear_image_logical;
+
 extern int		g_show_results;
 
 extern int		g_dmaxy;

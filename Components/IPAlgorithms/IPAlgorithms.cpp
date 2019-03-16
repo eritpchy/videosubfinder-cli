@@ -91,6 +91,8 @@ int g_blnHE = 0;
 int g_str_size = 256*2;
 
 bool g_hard_sub_mining = false;
+bool g_clear_image_logical = true;
+
 int g_show_results = 1;
 
 bool g_wxImageHandlersInitialized = false;
@@ -5089,13 +5091,16 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			ClearImageOpt5(ImRES9, ImY, ImI, ImQ, w, h, LH, LMAXY, jY_min, jY_max, j4_min, j4_max, j5_min, j5_max, mY, dY, mI, dI, mQ, dQ, mmY, ddY1, ddY2, mmI, ddI, mmQ, ddQ, r);
 			if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_31_SE1_RES04.jpeg", w, h);
 
-			val = ClearImageLogical(ImRES9, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_32_SE1_RES05!.jpeg", w, h);
-
-			if (val == 0)
+			if (g_clear_image_logical == true)
 			{
-				memset(&ImRES9[0], 0, (w*h)*sizeof(int));
-				break;
+				val = ClearImageLogical(ImRES9, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_32_SE1_RES05!.jpeg", w, h);
+
+				if (val == 0)
+				{
+					memset(&ImRES9[0], 0, (w*h) * sizeof(int));
+					break;
+				}
 			}
 
 			memcpy(&ImRES8[0], &ImRES9[0], (w*h)*sizeof(int));
@@ -5112,13 +5117,16 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			ClearImageOpt5(ImRES8, ImY, ImI, ImQ, w, h, LH, LMAXY, jY_min, jY_max, j4_min, j4_max, j5_min, j5_max, mY, dY, mI, dI, mQ, dQ, mmY, ddY1, ddY2, mmI, ddI, mmQ, ddQ, r);
 			if (g_show_results == 1) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_33_SE1_RES06.jpeg", w, h);		
 
-			val = ClearImageLogical(ImRES8, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_34_SE1_RES07!.jpeg", w, h);
-
-			if (val == 0)
+			if (g_clear_image_logical == true)
 			{
-				memset(&ImRES9[0], 0, (w*h)*sizeof(int));
-				break;
+				val = ClearImageLogical(ImRES8, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_34_SE1_RES07!.jpeg", w, h);
+
+				if (val == 0)
+				{
+					memset(&ImRES9[0], 0, (w*h) * sizeof(int));
+					break;
+				}
 			}
 
 			for (i=0; i<w*h; i++)
@@ -5134,8 +5142,11 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			ClearImageOpt5(ImRES9, ImY, ImI, ImQ, w, h, LH, LMAXY, jY_min, jY_max, j4_min, j4_max, j5_min, j5_max, mY, dY, mI, dI, mQ, dQ, mmY, ddY1, ddY2, mmI, ddI, mmQ, ddQ, r);
 			if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_35_SE1_RES08.jpeg", w, h);		
 
-			val = ClearImageLogical(ImRES9, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_36_SE1_RES09!.jpeg", w, h);
+			if (g_clear_image_logical == true)
+			{
+				val = ClearImageLogical(ImRES9, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_36_SE1_RES09!.jpeg", w, h);
+			}
 
 			for (i=0; i<w*h; i++)
 			{
@@ -5148,13 +5159,16 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			ClearImageOpt5(ImRES9, ImY, ImI, ImQ, w, h, LH, LMAXY, jY_min, jY_max, j4_min, j4_max, j5_min, j5_max, mY, dY, mI, dI, mQ, dQ, mmY, ddY1, ddY2, mmI, ddI, mmQ, ddQ, r);
 			if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_38_SE1_RES11.jpeg", w, h);
 
-			val = ClearImageLogical(ImRES9, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_39_SE1_RES12!.jpeg", w, h);
-
-			if (val == 0)
+			if (g_clear_image_logical == true)
 			{
-				memset(&ImRES9[0], 0, (w*h)*sizeof(int));
-				break;
+				val = ClearImageLogical(ImRES9, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES9, "\\TestImages\\FindTextLines_39_SE1_RES12!.jpeg", w, h);
+
+				if (val == 0)
+				{
+					memset(&ImRES9[0], 0, (w*h) * sizeof(int));
+					break;
+				}
 			}
 
 			ClearImageOpt5(ImRES4, ImY, ImI, ImQ, w, h, LH, LMAXY, jY_min, jY_max, j4_min, j4_max, j5_min, j5_max, mY, dY, mI, dI, mQ, dQ, mmY, ddY1, ddY2, mmI, ddI, mmQ, ddQ, r);
@@ -5163,7 +5177,10 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 
 			val1 = LH;
 			val2 = LMAXY;
-			val = ClearImageLogical(ImRES4, w, h, val1, val2, xb, xe, r);
+			if (g_clear_image_logical == true)
+			{
+				val = ClearImageLogical(ImRES4, w, h, val1, val2, xb, xe, r);
+			}
 			ClearImageSpecific2(ImRES4, w, h, LMAXY, LH, r);
 			
 			if (g_show_results == 1) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_40_SE1_RES13.jpeg", w, h);
@@ -5421,23 +5438,29 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			ClearImageOpt5(ImFF, ImY, ImI, ImQ, w, h, LH, LMAXY, jY_min, jY_max, j4_min, j4_max, j5_min, j5_max, mY, dY, mI, dI, mQ, dQ, mmY, ddY1, ddY2, mmI, ddI, mmQ, ddQ, r);
 			if (g_show_results == 1) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_61_SE2_RES07.jpeg", w, h);
 			
-			val = ClearImageLogical(ImFF, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_62_SE2_RES08!.jpeg", w, h);
-
-			if (val == 0)
+			if (g_clear_image_logical == true)
 			{
-				memset(&ImFF[0], 0, (w*h)*sizeof(int));
-				break;
+				val = ClearImageLogical(ImFF, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_62_SE2_RES08!.jpeg", w, h);
+
+				if (val == 0)
+				{
+					memset(&ImFF[0], 0, (w*h) * sizeof(int));
+					break;
+				}
 			}
 
-			val = ClearImageLogical(ImRES8, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_63_SE2_RES09!.jpeg", w, h);
+			if (g_clear_image_logical == true)
+			{
+				val = ClearImageLogical(ImRES8, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_63_SE2_RES09!.jpeg", w, h);
 
-			val = ClearImageLogical(ImRES7, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES7, "\\TestImages\\FindTextLines_64_SE2_RES10!.jpeg", w, h);
+				val = ClearImageLogical(ImRES7, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES7, "\\TestImages\\FindTextLines_64_SE2_RES10!.jpeg", w, h);
 
-			val = ClearImageLogical(ImRES6, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImRES6, "\\TestImages\\FindTextLines_65_SE2_RES11!.jpeg", w, h);
+				val = ClearImageLogical(ImRES6, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImRES6, "\\TestImages\\FindTextLines_65_SE2_RES11!.jpeg", w, h);
+			}
 
 			for (i=0; i<w*h; i++)
 			{
@@ -5447,9 +5470,13 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 					ImFF[i] = r;
 				}
 			}
-			val = ClearImageLogical(ImFF, w, h, LH, LMAXY, xb, xe, r);
-			if (g_show_results == 1) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_66_SE2_RES12!.jpeg", w, h);
-			
+
+			if (g_clear_image_logical == true)
+			{
+				val = ClearImageLogical(ImFF, w, h, LH, LMAXY, xb, xe, r);
+				if (g_show_results == 1) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_66_SE2_RES12!.jpeg", w, h);
+			}
+
 			for (i=0; i<w*h; i++)
 			{
 				if (ImRES8[i] != 0)

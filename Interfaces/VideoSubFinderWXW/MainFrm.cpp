@@ -564,6 +564,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_mtpl, "min_text_len_(in_procent)");
 	ReadProperty(fin, g_sse, "sub_square_error");
 	ReadProperty(fin, g_veple, "vedges_points_line_error");
+	
+	ReadProperty(fin, g_clear_image_logical, "clear_image_logical");
 
 	ReadProperty(fin, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
 
@@ -590,6 +592,55 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
 
+	ReadProperty(fin, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
+	ReadProperty(fin, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
+	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_using_fast_version, "ssp_oi_property_using_fast_version");
+	ReadProperty(fin, m_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
+	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_vedges_threshold, "ssp_oi_property_moderate_vedges_threshold");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_nedges_threshold, "ssp_oi_property_moderate_nedges_threshold");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_hedges_threshold, "ssp_oi_property_moderate_hedges_threshold");
+	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, "ssp_oi_sub_group_settings_for_color_filtering");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_segment_width, "ssp_oi_property_segment_width");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_segments_count, "ssp_oi_property_min_segments_count");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_sum_color_difference, "ssp_oi_property_min_sum_color_difference");
+	ReadProperty(fin, m_cfg.m_ssp_oi_group_secondary_image_processing, "ssp_oi_group_secondary_image_processing");
+	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, "ssp_oi_sub_group_settings_for_linear_filtering");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_line_height, "ssp_oi_property_line_height");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_max_between_text_distance, "ssp_oi_property_max_between_text_distance");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_max_text_center_offset, "ssp_oi_property_max_text_center_offset");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_max_text_center_percent_offset, "ssp_oi_property_max_text_center_percent_offset");
+	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, "ssp_oi_sub_group_settings_for_color_border_points");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_points_number, "ssp_oi_property_min_points_number");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_points_density, "ssp_oi_property_min_points_density");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_vedges_points_density, "ssp_oi_property_min_vedges_points_density");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_nedges_points_density, "ssp_oi_property_min_nedges_points_density");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_sum_multiple_color_difference, "ssp_oi_property_min_sum_multiple_color_difference");
+	ReadProperty(fin, m_cfg.m_ssp_oi_group_tertiary_image_processing, "ssp_oi_group_tertiary_image_processing");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_vedges_points_density_per_half_line, "ssp_oi_property_min_vedges_points_density_per_half_line");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_hedges_points_density_per_half_line, "ssp_oi_property_min_hedges_points_density_per_half_line");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_nedges_points_density_per_half_line, "ssp_oi_property_min_nedges_points_density_per_half_line");
+	ReadProperty(fin, m_cfg.m_ssp_oim_group_ocr_settings, "ssp_oim_group_ocr_settings");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_frdimages_for_getting_txt_areas, "ssp_oim_property_using_frdimages_for_getting_txt_areas");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_default_string_for_empty_sub, "ssp_oim_property_default_string_for_empty_sub");
+	ReadProperty(fin, m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, "ssp_oim_group_settings_for_multiframe_image_processing");
+	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_square_error, "ssp_oim_property_sub_square_error");
+	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
+	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_text_procent, "ssp_oim_property_text_procent");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");
+
 	fin.close();
 
 	//m_pPanel->m_pSSPanel->Refresh();
@@ -599,7 +650,12 @@ void CMainFrame::SaveSettings()
 {
 	ofstream fout;
 
+	m_pPanel->m_pSSPanel->m_pOI->SaveEditControlValue();
+	m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
+
 	fout.open(m_GeneralSettingsFileName.c_str(), ios::out);
+
+	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
 
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mvthr, "moderate_threshold_for_VEdges");
@@ -628,11 +684,11 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_sse, "sub_square_error");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
 
+	WriteProperty(fout, g_clear_image_logical, "clear_image_logical");
+
 	WriteProperty(fout, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
 
 	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
-
-	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
 
 	WriteProperty(fout, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
 
@@ -1056,6 +1112,7 @@ void ReadProperty(ifstream &fin, int &val, string Name)
 {
 	char name[100], str[100];
 
+	fin.clear();
 	fin.seekg(0);
 	do
 	{
@@ -1064,7 +1121,7 @@ void ReadProperty(ifstream &fin, int &val, string Name)
 		str[0] = '\0';
 
 		fin.getline(str, 100);
-		for(int i=0; i<(100-1); i++)
+		for(int i=0; i < strlen(str); i++)
 		{
 			str[i] = str[i+1];
 		}
@@ -1080,6 +1137,7 @@ void ReadProperty(ifstream &fin, bool &val, string Name)
 {
 	char name[100], str[100];
 
+	fin.clear();
 	fin.seekg(0);
 	do
 	{
@@ -1088,7 +1146,7 @@ void ReadProperty(ifstream &fin, bool &val, string Name)
 		str[0] = '\0';
 
 		fin.getline(str, 100);
-		for(int i=0; i<(100-1); i++)
+		for(int i=0; i < strlen(str); i++)
 		{
 			str[i] = str[i+1];
 		}
@@ -1113,6 +1171,7 @@ void ReadProperty(ifstream &fin, double &val, string Name)
 {
 	char name[100], str[100];
 
+	fin.clear();
 	fin.seekg(0);
 	do
 	{
@@ -1121,7 +1180,7 @@ void ReadProperty(ifstream &fin, double &val, string Name)
 		str[0] = '\0';
 		
 		fin.getline(str, 100);
-		for(int i=0; i<(100-1); i++)
+		for(int i=0; i < strlen(str); i++)
 		{
 			str[i] = str[i+1];
 		}
@@ -1137,6 +1196,7 @@ void ReadProperty(ifstream &fin, wxString &val, string Name)
 {
 	char name[100], str[100];
 
+	fin.clear();
 	fin.seekg(0);
 	do
 	{
@@ -1145,7 +1205,7 @@ void ReadProperty(ifstream &fin, wxString &val, string Name)
 		str[0] = '\0';
 
 		fin.getline(str, 100);
-		for(int i=0; i<(100-1); i++)
+		for(int i=0; i < strlen(str); i++)
 		{
 			str[i] = str[i+1];
 		}
