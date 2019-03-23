@@ -173,15 +173,15 @@ void CSettingsPanel::Init()
 		wxT("Test"), rcTEST.GetPosition(), rcTEST.GetSize() );
 	m_pTest->SetFont(m_BTNFont);
 	
-	bmp_na = wxBitmap(wxImage("bitmaps/left_na.bmp"));
-	bmp_od = wxBitmap(wxImage("bitmaps/left_od.bmp"));
+	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_na.bmp"));
+	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_od.bmp"));
 
 	m_pLeft = new wxBitmapButton( m_pP2, ID_SP_LEFT,
 		bmp_na, rcLeft.GetPosition(), rcLeft.GetSize() );
 	m_pLeft->SetBitmapSelected(bmp_od);
 
-	bmp_na = wxBitmap(wxImage("bitmaps/right_na.bmp"));
-	bmp_od = wxBitmap(wxImage("bitmaps/right_od.bmp"));
+	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/right_na.bmp"));
+	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/right_od.bmp"));
 
 	m_pRight = new wxBitmapButton( m_pP2, ID_SP_RIGHT,
 		bmp_na, rcRight.GetPosition(), rcRight.GetSize() );

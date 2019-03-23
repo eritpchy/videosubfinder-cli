@@ -15,6 +15,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "MainFrm.h"
+#include <wx/filename.h>
+#include <wx/stdpaths.h>
 
 CMainFrame *g_pMF;
 
@@ -25,21 +27,21 @@ const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
 void  ViewImageInImageBox(custom_buffer<int> &Im, int w, int h)
 {
-	g_pMF->m_pImageBox->ViewImage(Im, w, h);	
+	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewImage(Im, w, h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void  ViewImageInVideoBox(custom_buffer<int> &Im, int w, int h)
 {
-	g_pMF->m_pVideoBox->ViewImage(Im, w, h);	
+	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pVideoBox->ViewImage(Im, w, h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void ViewRGBImage(custom_buffer<int> &Im, int w, int h)
 {
-	g_pMF->m_pImageBox->ViewRGBImage(Im, w, h);	
+	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewRGBImage(Im, w, h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -134,11 +136,10 @@ CMainFrame::CMainFrame(const wxString& title)
 	// set frame icon
 	this->SetIcon(wxIcon("vsf_ico"));
 	
-	Str = wxGetCwd();
-	Str.Replace("\\", "/"); 
-	m_Dir = Str;
-
-	g_dir = m_Dir;
+	Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
+	Str.Replace("\\", "/");
+	g_app_dir = Str.ToStdString();
+	g_work_dir = g_app_dir;
 
 	g_pV = NULL;
 
@@ -163,9 +164,11 @@ void CMainFrame::Init()
 {
 	int cnt;
 
+	m_blnNoGUI = false;
+
 	wxMenuBar *pMenuBar = new wxMenuBar;
 
-	m_GeneralSettingsFileName = m_Dir + string("/settings/general.cfg");
+	m_GeneralSettingsFileName = g_app_dir + string("/settings/general.cfg");
 
 	LoadSettings();
 
@@ -282,7 +285,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 		return;
 	}	
 
-	m_pVideo->m_Dir = m_Dir;
+	m_pVideo->m_Dir = g_work_dir;
 
 	if (m_blnReopenVideo == false)
 	{
@@ -313,7 +316,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	}
 
 	fstream fout;
-	string rpl_path = m_Dir+string("/report.log");
+	string rpl_path = g_work_dir + string("/report.log");
 	fout.open(rpl_path.c_str(), ios::out);
 	fout <<	m_pVideo->m_log;
 	fout.close();
@@ -583,7 +586,7 @@ void CMainFrame::LoadSettings()
 
 	fin.close();
 
-	fin.open((m_Dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);	
+	fin.open((g_app_dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);
 	
 	ReadProperty(fin, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
@@ -734,7 +737,7 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 	if (m_blnReopenVideo == false)
 	{
 		wxFileDialog fd(this, _T("Open Settings File"),
-						m_Dir, wxEmptyString, wxT("*.cfg"), wxFD_OPEN);
+			g_work_dir, wxEmptyString, wxT("*.cfg"), wxFD_OPEN);
 
 		if(fd.ShowModal() != wxID_OK)
 		{
@@ -750,7 +753,7 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 {
 	wxFileDialog fd(this, _T("Save Settings File"),
-						m_Dir, wxEmptyString, wxT("Settings Files (*.cfg)|*.cfg"), wxFD_SAVE);
+		g_work_dir, wxEmptyString, wxT("Settings Files (*.cfg)|*.cfg"), wxFD_SAVE);
 
 	if (m_blnReopenVideo == false)
 	{
@@ -881,7 +884,7 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 	if ( (g_IsSearching == 0) && (m_FileName != wxString("")) )
 	{
 		fstream fout;
-		string pvi_path = m_Dir+string("/previous_video.inf");
+		string pvi_path = g_work_dir + string("/previous_video.inf");
 
 		fout.open(pvi_path.c_str(), ios::out);
 
@@ -924,7 +927,7 @@ void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 {
 	char str[300];
 	fstream fin;
-	string pvi_path = m_Dir+string("/previous_video.inf");
+	string pvi_path = g_work_dir + string("/previous_video.inf");
 
 	fin.open(pvi_path.c_str(), ios::in);
 	
@@ -947,10 +950,9 @@ void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 	OnFileOpenVideo(m_type);
 }
 
-void CMainFrame::ClearDir(string DirName)
+void CMainFrame::ClearDir(wxString DirName)
 {
-	wxString dir_path = wxString(m_Dir + string("/") + DirName + string("/"));
-	wxDir dir(dir_path);
+	wxDir dir(DirName);
 	vector<wxString> FileNamesVector;
 	wxString filename;
 	bool res;
@@ -969,7 +971,7 @@ void CMainFrame::ClearDir(string DirName)
 
 	for(int i=0; i<(int)FileNamesVector.size(); i++)
 	{		
-		res = wxRemoveFile(dir_path + FileNamesVector[i]);
+		res = wxRemoveFile(dir.GetName() + "/" + FileNamesVector[i]);
 	}
 	
 	FileNamesVector.clear();

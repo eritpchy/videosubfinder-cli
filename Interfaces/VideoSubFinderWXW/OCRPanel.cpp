@@ -293,8 +293,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 	u64 bt, et, dt, mdt;
 	char str[30];
 
-	wxString dir_path = wxString(m_pMF->m_Dir + string("/RGBImages/"));
-	wxDir dir(dir_path);
+	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
 	vector<u64> BT, ET;
 	wxString filename;
@@ -319,7 +318,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		}
 	}
 
-	fout.open(string(m_pMF->m_Dir+string("/sub.srt")).c_str(), ios::out);
+	fout.open(string(g_work_dir + string("/sub.srt")).c_str(), ios::out);
 
 	Str = m_pMSD->GetValue();
 	mdt = (s64)atof(Str)*1000;
@@ -410,7 +409,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 	char str[30];
 	u64 bt, et, dt, mdt;
 
-	wxString dir_path = wxString(m_pMF->m_Dir + string("/TXTImages/"));
+	wxString dir_path = wxString(g_work_dir + string("/TXTImages/"));
 	wxDir dir(dir_path);
 	vector<wxString> FileNamesVector;
 	vector<u64> BT, ET;
@@ -485,7 +484,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		}
 	}
 
-	fout.open(string(m_pMF->m_Dir+"/sub.srt").c_str(), ios::out);
+	fout.open(string(g_work_dir + "/sub.srt").c_str(), ios::out);
 
 	for(k=0; k<(int)BT.size(); k++)
 	{
@@ -554,7 +553,7 @@ void COCRPanel::CreateSubFromTXTResults()
 	max_posY_dif = 5;
 	max_LH_dif = 0.20;
 
-	wxString dir_path = wxString(m_pMF->m_Dir + string("/TXTResults/"));
+	wxString dir_path = wxString(g_work_dir + string("/TXTResults/"));
 	wxDir dir(dir_path);
 	wxString filename;
 	bool res;
@@ -585,7 +584,7 @@ void COCRPanel::CreateSubFromTXTResults()
 
 	str[0] = '\0';
 
-	fname = g_dir + string("/text_lines.info");
+	fname = g_work_dir + string("/text_lines.info");
 	txt_info.open(fname.c_str(), ios::in);
 
 	NT = 0;
@@ -596,8 +595,8 @@ void COCRPanel::CreateSubFromTXTResults()
 	
     //--------------
 
-    image_name = g_dir+string("/RGBImages/")+string(FileNamesVector[0]).substr(0, 24) + string(".jpeg");
-    GetImageSize(image_name, g_W, g_H);    
+    image_name = g_work_dir + "/RGBImages/" + string(FileNamesVector[0]).substr(0, 24) + string(".jpeg");
+    GetImageSize(image_name, g_W, g_H);
 
     //--------------
     
@@ -630,7 +629,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			   (FileNamesVector[kb].Mid(0, 11) == FileNamesVector[k].Mid(0, 11))
 			 )
 		{
-			Name = m_pMF->m_Dir+"/TXTResults/"+FileNamesVector[k];
+			Name = g_work_dir + "/TXTResults/"+FileNamesVector[k];
 
 			FILE *fin = fopen(Name, "r");
 			
@@ -776,7 +775,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		}
 	}
 
-	fout.open(string(m_pMF->m_Dir+"/sub.srt").c_str(), ios::out);
+	fout.open(string(g_work_dir + "/sub.srt").c_str(), ios::out);
 
 	for(k=0; k<(int)TXTVector.size(); k++)
 	{
@@ -1259,7 +1258,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		i++;
 	}
 
-	fout.open(string(m_pMF->m_Dir+"/sub.ass").c_str(), ios::out);
+	fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);
 
 	fout << "Title: Default Aegisub file\n";
 	fout << "ScriptType: v4.00+\n";
@@ -1382,7 +1381,7 @@ void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	g_show_results = 1;
 
-	if (g_debug == 0) m_pMF->ClearDir("TestImages");
+	if (g_debug == 0) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
 	FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, w, h);
 }
@@ -1394,14 +1393,14 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 		g_IsCreateClearedTextImages = 1;
 		g_RunCreateClearedTextImages = 1;
 
-		m_pCCTI->SetLabel("Stop CCTXTImages");
+		if (!(m_pMF->m_blnNoGUI)) m_pCCTI->SetLabel("Stop CCTXTImages");
 
-		if (g_debug == 1) m_pMF->ClearDir("TestImages");
+		if (g_debug == 1) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF);
+		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
 		m_pSearchThread->Create();
 		m_pSearchThread->Run();
-		m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+		if (!(m_pMF->m_blnNoGUI)) m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 	}
 	else
 	{
@@ -1410,8 +1409,8 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 	}
 }
 
-ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF)
-        : wxThread()
+ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind)
+        : wxThread(kind)
 {
     m_pMF = pMF;
 }
@@ -1438,17 +1437,16 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	int res;	
 
-	m_pMF->ClearDir("TXTImages");
-	m_pMF->ClearDir("TXTResults");
+	m_pMF->ClearDir(g_work_dir + "/TXTImages");
+	m_pMF->ClearDir(g_work_dir + "/TXTResults");
 
 	// очищаем файл text_lines.info
-	fname = g_dir + string("/text_lines.info");
+	fname = g_work_dir + string("/text_lines.info");
 	fout.open(fname.c_str(), ios::out);
 	fout << "";
 	fout.close();
 
-	wxString dir_path = wxString(m_pMF->m_Dir + string("/RGBImages/"));
-	wxDir dir(dir_path);
+	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
 	vector<string> SavedFiles, prevSavedFiles;
 	vector<u64> BT, ET;
@@ -1487,8 +1485,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	{
 		if (g_RunCreateClearedTextImages == 0) break;
 
-		Str = m_pMF->m_Dir+"/RGBImages/"+FileNamesVector[k];
-		
+		Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
         GetImageSize(string(Str), w, h);
         
         if ( (g_W != w) || (g_H != h) )
@@ -1515,7 +1512,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		{
 			Str = FileNamesVector[k];
 			Str = Str.Mid(0, Str.length()-5);
-			Str = m_pMF->m_Dir+"/FRDImages/"+Str+"!.jpeg";
+			Str = g_work_dir + "/FRDImages/"+Str+"!.jpeg";
 			LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
 			//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
 		}
@@ -1527,7 +1524,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 		val = k+1;
 		sprintf(str, "%.4d", val);
-		m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
+		if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
 
 		res = FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, w, h);
 
@@ -1640,9 +1637,11 @@ void *ThreadCreateClearedTextImages::Entry()
 	//if (ImRES1 != NULL) delete[] ImRES1;
 	//if (ImRES2 != NULL) delete[] ImRES2;
 
-	m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000");
-
-	m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
+	if (!(m_pMF->m_blnNoGUI))
+	{
+		m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000");
+		m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
+	}
 
 	g_IsCreateClearedTextImages = 0;
 	

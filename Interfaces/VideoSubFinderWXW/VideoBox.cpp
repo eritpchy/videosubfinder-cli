@@ -235,13 +235,13 @@ void CVideoBox::Init()
 	m_pVBar->SetMargins(4, 4);
 	m_CLVBar = m_pVBar->GetBackgroundColour();
 
-	LoadToolBarImage(bmp, "bitmaps/tb_run.bmp", m_CLVBar);
+	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_run.bmp", m_CLVBar);
 	m_pVBar->AddTool(ID_TB_RUN, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
 
-	LoadToolBarImage(bmp, "bitmaps/tb_pause.bmp", m_CLVBar);
+	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_pause.bmp", m_CLVBar);
 	m_pVBar->AddTool(ID_TB_PAUSE, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
 	
-	LoadToolBarImage(bmp, "bitmaps/tb_stop.bmp", m_CLVBar);
+	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_stop.bmp", m_CLVBar);
 	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);	
 
 	m_plblVB = new CTextBox( this, ID_LBL_VB, wxT("Video Box") );

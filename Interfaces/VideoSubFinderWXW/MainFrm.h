@@ -115,9 +115,9 @@ public:
 	~CMainFrame();
 
 public:
-	string		m_Dir;
-
 	bool		m_WasInited;
+	
+	bool		m_blnNoGUI;
 
 	wxSizer		*m_pSizer;
 
@@ -170,7 +170,7 @@ public:
 	void LoadSettings();
 	void SaveSettings();
 	void OnFileOpenVideo(int type);
-	void ClearDir(string DirName);
+	void ClearDir(wxString DirName);
 
 public:
 	void OnSize(wxSizeEvent& event);

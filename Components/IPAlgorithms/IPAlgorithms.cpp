@@ -37,7 +37,8 @@ int g_xmax;
 int g_ymin;
 int g_ymax;
 
-string  g_dir;
+string  g_work_dir;
+string  g_app_dir;
 
 double	g_mthr = 0.4;
 double	g_mvthr = 0.3;
@@ -6771,7 +6772,7 @@ void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, i
 	PropString += string(" YIQ ");
     PropString += string(str);		
 	
-	fname = g_dir + string("\\text_lines.info");
+	fname = g_work_dir + string("\\text_lines.info");
 	fout.open(fname.c_str(), ios::out | ios::app);
 
 	fout << ImageName << " = " << PropString << '\n';
@@ -8852,7 +8853,7 @@ void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h)
 	compression_params.push_back(100);
 
 	try {
-		cv::imwrite(g_dir + name, im, compression_params);
+		cv::imwrite(g_work_dir + name, im, compression_params);
 	}
 	catch (runtime_error& ex) {
 		char msg[500];
@@ -8897,7 +8898,7 @@ void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int q
 	compression_params.push_back(100);
 
 	try {
-		cv::imwrite(g_dir + name, im, compression_params);
+		cv::imwrite(g_work_dir + name, im, compression_params);
 	}
 	catch (runtime_error& ex) {
 		char msg[500];

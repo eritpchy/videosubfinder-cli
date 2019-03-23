@@ -179,16 +179,16 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 
 void CSearchPanel::OnBnClickedClear(wxCommandEvent& event)
 {
-	m_pMF->ClearDir("RGBImages");
-	m_pMF->ClearDir("FRDImages");
-	m_pMF->ClearDir("TSTImages");
-	m_pMF->ClearDir("TXTImages");
-	m_pMF->ClearDir("TestImages");
-	m_pMF->ClearDir("TXTResults");	
+	m_pMF->ClearDir(g_work_dir + "/RGBImages");
+	m_pMF->ClearDir(g_work_dir + "/FRDImages");
+	m_pMF->ClearDir(g_work_dir + "/TSTImages");
+	m_pMF->ClearDir(g_work_dir + "/TXTImages");
+	m_pMF->ClearDir(g_work_dir + "/TestImages");
+	m_pMF->ClearDir(g_work_dir + "/TXTResults");
 }
 
-ThreadSearchSubtitles::ThreadSearchSubtitles(CMainFrame *pMF)
-        : wxThread()
+ThreadSearchSubtitles::ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind)
+        : wxThread(kind)
 {
     m_pMF = pMF;
 }
@@ -235,27 +235,30 @@ void *ThreadSearchSubtitles::Entry()
 		return 0;
 	}
 
-	m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
-
-	if (m_pMF->m_pVideoBox->m_pImage != NULL)
+	if (!(m_pMF->m_blnNoGUI))
 	{
-		delete m_pMF->m_pVideoBox->m_pImage;
-		m_pMF->m_pVideoBox->m_pImage = NULL;
-	}
+		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
 
-	m_pMF->m_pPanel->m_pSSPanel->Enable();
-	m_pMF->m_pPanel->m_pOCRPanel->Enable();
-	
-	wxCommandEvent  menu_event(wxEVT_COMMAND_MENU_SELECTED, ID_FILE_REOPENVIDEO);
-	handler = m_pMF->GetEventHandler(); 
-	wxPostEvent(handler, menu_event);
+		if (m_pMF->m_pVideoBox->m_pImage != NULL)
+		{
+			delete m_pMF->m_pVideoBox->m_pImage;
+			m_pMF->m_pVideoBox->m_pImage = NULL;
+		}
 
-	if ( (g_RunSubSearch == 1) && (g_CLEAN_RGB_IMAGES == true) )
-	{
-		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
-		handler = m_pMF->m_pPanel->m_pOCRPanel->GetEventHandler(); 
-		wxPostEvent(handler, bn_event);
-		//m_pMF->m_pPanel->m_pOCRPanel->OnBnClickedCreateClearedTextImages(bn_event);
+		m_pMF->m_pPanel->m_pSSPanel->Enable();
+		m_pMF->m_pPanel->m_pOCRPanel->Enable();
+
+		wxCommandEvent  menu_event(wxEVT_COMMAND_MENU_SELECTED, ID_FILE_REOPENVIDEO);
+		handler = m_pMF->GetEventHandler();
+		wxPostEvent(handler, menu_event);
+
+		if ((g_RunSubSearch == 1) && (g_CLEAN_RGB_IMAGES == true))
+		{
+			wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
+			handler = m_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
+			wxPostEvent(handler, bn_event);
+			//m_pMF->m_pPanel->m_pOCRPanel->OnBnClickedCreateClearedTextImages(bn_event);
+		}
 	}
 
 	g_IsSearching = 0;

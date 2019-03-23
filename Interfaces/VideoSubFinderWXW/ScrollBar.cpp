@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "ScrollBar.h"
+#include "IPAlgorithms.h"
 
 BEGIN_EVENT_TABLE(CScrollBar, wxPanel)
 	EVT_PAINT(CScrollBar::OnPaint)
@@ -33,11 +34,11 @@ CScrollBar::CScrollBar( wxWindow *parent,
 {
 	m_pParent = parent;
 	
-	m_SBLA = wxImage("bitmaps/sb_la.bmp");
-	m_SBRA = wxImage("bitmaps/sb_ra.bmp");
-	m_SBLC = wxImage("bitmaps/sb_lc.bmp");
-	m_SBRC = wxImage("bitmaps/sb_rc.bmp");
-	m_SBT = wxImage("bitmaps/sb_t.bmp");
+	m_SBLA = wxImage(g_app_dir + "/bitmaps/sb_la.bmp");
+	m_SBRA = wxImage(g_app_dir + "/bitmaps/sb_ra.bmp");
+	m_SBLC = wxImage(g_app_dir + "/bitmaps/sb_lc.bmp");
+	m_SBRC = wxImage(g_app_dir + "/bitmaps/sb_rc.bmp");
+	m_SBT = wxImage(g_app_dir + "/bitmaps/sb_t.bmp");
 
 	m_rcSBT.x = -1;
 	m_rcSBT.y = -1;

@@ -121,7 +121,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		}
 
 		m_pVideoWindow = pVideoWindow;
-		m_show_video = true;		
+		m_pVideoWindow ? m_show_video = true : m_show_video = false;
 
 		m_VC >> m_cur_frame;
 		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);

@@ -116,7 +116,7 @@ public:
 class ThreadCreateClearedTextImages : public wxThread
 {
 public:
-    ThreadCreateClearedTextImages(CMainFrame *pMF);
+    ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind = wxTHREAD_DETACHED);
 
     virtual void *Entry();
 

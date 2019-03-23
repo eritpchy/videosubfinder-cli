@@ -38,7 +38,8 @@ extern int		g_xmax;
 extern int		g_ymin;
 extern int		g_ymax;
 
-extern string   g_dir;
+extern string   g_work_dir;
+extern string   g_app_dir;
 
 extern double	g_mthr;  //moderate threshold
 extern double	g_mvthr; //moderate threshold for VEdges

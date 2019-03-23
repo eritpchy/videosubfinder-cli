@@ -30,7 +30,7 @@ extern int g_IsClose;
 class ThreadSearchSubtitles : public wxThread
 {
 public:
-    ThreadSearchSubtitles(CMainFrame *pMF);
+    ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind = wxTHREAD_DETACHED);
 
     virtual void *Entry();
 
