@@ -29,15 +29,6 @@ using namespace std;
 extern void     (*g_pViewRGBImage)(custom_buffer<int> &Im, int w, int h);
 extern void     (*g_pViewImage[2])(custom_buffer<int> &Im, int w, int h);
 
-extern int		g_W;
-extern int		g_H;
-extern int		g_w;
-extern int		g_h;
-extern int		g_xmin;
-extern int		g_xmax;
-extern int		g_ymin;
-extern int		g_ymax;
-
 extern string   g_work_dir;
 extern string   g_app_dir;
 
@@ -53,11 +44,11 @@ extern int		g_scd;   //min sum color diff
 extern int		g_smcd;  //min sum multiple color diff
 extern double	g_btd;   //between text distace
 extern double	g_tco;   //text centre offset
-extern double	g_tcpo;  //text centre percent offset
+//extern double	g_tcpo;  //text centre percent offset
 
 extern int		g_mpn;	 //min points number
 extern double	g_mpd;   //min points density
-extern double	g_mpvd;  //min VEdges points density (per full line)
+//extern double	g_mpvd;  //min VEdges points density (per full line)
 extern double	g_mphd;  //min HEdges points density (per full line)
 extern double	g_mpnd;  //min NEdges points density (per full line)
 extern double	g_mpved; //min VEdges points density
@@ -68,12 +59,9 @@ extern int		g_scale;
 extern int		g_blnVNE;
 extern int		g_blnHE;
 
-extern int		g_debug;
-
-extern bool		g_hard_sub_mining;
 extern bool		g_clear_image_logical;
 
-extern int		g_show_results;
+extern bool		g_show_results;
 
 extern int		g_dmaxy;
 
@@ -113,12 +101,12 @@ void EasyBorderClear(custom_buffer<int> &Im, int w, int h);
 void FreeImage(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h);
 void UnpackImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h);
 
-int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, int W, int H);
-int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int W, int H);
+int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, int w, int h, int W, int H);
+int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h, int W, int H);
 
-int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h);
-int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h);
-int ThirdFiltrationForGFTI(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h);
+int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H);
+int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
+int ThirdFiltrationForGFTI(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
 
 int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H);
 
@@ -126,35 +114,28 @@ void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_bu
 void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset);
 void FindMaxStr(custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &max_i, int &max_val, int N);
 
-int AnalizeAndClearImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &ImRES1, custom_buffer<int> &ImRES3, int w, int h, int j1_min, int j1_max, int r, int g, int yb, int ye, int xb, int xe, int &cnt1, int &cnt2);
+int CreateAndAnalizeImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &ImMASK, int w, int h, int j1_min, int j1_max, int r, int g, int yb, int ye, int xb, int xe, int &cnt1, int &cnt2);
+int CreateClearedImageFromBorders(custom_buffer<int> &Im, custom_buffer<int> &ImGR, int w, int h, int j1_min, int j1_max, int white);
+int CreateRGBCImage(custom_buffer<int> &ImRGBC, custom_buffer<int> &ImGR, custom_buffer<int> &ImSF, custom_buffer<int> &ImY, int w, int h, int yb, int ye, int yb_im_gr, int ye_im_gr, int xb_im_gr, int xe_im_gr, int yb_im_sf, int ye_im_sf, int xb_im_sf, int xe_im_sf, int delta);
+void ExtendImFWithDataFromImNF(custom_buffer<int> &ImF, custom_buffer<int> &ImNF, int w, int h);
 
 void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int offset);
 
 void ClearImage4x4(custom_buffer<int> &Im, int w, int h, int white);
 void ClearImageSpecific1(custom_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white);
-void ClearImageSpecific2(custom_buffer<int> &Im, int w, int h, int LMAXY, int LH, int white);
+void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 void ClearImageSpecific(custom_buffer<int> &Im, int w, int h, int white);
 int ClearImage(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
+int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int white);
 int ClearImageDetailed(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 
-int ClearImageOpt2(custom_buffer<int> &Im, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h, int white, int &LH, int &LMAXY,
-	int &jY_min, int &jY_max, int &jI_min, int &jI_max, int &jQ_min, int &jQ_max,
-	int &mY, int &dY, int &mI, int &dI, int &mQ, int &dQ,
-	int &mmY, int &ddY1, int &ddY2, int &mmI, int &ddI, int &mmQ, int &ddQ);
-
-void ClearImageOpt3(custom_buffer<int> &Im, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h, int LH, int LMAXY, int jI_min, int jI_max, int jQ_min, int jQ_max, int white);
-
-int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white);
+int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white, int W, int H);
 
 void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ);
 void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ);
 void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h, int &LH, int &LMAXY, int &XB, int &XE, int &YB, int &YE, int &mY, int &mI, int &mQ, int white);
-
-int ClearImageOpt5(custom_buffer<int> &Im, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ,
-	int w, int h, int LH, int LMAXY, int jY_min, int jY_max, int jI_min, int jI_max, int jQ_min, int jQ_max,
-	int mY, int dY, int mI, int dI, int mQ, int dQ, int mmY, int ddY1, int ddY2, int mmI, int ddI, int mmQ, int ddQ, int white);
 
 void ResizeImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h);
 void SimpleResizeImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h);
@@ -165,5 +146,5 @@ int CompareTXTImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int w1, i
 void GetImageSize(string name, int &w, int &h);
 void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h);
 void LoadRGBImage(custom_buffer<int> &Im, string name, int &w, int &h);
-void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int quality = -1, int dpi = -1);
+void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h);

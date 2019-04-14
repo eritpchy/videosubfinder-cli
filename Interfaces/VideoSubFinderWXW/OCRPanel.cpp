@@ -111,7 +111,9 @@ AssTXTStyle::AssTXTStyle()
 	m_Name = string("");
 }
 
-void AssTXTStyle::Compute()
+// W - full image include scale (if is) width
+// H - full image include scale (if is) height
+void AssTXTStyle::Compute(int W, int H)
 {
 	int i;
 	int size, val1, val2, val3, val4;
@@ -135,7 +137,7 @@ void AssTXTStyle::Compute()
 	m_mY = val1/size;
 	m_mI = val2/size;
 	m_mQ = val3/size;
-	m_LH = (val4*528*100)/(size*g_H*53);
+	m_LH = (val4*528*100)/(size*H*53);
 	m_LH += m_LH%2;
 }
 
@@ -299,7 +301,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 	wxString filename;
 	bool res;
 
-	res = dir.GetFirst(&filename, "*.jpeg");
+	res = dir.GetFirst(&filename);
     while ( res )
     {
 		FileNamesVector.push_back(filename);
@@ -416,7 +418,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 	wxString filename;
 	bool res;
 
-	res = dir.GetFirst(&filename, "*.jpeg");
+	res = dir.GetFirst(&filename);
     while ( res )
     {
 		FileNamesVector.push_back(filename);
@@ -596,7 +598,8 @@ void COCRPanel::CreateSubFromTXTResults()
     //--------------
 
     image_name = g_work_dir + "/RGBImages/" + string(FileNamesVector[0]).substr(0, 24) + string(".jpeg");
-    GetImageSize(image_name, g_W, g_H);
+	int W, H;
+    GetImageSize(image_name, W, H);
 
     //--------------
     
@@ -823,8 +826,8 @@ void COCRPanel::CreateSubFromTXTResults()
 	{
 		if (AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT)
 		{
-			val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2 - g_H/2;
-			val2 = AssTXTVector[i+1].m_LY - AssTXTVector[i+1].m_LH/2 - g_H/2;
+			val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2 - H/2;
+			val2 = AssTXTVector[i+1].m_LY - AssTXTVector[i+1].m_LH/2 - H/2;
 
 			if ( (val1 >= AssTXTVector[i].m_LH/2) &&
 				 (val2 >= AssTXTVector[i+1].m_LH/2) )
@@ -858,8 +861,8 @@ void COCRPanel::CreateSubFromTXTResults()
 				AssTXTVector[k].m_mY = 0;
 				AssTXTVector[k].m_mI = 0;
 				AssTXTVector[k].m_mQ = 0;
-				/*AssTXTVector[k].m_LXB = AssTXTVector[k].m_LXE = g_W/2;
-				AssTXTVector[k].m_LY = AssTXTVector[k].m_LYE = g_H - 20;				
+				/*AssTXTVector[k].m_LXB = AssTXTVector[k].m_LXE = W/2;
+				AssTXTVector[k].m_LY = AssTXTVector[k].m_LYE = H - 20;				
 				AssTXTVector[k].m_LYB = AssTXTVector[k].m_LYE - AssTXTVector[k].m_LH + 1;
 				*/
 			}
@@ -993,11 +996,11 @@ void COCRPanel::CreateSubFromTXTResults()
 			AssStyle.m_maxLH = AssStyleDatum.m_LH;
 
 			val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-			val2 = val1 - g_W/2;
+			val2 = val1 - W/2;
 
 			AssStyle.m_Alignment = 2;
 
-			if ((double)abs(val2)/(g_W/2) < 0.3)
+			if ((double)abs(val2)/(W/2) < 0.3)
 			{
 				AssStyle.m_MarginL = -1;
 				AssStyle.m_MarginR = -1;
@@ -1014,7 +1017,7 @@ void COCRPanel::CreateSubFromTXTResults()
 				}
 				else
 				{
-					val3 = g_W-(AssTXTVector[i].m_LXE + AssTXTVector[i].m_LH/10);
+					val3 = W-(AssTXTVector[i].m_LXE + AssTXTVector[i].m_LH/10);
 					if (val3 < 0) val3 = 0;
 
 					AssStyle.m_MarginL = val3;
@@ -1023,7 +1026,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			}
 
 			val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-			val2 = val1 - g_H/2;
+			val2 = val1 - H/2;
 
 			if (abs(val2) < AssTXTVector[i].m_LH/2)
 			{
@@ -1050,7 +1053,7 @@ void COCRPanel::CreateSubFromTXTResults()
 				}
 				else
 				{
-					val3 = g_H - AssTXTVector[i].m_LYE;
+					val3 = H - AssTXTVector[i].m_LYE;
 
 					if (val3 > 0)
 					{
@@ -1076,7 +1079,7 @@ void COCRPanel::CreateSubFromTXTResults()
 	
 	for(i=0; i<NS; i++)
 	{
-		AssTXTStyleVector[i].Compute();
+		AssTXTStyleVector[i].Compute(W, H);
 	}
 
 	for(i=0; i<NT; i++)
@@ -1094,7 +1097,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		int vo = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)/3 + 1;
 
 		val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-		val2 = val1 - g_W/2;
+		val2 = val1 - W/2;
 
 		val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
 		if (val3 < 0) val3 = 0;
@@ -1132,9 +1135,9 @@ void COCRPanel::CreateSubFromTXTResults()
 		}
 
 		val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-		val2 = val1 - g_H/2;
+		val2 = val1 - H/2;
 
-		if ((double)abs(val2)/(g_H/2) < 0.05)
+		if ((double)abs(val2)/(H/2) < 0.05)
 		{
 			if (vo != 2)
 			{
@@ -1182,7 +1185,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			}
 			else
 			{
-				val3 = (g_H - (AssTXTVector[i].m_LY + AssTXTVector[i].m_LH/10));
+				val3 = (H - (AssTXTVector[i].m_LY + AssTXTVector[i].m_LH/10));
 
 				if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
 				{
@@ -1262,8 +1265,8 @@ void COCRPanel::CreateSubFromTXTResults()
 
 	fout << "Title: Default Aegisub file\n";
 	fout << "ScriptType: v4.00+\n";
-	fout << "PlayResX: " << g_W << "\n";
-	fout << "PlayResY: " << g_H << "\n";
+	fout << "PlayResX: " << W << "\n";
+	fout << "PlayResY: " << H << "\n";
 	fout << "PlayDepth: 16\n";
 	fout << "Timer: 100,0000\n";
 	fout << "WrapStyle: 1\n";
@@ -1341,26 +1344,22 @@ void COCRPanel::CreateSubFromTXTResults()
 
 void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 {
-	int w, h, S, i, j;
+	int S, i, j;
 	vector<string> SavedFiles;
 	wxString Str;
 	s64 CurPos;
 
 	if (m_pMF->m_VIsOpen == false) return;
 	
-	SetVideoWindowSettins(m_pMF->m_pVideo, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
-
-	w = g_w;
-	h = g_h;
+	m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, 
+											m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, 
+											m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, 
+											m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 	
-	custom_buffer<int> g_ImRGB(w*h*3, 0);
-	custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h*3, 0));
+	custom_buffer<int> g_ImRGB(m_pMF->m_pVideo->m_w*m_pMF->m_pVideo->m_h*3, 0);
+	custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(m_pMF->m_pVideo->m_w*m_pMF->m_pVideo->m_h*3, 0));
 
-	S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], m_pMF->m_pVideo, w, h);
+	S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], m_pMF->m_pVideo, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h, m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height, m_pMF->m_pVideo->m_xmin, m_pMF->m_pVideo->m_xmax, m_pMF->m_pVideo->m_ymin, m_pMF->m_pVideo->m_ymax);
 
 	SavedFiles.clear();
 
@@ -1379,11 +1378,9 @@ void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	SavedFiles.push_back(string(Str));
 
-	g_show_results = 1;
+	if (g_show_results) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-	if (g_debug == 0) m_pMF->ClearDir(g_work_dir + "/TestImages");
-
-	FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, w, h);
+	FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h);
 }
 
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
@@ -1395,7 +1392,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 
 		if (!(m_pMF->m_blnNoGUI)) m_pCCTI->SetLabel("Stop CCTXTImages");
 
-		if (g_debug == 1) m_pMF->ClearDir(g_work_dir + "/TestImages");
+		if (g_show_results) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
 		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
 		m_pSearchThread->Create();
@@ -1419,14 +1416,11 @@ void *ThreadCreateClearedTextImages::Entry()
 {
 	g_IsCreateClearedTextImages = 1;
 
-	if (g_debug == 0) g_show_results = 0;
-	else g_show_results = 1;
-
 	wxString Str, dStr;
 	string fname;
 	ofstream fout;
 	char str[30];
-	int i, j, k, w, h, val;
+	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, val;
 	
 	int w1, h1, w2, h2, YB1, YB2, bln;
 	wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
@@ -1453,7 +1447,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	wxString filename;
 	bool bres;
 
-	bres = dir.GetFirst(&filename, "*.jpeg");
+	bres = dir.GetFirst(&filename);
     while ( bres )
     {
 		FileNamesVector.push_back(filename);
@@ -1476,8 +1470,8 @@ void *ThreadCreateClearedTextImages::Entry()
 	sprintf(str, "%.4d", val);
 	dStr = wxString(" : ") + wxString(str);
 
-    g_W = -1;
-    g_H = -1;
+    W = -1;
+    H = -1;
     w = 0;
     h = 0;
 
@@ -1488,15 +1482,15 @@ void *ThreadCreateClearedTextImages::Entry()
 		Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
         GetImageSize(string(Str), w, h);
         
-        if ( (g_W != w) || (g_H != h) )
+        if ( (W != w) || (H != h) )
         {
-            g_W = w;
-	        g_H = h;
+            W = w;
+	        H = h;
 
-            g_xmin = 0;
-	        g_xmax = w-1;
-	        g_ymin = 0;
-	        g_ymax = h-1;           	        
+            xmin = 0;
+	        xmax = w-1;
+	        ymin = 0;
+	        ymax = h-1;           	        
         }
 
 		custom_buffer<int> g_ImRES1(w*h * 3, 0);
@@ -1506,7 +1500,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		LoadRGBImage(g_ImRGB, string(Str), w, h);		
 		//m_pMF->m_pVideoBox->ViewImage(ImRGB, w, h);		
 
-		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], w, h);
+		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], w, h, W, H);
 
 		if (g_use_FRD_images == true) 
 		{

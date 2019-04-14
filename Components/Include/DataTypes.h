@@ -145,6 +145,29 @@ public:
 		return m_size;
 	}
 
+	inline void set_size(int size)
+	{
+		if (m_need_to_release)
+		{
+			delete[] m_pData;
+		}
+
+		custom_assert(size >= 0, "custom_buffer(int size): not: size >= 0");
+
+		if (size == 0)
+		{
+			m_pData = NULL;
+			m_size = 0;
+			m_need_to_release = false;
+		}
+		else
+		{
+			m_pData = new T[size];
+			m_size = size;
+			m_need_to_release = true;
+		}
+	}
+
 	inline T& operator[](int idx)
 	{
 		custom_assert(idx >= 0, "operator[](int idx): not: idx >= 0");

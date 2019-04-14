@@ -197,19 +197,16 @@ void *ThreadSearchSubtitles::Entry()
 {
 	wxEvtHandler *handler;
 
-	g_show_results = 0;
-
 	g_IsSearching = 1;
 
 	if (g_fast_search == true)
 	{
         if ( m_pMF->m_pVideo->SetNullRender() )
         {
-	        SetVideoWindowSettins(m_pMF->m_pVideo, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+			m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+													m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+													m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+													m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
             m_pMF->m_BegTime = FastSearchSubtitles( m_pMF->m_pVideo, m_pMF->m_BegTime, m_pMF->m_EndTime );
         }
@@ -218,11 +215,10 @@ void *ThreadSearchSubtitles::Entry()
 	{
         if ( m_pMF->m_pVideo->SetNullRender() )
         {
-	        SetVideoWindowSettins(m_pMF->m_pVideo, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+			m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+													m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+													m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+													m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
 		    m_pMF->m_BegTime = SearchSubtitles( m_pMF->m_pVideo, m_pMF->m_BegTime, m_pMF->m_EndTime );
         }

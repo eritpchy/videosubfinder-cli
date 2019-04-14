@@ -252,7 +252,7 @@ s64 OCVVideo::GetPos()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
+// ImRGB in format b:g:r:0
 void OCVVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	if (m_VC.isOpened())

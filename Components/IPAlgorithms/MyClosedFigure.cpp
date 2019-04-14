@@ -391,7 +391,7 @@ void CMyClosedFigure::AlignPoints()
 
 /////////////////////////////////////////////////////////////////////////////
 
-clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, CMyClosedFigure* &FiguresArray, int &Number)
+clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, custom_buffer<CMyClosedFigure> &FiguresArray)
 {
 	int N;
 	int *m, *key, *key2, *NN, *I, *minX, *maxX, *minY, *maxY;
@@ -558,7 +558,6 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, CMy
 		}
 	}
 
-	Number = N;
 	NN = new int[N];
 	I = new int[N];
 	minX = new int[N];
@@ -592,13 +591,13 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, CMy
 		}
 	}
 
-	FiguresArray = new CMyClosedFigure[N];
+	FiguresArray.set_size(N);
 
-	CMyClosedFigure* pfa = FiguresArray, *pf;
+	CMyClosedFigure *pf;
 	
 	for(i=0; i<N; i++)
 	{
-		pf = pfa+i;
+		pf = &(FiguresArray[i]);
 		pf->m_PointsArray = new CMyPoint[NN[i]];
 		pf->m_Square =  NN[i];
 		pf->m_minX = minX[i];
@@ -615,7 +614,7 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, CMy
 		if (Im[i]==white)
 		{
 			j = key2[key[m[i]]];
-			pfa[j].m_PointsArray[I[j]]=CMyPoint(x, y, i);
+			FiguresArray[j].m_PointsArray[I[j]]=CMyPoint(x, y, i);
 			I[j]++;
 		}
 	}

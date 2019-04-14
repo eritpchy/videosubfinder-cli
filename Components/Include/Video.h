@@ -52,7 +52,26 @@ public:
 	string		m_Dir;
 	void	*m_pVideoWindow;
 
+	// VideoWindowSettins
+	int m_xmin;
+	int m_xmax;
+	int m_ymin;
+	int m_ymax;
+	int m_w;
+	int m_h;
+
 public:
+
+	void SetVideoWindowSettins(double dx_min, double dx_max, double dy_min, double dy_max)
+	{
+		m_xmin = (int)(dx_min*(double)m_Width);
+		m_xmax = (int)(dx_max*(double)m_Width) - 1;
+		m_ymin = (int)(dy_min*(double)m_Height);
+		m_ymax = (int)(dy_max*(double)m_Height) - 1;
+
+		m_w = m_xmax - m_xmin + 1;
+		m_h = m_ymax - m_ymin + 1;
+	}
 
 	virtual bool OpenMovie(wxString csMovieName, void	*pVideoWindow, int type)
 	{

@@ -62,6 +62,7 @@ public:
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_using_fast_version;
+	wxString	m_ssp_oi_property_dump_debug_images;
 	wxString	m_ssp_oi_group_initial_image_processing;
 	wxString	m_ssp_oi_sub_group_settings_for_sobel_operators;
 	wxString	m_ssp_oi_property_moderate_threshold;

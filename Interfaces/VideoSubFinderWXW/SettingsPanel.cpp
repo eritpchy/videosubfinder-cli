@@ -197,6 +197,7 @@ void CSettingsPanel::Init()
 
     m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_using_fast_version, m_CL2, m_CL4, m_LBLFont, &g_fast_search);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CL2, m_CL4, m_LBLFont, &g_show_results);
 	
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
@@ -214,7 +215,7 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segh, 1, 50);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_percent_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tcpo, 0.0, 1.0);
+	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_percent_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tcpo, 0.0, 1.0);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);
@@ -225,7 +226,7 @@ void CSettingsPanel::Init()
 
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_vedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpvd, 0.0, 1.0);
+	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_vedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpvd, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_hedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mphd, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpnd, 0.0, 1.0);
 
@@ -240,7 +241,6 @@ void CSettingsPanel::Init()
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, m_CL2, m_CL4, m_LBLFont, &g_hard_sub_mining);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_frdimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_FRD_images);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CL2, m_CL4, m_LBLFont, &g_ValidateAndCompareTXTImages);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
@@ -265,33 +265,36 @@ void CSettingsPanel::Init()
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 {
 	CVideo *pVideo;
-	int i, k, w, h, S=0;
+	int i, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;
 	char str[30];
 	clock_t t;
 		
-	g_show_results = 1;
-
 	if (m_pMF->m_VIsOpen == false) return;
 
 	pVideo = m_pMF->m_pVideo;
 	
-	SetVideoWindowSettins(m_pMF->m_pVideo, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, 
-                                  m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+	m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+											m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+											m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+											m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-	m_w = w = g_w;
-	m_h = h = g_h;
+	m_w = w = m_pMF->m_pVideo->m_w;
+	m_h = h = m_pMF->m_pVideo->m_h;
+	W = m_pMF->m_pVideo->m_Width;
+	H = m_pMF->m_pVideo->m_Height;
+	xmin = m_pMF->m_pVideo->m_xmin;
+	xmax = m_pMF->m_pVideo->m_xmax;
+	ymin = m_pMF->m_pVideo->m_ymin;
+	ymax = m_pMF->m_pVideo->m_ymax;
 
-	custom_buffer<int> g_ImRGB(g_W*g_H, 0), g_ImRES2(g_W*g_H, 0), g_ImRES3(g_W*g_H, 0);
-	m_ImF = custom_buffer<custom_buffer<int>> (6, custom_buffer<int>(g_W*g_H, 0));	
+	custom_buffer<int> g_ImRGB(W*H, 0), g_ImRES2(W*H, 0), g_ImRES3(W*H, 0);
+	m_ImF = custom_buffer<custom_buffer<int>> (6, custom_buffer<int>(W*H, 0));	
 
 	if (g_fast_search == true)
 	{
 		t = clock();
-		m_pMF->m_pVideo->GetRGBImage(g_ImRGB, g_xmin, g_xmax, g_ymin, g_ymax);
-		S = ConvertImage(g_ImRGB, m_ImF[5], m_ImF[0], w, h);
+		m_pMF->m_pVideo->GetRGBImage(g_ImRGB, xmin, xmax, ymin, ymax);
+		S = ConvertImage(g_ImRGB, m_ImF[5], m_ImF[0], w, h, W, H);
 		t = clock()-t;
 		
 		if (S > 0)
@@ -317,7 +320,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	else
 	{
 		t = clock();
-		S = GetAndConvertImage(g_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[0], m_ImF[1], m_ImF[2], pVideo, w, h);
+		S = GetAndConvertImage(g_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[0], m_ImF[1], m_ImF[2], pVideo, w, h, W, H, xmin, xmax, ymin, ymax);
 		t = clock()-t;
 
 		if (S == 0)
@@ -326,7 +329,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			{
 				if (m_ImF[i][0] == -1)
 				{
-					memset(m_ImF[i].m_pData, 0, g_W*g_H*sizeof(int));
+					memset(m_ImF[i].m_pData, 0, W*H*sizeof(int));
 				}
 			}
 		}
@@ -337,13 +340,13 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	if (S > 0)
 	{
-		if ((w != g_W) || (h != g_H))
+		if ((w != W) || (h != H))
 		{
-			ImToNativeSize(g_ImRGB, w, h);
+			ImToNativeSize(g_ImRGB, w, h, W, H, xmin, xmax, ymin, ymax);
 			
 			for(k=0; k<m_n; k++)
 			{
-				ImToNativeSize(m_ImF[k], w, h);
+				ImToNativeSize(m_ImF[k], w, h, W, H, xmin, xmax, ymin, ymax);
 			}
 		}
 	}	
@@ -351,14 +354,14 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	//GetFastTransformedImage(Im, g_ImF[5], g_ImF[0], w, h);
 	//GetVeryFastTransformedImage(Im, g_ImF[5], g_ImF[0], w, h);
 
-	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], g_W, g_H);
+	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], W, H);
 	
-	SaveRGBImage(g_ImRGB, "/TSTImages/RGBImage.jpeg", g_W, g_H);
+	SaveRGBImage(g_ImRGB, "/TSTImages/RGBImage.jpeg", W, H);
 	
 	for (i=0; i<m_n; i++) 
 	{		
 		_itoa(i, str, 10);
-		SaveGreyscaleImage(m_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), g_W, g_H);
+		SaveGreyscaleImage(m_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + string(".jpeg"), W, H);
 	}
 }
 
@@ -371,7 +374,7 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 
 	if (m_pMF->m_VIsOpen == true)
 	{
-		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], g_W, g_H);
+		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height);
 	}
 }
 
@@ -384,7 +387,7 @@ void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 
 	if (m_pMF->m_VIsOpen == true)
 	{
-		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], g_W, g_H);
+		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height);
 	}
 }
 

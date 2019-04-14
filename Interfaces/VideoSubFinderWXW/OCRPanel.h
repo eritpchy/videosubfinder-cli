@@ -87,7 +87,7 @@ public:
 
 	vector<YIQ_LH_Struct> m_data;
 	
-	void Compute();
+	void Compute(int W, int H);
 
 	int		m_minY;
 	int		m_minI;
