@@ -542,6 +542,8 @@ void CMainFrame::LoadSettings()
 	}
 	
 	ReadProperty(fin, g_show_results, "dump_debug_images");
+	ReadProperty(fin, g_show_sf_results, "dump_debug_second_filtration_images");
+	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
 
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mvthr, "moderate_threshold_for_VEdges");
@@ -558,6 +560,7 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(fin, g_mpn, "min_points_number");
 	ReadProperty(fin, g_mpd, "min_points_density");
+	ReadProperty(fin, g_msh, "min_symbol_height");
 	//ReadProperty(fin, g_mpvd, "min_VEdges_points_density_(per_full_line)");
 	//ReadProperty(fin, g_mphd, "min_HEdges_points_density_(per_full_line)");
 	ReadProperty(fin, g_mpnd, "min_NEdges_points_density_(per_full_line)");
@@ -602,6 +605,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_using_fast_version, "ssp_oi_property_using_fast_version");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_dump_debug_images, "ssp_oi_property_dump_debug_images");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, "ssp_oi_property_dump_debug_second_filtration_images");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_clear_test_images_folder, "ssp_oi_property_clear_test_images_folder");
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
@@ -621,6 +626,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, "ssp_oi_sub_group_settings_for_color_border_points");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_points_number, "ssp_oi_property_min_points_number");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_points_density, "ssp_oi_property_min_points_density");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_symbol_height, "ssp_oi_property_min_symbol_height");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_vedges_points_density, "ssp_oi_property_min_vedges_points_density");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_nedges_points_density, "ssp_oi_property_min_nedges_points_density");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_sum_multiple_color_difference, "ssp_oi_property_min_sum_multiple_color_difference");
@@ -664,6 +670,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
 
 	WriteProperty(fout, g_show_results, "dump_debug_images");
+	WriteProperty(fout, g_show_sf_results, "dump_debug_second_filtration_images");
+	WriteProperty(fout, g_clear_test_images_folder, "clear_test_images_folder");
 
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mvthr, "moderate_threshold_for_VEdges");
@@ -680,6 +688,7 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, g_mpn, "min_points_number");
 	WriteProperty(fout, g_mpd, "min_points_density");
+	WriteProperty(fout, g_msh, "min_symbol_height");
 	//WriteProperty(fout, g_mpvd, "min_VEdges_points_density_(per_full_line)");
 	//WriteProperty(fout, g_mphd, "min_HEdges_points_density_(per_full_line)");
 	WriteProperty(fout, g_mpnd, "min_NEdges_points_density_(per_full_line)");

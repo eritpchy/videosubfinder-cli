@@ -1378,7 +1378,7 @@ void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	SavedFiles.push_back(string(Str));
 
-	if (g_show_results) m_pMF->ClearDir(g_work_dir + "/TestImages");
+	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
 	FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h);
 }
@@ -1390,9 +1390,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 		g_IsCreateClearedTextImages = 1;
 		g_RunCreateClearedTextImages = 1;
 
-		if (!(m_pMF->m_blnNoGUI)) m_pCCTI->SetLabel("Stop CCTXTImages");
-
-		if (g_show_results) m_pMF->ClearDir(g_work_dir + "/TestImages");
+		if (!(m_pMF->m_blnNoGUI)) m_pCCTI->SetLabel("Stop CCTXTImages");		
 
 		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
 		m_pSearchThread->Create();
@@ -1478,6 +1476,8 @@ void *ThreadCreateClearedTextImages::Entry()
 	for (k=0; k<(int)FileNamesVector.size(); k++)
 	{
 		if (g_RunCreateClearedTextImages == 0) break;
+
+		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
 		Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
         GetImageSize(string(Str), w, h);

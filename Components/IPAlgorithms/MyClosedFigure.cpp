@@ -49,7 +49,7 @@ void CMyClosedFigure::operator=(CMyClosedFigure& other)
 {	
 	if (m_PointsArray!=NULL) delete[] m_PointsArray;
 	m_PointsArray = new CMyPoint[other.m_Square];
-	memcpy(m_PointsArray,other.m_PointsArray,4*other.m_Square);
+	memcpy(m_PointsArray,other.m_PointsArray, sizeof(CMyPoint)*other.m_Square);
 	
 	if (other.m_pImage!=NULL)
 	{
@@ -85,8 +85,8 @@ void CMyClosedFigure::operator+=(CMyClosedFigure& other)
 	N2 = other.m_Square;
 
 	m = new CMyPoint[N1+N2];
-	memcpy(m,m_PointsArray,4*N1);
-	memcpy(m+N1,other.m_PointsArray,4*N2);
+	memcpy(m,m_PointsArray,N1*sizeof(CMyPoint));
+	memcpy(m+N1,other.m_PointsArray,N2*sizeof(CMyPoint));
 
 	delete[] m_PointsArray;
 	m_PointsArray = m;

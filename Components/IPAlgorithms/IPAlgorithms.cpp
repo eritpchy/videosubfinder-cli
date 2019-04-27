@@ -37,6 +37,9 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int white);
 int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int white);
 int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int white);
+void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h);
+void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white);
+int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int white);
 
 string  g_work_dir;
 string  g_app_dir;
@@ -57,6 +60,7 @@ double	g_tco = 0.1;
 
 int		g_mpn = 50;	 //min points number
 double	g_mpd = 0.7; //0.7
+double  g_msh = 0.01;
 //double	g_mpvd = 0.3; //0.3
 //double	g_mphd = 0.2; //0.2
 double	g_mpnd = 0.3; //0.3
@@ -95,6 +99,8 @@ int g_str_size = 256*2;
 bool g_clear_image_logical = true;
 
 bool g_show_results = false;
+bool g_show_sf_results = false;
+bool g_clear_test_images_folder = true;
 
 bool g_wxImageHandlersInitialized = false;
 
@@ -1233,6 +1239,7 @@ void AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
 	}
 }
 
+/*
 void ColorFiltration2(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int scd)
 {
 	int r0, g0, b0, r1, g1, b1;
@@ -1294,7 +1301,7 @@ void ColorFiltration2(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, 
 			}
 		}
 	}
-}
+}*/
 
 void BorderClear(custom_buffer<int> &Im, int dd, int w, int h)
 {
@@ -1761,10 +1768,13 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 
 	if (res == 1) res = ThirdFiltration(ImTF, ImVE, ImNE, ImHE, LB, LE, N, w, h, W, H);
 
-	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_08_ImTFFThirdFiltration.jpeg", w, h);
+	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_08_ImTFFThirdFiltration.jpeg", w, h);	
 
-	ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_09_ImTFExtByImFF.jpeg", w, h);
+	if (res == 1) res = ClearImageFromSmallSymbols(ImTF, w, h, 255);
+	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_09_ImTFClearedFromSmallSymbols.jpeg", w, h);
+
+	if (res == 1) ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_10_ImTFExtByImFF.jpeg", w, h);	
 
 	return res;
 }
@@ -2187,8 +2197,8 @@ int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, 
 int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H)
 {
 	custom_buffer<int> lb(w, 0), le(w, 0);
-	int segh, ln;
-	int x, y, da, ia, ib, ic, ie, i, k, l, ll, val, val1, val2, offset;
+	int segh, ln, ln_orig;
+	int x, y, da, ia, ib, ic, ie, i, k, l, ll, val, val1, val2, offset, iter;
 	int bln, res;
 	int w_2, dw, dw2;
 	//double tcpo;
@@ -2203,6 +2213,8 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 	int S = 0;
 	int SS = 0;
 	int S1, S2;
+	std::string now;
+	if (g_show_sf_results) now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
 	res = 0;
 
@@ -2223,13 +2235,18 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 	
 	da = segh*w;
 
+	if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_01_Im.jpeg", w, h);
+
+	iter = 0;
 	for(k=0; k<N; k++)
 	{
 		ia = LB[k]*w;
 		ie = (LB[k] + (int)((min(LE[k]+segh,h-1)-LB[k])/segh)*segh)*w;
 
-		for(; ia<ie;  ia+=da)
+		while (ia<ie)
 		{
+			iter++;
+
 			l = 0;
 			bln = 0;
 
@@ -2270,8 +2287,13 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				}
 			}
 			ln = l;
+			ln_orig = ln;
 
-			if (ln==0) continue;
+			if (ln == 0)
+			{
+				ia += da;
+				continue;
+			}
 
 			l=ln - 2;
 			while( (l>=0) && (l < (ln - 1)) )
@@ -2323,22 +2345,13 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				l--;
 			}
 
-			if(ln==0) continue;
+			if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_01_ImFBetweenTextDistace.jpeg", w, h);
 
-			// есть не удаленые подстроки
-			
-			//// потенциальный текст не расположен в обоих половинах изображения ?
-			//if ((lb[0]>=w_2)||(le[ln-1]<=w_2))
-			//{
-			//	//удаляем оставшиеся подстроки
-			//	val = (le[ln-1]-lb[0]+1)*sizeof(int);
-			//	for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-			//	{
-			//		memset(&Im[i], 0, val);
-			//	}
-			//	
-			//	continue;
-			//}
+			if (ln == 0)
+			{
+				ia += da;
+				continue;
+			}
 
 			offset = le[ln-1]+lb[0]-w;			
 			if (offset<0) offset = -offset;
@@ -2411,11 +2424,16 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 						memset(&Im[i], 0, val);
 					}
 
+					if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_02_1_ImFTextCentreOffset.jpeg", w, h);
+
+					ia += da;
 					continue;
 				}
 
 				ln = l+1;
 			}
+
+			if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_02_2_ImFTextCentreOffset.jpeg", w, h);
 
 			// текст состоит всего из 2-х подстрок растояние между которыми больше их размеров ?
 			if (ln == 2)
@@ -2435,6 +2453,9 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 						memset(&Im[i], 0, val);
 					}
 
+					if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_03_ImFOnly2SubStrWithBigDist.jpeg", w, h);
+					
+					ia += da;
 					continue;
 				}
 			}
@@ -2491,61 +2512,15 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 				}
 			}
 
-			if(ln==0) continue;
+			if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_04_ImFMinPointsDensity.jpeg", w, h);
 
-			offset = le[ln-1]+lb[0]-w;			
-			if (offset<0) offset = -offset;
-			
-			// потенциальный текст слишком сильно сдвинут от центра изображения ?
-			if (offset>dw2)
+			if (ln == 0)
 			{
-				//удаляем оставшиеся подстроки
-				val = (le[ln-1]-lb[0]+1)*sizeof(int);
-				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-				{
-					memset(&Im[i], 0, val);
-				}
-
+				ia += da;
 				continue;
 			}
 
-			//// потенциальный текст не расположен в обоих половинах изображения ?
-			//if ((lb[0]>=w_2)||(le[ln-1]<=w_2))
-			//{
-			//	//удаляем оставшиеся подстроки
-			//	val = (le[ln-1]-lb[0]+1)*sizeof(int);
-			//	for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-			//	{
-			//		memset(&Im[i], 0, val);
-			//	}
-			//	
-			//	continue;
-			//}
-
-			/*offset = le[ln-1]+lb[0]-w;			
-			if (offset<0)
-			{
-				val = w - 2*lb[0];
-				offset = -offset;
-			}
-			else
-			{
-				val = 2*le[ln-1] - w;
-			}*/
-
-			//if ((double)offset/(double)val > tcpo)
-			//{
-			//	//удаляем оставшиеся подстроки
-			//	val = (le[ln-1]-lb[0]+1)*sizeof(int);
-			//	for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-			//	{
-			//		memset(&Im[i], 0, val);
-			//	}
-
-			//	continue;
-			//}
-
-			bln = 0;
+			/*bln = 0;
 			while((ln > 0) && (bln == 0))
 			{
 				S1 = 0;
@@ -2563,7 +2538,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 
 				SS = (le[ln-1]-lb[0]+1)*segh;
 
-				if ( /*((double)S1/(double)SS < mpved) &&*/ ((double)S2/(double)SS < mpned) )
+				if ((double)S2/(double)SS < mpned)
 				{					
 					//определяем подстроку наиболее удаленую от центра
 					val1 = lb[ln-1]+le[ln-1]-w;
@@ -2603,201 +2578,183 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_b
 					bln = 1;
 				}
 			}
+			if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_05_ImFMinNEdgesPointsDensity.jpeg", w, h);
+			*/
 
-			if(ln==0) continue;
-
-			offset = le[ln-1]+lb[0]-w;			
-			if (offset<0) offset = -offset;
-			
-			// потенциальный текст слишком сильно сдвинут от центра изображения ?
-			if (offset>dw2)
+			if (ln == 0)
 			{
-				//удаляем оставшиеся подстроки
-				val = (le[ln-1]-lb[0]+1)*sizeof(int);
-				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-				{
-					memset(&Im[i], 0, val);
-				}
-
+				ia += da;
 				continue;
 			}
 
-			//// потенциальный текст не расположен в обоих половинах изображения ?
-			//if ((lb[0]>=w_2)||(le[ln-1]<=w_2))
-			//{
-			//	//удаляем оставшиеся подстроки
-			//	val = (le[ln-1]-lb[0]+1)*sizeof(int);
-			//	for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-			//	{
-			//		memset(&Im[i], 0, val);
-			//	}
-			//	
-			//	continue;
-			//}
-
-			/*offset = le[ln-1]+lb[0]-w;			
-			if (offset<0)
+			bln = 0;
+			while ((ln > 0) && (bln == 0))
 			{
-				val = w - 2*lb[0];
-				offset = -offset;
-			}
-			else
-			{
-				val = 2*le[ln-1] - w;
-			}*/
+				// определяем число течек в строке толщиной segh
+				// а также их плотность
+				ib = ia;
 
-			//if ((double)offset/(double)val > tcpo)
-			//{
-			//	//удаляем оставшиеся подстроки
-			//	val = (le[ln-1]-lb[0]+1)*sizeof(int);
-			//	for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
-			//	{
-			//		memset(&Im[i], 0, val);
-			//	}
+				S = 0;
+				for (ll = 0; ll < ln; ll++)  S += le[ll] - lb[ll] + 1;
+				S *= segh;
 
-			//	continue;
-			//}
-
-			// определяем число течек в строке толщиной segh
-			// а также их плотность
-			ib = ia;
-			
-			S = 0;
-			for(ll=0; ll<ln; ll++)  S += le[ll]-lb[ll]+1;
-			S *= segh;
-
-			for(y=0; y<segh; y++, ib += w)
-			{
-				for(ll=0; ll<ln; ll++)
-				{					
-					i = ib + lb[ll];
-					val = ib + le[ll];
-					
-					for(; i<=val; i++)
+				for (y = 0; y < segh; y++, ib += w)
+				{
+					for (ll = 0; ll < ln; ll++)
 					{
-						if (ImVE[i] == 255) nVE++;
-						if (ImNE[i] == 255) nNE++;
+						i = ib + lb[ll];
+						val = ib + le[ll];
+
+						for (; i <= val; i++)
+						{
+							if (ImVE[i] == 255) nVE++;
+							if (ImNE[i] == 255) nNE++;
+						}
 					}
 				}
-			}			 
 
-			/*if ((nVE < mpn) || ((double)nVE/(double)S < mpved))
-			{
-				//удаляем оставшиеся подстроки
-				val = (le[ln-1]-lb[0]+1)*sizeof(int);
-				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
+				if ((nNE < mpn) || ((double)nNE / (double)S < mpned))
 				{
-					memset(&Im[i], 0, val);
+					//определяем подстроку наиболее удаленую от центра
+					val1 = lb[ln - 1] + le[ln - 1] - w;
+					val2 = lb[0] + le[0] - w;
+					if (val1 < 0) val1 = -val1;
+					if (val2 < 0) val2 = -val2;
+
+					if (((lb[ln - 1] + le[ln - 1]) > w) ||
+						(
+						(offset <= dw2) &&
+							((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0])))
+							)
+						)
+					{
+						ll = ln - 1;
+					}
+					else if (val1 > val2) ll = ln - 1;
+					else ll = 0;
+
+					//удаляем наиболее удаленую подстроку
+					val = (le[ll] - lb[ll] + 1) * sizeof(int);
+					for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
+					{
+						memset(&Im[i], 0, val);
+					}
+
+					for (i = ll; i < ln - 1; i++)
+					{
+						lb[i] = lb[i + 1];
+						le[i] = le[i + 1];
+					}
+
+					ln--;					
 				}
-
-				continue;
-			}*/
-
-			if ((nNE < mpn) || ((double)nNE/(double)S < mpned))
-			{
-				//удаляем оставшиеся подстроки
-				val = (le[ln-1]-lb[0]+1)*sizeof(int);
-				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
+				else
 				{
-					memset(&Im[i], 0, val);
+					bln = 1;
 				}
+			}
 
+			if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_06_ImFMinNEdgesPointsDensity.jpeg", w, h);
+
+			if (ln == 0)
+			{
+				ia += da;
 				continue;
 			}
 
 			// цветовая фильтрация		
-
-			/*val = msegc*segw - (le[ln-1]-lb[0]+1);
-
-			if (val > 0)
+			if (smcd > 0)
 			{
-				sb = lb[0] - val/2;
-				if (sb < 0) sb = 0;
-				ns = msegc;
-			}
-			else
-			{
+				ns = (le[ln - 1] - lb[0] + 1) / segw;
 				sb = lb[0];
-				ns = (le[ln-1]-lb[0]+1)/segw;
-			}*/
 
-			ns = (le[ln-1]-lb[0]+1)/segw;
-			sb = lb[0];
-
-			if (ns < msegc)
-			{
-				i = le[ln-1];
-				do
+				if (ns < msegc)
 				{
-					if (i+segw < w) { ns++; i+=segw; }
-					if (sb-segw > 0) { ns++; sb-=segw; }
-				}
-				while (ns < msegc);
-			}
-
-			ngs = 0;
-
-			for(l=0, ib=ia+sb; l<ns; l++, ib+=segw)
-			{
-				bln = 1;
-				for(y=0, ic=ib; y<segh; y++, ic+=w)
-				{
-					color = (u8*)(&ImRGB[ic]);
-					r0 = color[2];
-					g0 = color[1];
-					b0 = color[0];	
-
-					mi = ic+segw;
-					dif = 0;
-					
-					for(i=ic+1; i<mi; i++)
+					i = le[ln - 1];
+					do
 					{
-						color = (u8*)(&ImRGB[i]);
-						r1 = color[2];
-						g1 = color[1];
-						b1 = color[0];	
-						
-						rdif = r1-r0;
-						if (rdif<0) rdif = -rdif;
+						if (i + segw < w) { ns++; i += segw; }
+						if (sb - segw > 0) { ns++; sb -= segw; }
+					} while (ns < msegc);
+				}
 
-						gdif = g1-g0;
-						if (gdif<0) gdif = -gdif;
+				ngs = 0;
 
-						bdif = b1-b0;
-						if (bdif<0) bdif = -bdif;
+				for (l = 0, ib = ia + sb; l < ns; l++, ib += segw)
+				{
+					bln = 1;
+					for (y = 0, ic = ib; y < segh; y++, ic += w)
+					{
+						color = (u8*)(&ImRGB[ic]);
+						r0 = color[2];
+						g0 = color[1];
+						b0 = color[0];
 
-						dif += rdif+gdif+bdif;
+						mi = ic + segw;
+						dif = 0;
 
-						r0 = r1;
-						g0 = g1;
-						b0 = b1;
+						for (i = ic + 1; i < mi; i++)
+						{
+							color = (u8*)(&ImRGB[i]);
+							r1 = color[2];
+							g1 = color[1];
+							b1 = color[0];
+
+							rdif = r1 - r0;
+							if (rdif < 0) rdif = -rdif;
+
+							gdif = g1 - g0;
+							if (gdif < 0) gdif = -gdif;
+
+							bdif = b1 - b0;
+							if (bdif < 0) bdif = -bdif;
+
+							dif += rdif + gdif + bdif;
+
+							r0 = r1;
+							g0 = g1;
+							b0 = b1;
+						}
+
+						if (dif < smcd)
+						{
+							bln = 0;
+							break;
+						}
+					}
+					if (bln == 1) ngs++;
+					else ngs = 0;
+
+					if (ngs >= msegc) break;
+				}
+
+				if (ngs < msegc)
+				{
+					//удаляем оставшиеся подстроки
+					val = (le[ln - 1] - lb[0] + 1) * sizeof(int);
+					for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
+					{
+						memset(&Im[i], 0, val);
 					}
 
-					if (dif < smcd)
-					{
-						bln = 0;
-						break;
-					}
+					if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_iter" + std::to_string(iter) + "_07_ImFMinSegmentsCount.jpeg", w, h);
+
+					ia += da;
+					continue;
 				}
-				if (bln == 1) ngs++;
-				else ngs = 0;
-
-				if (ngs >= msegc) break;
-			}
-
-			if (ngs < msegc)
-			{
-				//удаляем оставшиеся подстроки
-				val = (le[ln-1]-lb[0]+1)*sizeof(int);
-				for(y=0, i=ia+lb[0]; y<segh; y++, i+=w)
+				else
 				{
-					memset(&Im[i], 0, val);
-				}				
-				continue;
+					res = 1;
+				}
 			}
-			else
+
+			if (ln == ln_orig)
 			{
-				res = 1;
+				if (ln > 0)
+				{
+					res = 1;
+				}
+				ia += da;
 			}
 		}
 	}
@@ -2821,8 +2778,6 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buf
 	res = 0;
 
 	segh = g_segh;
-	//mpvd = g_mpvd;
-	//mphd = g_mphd;
 	mpnd = g_mpnd;
 
 	w_2 = w/2;
@@ -2867,15 +2822,7 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buf
 			N++;
 			LLB[N] = -1;
 			LLE[N] = -1;
-			/*LL[N] = 0;
-			LR[N] = 0;*/
 		}
-
-		/*if (bln == 1)
-		{
-			LL[N] += l;
-			LR[N] += r;
-		}*/
 	}
 	if (LLE[N] == h-1) N++;
 
@@ -3042,30 +2989,14 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buf
 		LR[k] = LR[k]/(LLE[k]-LLB[k]+1);
 
 		if ( ((LLE[k]-LLB[k]+1) < segh) || 
-			 (LL[k] >= w_2) // || 
-			 //(LR[k] <= w_2) 
+			 (LL[k] >= w_2)
 			)
 		{
 			memset(&Im[LLB[k]*w], 0, (LLE[k]-LLB[k]+1)*w*sizeof(int));
 			continue;
-		}
-		
-		ib = LLB[k]*w+LL[k];
-		ie = ib-LL[k]+LR[k];
-		im = LLE[k]*w+LL[k];
-		vmax = 0;
-		for (; ib<=im; ib+=w, ie+=w)
-		{
-			val = 0;
-			for (i=ib; i<=ie; i++)
-			{
-				if (ImVE[i] == 255) val++;
-			}
+		}		
 
-			if (val > vmax) vmax = val;
-		}
-
-		yb = (LLE[k] + LLB[k])/2;
+		/*yb = (LLE[k] + LLB[k])/2;
 		yb -= yb%segh;
 
 		if ((LLE[k]-LLB[k]+1) > segh)
@@ -3099,39 +3030,10 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buf
 			}
 		}
 
-		/*val1 = w_2-LL[k];
-		val2 = LR[k]-w_2;
-		if (val2 < val1) val1 = val2;
-
-		xb = w_2-val1;
-		xm = w_2+val1;*/
 		xb = LL[k];
 		xm = LR[k];
 
 		bln = 0;
-
-		/*if ((xm-xb+1 < W/5) && ((ymin + yb) > 0.7*H))
-		{
-			bln2 = 1;
-		}
-		else
-		{
-			bln2 = 0;
-		}*/
-
-		/*val = xb*sizeof(int);
-		val1 = LLB[k]*w;
-		val2 = LLE[k]-LLB[k]+1;
-		for(y=0, i=val1; y<val2; y++, i+=w)
-		{
-			memset(&Im[i], 0, val);
-		}
-		val = (w-xm)*sizeof(int);
-		val1 += xm+1;
-		for(y=0, i=val1; y<val2; y++, i+=w)
-		{
-			memset(&Im[i], 0, val);
-		}		*/
 
 		ym_temp = ym;
 
@@ -3175,8 +3077,7 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buf
 				max_phd = phd;
 			}
 
-			if ( (pnd >= mpnd)/* &&
-				 (phd >= mphd)*/ )
+			if (pnd >= mpnd)
 			{
 					bln = 1;
 					break;
@@ -3184,132 +3085,6 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buf
 		}
 
 		if (bln == 0)
-		{
-			memset(&Im[LLB[k]*w], 0, (LLE[k]-LLB[k]+1)*w*sizeof(int));
-			continue;
-		}
-
-		/*vmin = vmax;
-		ib = LLE[k]*w+xb;
-		ie = ib-xb+xm;
-		val = LLE[k]+(int)(0.04*(double)H);
-		if (val > h-1) val = h-1;
-		im = val*w+xb;
-		for (;ib<=im; ib+=w, ie+=w)
-		{
-			val = 0;
-			for (i=ib; i<=ie; i++)
-			{								
-				if (ImVE[i] == 255)	val++;
-			}	
-
-			if (val < vmin) vmin = val;
-		}
-
-		if ((double)vmin/vmax > 0.33)
-		{
-			//if (bln2 == 1)
-			//{
-			//	bln2 = 0;
-			//	val = (int)((double)(xm-xb+1)*0.20);
-			//	xb += val;
-			//	xm -= val;
-			//	ym = ym_temp;
-
-			//	goto L;
-			//}
-
-			memset(&Im[LLB[k]*w], 0, (LLE[k]-LLB[k]+1)*w*sizeof(int));
-			continue;
-		}
-
-		if ((LLE[k]-LLB[k]+1) > segh)
-		{
-			ym = yb - dy;
-			if (ym < 0) ym = 0;
-			if (k > 0)
-			{
-				if (LLE[k-1] > ym)
-				{
-					ym = LLE[k-1] + 1;
-				}
-			}
-			ym -= ym%segh;
-		}
-		else
-		{
-			ym = yb - 2*segh;
-			if (ym < 0) ym = 0;
-		}
-		
-		bln = 0;
-
-		ib = yb*w;
-		ie = ym*w;
-		da = w*segh;
-		S = (xm-xb+1)*segh;
-
-		//npNE1 = 0;
-		//npNE2 = 0;
-
-		while (ib>=ie)
-		{
-			nHE = 0;
-			nNE = 0;
-			//nVE = 0;
-
-			for (y=0; y<segh; y++, ib+=w)
-			{
-				for (x=xb; x<=xm; x++)
-				{
-					i = ib + x; 
-					
-					if (ImHE[i] == 255)
-					{
-						nHE++;
-					}
-
-					if (ImNE[i] == 255)
-					{
-						nNE++;
-					}					
-				}
-			}
-
-			ib -= 2*da;
-
-			if (((double)(nNE) / S >= mpnd) &&
-				((double)(nHE) / S >= mphd))
-			{
-				bln = 1;
-				break;
-			}
-		}
-
-		if (bln == 0)
-		{
-			memset(&Im[LLB[k]*w], 0, (LLE[k]-LLB[k]+1)*w*sizeof(int));
-			continue;
-		}
-
-		vmin = vmax;
-		ib = LLB[k]*w+xb;
-		ie = ib-xb+xm;
-		val = LLB[k]-(int)(0.04*(double)H);
-		if (val < 0) val = 0;
-		im = val*w+xb;
-		for (;ib>=im; ib-=w, ie-=w)
-		{
-			val = 0;
-			for (i=ib; i<=ie; i++)
-			{								
-				if (ImVE[i] == 255)	val++;
-			}	
-
-			if (val < vmin) vmin = val;
-		}
-
-		if ((double)vmin/vmax > 0.33)
 		{
 			memset(&Im[LLB[k]*w], 0, (LLE[k]-LLB[k]+1)*w*sizeof(int));
 			continue;
@@ -4203,8 +3978,8 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 		TL[i + 1] -= dt - (dt / 2);
 	}
 
-	TL[0] = std::max<int>(0, TL[0] - (LH / 8));
-	TR[TN - 1] = std::min<int>(w - 1, TR[TN - 1] + (LH / 8));
+	TL[0] = 0;
+	TR[TN - 1] = w - 1;
 
 	if (g_show_results)
 	{
@@ -4288,9 +4063,9 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 {
 	custom_buffer<int> LL(H, 0), LR(H, 0), LLB(H, 0), LLE(H, 0), LW(H, 0);
 	custom_buffer<int> ImRES1(W*H * 16, 0), ImRES2(W*H * 16, 0), ImRES3(W*H * 16, 0), ImRES4(W*H * 16, 0);		
-	custom_buffer<int> ImRES5(W*H * 16, 0), ImRES6(W*H * 16, 0), ImRES7(W*H * 16, 0), ImRES8(W*H * 16, 0), ImRES9(W*H * 16, 0);
-	custom_buffer<int> Im(W*H * 16, 0), ImSF(W*H * 16, 0), ImSNF(W*H * 16, 0), ImFF(W*H * 16, 0), /*ImRGBC(W*H * 16, 0),*/ ImSFIntRGBC(W*H * 16, 0);
-	custom_buffer<int> FullImY(W*H, 0), ImY(W*H * 16, 0), ImU(W*H * 16, 0), ImV(W*H * 16, 0), ImI(W*H * 16, 0)/*, ImQ(W*H * 16, 0)*/;
+	custom_buffer<int> ImRES5(W*H * 16, 0), ImRES6(W*H * 16, 0), ImRES7(W*H * 16, 0), ImRES8(W*H * 16, 0), ImRES(W*H * 16, 0);
+	custom_buffer<int> Im(W*H * 16, 0), ImSF(W*H * 16, 0), ImSNF(W*H * 16, 0), ImFF(W*H * 16, 0), ImSFIntTHRF(W*H * 16, 0), ImNSFIntTHRF(W*H * 16, 0);
+	custom_buffer<int> FullImY(W*H, 0), ImY(W*H * 16, 0), ImU(W*H * 16, 0), ImV(W*H * 16, 0), ImI(W*H * 16, 0);
 	custom_buffer<int> GRStr(g_str_size, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 
 	int i, j, k, l, r, x, y, ib, bln, N, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
@@ -4340,6 +4115,10 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 	pClr[1] = 255;
 	pClr[2] = 255;
 	wc = color;
+
+	for (i = 0; i < W*H*16; i++) ImRES[i] = wc;
+
+	g_pViewImage[0](ImRGB, W, H);
 
 	if (g_show_results) SaveRGBImage(ImRGB, "\\TestImages\\FindTextLines_01_1_ImRGB.jpeg", W, H);
 	if (g_show_results) SaveGreyscaleImage(ImF, "\\TestImages\\FindTextLines_01_2_ImF.jpeg", W, H);
@@ -4460,8 +4239,27 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		val = (3*((int)(0.03*(double)H)+1))/2; // 3/2 * ~ min sub height # (536-520+1)/576
 		if (h < val)
 		{
-			LLB[k] -= (val - h) / 2;
-			LLE[k] = LLB[k] + val - 1;			
+			if (N == 1)
+			{
+				LLB[k] -= (val - h) / 2;
+				LLE[k] = LLB[k] + val - 1;
+			}
+			else if (k == 0)
+			{
+				LLE[k] += std::min<int>((val - h) / 2, (LLB[k+1] - LLE[k])/2);
+				LLB[k] = LLE[k] - val + 1;
+			}
+			else if (k == N-1)
+			{
+				LLB[k] -= std::min<int>((val - h) / 2, (LLB[k] - LLE[k-1]) / 2);
+				LLE[k] = LLB[k] + val - 1;
+			}
+			else
+			{
+				LLB[k] -= std::min<int>((val - h) / 2, (LLB[k] - LLE[k - 1]) / 2);
+				LLE[k] += std::min<int>((val - h) / 2, (LLB[k + 1] - LLE[k]) / 2);				
+			}
+
 			if (LLB[k] < 0) LLB[k] = 0;
 			if (LLE[k] > H - 1) LLE[k] = H - 1;
 
@@ -4689,53 +4487,52 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		cv::morphologyEx(cv_bw, opening, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);
 		//cv::imshow("opening", opening);		
 		//cv::waitKey(0);		
-		GreyscaleMatToImage(opening, w, h, ImSFIntRGBC);
-		if (g_show_results) SaveGreyscaleImage(ImSFIntRGBC, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_1_ImRGBC.jpeg", w, h);
+		GreyscaleMatToImage(opening, w, h, ImSFIntTHRF);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_1_ImTHRF.jpeg", w, h);
 
-		ClearImageFromBorders(ImSFIntRGBC, w, h, 255);
-		if (g_show_results) SaveGreyscaleImage(ImSFIntRGBC, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_2_ImRGBC_F.jpeg", w, h);
+		ClearImageFromBorders(ImSFIntTHRF, w, h, 255);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_2_ImTHRFClearedFromBorders.jpeg", w, h);		
 
-		ClearImageFromGarbageBetweenLines(ImSFIntRGBC, w, h, (LLB[k] - YB) * 4, (LLE[k] - YB) * 4,  255);
+		IntersectTwoImages(ImSFIntTHRF, ImSNF, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_3_ImNSFIntTHRF.jpeg", w, h);		
 
-		if (g_show_results) SaveGreyscaleImage(ImSFIntRGBC, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_2_ImRGBC_With_ClearImageFromGarbageBetweenLines.jpeg", w, h);
-
-		IntersectTwoImages(ImSFIntRGBC, ImSNF, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImSFIntRGBC, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_3_ImNSFIntRGBC.jpeg", w, h);		
-
-		// Checking ImSFIntRGBC on presence more then one line (if yes spliting on two and repeat)
-		//-------------------------------
-		val = (int)(0.03*(double)H)+1; // ~ min sub height # (536-520+1)/576
+		val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
 		min_h = (int)(0.4*(double)min<int>(val, orig_LLEk - orig_LLBk + 1));
 
-		val = GetSubParams(ImSFIntRGBC, w, h, 255, LH, LMAXY, lb, le, min_h*4, ((W / 2) - XB) * 4);
+		ClearImageFromGarbageBetweenLines(ImSFIntTHRF, w, h, (LLB[k] - YB) * 4, (LLE[k] - YB) * 4, min_h * 4, 255);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_4_ImNSFIntTHRFClearedFromGarbageBetweenLines.jpeg", w, h);
 
-		yb = (LLB[k] - YB) * 4;
-		ye = (LLE[k] - YB) * 4;
-		xb = (LL[k] - XB) * 4;
-		xe = (LR[k] - XB) * 4;
+		memcpy(&ImNSFIntTHRF[0], &ImSFIntTHRF[0], (w*h) * sizeof(int));
 
-		if ((val == 1) && (std::max<int>((LLE[k] - LLB[k] + 1)*4, le - lb + 1) > LH*2))
+		// Checking ImSFIntTHRF on presence more then one line (if yes spliting on two and repeat)
+		//-------------------------------		
+		val = GetSubParams(ImSFIntTHRF, w, h, 255, LH, LMAXY, lb, le, min_h*4, ((W / 2) - XB) * 4);
+
+		yb = (orig_LLBk - YB) * 4;
+		ye = (orig_LLEk - YB) * 4;
+		xb = (orig_LLk - XB) * 4;
+		xe = std::min<int>(((W / 2) - XB) * 4 + (((W / 2) - XB) * 4 - xb), (orig_LRk - XB) * 4); //sometimes frome the right can be additional not centered text lines which intersect with two centered lines
+
+		if ((val == 1) && (std::max<int>((LLE[k] - LLB[k] + 1)*4, le - lb + 1) > 1.7*(double)LH))
 		{
 			bln = 0;
 
 			custom_buffer<int> lw(h, 0);
+			int max_txt_w, max_txt_y, min_y, max_y, new_txt_y = 0, new_txt_w, max_txt2_w, max_txt2_y;
 
 			for (y = yb; y <= ye; y++)
 			{
 				for (x = xb; x < xe; x++, i++)
 				{
-					if (ImSFIntRGBC[y*w+x] != 0)
+					if (ImSFIntTHRF[y*w+x] != 0)
 					{
 						lw[y]++;
 					}
 				}
-			}
+			}			
 
-			int max_txt_w, max_txt_y, min_y, max_y, new_txt_y = 0, new_txt_w, max_txt2_w, max_txt2_y;
-
-			// searching max text location by y -- max_txt_y
-			for (y = yb, max_txt_w = lw[y], max_txt_y = y; y <= ye; y++)
+			// searching max text location by y for line [LMAXY-LH+1, LMAXY] -- max_txt_y
+			for (y = LMAXY - LH + 1, max_txt_w = lw[y], max_txt_y = y; y <= LMAXY; y++)
 			{
 				if (lw[y] > max_txt_w)
 				{
@@ -4750,104 +4547,59 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 				continue;
 			}
 
-			if ((max_txt_y - yb) > (ye - max_txt_y))
-			{
-				min_y = yb;
-				max_y = max_txt_y - 1;
+			min_y = yb;
+			max_y = LMAXY - LH;
 
-				int y1, y2;
+			int y1, y2;
 
-				for (y1 = min_y; y1 <= max_y - 1; y1++)
-				{					
-					if (lw[y1] >= val) // bigger then min sub height
+			for (y1 = max_y - 1; y1 >= min_y; y1--)
+			{					
+				if (lw[y1] >= min_h * 4) // bigger then min sub height
+				{
+					for (y2 = max_y; y2 >= y1 + 1; y2--)
 					{
-						for (y2 = y1 + 1; y2 <= max_y; y2++)
+						if ((double)lw[y2] / max_txt_w <= 0.3)
 						{
-							if ((double)lw[y2] / max_txt_w <= 0.3)
-							{
-								if ((double)lw[y2] / lw[y1] <= 0.3)
-								{
-									new_txt_y = y2;
-									new_txt_w = lw[new_txt_y];
-									break;
-								}
-							}
-						}
-					}
-					if (new_txt_y > 0)
-					{
-						for (y2 = y1+1; y2 <= max_y; y2++)
-						{
-							if (lw[y2] < lw[new_txt_y])
+							if ((double)lw[y2] / lw[y1] <= 0.3)
 							{
 								new_txt_y = y2;
 								new_txt_w = lw[new_txt_y];
+								break;
 							}
 						}
-
-						for (y1 = min_y, max_txt2_y=y1, max_txt2_w=lw[y1]; y1 < new_txt_y; y1++)
-						{
-							if (lw[y1] > max_txt2_w)
-							{
-								max_txt2_y = y1;
-								max_txt2_w = lw[max_txt2_y];
-							}
-						}
-
-						break;
 					}
 				}
-			}
-			else
-			{
-				min_y = max_txt_y + 1;
-				max_y = ye;
-
-				int y1, y2;
-
-				for (y1 = min_y; y1 <= max_y - 1; y1++)
+				if (new_txt_y > 0)
 				{
-					if ((double)lw[y1] / max_txt_w <= 0.3)
+					for (y2 = max_y; y2 >= y1 + 1; y2--)
 					{
-						for (y2 = y1 + 1; y2 <= max_y; y2++)
+						if (lw[y2] < lw[new_txt_y])
 						{
-							if (lw[y2] >= val) // bigger then min sub height
-							{
-								if ((double)lw[y1] / lw[y2] <= 0.3)
-								{
-									new_txt_y = y1;
-									new_txt_w = lw[new_txt_y];
-									break;
-								}
-							}
+							new_txt_y = y2;
+							new_txt_w = lw[new_txt_y];
 						}
 					}
-					if (new_txt_y > 0)
+
+					max_txt2_y = y1;
+					max_txt2_w = lw[max_txt2_y];
+
+					/*for (y1 = min_y, max_txt2_y=y1, max_txt2_w=lw[y1]; y1 < new_txt_y; y1++)
 					{
-						for (y1 = min_y; y1 < y2; y1++)
+						if (lw[y1] > max_txt2_w)
 						{
-							if (lw[y1] < lw[new_txt_y])
-							{
-								new_txt_y = y1;
-								new_txt_w = lw[new_txt_y];
-							}
+							max_txt2_y = y1;
+							max_txt2_w = lw[max_txt2_y];
 						}
+					}*/
 
-						for (y2 = new_txt_y+1, max_txt2_y = y2, max_txt2_w = lw[y2]; y2 <= max_y; y2++)
-						{
-							if (lw[y2] > max_txt2_w)
-							{
-								max_txt2_y = y2;
-								max_txt2_w = lw[max_txt2_y];
-							}
-						}
-
-						break;
-					}
+					break;
 				}
 			}
 
-			if (new_txt_y > 0)
+			if ( (new_txt_y > 0) && 
+				 (((YB + (new_txt_y/4)) - orig_LLBk + 1) >= 4) &&
+				 ((orig_LLEk - (YB + (new_txt_y / 4) + 1) + 1) >= 4)
+				)
 			{
 				for (i = N; i > k + 1; i--)
 				{
@@ -4875,8 +4627,8 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		
 		while (1)
 		{
-			IntersectTwoImages(ImSFIntRGBC, ImSF, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImSFIntRGBC, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_4_ImSFIntRGBC.jpeg", w, h);		
+			IntersectTwoImages(ImSFIntTHRF, ImSF, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_5_ImSFIntTHRF.jpeg", w, h);		
 
 			delta = 40;
 
@@ -4887,7 +4639,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			xb = (LL[k] - XB) * 4 + val2;
 			xe = (LR[k] - XB) * 4 - val2;
 
-			StrAnalyseImage(ImSFIntRGBC, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
+			StrAnalyseImage(ImSFIntTHRF, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
 			FindMaxStrDistribution(GRStr, delta, smax, smaxi, NN, 0);
 			FindMaxStr(smax, smaxi, j1, ys1, NN);
 
@@ -4922,7 +4674,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			{
 				val1 = ImY[i];
 
-				if ((ImSFIntRGBC[i] != 0) && (ImY[i] >= j1) && (ImY[i] <= j1 + delta - 1))
+				if ((ImSFIntTHRF[i] != 0) && (ImY[i] >= j1) && (ImY[i] <= j1 + delta - 1))
 				{
 					GRStr2[ImU[i]]++;
 					GRStr3[ImV[i]]++;
@@ -4946,7 +4698,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			}
 
 			delta = 80;
-			StrAnalyseImage(ImSFIntRGBC, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
+			StrAnalyseImage(ImSFIntTHRF, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
 			FindMaxStrDistribution(GRStr, delta, smax, smaxi, NN, 0);
 			FindMaxStr(smax, smaxi, j1, ys1, NN);
 			j1_min = j1;
@@ -5101,14 +4853,12 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			memcpy(&ImFF[0], &ImRES1[0], (w*h)*sizeof(int));
 
 			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_1_ImRES1.jpeg", w, h);
+			IntersectTwoImages(ImNSFIntTHRF, ImRES1, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImNSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_2_ImNSFIntTHRFIntImRES1.jpeg", w, h);
 
 			val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
 			min_h = (int)(0.4*(double)max<int>(val, orig_LLEk - orig_LLBk + 1));
-			val = GetSubParams(ImRES1, w, h, rc, LH, LMAXY, lb, le, min_h * 4, ((W / 2) - XB) * 4);
-			if (val == 0)
-			{
-				val = GetSubParams(ImSFIntRGBC, w, h, 255, LH, LMAXY, lb, le, min_h * 4, ((W / 2) - XB) * 4);
-			}
+			val = GetSubParams(ImNSFIntTHRF, w, h, 255, LH, LMAXY, lb, le, min_h * 4, ((W / 2) - XB) * 4);
 			if (val == 0)
 			{
 				memset(&ImFF[0], 0, (w*h) * sizeof(int));
@@ -5116,7 +4866,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			}
 
 			N1 = ClearImageOptimal(ImRES1, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_2_ImRES1F.jpeg", w, h);
+			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_3_ImRES1F.jpeg", w, h);
 
 			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_50_1_ImRES3.jpeg", w, h);
 			N3 = ClearImageOptimal(ImRES3, w, h, LH, LMAXY, rc);
@@ -5146,21 +4896,11 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 				{
 					ImRES8[i] = 0;
 				}
-			}		
+			}
 			if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_54_1_ImRES8(ImRES1+3+4+5).jpeg", w, h);
 
-			val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
-			min_h = (int)(0.4*(double)max<int>(val, orig_LLEk - orig_LLBk + 1));
-			val = GetSubParams(ImRES8, w, h, rc, LH, LMAXY, lb, le, min_h * 4, ((W/2) - XB)*4);
-
-			if (val == 0)
-			{
-				memset(&ImFF[0], 0, (w*h) * sizeof(int));
-				break;
-			}
-
 			val = ClearImageOpt2(ImRES8, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_54_2_ImRES8_F.jpeg", w, h);
+			if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_54_2_ImRES8ClearImageOpt2.jpeg", w, h);
 
 			if (val == 0)
 			{
@@ -5246,14 +4986,14 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			{
 				memcpy(&ImRES1[j], &Im[i], ww * sizeof(int));
 				memcpy(&ImRES2[j], &ImFF[i], ww * sizeof(int));
-				memcpy(&ImRES6[j], &ImSFIntRGBC[i], ww * sizeof(int));
+				memcpy(&ImRES6[j], &ImSFIntTHRF[i], ww * sizeof(int));
 			}			
 
 			IntersectTwoImages(ImRES6, ImRES2, ww, hh);
 
 			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_1_ImRES1_ImRGB.jpeg", ww, hh);
 			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_2_ImRES2_ImFF.jpeg", ww, hh);
-			if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_3_ImRES6_ImFFIntImSFIntRGBC.jpeg", ww, hh);
+			if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_3_ImRES6_ImFFIntImSFIntTHRF.jpeg", ww, hh);
 
 			u8 *color;
 			cv::Mat cv_ImGR(hh, ww, CV_8UC1), cv_ImGRRes(hh, ww, CV_8UC1);
@@ -5262,7 +5002,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			BinaryImageToMat(ImRES6, ww, hh, cv_ImGR);
 			cv::erode(cv_ImGR, cv_ImGRRes, cv::Mat());
 			BinaryMatToImage(cv_ImGRRes, ww, hh, ImRES6, rc);			
-			if (g_show_results) SaveRGBImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_4_ImRES6_ImFFIntImSFIntRGBCWithErode.jpeg", ww, hh);
+			if (g_show_results) SaveRGBImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_4_ImRES6_ImFFIntImSFIntTHRFWithErode.jpeg", ww, hh);
 
 			GetMainClusterImageBySplit(ImRES1, ImRES6, ImRES4, ImMaskWithBorder, ww, hh, LH, LMAXY - min_y, iter, rc);
 			GetMainClusterImage(ImRES1, ImRES6, ImRES3, ImMaskWithBorder, ww, hh, LH, LMAXY - min_y, iter, rc);
@@ -5327,9 +5067,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 			LLE[k] = YB + (LMAXY/4);
 
 			break;
-		}
-		
-        g_pViewRGBImage(ImFF, w, h);
+		}        
 
 		ww = W*4;
 		hh = h;
@@ -5339,10 +5077,14 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 		for(y=0, i=0; y<h; y++)
 		for(x=0; x<w; x++, i++)
 		{
-			j = y*ww + (XB*4) + x;
-
-			if (ImFF[i] != 0) ImRES1[j] = 0;
+			if (ImFF[i] != 0)
+			{
+				ImRES1[y*ww + (XB * 4) + x] = 0;
+				ImRES[(YB*4 + y)*ww + (XB * 4) + x] = 0;
+			}
 		}
+
+		g_pViewRGBImage(ImRES, W*4, H*4);
 
 		GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, rc);
 
@@ -5432,10 +5174,12 @@ void ExtendImFWithDataFromImNF(custom_buffer<int> &ImF, custom_buffer<int> &ImNF
 	}
 	if (LLE[N] == h - 1) N++;
 
-	k = 0;
-	while (k < N - 1)
+	k = N-2;
+	while (k >= 0)
 	{
-		if (LLB[k + 1] - LLE[k] <= std::max<int>(4 * g_segh, LLE[k] - LLB[k] + LLE[k + 1] - LLB[k + 1] + 2))
+		if ( (LLB[k + 1] - LLE[k] - 1 <= std::min<int>(LLE[k] - LLB[k] + 1, LLE[k + 1] - LLB[k + 1] + 1)) &&
+			 (LLB[k + 1] - LLE[k] - 1 <= std::min<int>(LR[k] - LL[k] + 1, LR[k + 1] - LL[k + 1] + 1))
+			)
 		{
 			LLE[k] = LLE[k + 1];
 			LL[k] = std::min<int>(LL[k], LL[k + 1]);
@@ -5449,9 +5193,13 @@ void ExtendImFWithDataFromImNF(custom_buffer<int> &ImF, custom_buffer<int> &ImNF
 				LLE[i] = LLE[i + 1];
 			}
 			N--;
+			if (k == N - 1)
+			{
+				k--;
+			}
 			continue;
 		}
-		k++;
+		k--;
 	}
 
 	for (k = 0; k < N; k++)
@@ -5675,75 +5423,63 @@ int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, i
 	}
 
 	return l;
+}
 
-	/*custom_buffer<int> maxY(N, 0), NN(N, 0), NY(N, 0);
+void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h)
+{
+	int i, j, k;
+	CMyClosedFigure *pFigureI, *pFigureJ;
+	bool found = true;
 
-	min_h = (int)((double)(ye-yb+1)*0.6);
-	val1 = (yb+ye)/2 - (int)((double)(ye-yb+1)*0.2);
-	val2 = (yb+ye)/2 + (int)((double)(ye-yb+1)*0.1);
-
-	for(i=0, j=0; i < N; i++)
+	while (found)
 	{
-		pFigure = ppFigures[i];
+		found = false;
 
-		if ( (pFigure->m_h >= min_h) &&
-			 (pFigure->m_minY < val1) &&
-			 (pFigure->m_maxY > val2) )
+		for (i = 0; i < N; i++)
 		{
-			maxY[j] = pFigure->m_maxY;
-			j++;
-		}
-	}
-	NNY = j;
+			pFigureI = ppFigures[i];
 
-	for(i=0; i<NNY-1; i++)
-	{
-		for(j=i+1; j<NNY; j++)
-		{
-			if(maxY[j] > maxY[i])
+			for (j = 0; j < N; j++)
 			{
-				val = maxY[i];
-				maxY[i] = maxY[j];
-				maxY[j] = val;
+				pFigureJ = ppFigures[j];
+
+				if ((i != j))
+				{
+					int val1 = (pFigureI->m_maxX + pFigureI->m_minX) - (pFigureJ->m_maxX + pFigureJ->m_minX);
+					if (val1 < 0) val1 = -val1;
+					val1 = ((pFigureI->m_maxX - pFigureI->m_minX) + (pFigureJ->m_maxX - pFigureJ->m_minX) + 2 - val1) / 2;
+
+					int my = (pFigureI->m_maxY + pFigureI->m_minY) / 2;
+
+					if ((pFigureI->m_h >= min_h / 3) && // ImI is not too small
+						(pFigureI->m_w >= 1.5*(double)pFigureI->m_h) && // ImI is wider then its height
+						(pFigureI->m_w <= 1.5*(double)pFigureJ->m_w) && // ImI is not too wide
+						( (pFigureI->m_minY < pFigureJ->m_minY) &&
+						  (pFigureI->m_maxY < pFigureJ->m_minY + (pFigureJ->m_h/2)) ) && // ImI is on top of ImJ
+						(val1 >= 0.75*(double)pFigureI->m_w) && // ImI intersect with ImJ by x more then 0.75*ImI_width
+						((pFigureJ->m_minY - pFigureI->m_maxY - 1) <= std::min<int>(pFigureI->m_h, pFigureJ->m_h) / 4) // distance between ImI and ImJ is not bigger then Images_height / 5
+						)
+					{
+						// combine two images
+						*pFigureI += *pFigureJ;
+						for (k = j; k < N - 1; k++)
+						{
+							ppFigures[k] = ppFigures[k + 1];
+						}
+						found = true;
+					}
+				}
+
+				if (found) break;
 			}
+			if (found) break;
 		}
-	}
 
-	j=0;
-	k=0;
-	i=0;
-	while(i < NNY)
-	{
-		if ((maxY[j]-maxY[i]) > std::max<int>(g_dmaxy, LH / 8))
+		if (found)
 		{
-			NN[k] = i-j;
-			NY[k] = maxY[j];
-			k++;
-			
-			l = j+1;
-			while(maxY[l] == maxY[j]) l++;
-
-			j = i = l;
-		}
-
-		i++;
-	}
-	NN[k] = i-j;
-	NY[k] = maxY[j];
-	k++;
-
-	val = NN[0];
-	j = 0;
-	for(i=0; i<k; i++)
-	{
-		if(NN[i] > val)
-		{
-			val = NN[i];
-			j = i;
+			N--;
 		}
 	}
-
-	return val;*/
 }
 
 int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center)
@@ -5782,6 +5518,8 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 	custom_buffer<int> NN(N, 0), NY(N, 0), NL(N, 0), NR(N, 0);
 	custom_buffer<CMyClosedFigure*> good_figures(N);
 	
+	CombineFiguresRelatedToEachOther(ppFigures, N, min_h);
+
 	for (i = 0, j = 0; i < N; i++)
 	{
 		pFigure = ppFigures[i];
@@ -5875,6 +5613,13 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 	j = k-1;
 	for (i = 0; i < k; i++)
 	{
+		if ((NN[i] >= NN[j]) && (NL[i] < real_im_x_center))
+		{
+			j = i;
+		}
+	}
+	for (i = 0; i < k; i++)
+	{
 		if ((NY[i] > NY[j]) && ((NN[i] >= 2) || (NN[i] >= NN[j])) && (NL[i] < real_im_x_center))
 		{
 			j = i;
@@ -5924,7 +5669,7 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 	H = 0;
 	while (i < k)
 	{
-		if ((arH[0] - arH[i]) > arH[0]/8)
+		if ((arH[0] - arH[i]) > arH[0]/5) //sometimes CombineFiguresRelatedToEachOther add garbage, to avoid this using more average height
 		{
 			break;
 		}
@@ -5952,11 +5697,6 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 	N = pFigures.size();
 
 	if (N == 0)	return 0;
-
-	if (N < 2)
-	{
-		return 0;
-	}
 
 	custom_buffer<CMyClosedFigure*> ppFigures(N);
 	for(i=0; i<N; i++)
@@ -5991,6 +5731,93 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 	}
 
 	return N;
+}
+
+int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int white)
+{
+	custom_buffer<int> ImOrig(Im);
+	CMyClosedFigure *pFigure;
+	int i, l, ii, N, res = 0, x, y, y2;
+	CMyPoint *PA;
+	clock_t t;
+
+	custom_buffer<CMyClosedFigure> pFigures;
+	t = SearchClosedFigures(Im, w, h, white, pFigures);
+	N = pFigures.size();
+
+	if (N == 0)	return 0;
+
+	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	for (i = 0; i < N; i++)
+	{
+		ppFigures[i] = &(pFigures[i]);
+	}
+
+	i = 0;
+	while (i < N)
+	{
+		pFigure = ppFigures[i];
+
+		if ((pFigure->m_h < g_msh*(double)h) ||
+			(pFigure->m_w <= g_segh) || 
+			(pFigure->m_h <= g_segh)
+			)
+		{
+			PA = pFigure->m_PointsArray;
+
+			// for debug
+			/*if ((pFigure->m_minX >= 1320) &&
+				(pFigure->m_minX <= 1350))
+			{
+				i = i;
+			}*/
+
+			for (l = 0; l < pFigure->m_Square; l++)
+			{
+				ii = PA[l].m_i;
+				Im[ii] = 0;
+			}
+
+			ppFigures[i] = ppFigures[N - 1];
+			N--;
+			continue;
+		}
+		i++;
+	}
+
+	if (g_show_results) SaveGreyscaleImage(Im, "\\TestImages\\ClearImageFromSmallSymbols_01.jpeg", w, h);
+
+	int dy = std::max<int>(g_msh * (double)h, 4 * g_segh);
+	for (y = 0; y < h; y++)
+	{
+		int found = 0;
+		for (y2 = std::max<int>(0, y - dy); y2 <= std::min<int>(y + dy, h - 1); y2++)
+		{
+			for (x = 0; x < w; x++)
+			{
+				if (Im[y2 * w + x] != 0)
+				{
+					found = 1;
+					break;
+				}
+			}
+			if (found == 1)
+			{
+				break;
+			}
+		}
+
+		if (found == 1)
+		{
+			memcpy(&Im[y * w], &ImOrig[y * w], w*sizeof(int));
+		}
+	}
+
+	if (g_show_results) SaveGreyscaleImage(Im, "\\TestImages\\ClearImageFromSmallSymbols_02.jpeg", w, h);
+
+	if (N > 0) res = 1;
+
+	return res;
 }
 
 int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int white)
@@ -6236,7 +6063,7 @@ void MergeWithClusterImage(custom_buffer<int> &ImInOut, custom_buffer<int> &ImCl
 	//}	
 }
 
-void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white)
+void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white)
 {
 	CMyClosedFigure *pFigureI, *pFigureJ, *pFigureK;
 	int i, j, k, l, N;
@@ -6254,6 +6081,8 @@ void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int
 	{
 		ppFigures[i] = &(pFigures[i]);
 	}
+
+	CombineFiguresRelatedToEachOther(ppFigures, N, min_h);
 
 	bool found = true;
 

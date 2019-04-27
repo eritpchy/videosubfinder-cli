@@ -47,6 +47,8 @@ extern double	g_tco;   //text centre offset
 
 extern int		g_mpn;	 //min points number
 extern double	g_mpd;   //min points density
+extern double   g_msh;	 //min symbol height in percents
+
 //extern double	g_mphd;  //min HEdges points density (per full line)
 extern double	g_mpnd;  //min NEdges points density (per full line)
 //extern double	g_mpved; //min VEdges points density
@@ -60,6 +62,8 @@ extern int		g_blnHE;
 extern bool		g_clear_image_logical;
 
 extern bool		g_show_results;
+extern bool		g_show_sf_results;
+extern bool		g_clear_test_images_folder;
 
 extern int		g_dmaxy;
 
@@ -91,7 +95,6 @@ void AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h);
 void AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h);
 
 void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h);
-void ColorFiltration2(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int scd);
 
 void BorderClear(custom_buffer<int> &Im, int dd, int w, int h);
 void EasyBorderClear(custom_buffer<int> &Im, int w, int h);
@@ -119,7 +122,6 @@ void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_
 
 void ClearImage4x4(custom_buffer<int> &Im, int w, int h, int white);
 void ClearImageSpecific1(custom_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white);
-void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int white);
 
 int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center);

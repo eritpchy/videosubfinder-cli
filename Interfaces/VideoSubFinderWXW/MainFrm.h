@@ -63,6 +63,8 @@ public:
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_using_fast_version;
 	wxString	m_ssp_oi_property_dump_debug_images;
+	wxString	m_ssp_oi_property_dump_debug_second_filtration_images;
+	wxString	m_ssp_oi_property_clear_test_images_folder;
 	wxString	m_ssp_oi_group_initial_image_processing;
 	wxString	m_ssp_oi_sub_group_settings_for_sobel_operators;
 	wxString	m_ssp_oi_property_moderate_threshold;
@@ -82,6 +84,7 @@ public:
 	wxString	m_ssp_oi_sub_group_settings_for_color_border_points;
 	wxString	m_ssp_oi_property_min_points_number;
 	wxString	m_ssp_oi_property_min_points_density;
+	wxString	m_ssp_oi_property_min_symbol_height;
 	wxString	m_ssp_oi_property_min_vedges_points_density;
 	wxString	m_ssp_oi_property_min_nedges_points_density;
 	wxString	m_ssp_oi_property_min_sum_multiple_color_difference;
