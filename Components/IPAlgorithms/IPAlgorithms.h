@@ -44,14 +44,12 @@ extern int		g_scd;   //min sum color diff
 extern int		g_smcd;  //min sum multiple color diff
 extern double	g_btd;   //between text distace
 extern double	g_tco;   //text centre offset
-//extern double	g_tcpo;  //text centre percent offset
 
 extern int		g_mpn;	 //min points number
 extern double	g_mpd;   //min points density
-//extern double	g_mpvd;  //min VEdges points density (per full line)
-extern double	g_mphd;  //min HEdges points density (per full line)
+//extern double	g_mphd;  //min HEdges points density (per full line)
 extern double	g_mpnd;  //min NEdges points density (per full line)
-extern double	g_mpved; //min VEdges points density
+//extern double	g_mpved; //min VEdges points density
 extern double	g_mpned; //min NEdges points density
 
 extern int		g_scale;
@@ -114,9 +112,6 @@ void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_bu
 void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset);
 void FindMaxStr(custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &max_i, int &max_val, int N);
 
-int CreateAndAnalizeImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &ImMASK, int w, int h, int j1_min, int j1_max, int r, int g, int yb, int ye, int xb, int xe, int &cnt1, int &cnt2);
-int CreateClearedImageFromBorders(custom_buffer<int> &Im, custom_buffer<int> &ImGR, int w, int h, int j1_min, int j1_max, int white);
-int CreateRGBCImage(custom_buffer<int> &ImRGBC, custom_buffer<int> &ImGR, custom_buffer<int> &ImSF, custom_buffer<int> &ImY, int w, int h, int yb, int ye, int yb_im_gr, int ye_im_gr, int xb_im_gr, int xe_im_gr, int yb_im_sf, int ye_im_sf, int xb_im_sf, int xe_im_sf, int delta);
 void ExtendImFWithDataFromImNF(custom_buffer<int> &ImF, custom_buffer<int> &ImNF, int w, int h);
 
 void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
@@ -125,13 +120,9 @@ void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_
 void ClearImage4x4(custom_buffer<int> &Im, int w, int h, int white);
 void ClearImageSpecific1(custom_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white);
 void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
-void ClearImageSpecific(custom_buffer<int> &Im, int w, int h, int white);
-int ClearImage(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int white);
-int ClearImageDetailed(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
-int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int yb, int ye, int white);
 
-int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white, int W, int H);
+int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center);
 
 void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ);
 void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ);

@@ -559,9 +559,9 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_mpn, "min_points_number");
 	ReadProperty(fin, g_mpd, "min_points_density");
 	//ReadProperty(fin, g_mpvd, "min_VEdges_points_density_(per_full_line)");
-	ReadProperty(fin, g_mphd, "min_HEdges_points_density_(per_full_line)");
+	//ReadProperty(fin, g_mphd, "min_HEdges_points_density_(per_full_line)");
 	ReadProperty(fin, g_mpnd, "min_NEdges_points_density_(per_full_line)");
-	ReadProperty(fin, g_mpved, "min_VEdges_points_density");
+	//ReadProperty(fin, g_mpved, "min_VEdges_points_density");
 	ReadProperty(fin, g_mpned, "min_NEdges_points_density");
 
 	ReadProperty(fin, g_DL, "sub_frame_length");
@@ -681,9 +681,9 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_mpn, "min_points_number");
 	WriteProperty(fout, g_mpd, "min_points_density");
 	//WriteProperty(fout, g_mpvd, "min_VEdges_points_density_(per_full_line)");
-	WriteProperty(fout, g_mphd, "min_HEdges_points_density_(per_full_line)");
+	//WriteProperty(fout, g_mphd, "min_HEdges_points_density_(per_full_line)");
 	WriteProperty(fout, g_mpnd, "min_NEdges_points_density_(per_full_line)");
-	WriteProperty(fout, g_mpved, "min_VEdges_points_density");
+	//WriteProperty(fout, g_mpved, "min_VEdges_points_density");
 	WriteProperty(fout, g_mpned, "min_NEdges_points_density");
 
 	WriteProperty(fout, g_DL, "sub_frame_length");
