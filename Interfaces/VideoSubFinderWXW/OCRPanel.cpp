@@ -1359,7 +1359,7 @@ void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 	custom_buffer<int> g_ImRGB(m_pMF->m_pVideo->m_w*m_pMF->m_pVideo->m_h*3, 0);
 	custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(m_pMF->m_pVideo->m_w*m_pMF->m_pVideo->m_h*3, 0));
 
-	S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], m_pMF->m_pVideo, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h, m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height, m_pMF->m_pVideo->m_xmin, m_pMF->m_pVideo->m_xmax, m_pMF->m_pVideo->m_ymin, m_pMF->m_pVideo->m_ymax);
+	S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], m_pMF->m_pVideo, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h, m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height, m_pMF->m_pVideo->m_xmin, m_pMF->m_pVideo->m_xmax, m_pMF->m_pVideo->m_ymin, m_pMF->m_pVideo->m_ymax);
 
 	SavedFiles.clear();
 
@@ -1500,7 +1500,14 @@ void *ThreadCreateClearedTextImages::Entry()
 		LoadRGBImage(g_ImRGB, string(Str), w, h);		
 		//m_pMF->m_pVideoBox->ViewImage(ImRGB, w, h);		
 
-		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[0], g_ImF[1], g_ImF[2], w, h, W, H);
+		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], w, h, W, H);
+
+		if (g_show_transformed_images_only)
+		{
+			Str = wxString("/TXTImages/") + FileNamesVector[k];
+			SaveGreyscaleImage(g_ImF[5], string(Str), w, h);
+			continue;
+		}
 
 		if (g_use_FRD_images == true) 
 		{

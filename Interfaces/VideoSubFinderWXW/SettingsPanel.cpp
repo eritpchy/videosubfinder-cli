@@ -196,10 +196,10 @@ void CSettingsPanel::Init()
                            rcOI.GetPosition(), rcOI.GetSize() );
 
     m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_using_fast_version, m_CL2, m_CL4, m_LBLFont, &g_fast_search);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CL2, m_CL4, m_LBLFont, &g_show_results);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CL2, m_CL4, m_LBLFont, &g_show_sf_results);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CL2, m_CL4, m_LBLFont, &g_clear_test_images_folder);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CL2, m_CL4, m_LBLFont, &g_show_transformed_images_only);
 	
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
@@ -218,21 +218,16 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msh, 0.0, 1.0);
-	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_percent_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tcpo, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msd, 0.0, 1.0);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);	
 
-	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_vedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpved, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpned, 0.0, 1.0);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_sum_multiple_color_difference, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smcd, 0, 10000);
 
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
-	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_vedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpvd, 0.0, 1.0);
-	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_hedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mphd, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density_per_half_line, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpnd, 0.0, 1.0);
 
 	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.75);
 	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.25);
@@ -294,54 +289,11 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	custom_buffer<int> g_ImRGB(W*H, 0), g_ImRES2(W*H, 0), g_ImRES3(W*H, 0);
 	m_ImF = custom_buffer<custom_buffer<int>> (6, custom_buffer<int>(W*H, 0));	
 
-	if (g_fast_search == true)
-	{
-		t = clock();
-		m_pMF->m_pVideo->GetRGBImage(g_ImRGB, xmin, xmax, ymin, ymax);
-		S = ConvertImage(g_ImRGB, m_ImF[5], m_ImF[0], w, h, W, H);
-		t = clock()-t;
-		
-		if (S > 0)
-		{
-			memcpy(m_ImF[3].m_pData, m_ImF[5].m_pData, (w*h)*sizeof(int));
-			memcpy(m_ImF[4].m_pData, m_ImF[5].m_pData, (w*h)*sizeof(int));
-			//UnpackImage(g_ImRES2, m_ImF[1], g_pLB, g_pLE, g_LN, w, h);
-			//UnpackImage(g_ImRES3, m_ImF[2], g_pLB, g_pLE, g_LN, w, h);			
-		}
-		else
-		{
-			if (g_blnVNE == 1) 
-			{
-				//UnpackImage(g_ImRES1, g_ImF[0], g_pLB, g_pLE, g_LN, w, h);
-				//UnpackImage(g_ImRES2, g_ImF[1], g_pLB, g_pLE, g_LN, w, h);
-			}
-			if (g_blnVNE == 1) 
-			{
-				//UnpackImage(g_ImRES3, g_ImF[2], g_pLB, g_pLE, g_LN, w, h);			
-			}
-		}
-	}
-	else
-	{
-		t = clock();
-		S = GetAndConvertImage(g_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[0], m_ImF[1], m_ImF[2], pVideo, w, h, W, H, xmin, xmax, ymin, ymax);
-		t = clock()-t;
-
-		if (S == 0)
-		{
-			for(i=0; i<m_n; i++) 
-			{
-				if (m_ImF[i][0] == -1)
-				{
-					memset(m_ImF[i].m_pData, 0, W*H*sizeof(int));
-				}
-			}
-		}
-	}
-	
-	_itoa((int)t, str, 10);
-	//this->MessageBox(str);
-	
+	t = clock();
+	m_pMF->m_pVideo->GetRGBImage(g_ImRGB, xmin, xmax, ymin, ymax);
+	S = ConvertImage(g_ImRGB, m_ImF[5], m_ImF[4], m_ImF[3], m_ImF[0], w, h, W, H);
+	t = clock()-t;
+			
 	if (S > 0)
 	{
 		if ((w != W) || (h != H))
@@ -354,9 +306,6 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			}
 		}
 	}	
-
-	//GetFastTransformedImage(Im, g_ImF[5], g_ImF[0], w, h);
-	//GetVeryFastTransformedImage(Im, g_ImF[5], g_ImF[0], w, h);
 
 	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], W, H);
 	

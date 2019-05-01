@@ -41,17 +41,14 @@ extern int		g_segw;  //segment width
 extern int		g_segh;  //segment height
 extern int		g_msegc; //minimum segments count
 extern int		g_scd;   //min sum color diff
-extern int		g_smcd;  //min sum multiple color diff
 extern double	g_btd;   //between text distace
 extern double	g_tco;   //text centre offset
 
 extern int		g_mpn;	 //min points number
 extern double	g_mpd;   //min points density
-extern double   g_msh;	 //min symbol height in percents
+extern double   g_msh;	 //min symbol height in percents to full image height
+extern double   g_msd;   //min symbol density (percent of its pixels / w*h of symbol)
 
-//extern double	g_mphd;  //min HEdges points density (per full line)
-extern double	g_mpnd;  //min NEdges points density (per full line)
-//extern double	g_mpved; //min VEdges points density
 extern double	g_mpned; //min NEdges points density
 
 extern int		g_scale;
@@ -64,6 +61,7 @@ extern bool		g_clear_image_logical;
 extern bool		g_show_results;
 extern bool		g_show_sf_results;
 extern bool		g_clear_test_images_folder;
+extern bool		g_show_transformed_images_only;
 
 extern int		g_dmaxy;
 
@@ -102,12 +100,8 @@ void EasyBorderClear(custom_buffer<int> &Im, int w, int h);
 void FreeImage(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h);
 void UnpackImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h);
 
-int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, int w, int h, int W, int H);
-int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h, int W, int H);
-
-int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H);
-int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
-int ThirdFiltrationForGFTI(custom_buffer<int> &Im, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
+int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H);
+//int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h, int W, int H);
 
 int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H);
 

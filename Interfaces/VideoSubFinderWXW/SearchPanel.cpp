@@ -199,31 +199,16 @@ void *ThreadSearchSubtitles::Entry()
 
 	g_IsSearching = 1;
 
-	if (g_fast_search == true)
-	{
-        if ( m_pMF->m_pVideo->SetNullRender() )
-        {
-			m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-													m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-													m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-													m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+    if ( m_pMF->m_pVideo->SetNullRender() )
+    {
+		m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+												m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+												m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+												m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-            m_pMF->m_BegTime = FastSearchSubtitles( m_pMF->m_pVideo, m_pMF->m_BegTime, m_pMF->m_EndTime );
-        }
-	}
-	else
-	{
-        if ( m_pMF->m_pVideo->SetNullRender() )
-        {
-			m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-													m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-													m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-													m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
-
-		    m_pMF->m_BegTime = SearchSubtitles( m_pMF->m_pVideo, m_pMF->m_BegTime, m_pMF->m_EndTime );
-        }
-	}
-
+        m_pMF->m_BegTime = FastSearchSubtitles( m_pMF->m_pVideo, m_pMF->m_BegTime, m_pMF->m_EndTime );
+    }
+	
 	if (g_IsClose == 1) 
 	{
 		g_IsSearching = 0;

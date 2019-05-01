@@ -33,9 +33,6 @@ extern double	g_mtpl;  //min text len (in procent)
 extern double	g_sse;	 //sub square error
 extern double	g_veple; //vedges points line error
 
-extern bool g_fast_search;
-
-s64 SearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
 int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom_buffer<int> &Im2, custom_buffer<int> &ImNFF2, int size);
@@ -58,9 +55,9 @@ int GetCombinedSquare(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size
 void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, int size);
 void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
 
-int ConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h, int W, int H);
+int ConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H);
 
-int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImVE, custom_buffer<int> &ImNE, custom_buffer<int> &ImHE, CVideo *pVideo, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, CVideo *pVideo, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
 void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 

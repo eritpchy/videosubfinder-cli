@@ -61,10 +61,10 @@ public:
 	wxString	m_ssp_label_parameters_influencing_image_processing;
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;
 	wxString	m_ssp_oi_group_global_image_processing_settings;
-	wxString	m_ssp_oi_property_using_fast_version;
 	wxString	m_ssp_oi_property_dump_debug_images;
 	wxString	m_ssp_oi_property_dump_debug_second_filtration_images;
 	wxString	m_ssp_oi_property_clear_test_images_folder;
+	wxString	m_ssp_oi_property_show_transformed_images_only;
 	wxString	m_ssp_oi_group_initial_image_processing;
 	wxString	m_ssp_oi_sub_group_settings_for_sobel_operators;
 	wxString	m_ssp_oi_property_moderate_threshold;
@@ -85,13 +85,10 @@ public:
 	wxString	m_ssp_oi_property_min_points_number;
 	wxString	m_ssp_oi_property_min_points_density;
 	wxString	m_ssp_oi_property_min_symbol_height;
+	wxString	m_ssp_oi_property_min_symbol_density;
 	wxString	m_ssp_oi_property_min_vedges_points_density;
 	wxString	m_ssp_oi_property_min_nedges_points_density;
-	wxString	m_ssp_oi_property_min_sum_multiple_color_difference;
-	wxString	m_ssp_oi_group_tertiary_image_processing;
-	wxString	m_ssp_oi_property_min_vedges_points_density_per_half_line;
-	wxString	m_ssp_oi_property_min_hedges_points_density_per_half_line;
-	wxString	m_ssp_oi_property_min_nedges_points_density_per_half_line;
+	wxString	m_ssp_oi_group_tertiary_image_processing;	
 	wxString	m_ssp_oim_group_ocr_settings;
 	wxString	m_ssp_oim_property_clear_images_logical;
 	wxString	m_ssp_oim_property_clear_rgbimages_after_search_subtitles;
