@@ -55,7 +55,7 @@ bool CVideoSubFinderApp::OnInit()
 	
 	m_pMainWnd->Init();
 
-	m_parser.Found("nthr", &g_threads);
+	//m_parser.Found("nthr", &g_threads);
 
 	bool blnI = m_parser.Found("i", &(m_pMainWnd->m_FileName));
 	if (m_parser.Found("o", &wxStr))

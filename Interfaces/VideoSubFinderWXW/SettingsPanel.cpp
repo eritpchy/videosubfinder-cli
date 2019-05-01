@@ -17,7 +17,7 @@
 #include "MyResource.h"
 #include "SettingsPanel.h"
 
-string	StrFN[6];
+string	StrFN[4];
 
 BEGIN_EVENT_TABLE(CSettingsPanel, wxPanel)
 	EVT_BUTTON(ID_TEST, CSettingsPanel::OnBnClickedTest)
@@ -34,14 +34,12 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 	m_pParent = pParent;
 	m_pMF = pParent->m_pMF;
 
-	StrFN[0] = string("VEdges Points Image");
-	StrFN[1] = string("NEdges Points Image");
-	StrFN[2] = string("HEdges Points Image");
-	StrFN[3] = string("After First Filtration");
-	StrFN[4] = string("After Second Filtration");
-	StrFN[5] = string("After Third Filtration");
-	m_cn = 5;
-	m_n = 6; 
+	StrFN[0] = string("After First Filtration");
+	StrFN[1] = string("After Second Filtration");
+	StrFN[2] = string("After Third Filtration");
+	StrFN[3] = string("NEdges Points Image");
+	m_cn = 2;
+	m_n = 4;
 	m_w = 10;
 	m_h = 10;
 }
@@ -204,9 +202,7 @@ void CSettingsPanel::Init()
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mthr, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_vedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mvthr, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_nedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mnthr, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_hedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mhthr, 0.0, 1.0);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1, m_LBLFont);	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_segment_width, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segw, 4, 50);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_segments_count, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msegc, 1, 10);
@@ -216,18 +212,16 @@ void CSettingsPanel::Init()
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segh, 1, 50);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msh, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msd, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);	
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);	
 
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpned, 0.0, 1.0);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1, m_LBLFont);
 
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG, m_LBLFont);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msh, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msd, 0.0, 1.0);
 
 	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.75);
 	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.25);
@@ -287,11 +281,11 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	ymax = m_pMF->m_pVideo->m_ymax;
 
 	custom_buffer<int> g_ImRGB(W*H, 0), g_ImRES2(W*H, 0), g_ImRES3(W*H, 0);
-	m_ImF = custom_buffer<custom_buffer<int>> (6, custom_buffer<int>(W*H, 0));	
+	m_ImF = custom_buffer<custom_buffer<int>> (m_n, custom_buffer<int>(W*H, 0));
 
 	t = clock();
 	m_pMF->m_pVideo->GetRGBImage(g_ImRGB, xmin, xmax, ymin, ymax);
-	S = ConvertImage(g_ImRGB, m_ImF[5], m_ImF[4], m_ImF[3], m_ImF[0], w, h, W, H);
+	S = ConvertImage(g_ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], w, h, W, H);
 	t = clock()-t;
 			
 	if (S > 0)
@@ -323,10 +317,9 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 	m_cn--;
 	if (m_cn < 0) m_cn = m_n-1;
 	
-	m_plblIF->SetLabel(StrFN[m_cn]);
-
-	if (m_pMF->m_VIsOpen == true)
+	if ((m_pMF->m_VIsOpen == true) && (m_ImF.m_size > 0))
 	{
+		m_plblIF->SetLabel(StrFN[m_cn]);	
 		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height);
 	}
 }
@@ -336,10 +329,9 @@ void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 	m_cn++;
 	if (m_cn > m_n-1) m_cn = 0;
 
-	m_plblIF->SetLabel(StrFN[m_cn]);
-
-	if (m_pMF->m_VIsOpen == true)
+	if ((m_pMF->m_VIsOpen == true) && (m_ImF.m_size > 0))
 	{
+		m_plblIF->SetLabel(StrFN[m_cn]);
 		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height);
 	}
 }

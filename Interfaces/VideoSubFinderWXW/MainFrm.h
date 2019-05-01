@@ -68,9 +68,7 @@ public:
 	wxString	m_ssp_oi_group_initial_image_processing;
 	wxString	m_ssp_oi_sub_group_settings_for_sobel_operators;
 	wxString	m_ssp_oi_property_moderate_threshold;
-	wxString	m_ssp_oi_property_moderate_vedges_threshold;
 	wxString	m_ssp_oi_property_moderate_nedges_threshold;
-	wxString	m_ssp_oi_property_moderate_hedges_threshold;
 	wxString	m_ssp_oi_sub_group_settings_for_color_filtering;
 	wxString	m_ssp_oi_property_segment_width;
 	wxString	m_ssp_oi_property_min_segments_count;

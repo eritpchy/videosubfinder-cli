@@ -19,7 +19,7 @@
 
 int		g_RunSubSearch = 0;
 
-long    g_threads = 16;
+//long    g_threads = 16;
 
 int		g_DL = 6;	 //sub frame length
 double	g_tp = 0.3;	 //text procent

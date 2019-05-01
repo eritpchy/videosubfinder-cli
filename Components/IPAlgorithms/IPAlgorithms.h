@@ -33,8 +33,6 @@ extern string   g_work_dir;
 extern string   g_app_dir;
 
 extern double	g_mthr;  //moderate threshold
-extern double	g_mvthr; //moderate threshold for VEdges
-extern double	g_mhthr; //moderate threshold for HEdges
 extern double	g_mnthr; //moderate threshold for NEdges
 extern int		g_hvt;	 //horizontal-vertical edges threshold
 extern int		g_segw;  //segment width
@@ -53,8 +51,8 @@ extern double	g_mpned; //min NEdges points density
 
 extern int		g_scale;
 
-extern int		g_blnVNE;
-extern int		g_blnHE;
+//extern int		g_blnVNE;
+//extern int		g_blnHE;
 
 extern bool		g_clear_image_logical;
 
@@ -83,7 +81,6 @@ void FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE,
 void SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h);
 
 void IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, int w, int h);
-void CEDOperator(custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, custom_buffer<int> &ImCED, int w, int h);
 
 void FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h);
 void FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w, int h);

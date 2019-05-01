@@ -162,7 +162,7 @@ CMainFrame::~CMainFrame()
 
 void CMainFrame::Init()
 {
-	int cnt;
+	int cnt;	
 
 	m_blnNoGUI = false;
 
@@ -547,8 +547,6 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_show_transformed_images_only, "show_transformed_images_only");
 
 	ReadProperty(fin, g_mthr, "moderate_threshold");
-	ReadProperty(fin, g_mvthr, "moderate_threshold_for_VEdges");
-	ReadProperty(fin, g_mhthr, "moderate_threshold_for_HEdges");
 	ReadProperty(fin, g_mnthr, "moderate_threshold_for_NEdges");
 	ReadProperty(fin, g_segw, "segment_width");
 	ReadProperty(fin, g_segh, "segment_height");
@@ -607,9 +605,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_vedges_threshold, "ssp_oi_property_moderate_vedges_threshold");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_nedges_threshold, "ssp_oi_property_moderate_nedges_threshold");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_hedges_threshold, "ssp_oi_property_moderate_hedges_threshold");
 	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, "ssp_oi_sub_group_settings_for_color_filtering");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_segment_width, "ssp_oi_property_segment_width");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_segments_count, "ssp_oi_property_min_segments_count");
@@ -667,8 +663,6 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
 
 	WriteProperty(fout, g_mthr, "moderate_threshold");
-	WriteProperty(fout, g_mvthr, "moderate_threshold_for_VEdges");
-	WriteProperty(fout, g_mhthr, "moderate_threshold_for_HEdges");
 	WriteProperty(fout, g_mnthr, "moderate_threshold_for_NEdges");
 	WriteProperty(fout, g_segw, "segment_width");
 	WriteProperty(fout, g_segh, "segment_height");

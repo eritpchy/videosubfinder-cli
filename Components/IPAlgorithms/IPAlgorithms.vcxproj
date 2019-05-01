@@ -211,6 +211,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)IPAlgorithms.lib</OutputFile>
@@ -234,6 +235,9 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <Optimization>MaxSpeed</Optimization>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)IPAlgorithms.lib</OutputFile>
