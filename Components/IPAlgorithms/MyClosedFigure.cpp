@@ -16,6 +16,7 @@
 
 #include "MyClosedFigure.h"
 #include <algorithm>
+#include <ppl.h>
 using namespace std;
 
 CMyClosedFigure::CMyClosedFigure()
@@ -389,174 +390,260 @@ void CMyClosedFigure::AlignPoints()
 }
 */
 
+inline void GetInfoAboutNearestPoints(custom_buffer<int> &Im, int &x, int &y, int &i, int &w, bool &bln, bool &bln2, int &i1, int &i2, int &white)
+{
+	//ѕровер€ем есть ли с лева точка фигуры
+	if ((x > 0) && (Im[i - 1] == white))//[x-1][y]
+	{//есть:
+		bln = true;
+		i1 = i - 1;
+
+		if (y > 0)
+		{
+			//ѕровер€ем нет ли c низу с лева точки фигуры
+			if (Im[i - w - 1] != white)//[x-1][y-1]
+			{//с низу с лева точки фигуры нету:
+
+				//ѕровер€ем есть ли с низу точка фигуры
+				if (Im[i - w] == white)//[x][y-1]
+				{//есть:
+					bln2 = true;
+					i2 = i - w;
+				}
+				else
+				{//нету: 
+
+					//ѕровер€ем есть ли с низу с права точка фигуры
+					if (x < w - 1)
+					{
+						if (Im[i - w + 1] == white)//[x+1][y-1]
+						{//есть:
+							bln2 = true;
+							i2 = i - w + 1;
+						}
+					}
+				}
+			}
+			else
+			{//с низу с лева точка фигуры есть:
+
+				//ѕровер€ем нет ли с низу точки фигуры
+				if (Im[i - w] != white)//[x][y-1]
+				{//нет:
+
+					//ѕровер€ем есть ли с низу с права точка фигуры
+					if (x < w - 1)
+					{
+						if (Im[i - w + 1] == white)//[x+1][y-1]
+						{//есть:
+							bln2 = true;
+							i2 = i - w + 1;
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{//с лева точки фигуры нету:
+
+		if (y > 0)
+		{
+			//ѕровер€ем есть ли с низу точка фигуры
+			if (Im[i - w] == white)//[x][y-1]
+			{//есть:
+				bln = true;
+				i1 = i - w;
+			}
+			else
+			{//нету:
+
+				//ѕровер€ем есть ли снизу слева точка фигуры
+				if ((x > 0) && (Im[i - w - 1] == white))//[x-1][y-1]
+				{//есть:
+					bln = true;
+					i1 = i - w - 1;
+
+					//ѕровер€ем есть ли снизу справа точка фигуры
+					if (x < w - 1)
+					{
+						if (Im[i - w + 1] == white)//[x+1][y-1]
+						{
+							//есть:
+							bln2 = true;
+							i2 = i - w + 1;
+						}
+					}
+				}
+				else
+				{//нету: 
+
+					//ѕровер€ем есть ли снизу справа точка фигуры
+					if (x < w - 1)
+					{
+						if (Im[i - w + 1] == white)//[x+1][y-1]
+						{
+							//есть:
+							bln = true;
+							i1 = i - w + 1;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, custom_buffer<CMyClosedFigure> &FiguresArray)
 {
-	int N;
-	int *m, *key, *key2, *NN, *I, *minX, *maxX, *minY, *maxY;
-	int i, j, i1, i2, jj, kk, index;
-	int x, y, size;
-	bool bln, bln2;
+	int *m, *key, *key2, *max_index_in_split;
+	const int n_splits = 1;
+	const int size = w*h;
 	clock_t start;
-		
+
 	start = clock();
-	size = w*h;
 
 	m = new int[size];
 	key = new int[size];
 	key2 = new int[size];
-	index=0;
+	max_index_in_split = new int[n_splits];
 
-	for(i=0; i<size; i++)
-	{
-		m[i]=-1;
-		key[i]=i;
-		key2[i]=i;
-	}
+	memset(m, 0, size * sizeof(int));
 
-	//Ќаходим все замкнутые фигуры в изображении
-	for(i=0; i<size; i++)
+	//Finding all closed figures on image
+
+	// doesn't give difference with n_splits == 32 (work a little longer)
+	//concurrency::parallel_for(0, n_splits, [&](int i_split)
+	//{
+	for (int i_split = 0; i_split < n_splits; i_split++)
 	{
-		if(Im[i] == white)
+		int i, j, i1, i2, jj, kk;
+		int x, y;
+		bool bln, bln2;
+		int yb = i_split * (h / n_splits);
+		int ye = (i_split == n_splits-1) ? (h - 1) : (yb + (h / n_splits) - 1);
+		int hh = ye - yb + 1;
+		int index = yb * w + 1;
+
+		for (y = 0, i = yb * w; y < hh; y++)
 		{
-			y = i/w;
-			x = i - y*w;
-			
-			bln=false;
-			bln2=false;
-			//ѕровер€ем есть ли с лева точка фигуры
-			if ( (x>0) && (Im[i-1]==white) )//[x-1][y]
-			{//есть:
-				bln=true;
-				i1=i-1;
-				
-				if (y>0)
+			for (x = 0; x < w; x++, i++)
+			{
+				if (Im[i] == white)
 				{
-					//ѕровер€ем нет ли c низу с лева точки фигуры
-					if (Im[i-w-1]!=white)//[x-1][y-1]
-					{//с низу с лева точки фигуры нету:
+					bln = false;
+					bln2 = false;
+					
+					GetInfoAboutNearestPoints(Im, x, y, i, w, bln, bln2, i1, i2, white);
 
-						//ѕровер€ем есть ли с низу точка фигуры
-						if (Im[i-w]==white)//[x][y-1]
-						{//есть:
-							bln2=true;
-							i2=i-w;
-						}
-
-						else 
-						{//нету: 
-							
-							//ѕровер€ем есть ли с низу с права точка фигуры
-							if (x<w-1) 
-							if (Im[i-w+1]==white)//[x+1][y-1]
-							{//есть:
-								bln2=true;
-								i2=i-w+1;
-							}
-						}
+					if (bln)
+					{
+						m[i] = m[i1];
 					}
 					else
-					{//с низу с лева точка фигуры есть:
-						
-						//ѕровер€ем нет ли с низу точки фигуры
-						if (Im[i-w]!=white)//[x][y-1]
-						{//нет:
-							
-							//ѕровер€ем есть ли с низу с права точка фигуры
-							if (x<w-1) 
-							if (Im[i-w+1]==white)//[x+1][y-1]
-							{//есть:
-								bln2=true;
-								i2=i-w+1;
-							}
+					{
+						m[i] = index;
+						key[index] = index;
+						key2[index] = index;
+						index++;
+					}
+
+					if (bln2)
+					{
+						if (m[i1] != m[i2])
+						{
+							jj = max(m[i1], m[i2]);
+							kk = min(m[i1], m[i2]);
+							while (key[jj] != jj) jj = key[jj];
+							while (key[kk] != kk) kk = key[kk];
+							key[max(jj, kk)] = min(jj, kk);
 						}
 					}
 				}
 			}
-			else 
-			{//с лева точки фигуры нету:
+		}
 
-				if (y>0)
+		max_index_in_split[i_split] = index;
+	}//);
+
+	for (int i_split = 1; i_split < n_splits; i_split++)
+	{
+		int i, j, i1, i2, jj, kk;
+		int x, y = i_split * (h / n_splits);
+		bool bln, bln2;
+		
+		for (x = 0, i = y * w; x < w; x++, i++)
+		{
+			if (Im[i] == white)
+			{
+				bln = false;
+				bln2 = false;
+
+				GetInfoAboutNearestPoints(Im, x, y, i, w, bln, bln2, i1, i2, white);				
+
+				if (bln)
 				{
-					//ѕровер€ем есть ли с низу точка фигуры
-					if (Im[i-w]==white)//[x][y-1]
-					{//есть:
-						bln=true;
-						i1=i-w;
+					if (m[i] != m[i1])
+					{
+						jj = max(m[i], m[i1]);
+						kk = min(m[i], m[i1]);
+						while (key[jj] != jj) jj = key[jj];
+						while (key[kk] != kk) kk = key[kk];
+						key[max(jj, kk)] = min(jj, kk);
 					}
+				}
 
-					else
-					{//нету:
-						
-						//ѕровер€ем есть ли снизу слева точка фигуры
-						if( (x>0) && (Im[i-w-1]==white) )//[x-1][y-1]
-						{//есть:
-							bln=true;
-							i1=i-w-1;
-							
-							//ѕровер€ем есть ли снизу справа точка фигуры
-							if (x<w-1) 
-							if (Im[i-w+1]==white)//[x+1][y-1]
-							{
-							//есть:
-								bln2=true;
-								i2=i-w+1;
-							}
-						}
-						
-						else 
-						{//нету: 
-							
-							//ѕровер€ем есть ли снизу справа точка фигуры
-							if (x<w-1) 
-							if (Im[i-w+1]==white)//[x+1][y-1]
-							{
-							//есть:
-								bln=true;
-								i1=i-w+1;
-							}
-						}
+				if (bln2)
+				{
+					if (m[i1] != m[i2])
+					{
+						jj = max(m[i1], m[i2]);
+						kk = min(m[i1], m[i2]);
+						while (key[jj] != jj) jj = key[jj];
+						while (key[kk] != kk) kk = key[kk];
+						key[max(jj, kk)] = min(jj, kk);
 					}
 				}
 			}
-
-			if (bln)
-			{
-				m[i]=key[m[i1]];
-			}
-			else
-			{
-				m[i]=index;
-				index++;
-			}
-
-			if (bln2)
-			if (m[i1]!=m[i2])
-			{
-				jj=max(m[i1],m[i2]);
-				kk=min(m[i1],m[i2]);
-				while (key[jj]!=jj) jj=key[jj];
-				while (key[kk]!=kk) kk=key[kk];
-				key[max(jj,kk)]=min(jj,kk);
-			}
-
 		}
+		
 	}
 
-	N=0;
-	for (i=0; i<index; i++)
+	int i, j, x, y, N=0;
+
+	for (int i_split = 0; i_split < n_splits; i_split++)
 	{
-		j=i;
-		while (key[j]!=j) j=key[j];
-		key[i]=j;
+		int yb = i_split * (h / n_splits);
+		int index_min = yb * w + 1;
 
-		if (key[i]==i)
+		for (i = index_min; i < max_index_in_split[i_split]; i++)
 		{
-			key2[i]=N;
-			N++;
+			j = i;
+			while (key[j] != j) j = key[j];
+			key[i] = j;
+
+			if (key[i] == i)
+			{
+				key2[i] = N;
+				N++;
+			}
 		}
 	}
+
+	for (int i_split = 0; i_split < n_splits; i_split++)
+	{
+		int yb = i_split * (h / n_splits);
+		int index_min = yb * w + 1;
+
+		for (i = index_min; i < max_index_in_split[i_split]; i++)
+		{
+			key[i] = key2[key[i]];
+		}
+	}
+
+	int *NN, *I, *minX, *maxX, *minY, *maxY;
 
 	NN = new int[N];
 	I = new int[N];
@@ -575,22 +662,21 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 		maxY[i]=0;
 	}
 
-	for(i=0; i<w*h; i++)
+	for (y = 0, i = 0; y < h; y++)
 	{
-		if (Im[i]==white)
+		for (x = 0; x < w; x++, i++)
 		{
-			y = i/w;
-			x = i - y*w;
-
-			j=key2[key[m[i]]];
-			NN[j]++;
-			maxY[j]=y;
-			if (minY[j]>y) minY[j]=y;
-			if (maxX[j]<x) maxX[j]=x;
-			if (minX[j]>x) minX[j]=x;
+			if (Im[i] == white)
+			{
+				j = key[m[i]];
+				NN[j]++;
+				maxY[j] = y;
+				if (minY[j] > y) minY[j] = y;
+				if (maxX[j] < x) maxX[j] = x;
+				if (minX[j] > x) minX[j] = x;
+			}
 		}
 	}
-
 	FiguresArray.set_size(N);
 
 	CMyClosedFigure *pf;
@@ -608,14 +694,16 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 		pf->m_h = maxY[i]-minY[i]+1;
 	}
 
-	for(y=0, i=0; y<h; y++)
-	for(x=0; x<w; x++, i++)
+	for (y = 0, i = 0; y < h; y++)
 	{
-		if (Im[i]==white)
+		for (x = 0; x < w; x++, i++)
 		{
-			j = key2[key[m[i]]];
-			FiguresArray[j].m_PointsArray[I[j]]=CMyPoint(x, y, i);
-			I[j]++;
+			if (Im[i] == white)
+			{
+				j = key[m[i]];
+				FiguresArray[j].m_PointsArray[I[j]] = CMyPoint(x, y, i);
+				I[j]++;
+			}
 		}
 	}
 
@@ -628,8 +716,9 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 	delete[] maxX;
 	delete[] minY;
 	delete[] maxY;
-	
-	return (clock()-start);
+	delete[] max_index_in_split;
+
+	return (clock() - start);
 }
 
 clock_t CreateIndexedImage(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int white, int &Number)

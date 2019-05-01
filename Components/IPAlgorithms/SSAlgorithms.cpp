@@ -19,7 +19,7 @@
 
 int		g_RunSubSearch = 0;
 
-long    g_threads = 16;
+//long    g_threads = 16;
 
 int		g_DL = 6;	 //sub frame length
 double	g_tp = 0.3;	 //text procent
@@ -91,12 +91,12 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	custom_buffer<int> lb(H, 0), le(H, 0);
 
-	custom_buffer<int> ImRGB(SIZE, 0), Im(SIZE, 0), ImNFF(SIZE, 0), ImNFFS(SIZE, 0);
+	custom_buffer<int> ImRGB(SIZE, 0);
 	custom_buffer<int> ImS(SIZE, 0); //store image
 	custom_buffer<int> ImSP(SIZE, 0); //store image prev
 	custom_buffer<int> ImFS(SIZE, 0); //image for save
 	custom_buffer<int> ImFSP(SIZE, 0); //image for save prev
-	custom_buffer<int> ImFF(SIZE, 0), ImSF(SIZE, 0), ImTF(SIZE, 0), ImSS(SIZE, 0), ImSSP(SIZE, 0);
+	custom_buffer<int> ImFF(SIZE, 0), ImSF(SIZE, 0), ImTF(SIZE, 0), ImTFT(SIZE, 0), ImSS(SIZE, 0), ImSSP(SIZE, 0);
 	custom_buffer<int> ImNE(SIZE, 0), ImNES(SIZE, 0), ImNESS(SIZE, 0), ImNESP(SIZE, 0), ImNESSP(SIZE, 0), ImNET(SIZE, 0), ImRES(SIZE, 0);
 	custom_buffer<custom_buffer<int>> mImRGB(DL, custom_buffer<int>(SIZE, 0)), ImS_SQ(DL, custom_buffer<int>(SIZE, 0)), ImVES_SQ(DL, custom_buffer<int>(SIZE, 0)), ImNES_SQ(DL, custom_buffer<int>(SIZE, 0));
 
@@ -111,8 +111,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	pV->GetRGBImage(mImRGB[0], xmin, xmax, ymin, ymax);
 	n_fs = 1;
 
-	prevPos = -2;
+	int iter = 0;
+	int debug = 0;	
 
+	prevPos = -2;
+	
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{		
 		while (found_sub == 0)
@@ -141,7 +144,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				}
 			}
 
-			bln = ConvertImage(mImRGB[DL-1], ImFF, ImSF, ImTF, ImNET, w, h, W, H);
+			bln = ConvertImage(mImRGB[DL-1], ImFF, ImSF, ImTFT, ImNET, w, h, W, H);
 
 			if (bln == 1)
 			{
@@ -193,17 +196,23 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 		if (n_fs != DL)
 		{
-			bln = ConvertImage(*pImRGB, Im, ImSF, ImTF, ImNE, w, h, W, H);
-			pIm = &Im;
+			bln = ConvertImage(*pImRGB, ImFF, ImSF, ImTF, ImNE, w, h, W, H);
+			pIm = &ImTF;
 			pImNE = &ImNE;
+
+			if (debug) { SaveRGBImage(*pImRGB, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGB1_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
+			if (debug) { SaveGreyscaleImage(*pIm, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImTF1_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
 		}
 		else
 		{
 			bln = 1;
-			pIm = &ImFF;
+			pIm = &ImTFT;
 			pImNE = &ImNET;
 			n_fs++;
-		}
+
+			if (debug) { SaveRGBImage(*pImRGB, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGB2_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
+			if (debug) { SaveGreyscaleImage(*pIm, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImTF2_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
+		}		
 
 		if ( (bln == 1) && (CurPos != prevPos) )
 		{	
@@ -224,17 +233,18 @@ L:				bf = fn;
 				{
 					/*if (g_show_results)
 					{
-						g_pMF->SaveGreyscaleImage(ImS, "\\TestImages\\Cmb1!.jpeg", w, h);
-						g_pMF->SaveGreyscaleImage(Im, "\\TestImages\\Cmb2!.jpeg", w, h);
-						g_pMF->SaveGreyscaleImage(ImVES, "\\TestImages\\Cmb3!.jpeg", w, h);
-						g_pMF->SaveGreyscaleImage(ImVE, "\\TestImages\\Cmb4!.jpeg", w, h);
+						g_pMF->SaveGreyscaleImage(ImS, "\\TestImages\\Cmb1!" + g_im_save_format, w, h);
+						g_pMF->SaveGreyscaleImage(Im, "\\TestImages\\Cmb2!" + g_im_save_format, w, h);
+						g_pMF->SaveGreyscaleImage(ImVES, "\\TestImages\\Cmb3!" + g_im_save_format, w, h);
+						g_pMF->SaveGreyscaleImage(ImVE, "\\TestImages\\Cmb4!" + g_im_save_format, w, h);
 					}*/
 
 					if(CompareTwoImages(ImS, ImNES, *pIm, *pImNE, size) == 0) 
 					{
-						if (finded_prev == 1) 
+						if (finded_prev == 1)
 						{
 							memcpy(ImSS.m_pData, ImS.m_pData, BufferSize);
+							if (debug) { iter++; SaveGreyscaleImage(ImSS, string("\\TestImages\\FastSearchSubtitles") + "_iter" + std::to_string(iter) + "_ImSS_line" + std::to_string(__LINE__)  +  "" + g_im_save_format, w, h); }
 
 							for(i=0; i<nn; i++)
 							{
@@ -286,8 +296,16 @@ L:				bf = fn;
 						}
 						else
 						{
-							if (finded_prev == 0) memcpy(ImSS.m_pData, ImS_SQ[nn - 1].m_pData, BufferSize);
-							else memcpy(ImSS.m_pData, ImS.m_pData, BufferSize);
+							if (finded_prev == 0)
+							{
+								memcpy(ImSS.m_pData, ImS_SQ[nn - 1].m_pData, BufferSize);
+								if (debug) { iter++; SaveGreyscaleImage(ImSS, string("\\TestImages\\FastSearchSubtitles") + "_iter" + std::to_string(iter) + "_ImSS_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
+							}
+							else
+							{
+								memcpy(ImSS.m_pData, ImS.m_pData, BufferSize);
+								if (debug) { iter++; SaveGreyscaleImage(ImSS, string("\\TestImages\\FastSearchSubtitles") + "_iter" + std::to_string(iter) + "_ImSS_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
+							}
 						}
 					}
 
@@ -319,8 +337,8 @@ L2:							if (finded_prev == 1)
 									ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
 									g_pViewImage[0](ImFSP, W, H);									
 									g_pViewImage[1](ImSSP, W, H);									
-									SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), W, H);
-									SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), W, H);								
+									SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
+									SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 
 									pbf = bf;
 									pbt = bt;
@@ -357,6 +375,7 @@ L2:							if (finded_prev == 1)
 						else
 						{
 							SimpleCombineTwoImages(ImSS, *pIm, size);
+							if (debug) { iter++; SaveGreyscaleImage(ImSS, string("\\TestImages\\FastSearchSubtitles") + "_iter" + std::to_string(iter) + "_ImSS_line" + std::to_string(__LINE__)  + g_im_save_format, w, h); }
 						}
 					}
 				}
@@ -385,8 +404,8 @@ L2:							if (finded_prev == 1)
 						ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						g_pViewImage[0](ImFSP, W, H);									
 						g_pViewImage[1](ImSSP, W, H);									
-						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), W, H);
-						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), W, H);														
+						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!") + g_im_save_format, W, H);														
 						finded_prev = 0;
 						bf = -2;
 					}
@@ -417,8 +436,8 @@ L2:							if (finded_prev == 1)
 						ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						g_pViewImage[0](ImFSP, W, H);									
 						g_pViewImage[1](ImSSP, W, H);									
-						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str+string(".jpeg"), W, H);
-						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!.jpeg"), W, H);														
+						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!") + g_im_save_format, W, H);
 					}
 				}
 			}
@@ -433,8 +452,8 @@ L2:							if (finded_prev == 1)
 					ImToNativeSize(ImSS, w, h, W, H, xmin, xmax, ymin, ymax);
 					g_pViewImage[0](ImFS, W, H);									
 					g_pViewImage[1](ImSS, W, H);									
-					SaveRGBImage(ImFS, string("\\RGBImages\\")+Str+string(".jpeg"), W, H);
-					SaveGreyscaleImage(ImSS, string("\\FRDImages\\")+Str+string("!.jpeg"), W, H);														
+					SaveRGBImage(ImFS, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
+					SaveGreyscaleImage(ImSS, string("\\FRDImages\\")+Str+string("!") + g_im_save_format, W, H);														
 				}
 			}
 
@@ -468,6 +487,7 @@ L2:							if (finded_prev == 1)
 	return 0;
 }
 
+// return 1 if similar else 0
 int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom_buffer<int> &Im2, custom_buffer<int> &ImNFF2, int size)
 {
 	int i, dif1, dif2, cmp, val1, val2;
@@ -755,9 +775,9 @@ int FinalCompareTwoSubs1(custom_buffer<int> &ImRES, custom_buffer<int> &lb, cust
 	int bln;
 	double veple;
 
-	//g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
-	//g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
-	//g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!" + g_im_save_format, w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!" + g_im_save_format, w, h);
+	//g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!" + g_im_save_format, w, h);
 
 	veple = g_veple;
 
@@ -809,9 +829,9 @@ int FinalCompareTwoSubs2(custom_buffer<int> &ImRES, custom_buffer<int> &lb, cust
 
 	/*if (g_show_results) 
 	{
-		g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
-		g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
-		g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
+		g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!" + g_im_save_format, w, h);
+		g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!" + g_im_save_format, w, h);
+		g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!" + g_im_save_format, w, h);
 	}*/
 
 	veple = g_veple;
@@ -942,9 +962,9 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_bu
 
 	AddTwoImages(Im1, Im2, ImRES, w*h);
 	
-	//g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!.jpeg", w, h);
-	//g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!.jpeg", w, h);
-	//g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!.jpeg", w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE1, "\\TestImages\\Cmb1!" + g_im_save_format, w, h);
+	//g_pMF->SaveGreyscaleImage(ImVE2, "\\TestImages\\Cmb2!" + g_im_save_format, w, h);
+	//g_pMF->SaveGreyscaleImage(ImRES, "\\TestImages\\Cmb3!" + g_im_save_format, w, h);
 	
 	bln = 0;
 	l = 0;

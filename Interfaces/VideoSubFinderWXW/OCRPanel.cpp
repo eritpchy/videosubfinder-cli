@@ -597,7 +597,7 @@ void COCRPanel::CreateSubFromTXTResults()
 	
     //--------------
 
-    image_name = g_work_dir + "/RGBImages/" + string(FileNamesVector[0]).substr(0, 24) + string(".jpeg");
+    image_name = g_work_dir + "/RGBImages/" + string(FileNamesVector[0]).substr(0, 24) + g_im_save_format;
 	int W, H;
     GetImageSize(image_name, W, H);
 
@@ -654,7 +654,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			AssLine.m_BT = bt;
 			AssLine.m_ET = et;			
 
-			image_name = string("/TXTImages/") + string(FileNamesVector[k]).substr(0, 27) + string(".jpeg");
+			image_name = string("/TXTImages/") + string(FileNamesVector[k]).substr(0, 27) + g_im_save_format;
 			
             fname = string("");
 			do
@@ -1473,6 +1473,10 @@ void *ThreadCreateClearedTextImages::Entry()
     w = 0;
     h = 0;
 
+	__int64 t1, dt, num_calls;
+
+	//t1 = GetTickCount();
+
 	for (k=0; k<(int)FileNamesVector.size(); k++)
 	{
 		if (g_RunCreateClearedTextImages == 0) break;
@@ -1498,9 +1502,14 @@ void *ThreadCreateClearedTextImages::Entry()
 		custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h, 0));
 
 		LoadRGBImage(g_ImRGB, string(Str), w, h);		
-		//m_pMF->m_pVideoBox->ViewImage(ImRGB, w, h);		
 
-		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], w, h, W, H);
+		/*num_calls = 100;
+		t1 = GetTickCount();
+		for (__int64 i_call = 0; i_call < num_calls; i_call++)
+		{*/		
+		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], w, h, W, H);		
+		/*}
+		(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
 
 		if (g_show_transformed_images_only)
 		{
@@ -1513,7 +1522,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		{
 			Str = FileNamesVector[k];
 			Str = Str.Mid(0, Str.length()-5);
-			Str = g_work_dir + "/FRDImages/"+Str+"!.jpeg";
+			Str = g_work_dir + "/FRDImages/"+Str+"!"+g_im_save_format;
 			LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
 			//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
 		}
@@ -1533,7 +1542,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		{
 			Str = FileNamesVector[k];
 			Str = Str.Mid(0, Str.length()-5);
-			Str = wxString("/TXTImages/") + Str + wxString("_01.jpeg");
+			Str = wxString("/TXTImages/") + Str + wxString("_01") + g_im_save_format;
 
 			memset(g_ImRES1.m_pData, 0, ((w*4)*(h/4))*sizeof(int));
 
@@ -1634,6 +1643,8 @@ void *ThreadCreateClearedTextImages::Entry()
 
 		prevSavedFiles = SavedFiles;
 	}
+
+	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));
 
 	//if (ImRES1 != NULL) delete[] ImRES1;
 	//if (ImRES2 != NULL) delete[] ImRES2;
