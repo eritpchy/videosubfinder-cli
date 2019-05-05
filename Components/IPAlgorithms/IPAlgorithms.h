@@ -35,7 +35,6 @@ extern string   g_im_save_format;
 
 extern double	g_mthr;  //moderate threshold
 extern double	g_mnthr; //moderate threshold for NEdges
-extern int		g_hvt;	 //horizontal-vertical edges threshold
 extern int		g_segw;  //segment width
 extern int		g_segh;  //segment height
 extern int		g_msegc; //minimum segments count
@@ -51,9 +50,6 @@ extern double   g_msd;   //min symbol density (percent of its pixels / w*h of sy
 extern double	g_mpned; //min NEdges points density
 
 extern int		g_scale;
-
-//extern int		g_blnVNE;
-//extern int		g_blnHE;
 
 extern bool		g_clear_image_logical;
 
@@ -75,8 +71,6 @@ void SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int 
 void FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h);
 void FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h);
 void FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h);
-void FullSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE1, custom_buffer<int> &ImVOE2, int w, int h);
-void SobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h);
 void SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h);
 void FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h);
 void SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h);
@@ -95,11 +89,7 @@ void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buff
 void BorderClear(custom_buffer<int> &Im, int dd, int w, int h);
 void EasyBorderClear(custom_buffer<int> &Im, int w, int h);
 
-void FreeImage(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h);
-void UnpackImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h);
-
 int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H);
-//int GetFastTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImVE, int w, int h, int W, int H);
 
 int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H);
 
@@ -114,7 +104,7 @@ void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_
 
 void ClearImage4x4(custom_buffer<int> &Im, int w, int h, int white);
 void ClearImageSpecific1(custom_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white);
-int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int white);
+int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int ddy1, int ddy2, int white);
 
 int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center);
 

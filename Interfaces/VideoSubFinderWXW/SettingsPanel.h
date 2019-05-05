@@ -50,8 +50,8 @@ public:
 	int		m_cn;
 	int		m_n;
 
-	int		m_w;
-	int		m_h;
+	int		m_W;
+	int		m_H;
 
 	wxColour   m_CLSP;
 	wxColour   m_CL1;

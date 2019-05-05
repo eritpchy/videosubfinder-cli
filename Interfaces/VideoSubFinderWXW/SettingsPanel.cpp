@@ -40,8 +40,8 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 	StrFN[3] = string("NEdges Points Image");
 	m_cn = 2;
 	m_n = 4;
-	m_w = 10;
-	m_h = 10;
+	m_W = 0;
+	m_H = 0;
 }
 
 CSettingsPanel::~CSettingsPanel()
@@ -257,42 +257,71 @@ void CSettingsPanel::Init()
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 {
-	CVideo *pVideo;
-	int i, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;
+	custom_buffer<int> ImRGB;
+	int i, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
 	char str[30];
 	clock_t t;
 		
-	if (m_pMF->m_VIsOpen == false) return;
+	if (m_pMF->m_VIsOpen)
+	{
+		m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+			m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-	pVideo = m_pMF->m_pVideo;
+		w = m_pMF->m_pVideo->m_w;
+		h = m_pMF->m_pVideo->m_h;
+		m_W = W = m_pMF->m_pVideo->m_Width;
+		m_H = H = m_pMF->m_pVideo->m_Height;
+		xmin = m_pMF->m_pVideo->m_xmin;
+		xmax = m_pMF->m_pVideo->m_xmax;
+		ymin = m_pMF->m_pVideo->m_ymin;
+		ymax = m_pMF->m_pVideo->m_ymax;
+
+		ImRGB = custom_buffer<int>(W*H, 0);
+
+		m_pMF->m_pVideo->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
+	}
+	else
+	{
+		wxDir dir(g_work_dir + "/RGBImages");
+		wxString filename;
+
+		if (dir.GetFirst(&filename))
+		{
+			string filepath = g_work_dir + "/RGBImages/" + filename;
+
+			GetImageSize(filepath, w, h);
+			
+			m_W = W = w;
+			m_H = H = h;
+
+			xmin = 0;
+			xmax = w - 1;
+			ymin = 0;
+			ymax = h - 1;
+
+			ImRGB = custom_buffer<int>(W*H, 0);
+			LoadRGBImage(ImRGB, filepath, w, h);
+
+			g_pViewImage[0](ImRGB, W, H);
+		}		
+	}
+
+	if (ImRGB.size() == 0)
+	{
+		return;
+	}
 	
-	m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-											m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-											m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-											m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
-
-	m_w = w = m_pMF->m_pVideo->m_w;
-	m_h = h = m_pMF->m_pVideo->m_h;
-	W = m_pMF->m_pVideo->m_Width;
-	H = m_pMF->m_pVideo->m_Height;
-	xmin = m_pMF->m_pVideo->m_xmin;
-	xmax = m_pMF->m_pVideo->m_xmax;
-	ymin = m_pMF->m_pVideo->m_ymin;
-	ymax = m_pMF->m_pVideo->m_ymax;
-
-	custom_buffer<int> g_ImRGB(W*H, 0), g_ImRES2(W*H, 0), g_ImRES3(W*H, 0);
 	m_ImF = custom_buffer<custom_buffer<int>> (m_n, custom_buffer<int>(W*H, 0));
-
-	t = clock();
-	m_pMF->m_pVideo->GetRGBImage(g_ImRGB, xmin, xmax, ymin, ymax);
-	S = ConvertImage(g_ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], w, h, W, H);
-	t = clock()-t;
+	
+	S = ConvertImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], w, h, W, H);
 			
 	if (S > 0)
 	{
 		if ((w != W) || (h != H))
 		{
-			ImToNativeSize(g_ImRGB, w, h, W, H, xmin, xmax, ymin, ymax);
+			ImToNativeSize(ImRGB, w, h, W, H, xmin, xmax, ymin, ymax);
 			
 			for(k=0; k<m_n; k++)
 			{
@@ -303,7 +332,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], W, H);
 	
-	SaveRGBImage(g_ImRGB, "/TSTImages/RGBImage" + g_im_save_format, W, H);
+	SaveRGBImage(ImRGB, "/TSTImages/RGBImage" + g_im_save_format, W, H);
 	
 	for (i=0; i<m_n; i++) 
 	{		
@@ -317,10 +346,10 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 	m_cn--;
 	if (m_cn < 0) m_cn = m_n-1;
 	
-	if ((m_pMF->m_VIsOpen == true) && (m_ImF.m_size > 0))
+	if (m_ImF.m_size > 0)
 	{
 		m_plblIF->SetLabel(StrFN[m_cn]);	
-		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height);
+		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_W, m_H);
 	}
 }
 
@@ -329,10 +358,10 @@ void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 	m_cn++;
 	if (m_cn > m_n-1) m_cn = 0;
 
-	if ((m_pMF->m_VIsOpen == true) && (m_ImF.m_size > 0))
+	if (m_ImF.m_size > 0)
 	{
 		m_plblIF->SetLabel(StrFN[m_cn]);
-		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height);
+		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_W, m_H);
 	}
 }
 

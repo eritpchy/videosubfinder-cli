@@ -61,18 +61,18 @@ void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 	wxPaintDC dc(this);	
 
 	if (m_pVB != NULL) 
-	{
-		if (m_pVB->m_pImage != NULL)
-		{
-			int w, h;
-			this->GetClientSize(&w, &h);
-			dc.DrawBitmap(m_pVB->m_pImage->Scale(w, h), 0, 0);
-		}
-		else if (m_pVB->m_pMF->m_VIsOpen)
+	{		
+		if (m_pVB->m_pMF->m_VIsOpen)
 		{
 			int w, h;
 			this->GetClientSize(&w, &h);
 			m_pVB->m_pMF->m_pVideo->SetVideoWindowPosition(0, 0, w, h, &dc);
+		}
+		else if (m_pVB->m_pImage != NULL)
+		{
+			int w, h;
+			this->GetClientSize(&w, &h);
+			dc.DrawBitmap(m_pVB->m_pImage->Scale(w, h), 0, 0);
 		}
 	}
 }
