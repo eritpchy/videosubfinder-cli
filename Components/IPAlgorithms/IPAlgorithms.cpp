@@ -96,6 +96,7 @@ int g_scale = 1;
 
 bool g_clear_image_logical = false;
 
+bool g_generate_cleared_text_images_on_test = false;
 bool g_show_results = false;
 bool g_show_sf_results = false;
 bool g_clear_test_images_folder = true;
@@ -2878,7 +2879,7 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 	if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\GetMainClusterImageBySplit" + iter_det + "_03_3_ImMaskWithBorder" + g_im_save_format, w, h);
 }
 
-int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H)
+int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H)
 {
 	custom_buffer<int> LL(H, 0), LR(H, 0), LLB(H, 0), LLE(H, 0), LW(H, 0);
 	custom_buffer<int> ImRES1(W*H * 16, 0), ImRES2(W*H * 16, 0), ImRES3(W*H * 16, 0), ImRES4(W*H * 16, 0), ImTEMP(W*H * 16, 0);
@@ -3994,11 +3995,13 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 
 		for (i = 0; i < ww*hh; i++) ImRES1[i] = 255;
 
+		cnt = 0;
 		for(y=0, i=0; y<h; y++)
 		for(x=0; x<w; x++, i++)
 		{
 			if (ImFF[i] != 0)
 			{
+				cnt++;
 				ImRES1[y*ww + (XB * 4) + x] = 0;
 				ImRES[(YB*4 + y)*ww + (XB * 4) + x] = 0;
 			}
@@ -4006,28 +4009,38 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buf
 
 		g_pViewRGBImage(ImRES, W*4, H*4);
 
-		GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, rc);
+		if (cnt > 0)
+		{
+			GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, rc);
 
-        FullName = string("/TXTImages/");
-		FullName += SaveName;
+			FullName = string("/TXTImages/");
+			FullName += SaveName;
 
-		sprintf(str, "%.2d", (int)SavedFiles.size() + 1);
-		FullName += string("_");
-        FullName += string(str);
+			sprintf(str, "%.2d", (int)SavedFiles.size() + 1);
+			FullName += string("_");
+			FullName += string(str);
+			FullName += g_im_save_format;
 
-		SaveTextLineParameters(	FullName, YB, 
-								LH/4, YB + LMAXY/4, 
-								XB + DXB/4, XB + DXE/4,
-								YB + DYB/4, YB + DYE/4,
-								mY, mI, mQ );
+			SaveTextLineParameters(FullName, YB,
+				LH / 4, YB + LMAXY / 4,
+				XB + DXB / 4, XB + DXE / 4,
+				YB + DYB / 4, YB + DYE / 4,
+				mY, mI, mQ);
 
-		SavedFiles.push_back(FullName);
+			SavedFiles.push_back(FullName);
 
-		SaveGreyscaleImage(ImRES1, FullName + g_im_save_format, ww, hh, 0, 1.0, -1, 300);
-
-		res = 1;
+			SaveGreyscaleImage(ImRES1, FullName, ww, hh, 0, 1.0, -1, 300);
+			
+			res = 1;
+		}
+		
 		k++;
 	}
+
+	cv::Mat cv_ImRGBOrig(H*4, W*4, CV_8UC4), cv_ImRGB;
+	memcpy(cv_ImRGBOrig.data, &ImRES[0], W*H*16*sizeof(int));
+	cv::resize(cv_ImRGBOrig, cv_ImRGB, cv::Size(0, 0), 0.25, 0.25);
+	memcpy(&ImClearedText[0], cv_ImRGB.data, W*H*sizeof(int));
 
 	return res;
 }

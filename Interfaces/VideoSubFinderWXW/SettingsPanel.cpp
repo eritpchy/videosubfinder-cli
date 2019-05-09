@@ -17,7 +17,7 @@
 #include "MyResource.h"
 #include "SettingsPanel.h"
 
-string	StrFN[4];
+vector<string> StrFN;
 
 BEGIN_EVENT_TABLE(CSettingsPanel, wxPanel)
 	EVT_BUTTON(ID_TEST, CSettingsPanel::OnBnClickedTest)
@@ -34,12 +34,14 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 	m_pParent = pParent;
 	m_pMF = pParent->m_pMF;
 
+	m_n = 5;
+	StrFN.resize(m_n);
 	StrFN[0] = string("After First Filtration");
 	StrFN[1] = string("After Second Filtration");
 	StrFN[2] = string("After Third Filtration");
 	StrFN[3] = string("NEdges Points Image");
-	m_cn = 2;
-	m_n = 4;
+	StrFN[4] = string("Cleared Text Image");
+	m_cn = 2;	
 	m_W = 0;
 	m_H = 0;
 }
@@ -194,6 +196,7 @@ void CSettingsPanel::Init()
                            rcOI.GetPosition(), rcOI.GetSize() );
 
     m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CL2, m_CL4, m_LBLFont, &g_generate_cleared_text_images_on_test);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CL2, m_CL4, m_LBLFont, &g_show_results);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CL2, m_CL4, m_LBLFont, &g_show_sf_results);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CL2, m_CL4, m_LBLFont, &g_clear_test_images_folder);
@@ -313,10 +316,20 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		return;
 	}
 	
+	m_pMF->m_pPanel->Disable();	
+
 	m_ImF = custom_buffer<custom_buffer<int>> (m_n, custom_buffer<int>(W*H, 0));
 	
 	S = ConvertImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], w, h, W, H);
-			
+	
+	if (g_generate_cleared_text_images_on_test)
+	{
+		m_cn = 4;
+		vector<string> SavedFiles;
+		SavedFiles.push_back("RGBImage");
+		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], SavedFiles, w, h);
+	}
+
 	if (S > 0)
 	{
 		if ((w != W) || (h != H))
@@ -328,17 +341,12 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 				ImToNativeSize(m_ImF[k], w, h, W, H, xmin, xmax, ymin, ymax);
 			}
 		}
-	}	
-
-	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], W, H);
-	
-	SaveRGBImage(ImRGB, "/TSTImages/RGBImage" + g_im_save_format, W, H);
-	
-	for (i=0; i<m_n; i++) 
-	{		
-		_itoa(i, str, 10);
-		SaveGreyscaleImage(m_ImF[i], string("/TSTImages/") + string(str) + string("TSTImage _ ") + string(StrFN[i]) + g_im_save_format, W, H);
 	}
+
+	m_plblIF->SetLabel(StrFN[m_cn]);
+	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], W, H);	
+
+	m_pMF->m_pPanel->Enable();
 }
 
 void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)

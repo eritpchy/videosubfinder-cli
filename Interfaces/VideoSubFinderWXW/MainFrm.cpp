@@ -541,6 +541,11 @@ void CMainFrame::LoadSettings()
 		exit(1);
 	}
 	
+	
+	ReadProperty(fin, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
+	ReadProperty(fin, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
+
+	ReadProperty(fin, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
 	ReadProperty(fin, g_show_results, "dump_debug_images");
 	ReadProperty(fin, g_show_sf_results, "dump_debug_second_filtration_images");
 	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
@@ -598,6 +603,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, "ssp_oi_property_generate_cleared_text_images_on_test");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_dump_debug_images, "ssp_oi_property_dump_debug_images");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, "ssp_oi_property_dump_debug_second_filtration_images");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_clear_test_images_folder, "ssp_oi_property_clear_test_images_folder");
@@ -657,6 +663,10 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
 
+	WriteProperty(fout, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
+	WriteProperty(fout, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
+
+	WriteProperty(fout, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
 	WriteProperty(fout, g_show_results, "dump_debug_images");
 	WriteProperty(fout, g_show_sf_results, "dump_debug_second_filtration_images");
 	WriteProperty(fout, g_clear_test_images_folder, "clear_test_images_folder");

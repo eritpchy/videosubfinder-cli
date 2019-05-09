@@ -53,6 +53,7 @@ extern int		g_scale;
 
 extern bool		g_clear_image_logical;
 
+extern bool		g_generate_cleared_text_images_on_test;
 extern bool		g_show_results;
 extern bool		g_show_sf_results;
 extern bool		g_clear_test_images_folder;
@@ -91,7 +92,7 @@ void EasyBorderClear(custom_buffer<int> &Im, int w, int h);
 
 int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H);
 
-int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H);
+int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H);
 
 void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset);

@@ -66,7 +66,6 @@ bool CVideoSubFinderApp::OnInit()
 		wxFileName::Mkdir(wxStr + "/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 		wxFileName::Mkdir(wxStr + "/FRDImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 		wxFileName::Mkdir(wxStr + "/TestImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-		wxFileName::Mkdir(wxStr + "/TSTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 		wxFileName::Mkdir(wxStr + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 		wxFileName::Mkdir(wxStr + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	}

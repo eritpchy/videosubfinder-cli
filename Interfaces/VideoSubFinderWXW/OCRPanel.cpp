@@ -25,7 +25,7 @@ bool g_use_FRD_images = false;
 int g_IsCreateClearedTextImages = 0;
 int g_RunCreateClearedTextImages = 0;
 bool g_ValidateAndCompareTXTImages = false;
-bool g_DontDeleteUnrecognizedImages1 = false;
+bool g_DontDeleteUnrecognizedImages1 = true;
 bool g_DontDeleteUnrecognizedImages2 = true;
 
 wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
@@ -1380,7 +1380,7 @@ void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-	FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h);
+	FindTextLines(g_ImRGB, g_ImF[2], g_ImF[5], g_ImF[3], SavedFiles, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h);
 }
 
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
@@ -1536,7 +1536,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		sprintf(str, "%.4d", val);
 		if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
 
-		res = FindTextLines(g_ImRGB, g_ImF[5], g_ImF[3], SavedFiles, w, h);
+		res = FindTextLines(g_ImRGB, g_ImF[2], g_ImF[5], g_ImF[3], SavedFiles, w, h);
 
 		if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
 		{
