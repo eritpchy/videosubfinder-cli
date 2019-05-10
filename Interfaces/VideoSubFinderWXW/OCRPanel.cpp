@@ -146,7 +146,6 @@ BEGIN_EVENT_TABLE(COCRPanel, wxPanel)
 	EVT_BUTTON(ID_BTN_CSCTI, COCRPanel::OnBnClickedCreateSubFromClearedTXTImages)
 	EVT_BUTTON(ID_BTN_CSTXT, COCRPanel::OnBnClickedCreateSubFromTXTResults)
 	EVT_BUTTON(ID_BTN_CCTI, COCRPanel::OnBnClickedCreateClearedTextImages)
-	EVT_BUTTON(ID_BTN_TEST, COCRPanel::OnBnClickedTest)
 END_EVENT_TABLE()
 
 COCRPanel::COCRPanel(CSSOWnd* pParent)
@@ -270,10 +269,6 @@ void COCRPanel::Init()
 		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_BTNFont);
 
-	m_pTEST = new wxButton( m_pP3, ID_BTN_TEST,
-		m_pMF->m_cfg.m_ocr_button_test_text, rcTEST.GetPosition(), rcTEST.GetSize());
-	m_pTEST->SetFont(m_BTNFont);
-
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 
 	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
@@ -283,8 +278,6 @@ void COCRPanel::Init()
 	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
 
 	this->SetSizer(top_sizer);
-
-	m_pTEST->SetFocus();
 }
 
 void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
@@ -1342,47 +1335,6 @@ void COCRPanel::CreateSubFromTXTResults()
 	delete[] AssTXTStyleVector;
 }
 
-void COCRPanel::OnBnClickedTest(wxCommandEvent& event)
-{
-	int S, i, j;
-	vector<string> SavedFiles;
-	wxString Str;
-	s64 CurPos;
-
-	if (m_pMF->m_VIsOpen == false) return;
-	
-	m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, 
-											m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, 
-											m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, 
-											m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
-	
-	custom_buffer<int> g_ImRGB(m_pMF->m_pVideo->m_w*m_pMF->m_pVideo->m_h*3, 0);
-	custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(m_pMF->m_pVideo->m_w*m_pMF->m_pVideo->m_h*3, 0));
-
-	S = GetAndConvertImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], m_pMF->m_pVideo, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h, m_pMF->m_pVideo->m_Width, m_pMF->m_pVideo->m_Height, m_pMF->m_pVideo->m_xmin, m_pMF->m_pVideo->m_xmax, m_pMF->m_pVideo->m_ymin, m_pMF->m_pVideo->m_ymax);
-
-	SavedFiles.clear();
-
-	CurPos = m_pMF->m_pVideo->GetPos();
-
-	Str = m_pMF->m_pVideo->m_MovieName.c_str();
-
-	j = Str.length()-1;
-	while (Str[j] != '.') j--;
-	i = j;
-	while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-
-	Str = Str.Mid(i+1, j-i-1);
-
-	Str += wxString(" -- ") + VideoTimeToStr(CurPos).c_str();
-
-	SavedFiles.push_back(string(Str));
-
-	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
-
-	FindTextLines(g_ImRGB, g_ImF[2], g_ImF[5], g_ImF[3], SavedFiles, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h);
-}
-
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 {
 	if (g_IsCreateClearedTextImages == 0)
@@ -1521,14 +1473,14 @@ void *ThreadCreateClearedTextImages::Entry()
 		if (g_use_FRD_images == true) 
 		{
 			Str = FileNamesVector[k];
-			Str = Str.Mid(0, Str.length()-5);
+			Str = GetFileName(Str.ToStdString());
 			Str = g_work_dir + "/FRDImages/"+Str+"!"+g_im_save_format;
 			LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
 			//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
 		}
 		
 		Str = FileNamesVector[k];
-		Str = Str.Mid(0, Str.length()-5);
+		Str = GetFileName(Str.ToStdString());
 		SavedFiles.clear();
 		SavedFiles.push_back(string(Str));
 
@@ -1541,7 +1493,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
 		{
 			Str = FileNamesVector[k];
-			Str = Str.Mid(0, Str.length()-5);
+			Str = GetFileName(Str.ToStdString());
 			Str = wxString("/TXTImages/") + Str + wxString("_01") + g_im_save_format;
 
 			memset(g_ImRES1.m_pData, 0, ((w*4)*(h/4))*sizeof(int));

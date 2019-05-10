@@ -43,7 +43,7 @@ void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures
 void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white);
 int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int white);
 void RestoreStillExistLines(custom_buffer<int> &Im, custom_buffer<int> &ImOrig, int w, int h);
-int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H);
+int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H);
 int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
 int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white, int &val1, int &val2, int LH = 0, int LMAXY = 0, int real_im_x_center = 0);
 
@@ -526,36 +526,6 @@ void SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int 
 	}
 }
 
-void FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)
-{
-	int x, y, mx, my, val, val1, val2;
-
-	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImHOE.size() >= w*h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
-
-	int* pIm = &ImIn[0];
-	int* pImHOE = &ImHOE[0];
-
-	mx = w-1;
-	my = h-1;
-	pIm += w+1;
-	pImHOE += w+1;
-	for(y=1; y<my; y++, pIm += 2, pImHOE += 2)
-	for(x=1; x<mx; x++, pIm++, pImHOE++)
-	{
-		val1 = *(pIm - w - 1) + *(pIm - w + 1);
-		val2 = *(pIm - w);
-
-		val1 -= *(pIm + w - 1) + *(pIm + w + 1);
-		val2 -= *(pIm + w);
-
-		val = 3*val1 + 10*val2;
-
-		if (val < 0) val = -val;
-		*pImHOE = val;
-	}
-}
-
 void FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)
 {
 	int i, ii, x, y, mx, my, val;
@@ -706,6 +676,35 @@ void FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE,
 
 			if (val < 0) val = -val;
 			*pImNOE = val;
+		}
+	});
+}
+
+void FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)
+{	
+	custom_assert(ImIn.size() >= w * h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImHOE.size() >= w * h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
+
+	const int mx = w - 1;
+	const int my = h - 1;
+
+	concurrency::parallel_for(1, my, [&](int y)
+	{
+		int x, val, val1, val2;
+		int* pIm, *pImHOE;
+
+		for (x = 1, pIm = &ImIn[y*w + x], pImHOE = &ImHOE[y*w + x]; x < mx; x++, pIm++, pImHOE++)
+		{
+			val1 = *(pIm - w - 1) + *(pIm - w + 1);
+			val2 = *(pIm - w);
+
+			val1 -= *(pIm + w - 1) + *(pIm + w + 1);
+			val2 -= *(pIm + w);
+
+			val = 3 * val1 + 10 * val2;
+
+			if (val < 0) val = -val;
+			*pImHOE = val;
 		}
 	});
 }
@@ -1437,11 +1436,59 @@ void GetImNE(custom_buffer<int> &ImNE, custom_buffer<int> &ImY, custom_buffer<in
 	CombineTwoImages(ImNE, ImRES1, w, h);
 }
 
+void GetImHE(custom_buffer<int> &ImHE, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)
+{
+	custom_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
+	custom_buffer<int> ImRES1(w*h, 0);
+	int k, cnt, val, N, mx, my;
+	int segh;
+	int ww, hh;
+	__int64 t1, dt, num_calls;
+
+	EasyBorderClear(ImHE, w, h);
+
+	concurrency::parallel_invoke(
+		[&] { FastImprovedSobelHEdge(ImY, ImYMOE, w, h); },
+		[&] { FastImprovedSobelHEdge(ImU, ImUMOE, w, h); },
+		[&] { FastImprovedSobelHEdge(ImV, ImVMOE, w, h); }
+	);
+
+	mx = w - 1;
+	my = h - 1;
+
+	concurrency::parallel_invoke(
+		[&] {
+		int i = w + 1, x, y;
+		for (y = 1; y < my; y++, i += 2)
+		{
+			for (x = 1; x < mx; x++, i++)
+			{
+				ImRES1[i] = ImYMOE[i] + ImUMOE[i] + ImVMOE[i];
+			}
+		}
+		ApplyModerateThreshold(ImRES1, g_mnthr, w, h);
+	},
+		[&] {
+		int i = w + 1, x, y;
+		for (y = 1; y < my; y++, i += 2)
+		{
+			for (x = 1; x < mx; x++, i++)
+			{
+				ImHE[i] = ImYMOE[i] + (ImUMOE[i] + ImVMOE[i]) * 5;
+			}
+		}
+		ApplyModerateThreshold(ImHE, g_mnthr, w, h);
+	}
+	);
+
+	CombineTwoImages(ImHE, ImRES1, w, h);
+}
+
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
 int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H)
 {
-	custom_buffer<int> LB(h, 0), LE(h, 0), ImY(w*h, 0), ImU(w*h, 0), ImV(w*h, 0);
+	custom_buffer<int> LB(h, 0), LE(h, 0), ImY(w*h, 0), ImU(w*h, 0), ImV(w*h, 0), ImHE(w*h, 0);
 	custom_buffer<int> ImRES1(w*h, 0);
 	int N;
 	int res;	
@@ -1459,17 +1506,32 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	}		
 
 	RGB_to_YIQ(ImRGB, ImY, ImU, ImV, w, h);	
+
+	/*cv::Mat cv_ImRGB(h, w, CV_8UC4), cv_ImLAB, cv_ImLABSplit[3];
+	memcpy(cv_ImRGB.data, &ImRGB[0], w*h * sizeof(int));
+
+	cv::cvtColor(cv_ImRGB, cv_ImLAB, cv::COLOR_BGR2Lab);
+	cv::split(cv_ImLAB, cv_ImLABSplit);
+
+	GreyscaleMatToImage(cv_ImLABSplit[0], w, h, ImY);
+	GreyscaleMatToImage(cv_ImLABSplit[1], w, h, ImU);
+	GreyscaleMatToImage(cv_ImLABSplit[2], w, h, ImV);*/
 	
 	concurrency::parallel_invoke(
 		[&] { GetImFF(ImFF, ImSF, ImRGB, ImY, ImU, ImV, LB, LE, N, w, h); },
-		[&] { GetImNE(ImNE, ImY, ImU, ImV, w, h); }
+		[&] { GetImNE(ImNE, ImY, ImU, ImV, w, h); },
+		[&] { GetImHE(ImHE, ImY, ImU, ImV, w, h); }
 	);	
 
 	if (g_show_results) SaveGreyscaleImage(ImFF, "\\TestImages\\GetTransformedImage_02_1_ImFF" + g_im_save_format, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImSF, "\\TestImages\\GetTransformedImage_02_2_ImSF" + g_im_save_format, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImNE, "\\TestImages\\GetTransformedImage_02_3_ImNE" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImHE, "\\TestImages\\GetTransformedImage_02_4_ImHE" + g_im_save_format, w, h);
+	
+	CombineTwoImages(ImNE, ImHE, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImNE, "\\TestImages\\GetTransformedImage_02_5_ImNE+HE" + g_im_save_format, w, h);
 
-	res = SecondFiltration(ImSF, ImRGB, ImNE, LB, LE, N, w, h, W, H);
+	res = SecondFiltration(ImSF, ImNE, LB, LE, N, w, h, W, H);
 	if (g_show_results) SaveGreyscaleImage(ImSF, "\\TestImages\\GetTransformedImage_05_ImSFFSecondFiltration" + g_im_save_format, w, h);
 
 	memcpy(&ImTF[0], &ImSF[0], w*h*sizeof(int));
@@ -1480,7 +1542,7 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	if (res == 1) res = ClearImageFromSmallSymbols(ImTF, w, h, 255);
 	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_07_ImTFClearedFromSmallSymbols" + g_im_save_format, w, h);
 
-	if (res == 1) res = SecondFiltration(ImTF, ImRGB, ImNE, LB, LE, N, w, h, W, H);
+	if (res == 1) res = SecondFiltration(ImTF, ImNE, LB, LE, N, w, h, W, H);
 	if (g_show_results) SaveGreyscaleImage(ImTF, "\\TestImages\\GetTransformedImage_08_ImTFFSecondFiltration" + g_im_save_format, w, h);
 
 	if (res == 1) res = ThirdFiltration(ImTF, LB, LE, N, w, h, W, H);
@@ -1495,6 +1557,45 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	return res;
 }
 
+int FilterImage(custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int w, int h, int W, int H, custom_buffer<int> &LB, custom_buffer<int> &LE, int N)
+{
+	int res;
+	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0);
+	int diff_found = 1;
+	int iter = 0;
+
+	memcpy(&ImRES1[0], &ImF[0], w*h * sizeof(int));
+
+	if (g_show_results) SaveGreyscaleImage(ImF, "\\TestImages\\FilterImage_01_ImFOrigin" + g_im_save_format, w, h);
+
+	while (diff_found)
+	{
+		iter++;
+		memcpy(&ImRES2[0], &ImF[0], w*h * sizeof(int));		
+
+		res = SecondFiltration(ImF, ImNE, LB, LE, N, w, h, W, H);
+		if (g_show_results) SaveGreyscaleImage(ImF, "\\TestImages\\FilterImage_iter" + std::to_string(iter) + "_02_ImSFFSecondFiltration" + g_im_save_format, w, h);
+
+		if (res == 1) res = ThirdFiltration(ImF, LB, LE, N, w, h, W, H);
+		if (g_show_results) SaveGreyscaleImage(ImF, "\\TestImages\\FilterImage_iter" + std::to_string(iter) + "_03_ImTFFThirdFiltration" + g_im_save_format, w, h);
+
+		if (res == 1) res = ClearImageFromSmallSymbols(ImF, w, h, 255);
+		if (g_show_results) SaveGreyscaleImage(ImF, "\\TestImages\\FilterImage_iter" + std::to_string(iter) + "_04_ImTFClearedFromSmallSymbols" + g_im_save_format, w, h);
+		
+		diff_found = 0;
+		for (int i = 0; i < w*h; i++)
+		{
+			if (ImRES2[i] != ImF[i])
+			{
+				diff_found = 1;
+				break;
+			}
+		}
+	}
+
+	return res;
+}
+
 inline bool IsTooRight(int &lb, int &le, const int &dw2, int &w)
 {
 	return (((lb + le - w) >= dw2 / 2) || (lb >= w / 2));
@@ -1504,7 +1605,7 @@ inline bool IsTooRight(int &lb, int &le, const int &dw2, int &w)
 ///////////////////////////////////////////////////////////////////////////////
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImRGB, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H)
+int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H)
 {		
 	std::string now;
 	if (g_show_sf_results) now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
@@ -2943,9 +3044,11 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 
 	for (i = 0; i < W*H*16; i++) ImRES[i] = wc;
 
-	g_pViewImage[0](ImRGB, W, H);
+	g_pViewImage[0](ImRGB, W, H);	
 
 	if (g_show_results) SaveRGBImage(ImRGB, "\\TestImages\\FindTextLines_01_1_ImRGB" + g_im_save_format, W, H);
+	if (g_show_results) SaveRGBImage(ImRGB, "\\TestImages\\" + SaveName + g_im_save_format, W, H);
+
 	if (g_show_results) SaveGreyscaleImage(ImF, "\\TestImages\\FindTextLines_01_2_ImF" + g_im_save_format, W, H);
 	if (g_show_results) SaveGreyscaleImage(ImNF, "\\TestImages\\FindTextLines_01_3_ImNF" + g_im_save_format, W, H);
 
@@ -4889,7 +4992,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 	for (i = 0; i < N; i++)
 	{
 		pFigure = ppFigures[i];
-		if ((pFigure->m_maxY <= LMAXY + LH / 8) && (pFigure->m_maxY >= LMAXY - std::max<int>(g_dmaxy, LH / 8)))
+		if ((pFigure->m_maxY <= LMAXY + LH / 8) && (pFigure->m_maxY >= LMAXY - std::max<int>(g_dmaxy, LH / 3)))
 		{
 			if (pFigure->m_minX < min_x) min_x = pFigure->m_minX;
 			if (pFigure->m_maxX > max_x) max_x = pFigure->m_maxX;
@@ -5169,8 +5272,8 @@ int IsPoint(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	     (pFigure->m_h >= g_minph * H) && (pFigure->m_h <= g_maxph * H) &&
 	     (dval >= g_minpwh) ) 
 	{
-		if ( ( (pFigure->m_maxY <= LMAXY + 4) && 
-			   (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LLH / 8)) ) ||
+		if ( ( (pFigure->m_maxY <= LMAXY + (LLH/4)) &&
+			   (pFigure->m_maxY >= LMAXY - std::max<int>(g_dmaxy, LLH / 3)) ) ||
 			 ( (pFigure->m_maxY <= LMAXY-LLH) && 
 			   (pFigure->m_maxY >= LMAXY-LLH*1.25) )
 			)
@@ -5197,11 +5300,11 @@ int IsComma(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	if ( (pFigure->m_w >= g_minpw * W) && (pFigure->m_w <= 2 * g_maxpw * W) &&
 	     (dval <= (2.0/3.0)) && (pFigure->m_h <= (int)((double)LLH*0.8)) )
 	{
-		if ( ( (pFigure->m_minY <= LMAXY-LLH) &&
-		       (pFigure->m_maxY >= LMAXY-LLH-8) ) || 
-	         ( (pFigure->m_maxY > LMAXY) && 
-		       (pFigure->m_minY < LMAXY) )
-		   )
+		if (((pFigure->m_maxY <= LMAXY + (LLH / 4)) &&
+			(pFigure->m_maxY >= LMAXY - std::max<int>(g_dmaxy, LLH / 3))) ||
+			((pFigure->m_maxY <= LMAXY - LLH) &&
+			(pFigure->m_maxY >= LMAXY - LLH * 1.25))
+			)
 		{
 			ret = 1;
 		}
@@ -5532,7 +5635,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 	i=0;
 	while(i < NNY)
 	{
-		if ((maxY[j]-maxY[i]) > g_dmaxy)
+		if ((maxY[j]-maxY[i]) > std::max<int>(g_dmaxy, LH / 8))
 		{
 			NN[k] = i-j;
 			NY[k] = maxY[j];
@@ -5567,7 +5670,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 	}
 	else if (val == 1)
 	{
-		val = maxY[NNY-1] + g_dmaxy;
+		val = maxY[NNY-1] + std::max<int>(g_dmaxy, LH / 8);
 		j = NNY-2;
 
 		while ((j >= 0) && (maxY[j] <= val)) j--;
@@ -5612,7 +5715,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 		}
 
 		if ( (pFigure->m_maxY <= LMAXY) && 
-			 (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+			 (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 8)) &&
              (pFigure->m_h >= min_h) )
 		{
 			if (pFigure->m_minY > val1)
@@ -5639,7 +5742,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 		pFigure = ppFigures[i];
 
 		if ( (pFigure->m_maxY <= LMAXY) && 
-			(pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+			(pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 8)) &&
 			(pFigure->m_h >= min_h) )
 		{
 			if (pFigure->m_minY >= val3)
@@ -5683,18 +5786,18 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center)
+int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center)
 {
 	CMyClosedFigure *pFigure = NULL, *pFigure2 = NULL;
 	int i, ib, i1, i2, i3, j, k, l, x, y, val, val1, N, bln, bln1, bln2, bln3, LMINY, LM1, LM2;
-	int res, is_point, is_comma, LLH;
+	int res, is_point, is_comma;
 	CMyPoint *PA = NULL, *PA1 = NULL, *PA2 = NULL;
 	clock_t t;
 	double minpw, maxpw, minph, maxph;
 	double minpwh;
 	double dval;
 
-	int NNY, min_h;
+	int NNY;
 
 	res = 0;
 
@@ -5784,7 +5887,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
-	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_Im" + g_im_save_format, w, h);
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_01_Im" + g_im_save_format, w, h);
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -5812,119 +5915,6 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
-	//--------------------
-	custom_buffer<int> maxY(N, 0), NN(N, 0), NY(N, 0);
-
-	min_h = (int)(0.6*(double)LH);
-
-	for(i=0, j=0; i < N; i++)
-	{
-		val = (ppFigures[i]->m_minX+ppFigures[i]->m_maxX)/2;
-
-		if ( (ppFigures[i]->m_h >= min_h) && 
-			 (val > xb) &&
-			 (val < xe) )
-		{
-			maxY[j] = ppFigures[i]->m_maxY;
-			j++;
-		}
-	}
-	NNY = j;
-
-	for(i=0; i<NNY-1; i++)
-	{
-		for(j=i+1; j<NNY; j++)
-		{
-			if(maxY[j] > maxY[i])
-			{
-				val = maxY[i];
-				maxY[i] = maxY[j];
-				maxY[j] = val;
-			}
-		}
-	}
-
-	// отыскиваем группы символов, чья высота различается не более чем на g_dmaxy по всевозможным высотам
-	// (такие группы могут частично содержать одни и теже символы)
-	j=0;
-	k=0;
-	i=0;
-	while(i < NNY)
-	{
-		if ((maxY[j]-maxY[i]) > g_dmaxy)
-		{
-			NN[k] = i-j;
-			NY[k] = maxY[j];
-			k++;
-			
-			l = j+1;
-			while(maxY[l] == maxY[j]) l++;
-
-			j = i = l;
-		}
-
-		i++;
-	}
-	NN[k] = i-j;
-	NY[k] = maxY[j];
-	k++;
-
-	val = NN[0];
-	j = 0;
-	for(i=0; i<k; i++)
-	{
-		if(NN[i] > val)
-		{
-			val = NN[i];
-			j = i;
-		}
-	}
-
-	if (val > 1)
-	{
-		LMAXY = NY[j];
-	}
-	else if (val == 1)
-	{
-		for(i=0, j=0; i < N; i++)
-		{
-			val1 = (ppFigures[i]->m_minX+ppFigures[i]->m_maxX)/2;
-
-			if ( (ppFigures[i]->m_h >= min_h) && 
-				(val1 > xb) &&
-				(val1 < xe) )
-			{
-				LMAXY = ppFigures[i]->m_maxY;
-				break;
-			}
-		}
-	}
-
-	if (val == 0)
-	{
-		return res;
-	}
-	//--------------------
-
-	//--------------------
-	LH = 0;
-	j = 0;
-	for(i=0; i<N; i++)
-	{
-		pFigure = ppFigures[i];
-
-		if ( (pFigure->m_maxY <= LMAXY) && 
-			 (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
-             (pFigure->m_h >= 0.6*LH) )
-		{
-			LH += pFigure->m_h;
-			j++;
-		}
-	}
-
-	if (j == 0) return res;
-
-	LH = LH/j;
 	//--------------------
 
 	LMINY = LMAXY - (int)((double)LH*1.25);
@@ -5962,6 +5952,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		i++;
 	}
 
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_02_Im" + g_im_save_format, w, h);
+
 	i=0;
 	while(i < N) 
 	{
@@ -5982,7 +5974,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 			pFigure2 = ppFigures[j];
 			
-			if ( (  ( (pFigure2->m_maxY <= LMAXY) && (pFigure2->m_maxY >= LMAXY-g_dmaxy) ) ||
+			if ( (  ( (pFigure2->m_maxY <= LMAXY) && (pFigure2->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) ) ||
 					( (pFigure2->m_minY*2 < 2*LMAXY-LH) && (pFigure2->m_maxY > LMAXY) )
 				 ) &&
 				 (pFigure2->m_h >= 0.6*LH)
@@ -6002,7 +5994,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		
 		if (k >= 2) 
 		{
-			if ( (  ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY-g_dmaxy) ) ||
+			if ( (  ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) ) ||
 					( (pFigure->m_minY*2 < 2*LMAXY-LH) && (pFigure->m_maxY > LMAXY) )
 				 ) &&
 				 (pFigure->m_h >= 0.6*LH)
@@ -6071,13 +6063,13 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 		else if(k == 1)
 		{						
-			if ( (  ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY-g_dmaxy) ) ||
+			if ( (  ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) ) ||
 					( (pFigure->m_minY*2 < 2*LMAXY-LH) && (pFigure->m_maxY > LMAXY) )
 				 ) &&
 				 (pFigure->m_h >= 0.6*LH)
 				)
 			{
-				if ( !( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY-g_dmaxy) ) &&
+				if ( !( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) ) &&
 					 (pFigure->m_minY < ppFgs[0]->m_minY) && (pFigure->m_maxY > ppFgs[0]->m_maxY) &&
 					 (pFigure->m_minX <= ppFgs[0]->m_minX) && (pFigure->m_maxX >= ppFgs[0]->m_maxX) )
 				{
@@ -6112,7 +6104,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 				if (val < 0) val = -val;				
 				val = (pFigure->m_maxX-pFigure->m_minX)+(ppFgs[0]->m_maxX-ppFgs[0]->m_minX)+2 - val;
 
-				bln1 = ( (pFigure->m_maxY <= LMAXY + 4) && (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+				bln1 = ( (pFigure->m_maxY <= LMAXY + 4) && (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 						 (pFigure->m_w >= minpw *W) && (pFigure->m_w <= maxpw * W) &&
 					     (pFigure->m_h >= minph * H) && (pFigure->m_h <= maxph * H) &&
 				         (dval >= minpwh) );
@@ -6137,7 +6129,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 		else
 		{
-			if ( (  ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY-g_dmaxy) ) ||
+			if ( (  ( (pFigure->m_maxY <= LMAXY) && (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) ) ||
 					( (pFigure->m_minY*2 < 2*LMAXY-LH) && (pFigure->m_maxY > LMAXY) )
 				 ) &&
 				 (pFigure->m_h >= 0.6*LH)
@@ -6193,7 +6185,9 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		i++;
 	}
 
-	min_h = (int)((double)LH*0.6);
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_03_Im" + g_im_save_format, w, h);
+
+	int min_h = (int)((double)LH/4);
 
 	//-----очищаем с левого края-----//
 	i=0;
@@ -6201,7 +6195,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 	{
 		pFigure = ppFigures[i];
 
-		if ( (pFigure->m_maxY < LMAXY-g_dmaxy*1.5) ||
+		if ( (pFigure->m_maxY < LMAXY- std::max<int>(g_dmaxy, LH / 3)*1.5) ||
 			 (pFigure->m_h < min_h) ||
 			 (pFigure->m_h > LH*2)
 		   )
@@ -6219,7 +6213,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		else
 		{
 			if ( (pFigure->m_maxY <= LMAXY) && 
-				 (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+				 (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 				 (pFigure->m_h >= min_h) )
 			{
 				break;
@@ -6230,6 +6224,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			}
 		}
 	}
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_04_Im" + g_im_save_format, w, h);
 
 	//-----очищаем с правого края-----//
 	i=N-1;
@@ -6243,7 +6238,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 
 		if ( (pFigure->m_minY < LMAXY - 2*LH) ||
 		     ( (pFigure->m_h < min_h) && 
-			   !( (pFigure->m_maxY <= LMAXY + 4) && (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+			   !( (pFigure->m_maxY <= LMAXY + 4) && (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 				  (pFigure->m_w >= minpw * W) && (pFigure->m_w <= maxpw * W) &&
 				  (pFigure->m_h >= minph * H) && (pFigure->m_h <= maxph * H) &&
 				  (dval >= minpwh) 
@@ -6267,7 +6262,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		else
 		{
 			if ( (pFigure->m_maxY <= LMAXY) && 
-				 (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+				 (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 				 (pFigure->m_h >= min_h) )
 			{
 				break;
@@ -6279,6 +6274,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		}
 	}
 
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_05_Im" + g_im_save_format, w, h);
+
 	//--определяем минимальную высоту нормальных символов--//
 	custom_buffer<int> NH(N, 0);
 
@@ -6288,7 +6285,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		pFigure = ppFigures[i];
 
 		if ( (pFigure->m_maxY <= LMAXY) && 
-				 (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+				 (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 				 (pFigure->m_h >= min_h) )
 		{
 			NH[k] = LMAXY - pFigure->m_minY;
@@ -6310,7 +6307,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 	}
 	val = (int)((double)k*0.8)-1;
 	if (val < 0) val = k-1;
-	LLH = NH[val];
+	int LLH = NH[val];
 
 	//-----финальная упорядоченная очистка-----//
 	i=0;
@@ -6331,7 +6328,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			pFigure2 = ppFigures[j];
 			
 			if ( (pFigure2->m_maxY <= LMAXY) && 
-				 (pFigure2->m_maxY >= LMAXY-g_dmaxy) &&
+				 (pFigure2->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 				 (pFigure2->m_h >= min_h)
 			   )
 			{
@@ -6407,6 +6404,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		i++;
 	}
 
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_06_Im" + g_im_save_format, w, h);
+
 	i=0;
 	while(i < N) 
 	{
@@ -6425,7 +6424,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 			pFigure2 = ppFigures[j];
 			
 			if ( (pFigure2->m_maxY <= LMAXY) && 
-				 (pFigure2->m_maxY >= LMAXY-g_dmaxy) &&
+				 (pFigure2->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 				 (pFigure2->m_h >= min_h)
 			   )
 			{
@@ -6444,7 +6443,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 				}
 				else if ( (pFigure->m_minY <= LMAXY-LLH) &&
 						  (pFigure->m_maxY <= LMAXY) &&
-						  (pFigure->m_maxY >= LMAXY-g_dmaxy) )
+						  (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) )
 				{
 					//if (val >= 3)//наезжают друг на друга минимум на 3 пиксела
 					if (val*2 >= pFigure2->m_maxX - pFigure2->m_minX + 1)
@@ -6537,6 +6536,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		i++;
 	}
 
+	if (g_show_results) SaveRGBImage(Im, "\\TestImages\\ClearImageLogical_07_Im" + g_im_save_format, w, h);
+
 	//////////////////////////////
 	i=0;
 	while(i < N) 
@@ -6544,7 +6545,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int &LH, int &LMAXY,
 		pFigure = ppFigures[i];
 
 		if ( !( (pFigure->m_maxY <= LMAXY) && 
-			    (pFigure->m_maxY >= LMAXY-g_dmaxy) &&
+			    (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 3)) &&
 			    (pFigure->m_h >= 0.6*LH) ) )
 		{
 			ppFigures[i] = ppFigures[N-1];

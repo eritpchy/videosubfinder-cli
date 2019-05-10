@@ -43,9 +43,7 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_bu
 
 int PreCompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int w, int h); // return ln
 
-int FinalCompareTwoSubs1(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int ln, custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2, int w, int h); // return 0 or 1
-int FinalCompareTwoSubs2(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffer<int> &le, int ln, custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
-
+int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> &ImNE1, custom_buffer<int> &ImF2, custom_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin);
 int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h, int W, int H, int ymin);
 
 int SimpleCombineTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
@@ -62,3 +60,5 @@ int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cust
 void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
 std::string VideoTimeToStr(s64 pos);
+
+std::string GetFileName(std::string FilePath);

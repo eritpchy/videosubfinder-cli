@@ -986,7 +986,7 @@ void CMainFrame::ClearDir(wxString DirName)
 
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
-	(void)wxMessageBox("This program was written by Simeon Kosnitsky. \nPublished under GPL license.", "VideoSubFinder " VSF_VERSION " Version");
+	(void)wxMessageBox("This program was written by Simeon Kosnitsky. \nPublished under public domain license.", "VideoSubFinder " VSF_VERSION " Version");
 }
 
 void CMainFrame::OnSetPriorityIdle(wxCommandEvent& event)

@@ -41,7 +41,7 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 	StrFN[2] = string("After Third Filtration");
 	StrFN[3] = string("NEdges Points Image");
 	StrFN[4] = string("Cleared Text Image");
-	m_cn = 2;	
+	m_cn = 4;
 	m_W = 0;
 	m_H = 0;
 }
@@ -257,13 +257,13 @@ void CSettingsPanel::Init()
 	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.25);
 }
 
-
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 {
 	custom_buffer<int> ImRGB;
-	int i, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
+	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
 	char str[30];
 	clock_t t;
+	string ImgName;
 		
 	if (m_pMF->m_VIsOpen)
 	{
@@ -284,6 +284,10 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		ImRGB = custom_buffer<int>(W*H, 0);
 
 		m_pMF->m_pVideo->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
+
+		s64 CurPos = m_pMF->m_pVideo->GetPos();
+		ImgName = GetFileName(m_pMF->m_pVideo->m_MovieName.ToStdString());
+		ImgName += " -- " + VideoTimeToStr(CurPos);
 	}
 	else
 	{
@@ -308,7 +312,9 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			LoadRGBImage(ImRGB, filepath, w, h);
 
 			g_pViewImage[0](ImRGB, W, H);
-		}		
+
+			ImgName = GetFileName(filename.ToStdString());
+		}
 	}
 
 	if (ImRGB.size() == 0)
@@ -320,13 +326,14 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	m_ImF = custom_buffer<custom_buffer<int>> (m_n, custom_buffer<int>(W*H, 0));
 	
+	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+
 	S = ConvertImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], w, h, W, H);
 	
 	if (g_generate_cleared_text_images_on_test)
 	{
-		m_cn = 4;
 		vector<string> SavedFiles;
-		SavedFiles.push_back("RGBImage");
+		SavedFiles.push_back(ImgName);
 		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], SavedFiles, w, h);
 	}
 

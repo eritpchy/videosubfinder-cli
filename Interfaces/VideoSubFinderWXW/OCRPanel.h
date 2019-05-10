@@ -135,7 +135,6 @@ public:
 
 	wxStaticText *m_plblMSD;
 	wxTextCtrl	 *m_pMSD;
-	wxButton	 *m_pTEST;
 	wxButton	 *m_pCCTI;
 	wxButton	 *m_pCES;
 	wxButton	 *m_pCSCTI;
@@ -159,7 +158,6 @@ public:
 	void OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event);
 	void OnBnClickedCreateSubFromTXTResults(wxCommandEvent& event);
 	void OnBnClickedCreateClearedTextImages(wxCommandEvent& event);
-	void OnBnClickedTest(wxCommandEvent& event);
 
 private:
 	DECLARE_EVENT_TABLE()
