@@ -328,7 +328,7 @@ void OCVVideo::Run()
 			m_pThreadRunVideo = new ThreadRunVideo(this);
 			m_pThreadRunVideo->Create();
 			m_pThreadRunVideo->Run();
-			m_pThreadRunVideo->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+			//m_pThreadRunVideo->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 		}
 	}
 }

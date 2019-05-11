@@ -1347,7 +1347,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
 		m_pSearchThread->Create();
 		m_pSearchThread->Run();
-		if (!(m_pMF->m_blnNoGUI)) m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+		//if (!(m_pMF->m_blnNoGUI)) m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 	}
 	else
 	{
@@ -1431,169 +1431,177 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	for (k=0; k<(int)FileNamesVector.size(); k++)
 	{
-		if (g_RunCreateClearedTextImages == 0) break;
+		try
+		{
+			if (g_RunCreateClearedTextImages == 0) break;
 
-		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-		Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
-        GetImageSize(string(Str), w, h);
+			Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
+			GetImageSize(string(Str), w, h);
         
-        if ( (W != w) || (H != h) )
-        {
-            W = w;
-	        H = h;
-
-            xmin = 0;
-	        xmax = w-1;
-	        ymin = 0;
-	        ymax = h-1;           	        
-        }
-
-		custom_buffer<int> g_ImRES1(w*h * 3, 0);
-		custom_buffer<int> g_ImRGB(w*h, 0);
-		custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h, 0));
-
-		LoadRGBImage(g_ImRGB, string(Str), w, h);		
-
-		/*num_calls = 100;
-		t1 = GetTickCount();
-		for (__int64 i_call = 0; i_call < num_calls; i_call++)
-		{*/		
-		GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], w, h, W, H);		
-		/*}
-		(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
-
-		if (g_show_transformed_images_only)
-		{
-			Str = wxString("/TXTImages/") + FileNamesVector[k];
-			SaveGreyscaleImage(g_ImF[5], string(Str), w, h);
-			continue;
-		}
-
-		if (g_use_FRD_images == true) 
-		{
-			Str = FileNamesVector[k];
-			Str = GetFileName(Str.ToStdString());
-			Str = g_work_dir + "/FRDImages/"+Str+"!"+g_im_save_format;
-			LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
-			//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
-		}
-		
-		Str = FileNamesVector[k];
-		Str = GetFileName(Str.ToStdString());
-		SavedFiles.clear();
-		SavedFiles.push_back(string(Str));
-
-		val = k+1;
-		sprintf(str, "%.4d", val);
-		if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
-
-		res = FindTextLines(g_ImRGB, g_ImF[2], g_ImF[5], g_ImF[3], SavedFiles, w, h);
-
-		if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
-		{
-			Str = FileNamesVector[k];
-			Str = GetFileName(Str.ToStdString());
-			Str = wxString("/TXTImages/") + Str + wxString("_01") + g_im_save_format;
-
-			memset(g_ImRES1.m_pData, 0, ((w*4)*(h/4))*sizeof(int));
-
-			SaveGreyscaleImage(g_ImRES1, string(Str), w*4, h/4);
-			
-			val = 14; //LH
-			SaveTextLineParameters(	string(Str), 0, 
-								val, (h+val)/2, 
-								w/2, w/2,
-								(h-val)/2 + 1, (h+val)/2,
-								0, 0, 0 );
-		}
-
-		if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == SavedFiles.size()) )
-		{
-			Str = prevSavedFiles[i].c_str();
-			i = Str.length()-1;
-			while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-			Str = Str.Mid(i+1);
-
-			hour1 = Str.Mid(0,1);
-			min1 = Str.Mid(2,2);
-			sec1 = Str.Mid(5,2);
-			msec1 = Str.Mid(8,3);
-
-			hour2 = Str.Mid(13,1);
-			min2 = Str.Mid(15,2);
-			sec2 = Str.Mid(18,2);
-			msec2 = Str.Mid(21,3);
-
-			bt1 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-			et1 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
-
-			Str = SavedFiles[i].c_str();
-			i = Str.length()-1;
-			while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-			Str = Str.Mid(i+1);
-
-			hour1 = Str.Mid(0,1);
-			min1 = Str.Mid(2,2);
-			sec1 = Str.Mid(5,2);
-			msec1 = Str.Mid(8,3);
-
-			hour2 = Str.Mid(13,1);
-			min2 = Str.Mid(15,2);
-			sec2 = Str.Mid(18,2);
-			msec2 = Str.Mid(21,3);
-
-			bt2 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-			et2 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
-			
-			if (bt2-et1 < 300)
+			if ( (W != w) || (H != h) )
 			{
-				bln = 1;
-				for (i=0; i<(int)SavedFiles.size(); i++)
+				W = w;
+				H = h;
+
+				xmin = 0;
+				xmax = w-1;
+				ymin = 0;
+				ymax = h-1;           	        
+			}
+
+			custom_buffer<int> g_ImRES1(w*h * 3, 0);
+			custom_buffer<int> g_ImRGB(w*h, 0);
+			custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h, 0));
+
+			LoadRGBImage(g_ImRGB, string(Str), w, h);		
+
+			/*num_calls = 100;
+			t1 = GetTickCount();
+			for (__int64 i_call = 0; i_call < num_calls; i_call++)
+			{*/
+			GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], w, h, W, H);		
+			/*}
+			(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
+
+			if (g_show_transformed_images_only)
+			{
+				Str = wxString("/TXTImages/") + FileNamesVector[k];
+				SaveGreyscaleImage(g_ImF[5], string(Str), w, h);
+				continue;
+			}
+
+			if (g_use_FRD_images == true) 
+			{
+				Str = FileNamesVector[k];
+				Str = GetFileName(Str.ToStdString());
+				Str = g_work_dir + "/FRDImages/"+Str+"!"+g_im_save_format;
+				LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
+				//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
+			}
+		
+			Str = FileNamesVector[k];
+			Str = GetFileName(Str.ToStdString());
+			SavedFiles.clear();
+			SavedFiles.push_back(string(Str));
+
+			val = k+1;
+			sprintf(str, "%.4d", val);
+			if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
+
+			res = FindTextLines(g_ImRGB, g_ImF[2], g_ImF[5], g_ImF[3], SavedFiles, w, h);
+
+			if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
+			{
+				Str = FileNamesVector[k];
+				Str = GetFileName(Str.ToStdString());
+				Str = wxString("/TXTImages/") + Str + wxString("_01") + g_im_save_format;
+
+				memset(g_ImRES1.m_pData, 0, ((w*4)*(h/4))*sizeof(int));
+
+				SaveGreyscaleImage(g_ImRES1, string(Str), w*4, h/4);
+			
+				val = 14; //LH
+				SaveTextLineParameters(	string(Str), 0, 
+									val, (h+val)/2, 
+									w/2, w/2,
+									(h-val)/2 + 1, (h+val)/2,
+									0, 0, 0 );
+			}
+
+			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == SavedFiles.size()) )
+			{
+				Str = prevSavedFiles[i].c_str();
+				i = Str.length()-1;
+				while ((Str[i] != '\\') && (Str[i] != '/')) i--;
+				Str = Str.Mid(i+1);
+
+				hour1 = Str.Mid(0,1);
+				min1 = Str.Mid(2,2);
+				sec1 = Str.Mid(5,2);
+				msec1 = Str.Mid(8,3);
+
+				hour2 = Str.Mid(13,1);
+				min2 = Str.Mid(15,2);
+				sec2 = Str.Mid(18,2);
+				msec2 = Str.Mid(21,3);
+
+				bt1 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
+				et1 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
+
+				Str = SavedFiles[i].c_str();
+				i = Str.length()-1;
+				while ((Str[i] != '\\') && (Str[i] != '/')) i--;
+				Str = Str.Mid(i+1);
+
+				hour1 = Str.Mid(0,1);
+				min1 = Str.Mid(2,2);
+				sec1 = Str.Mid(5,2);
+				msec1 = Str.Mid(8,3);
+
+				hour2 = Str.Mid(13,1);
+				min2 = Str.Mid(15,2);
+				sec2 = Str.Mid(18,2);
+				msec2 = Str.Mid(21,3);
+
+				bt2 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
+				et2 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
+			
+				if (bt2-et1 < 300)
 				{
-					LoadGreyscaleImage(g_ImF[0], prevSavedFiles[i], w1, h1);
-					LoadGreyscaleImage(g_ImF[1], SavedFiles[i], w2, h2);
-
-					Str = prevSavedFiles[i].c_str();
-					i = Str.length()-1;
-					while (Str[i] != '_') i--;
-					j = i;
-					i--;
-					while (Str[i] != '_') i--;
-					Str = Str.Mid(i+1, j-i-1);
-					YB1 = atoi(Str);
-
-					Str = SavedFiles[i].c_str();
-					i = Str.length()-1;
-					while (Str[i] != '_') i--;
-					j = i;
-					i--;
-					while (Str[i] != '_') i--;
-					Str = Str.Mid(i+1, j-i-1);
-					YB2 = atoi(Str);
-
-					bln = CompareTXTImages(g_ImF[0], g_ImF[1], w1, h1, w2, h2, YB1, YB2);
-					if (bln == 0) break;
-				}
-
-				if (bln == 1)
-				{
+					bln = 1;
 					for (i=0; i<(int)SavedFiles.size(); i++)
 					{
-						DeleteFile(wxString(prevSavedFiles[i].c_str()));
-						
+						LoadGreyscaleImage(g_ImF[0], prevSavedFiles[i], w1, h1);
+						LoadGreyscaleImage(g_ImF[1], SavedFiles[i], w2, h2);
+
 						Str = prevSavedFiles[i].c_str();
 						i = Str.length()-1;
-						while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-						Str = Str.Mid(0,i+1+11)+wxString(SavedFiles[i].c_str()).Mid(i+1+11);
+						while (Str[i] != '_') i--;
+						j = i;
+						i--;
+						while (Str[i] != '_') i--;
+						Str = Str.Mid(i+1, j-i-1);
+						YB1 = atoi(Str);
 
-						MoveFile(wxString(SavedFiles[i].c_str()), Str);
+						Str = SavedFiles[i].c_str();
+						i = Str.length()-1;
+						while (Str[i] != '_') i--;
+						j = i;
+						i--;
+						while (Str[i] != '_') i--;
+						Str = Str.Mid(i+1, j-i-1);
+						YB2 = atoi(Str);
+
+						bln = CompareTXTImages(g_ImF[0], g_ImF[1], w1, h1, w2, h2, YB1, YB2);
+						if (bln == 0) break;
+					}
+
+					if (bln == 1)
+					{
+						for (i=0; i<(int)SavedFiles.size(); i++)
+						{
+							DeleteFile(wxString(prevSavedFiles[i].c_str()));
+						
+							Str = prevSavedFiles[i].c_str();
+							i = Str.length()-1;
+							while ((Str[i] != '\\') && (Str[i] != '/')) i--;
+							Str = Str.Mid(0,i+1+11)+wxString(SavedFiles[i].c_str()).Mid(i+1+11);
+
+							MoveFile(wxString(SavedFiles[i].c_str()), Str);
+						}
 					}
 				}
 			}
-		}
 
-		prevSavedFiles = SavedFiles;
+			prevSavedFiles = SavedFiles;
+		}
+		catch (const exception& e)
+		{
+			wxMessageBox(wxString("Got Exception: ") + e.what());
+			continue;
+		}
 	}
 
 	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));

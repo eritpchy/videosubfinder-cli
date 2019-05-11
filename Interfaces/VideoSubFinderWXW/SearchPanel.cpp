@@ -166,7 +166,7 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
 		m_pSearchThread->Create();
 		m_pSearchThread->Run();
-		m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+		//m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 	}
 	else
 	{

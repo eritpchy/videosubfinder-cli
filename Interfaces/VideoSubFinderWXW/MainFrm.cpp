@@ -910,7 +910,7 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 	{
 		g_IsClose = 1;
 		g_RunSubSearch = 0;
-		m_pPanel->m_pSHPanel->m_pSearchThread->SetPriority(90); //THREAD_PRIORITY_HIGHEST
+		//m_pPanel->m_pSHPanel->m_pSearchThread->SetPriority(90); //THREAD_PRIORITY_HIGHEST
 	}
 
 	clock_t start_t = clock();

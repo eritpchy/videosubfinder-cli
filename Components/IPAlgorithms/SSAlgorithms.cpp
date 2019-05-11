@@ -22,7 +22,7 @@
 
 int		g_RunSubSearch = 0;
 
-//long    g_threads = 16;
+long    g_threads = 4;
 
 int		g_DL = 6;	 //sub frame length
 double	g_tp = 0.3;	 //text procent
@@ -34,15 +34,24 @@ double	g_veple = 0.35; //vedges points line error
 
 CVideo *g_pV;
 
-s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
+inline concurrency::task<void> TaskConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int &w, int &h, int &W, int &H, int &res)
 {	
+	return concurrency::create_task([&]
+	{
+		custom_buffer<int> ImFF(w*h, 0), ImSF(w*h, 0);
+		res = ConvertImage(ImRGB, ImFF, ImSF, ImF, ImNE, w, h, W, H);
+	});
+}
+
+s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
+{
 	string Str;
-	
-	s64 CurPos, prevPos, prev_pos, next_CurPos, next_prevPos, pos;
-	int fn, next_fn; //frame num
+
+	s64 CurPos, prevPos, prev_pos, pos;
+	int fn; //frame num
 	int i, n, nn;
 	int w, h, W, H, xmin, xmax, ymin, ymax, size, BufferSize;
-	int mtl, DL, segh;
+	int mtl, DL, segh, threads;
 	double sse;
 
 	int bf, ef; // begin, end frame
@@ -50,10 +59,10 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	s64 bt, et; // begin, end time
 	s64 pbt, pet;
 
-	int found_sub, n_fs, next_n_fs;
+	int found_sub, n_fs, n_fs_start, prev_n_fs;
 
-	int bln, next_bln, finded_prev;
-	
+	int bln, finded_prev;
+
 	g_RunSubSearch = 1;
 
 	g_pV = pV;
@@ -67,18 +76,19 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	ymin = g_pV->m_ymin;
 	ymax = g_pV->m_ymax;
 
-	size = w*h;
-	BufferSize = size*sizeof(int);
+	size = w * h;
+	BufferSize = size * sizeof(int);
 
 	pV->SetPos(Begin);
 
-    pV->OneStep();
-    CurPos = pV->GetPos();
+	pV->OneStep();
+	CurPos = pV->GetPos();
 
 	mtl = (int)(g_mtpl*(double)w);
 	DL = g_DL;
+	threads = g_threads;
 	segh = g_segh;
-	n = h/g_segh;
+	n = h / g_segh;
 	sse = g_sse;
 
 	bf = -2;
@@ -88,151 +98,202 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	finded_prev = 0;
 
-	int SIZE = W*H;
+	int SIZE = W * H;
 
 	custom_buffer<int> lb(H, 0), le(H, 0);
 
-	custom_buffer<int> ImRGB(SIZE, 0), next_ImRGB(SIZE, 0);
 	custom_buffer<int> ImS(SIZE, 0); //store image
 	custom_buffer<int> ImSP(SIZE, 0); //store image prev
 	custom_buffer<int> ImFS(SIZE, 0); //image for save
 	custom_buffer<int> ImFSP(SIZE, 0); //image for save prev
-	custom_buffer<int> ImFF(SIZE, 0), ImSF(SIZE, 0), ImTF(SIZE, 0), next_ImTF(SIZE, 0), ImTFT(SIZE, 0), ImSS(SIZE, 0), ImSSP(SIZE, 0);
-	custom_buffer<int> ImNE(SIZE, 0), next_ImNE(SIZE, 0), ImNES(SIZE, 0), ImNESS(SIZE, 0), ImNESP(SIZE, 0), ImNESSP(SIZE, 0), ImNET(SIZE, 0), ImRES(SIZE, 0);
-	custom_buffer<custom_buffer<int>> mImRGB(DL, custom_buffer<int>(SIZE, 0)), ImS_SQ(DL, custom_buffer<int>(SIZE, 0)), ImVES_SQ(DL, custom_buffer<int>(SIZE, 0)), ImNES_SQ(DL, custom_buffer<int>(SIZE, 0));
-
+	custom_buffer<int> ImSS(SIZE, 0), ImSSP(SIZE, 0);
+	custom_buffer<int> ImNES(SIZE, 0), ImNESS(SIZE, 0), ImNESP(SIZE, 0), ImNESSP(SIZE, 0), ImRES(SIZE, 0);
+	custom_buffer<custom_buffer<int>> mImRGB(DL*threads, custom_buffer<int>(SIZE, 0)), ImS_SQ(DL + 1, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> ImNET(threads, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> ImT(threads, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> ImNE(threads, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> Im(threads, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> g_lb(n, custom_buffer<int>(w, 0)), g_le(n, custom_buffer<int>(w, 0));
 	custom_buffer<int> g_ln(n, 0);
 	custom_buffer<int> *pImRGB, *pIm, *pImNE;
-	custom_buffer<s64> mPrevPos(DL, 0);
-	custom_buffer<s64> ImS_Pos(DL, 0);
-	custom_buffer<s64> ImS_fn(DL, 0);	
+	custom_buffer<s64> ImS_Pos(DL + 1, 0);
+	custom_buffer<s64> ImS_fn(DL + 1, 0);
+	custom_buffer<s64> mPrevPos(DL*threads, 0);
+	vector<concurrency::task<void>> thrsT(threads), thrs(threads, concurrency::create_task([]{}));
+	custom_buffer<int> thrs_resT(threads, 0), thrs_res(threads, 0);
+	custom_buffer<int> thrs_fn(threads, 0);
+	custom_buffer<custom_buffer<int>> thrImRGB(threads, custom_buffer<int>(SIZE, 0));
+	custom_buffer<s64> thrPrevPos(threads, 0);
+	int thr_n, thr_nT;
+	bool thrs_were_created = false;
+
+	int debug = 0;
 
 	found_sub = 0;
 	prev_pos = -2;
 	mPrevPos[0] = CurPos;
 	pV->GetRGBImage(mImRGB[0], xmin, xmax, ymin, ymax);
-	n_fs = 1;
-
-	int debug = 0;	
+	n_fs = 0;
+	n_fs_start = 0;
+	prev_n_fs = DL * threads;
 
 	prevPos = -2;
-	
-	pImRGB = &ImRGB;
-	pIm = &ImTF;
-	pImNE = &ImNE;
 
+	thr_n = threads;
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
-	{		
+	{
 		while (found_sub == 0)
 		{
 			pos = CurPos;
-            n_fs = 0;
+			n_fs = 0;
+			n_fs_start = 0;
 
-			while( (n_fs < DL) && (pos < End) )
-			{			
-				mPrevPos[n_fs] = pos = pV->OneStepWithTimeout();
-
-				pV->GetRGBImage(mImRGB[n_fs], xmin, xmax, ymin, ymax);
+			while ((n_fs < DL*threads) && (pos < End))
+			{
+				if (prev_n_fs < DL * threads)
+				{
+					mPrevPos[n_fs] = mPrevPos[prev_n_fs];
+					mImRGB[n_fs] = mImRGB[prev_n_fs];
+					prev_n_fs++;
+					thr_n++;
+				}
+				else if (thr_n < threads)
+				{
+					mPrevPos[n_fs] = thrPrevPos[thr_n];
+					mImRGB[n_fs] = thrImRGB[thr_n];
+					thr_n++;
+				}
+				else
+				{
+					mPrevPos[n_fs] = pos = pV->OneStepWithTimeout();
+					pV->GetRGBImage(mImRGB[n_fs], xmin, xmax, ymin, ymax);
+				}
 
 				fn++;
 				n_fs++;
+
+				if (n_fs % DL == 0)
+				{
+					int thr_nT = (n_fs / DL) - 1;
+					thrsT[thr_nT] = TaskConvertImage(mImRGB[n_fs - 1], ImT[thr_nT], ImNET[thr_nT], w, h, W, H, thrs_resT[thr_nT]);
+				}
 			}
 			if (pos >= End)
 			{
-				while(n_fs < DL)
+				while (n_fs < DL*threads)
 				{
 					mPrevPos[n_fs] = pos;
-					memcpy(&(mImRGB[n_fs][0]), &(mImRGB[n_fs-1][0]), BufferSize);
+					memcpy(&(mImRGB[n_fs][0]), &(mImRGB[n_fs - 1][0]), BufferSize);
 
 					fn++;
 					n_fs++;
 				}
 			}
 
-			bln = ConvertImage(mImRGB[DL-1], ImFF, ImSF, ImTFT, ImNET, w, h, W, H);
+			concurrency::when_all(begin(thrsT), end(thrsT)).wait();
+
+			for (thr_nT = 0; thr_nT < threads; thr_nT++)
+			{
+				bln = thrs_resT[thr_nT];
+				if (bln == 1) break;
+			}
 
 			if (bln == 1)
 			{
-				fn -= DL; 
-				n_fs = 0;
+				fn = (fn - DL * threads) + DL * thr_nT;
+				n_fs = DL * thr_nT;
+				n_fs_start = n_fs;
 				found_sub = 1;
+				thr_n = 0;
 			}
 			else
 			{
-				prev_pos = CurPos = mPrevPos[DL-1];
+				prev_pos = CurPos = mPrevPos[(DL * threads) - 1];
 				n_fs = 0;
+				n_fs_start = 0;
 			}
 
-			if ( (mPrevPos[DL-1] >= End) || (g_RunSubSearch == 0) || (mPrevPos[DL-1] == mPrevPos[DL-2]) )
+			if ((mPrevPos[n_fs_start + DL - 1] >= End) || (g_RunSubSearch == 0) || (mPrevPos[n_fs_start + DL - 1] == mPrevPos[n_fs_start + DL - 2]))
 			{
 				break;
 			}
 		}
 
-		if ( (mPrevPos[DL-1] > End) || (g_RunSubSearch == 0) || (mPrevPos[DL-1] == mPrevPos[DL-2]) ||
-			 ( (found_sub == false) && (mPrevPos[DL-1] == End) ) )
-		{
+		if ((mPrevPos[n_fs_start + DL - 1] > End) || (g_RunSubSearch == 0) || (mPrevPos[n_fs_start + DL - 1] == mPrevPos[n_fs_start + DL - 2]) ||
+			((found_sub == 0) && (mPrevPos[n_fs_start + DL - 1] == End)))
+		{			
 			break;
 		}
 
-		auto get_next_frame_data = [&DL, &mPrevPos, &prev_pos, &mImRGB, &xmin, &xmax, &ymin, &ymax, &pV, &debug, &ImTFT, &ImNET, &BufferSize, &w, &h, &W, &H]
-									(int &bln, int &fn, int &n_fs, s64 &CurPos, s64 &prevPos,
-									custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE) {
-			if (n_fs < DL)
-			{
-				memcpy(&ImRGB[0], &(mImRGB[n_fs][0]), BufferSize);
-				CurPos = mPrevPos[n_fs];
-
-				if (n_fs == 0) prevPos = prev_pos;
-				else prevPos = mPrevPos[n_fs - 1];
-
-				fn++;
-				n_fs++;
-			}
-			else
-			{
-				prevPos = CurPos;
-
-				CurPos = pV->OneStepWithTimeout();
-
-				pV->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
-
-				fn++;
-			}
-
-			if (n_fs != DL)
-			{
-				bln = ConvertImage(ImRGB, ImFF, ImSF, ImTF, ImNE, w, h, W, H);
-			}
-			else
-			{
-				bln = 1;
-				memcpy(&ImTF[0], &ImTFT[0], BufferSize);
-				memcpy(&ImNE[0], &ImNET[0], BufferSize);
-				n_fs++;
-			}
-
-			if (debug) { SaveRGBImage(ImRGB, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGB2_line" + std::to_string(__LINE__) + g_im_save_format, w, h); }
-			if (debug) { SaveGreyscaleImage(ImTF, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImTF2_line" + std::to_string(__LINE__) + g_im_save_format, w, h); }
-		};
-
-		if (n_fs == 0)
+		if (thr_n % threads == 0)
 		{
-			get_next_frame_data(bln, fn, n_fs, CurPos, prevPos, ImRGB, ImFF, ImSF, ImTF, ImNE);			
-			next_fn = fn;
-			next_n_fs = n_fs;
-			next_CurPos = CurPos;
-			next_prevPos = prevPos;
+			thr_n = 0;
+			int _thr_n, _n_fs;
+			for (_thr_n = 0, _n_fs = n_fs; _thr_n < threads; _thr_n++)
+			{
+				if (_n_fs >= (DL*threads))
+				{
+					thrPrevPos[_thr_n] = pV->OneStepWithTimeout();
+					pV->GetRGBImage(thrImRGB[_thr_n], xmin, xmax, ymin, ymax);
+					pImRGB = &(thrImRGB[_thr_n]);
+				}
+				else
+				{
+					pImRGB = &(mImRGB[_n_fs]);
+				}
+				_n_fs++;
+
+				if ((_n_fs > (DL*threads)) || (_n_fs % DL != 0))
+				{
+					thrs[_thr_n] = TaskConvertImage(*pImRGB, Im[_thr_n], ImNE[_thr_n], w, h, W, H, thrs_res[_thr_n]);
+				}
+				/*else
+				{
+					int thr_nT = (_n_fs / DL) - 1;
+					thrs_res[_thr_n] = thrs_resT[thr_nT];
+					Im[_thr_n] = ImT[thr_nT];
+					ImVE[_thr_n] = ImVET[thr_nT];
+				}*/
+			}
 		}
 
-		auto get_next_frame_data_task = concurrency::create_task([&]
-		{			
-			get_next_frame_data(next_bln, next_fn, next_n_fs, next_CurPos, next_prevPos, next_ImRGB, ImFF, ImSF, next_ImTF, next_ImNE);
-		});
+		if (n_fs < (DL*threads))
+		{
+			pImRGB = &(mImRGB[n_fs]);
+			CurPos = mPrevPos[n_fs];
 
-		if ( (bln == 1) && (CurPos != prevPos) )
-		{	
+			if (n_fs == 0) prevPos = prev_pos;
+			else prevPos = mPrevPos[n_fs - 1];
+		}
+		else
+		{
+			pImRGB = &(thrImRGB[thr_n]);
+			prevPos = CurPos;
+			CurPos = thrPrevPos[thr_n];
+		}
+
+		fn++;
+		n_fs++;
+
+		if ((n_fs > (DL*threads)) || (n_fs % DL != 0))
+		{
+			thrs[thr_n].wait();
+			bln = thrs_res[thr_n];
+			pIm = &Im[thr_n];
+			pImNE = &ImNE[thr_n];
+		}
+		else
+		{
+			int thr_nT = (n_fs / DL) - 1;
+			bln = thrs_resT[thr_nT];
+			pIm = &ImT[thr_nT];
+			pImNE = &ImNET[thr_nT];
+		}
+
+		thr_n++;
+
+		if ((bln == 1) && (CurPos != prevPos))
+		{
 			if (bf == -2)
 			{
 L:				bf = fn;
@@ -246,9 +307,9 @@ L:				bf = fn;
 			}
 			else
 			{
-				if (fn-bf < DL)
+				if (fn - bf < DL)
 				{
-					if(CompareTwoImages(ImS, ImNES, *pIm, *pImNE, size) == 0) 
+					if (CompareTwoImages(ImS, ImNES, *pIm, *pImNE, size) == 0)
 					{
 						if (debug)
 						{
@@ -307,7 +368,7 @@ L:				bf = fn;
 									}
 
 									if (bln > 0)
-									{										
+									{
 										ii = i;
 									}
 								}
@@ -322,7 +383,7 @@ L:				bf = fn;
 									memcpy(ImS.m_pData, ImS_SQ[ii].m_pData, BufferSize);
 									for (i = 0; i < nn - ii; i++)
 									{
-										memcpy(ImS_SQ[i].m_pData, ImS_SQ[i+ii].m_pData, BufferSize);
+										memcpy(ImS_SQ[i].m_pData, ImS_SQ[i + ii].m_pData, BufferSize);
 										ImS_Pos[i] = ImS_Pos[i + ii];
 										ImS_fn[i] = ImS_fn[i + ii];
 									}
@@ -348,10 +409,10 @@ L:				bf = fn;
 				}
 				else
 				{
-					if (fn-bf == DL)
-					{	
+					if (fn - bf == DL)
+					{
 						//'bln' here is combined size of interesting pixels
-						for(i=0, bln=1; (i<nn) && (bln>0); i++)
+						for (i = 0, bln = 1; (i < nn) && (bln > 0); i++)
 						{
 							bln = SimpleCombineTwoImages(ImS, ImS_SQ[i], size);
 						}
@@ -361,7 +422,7 @@ L:				bf = fn;
 							bln = AnalyseImage(ImS, w, h);
 						}
 
-						if (bln == 0) 						
+						if (bln == 0)
 						{
 							bf = -2;
 							goto L;
@@ -373,7 +434,7 @@ L:				bf = fn;
 						}
 					}
 
-					if (fn-bf >= DL)
+					if (fn - bf >= DL)
 					{
 						if (CompareTwoSubs(ImS, ImNES, *pIm, *pImNE, w, h, W, H, ymin) == 0)
 						{
@@ -400,8 +461,8 @@ L2:							if (finded_prev == 1)
 
 								if (bln == 1)
 								{
-									pef = fn-1;
-									pet = CurPos-1;
+									pef = fn - 1;
+									pet = CurPos - 1;
 
 									SimpleCombineTwoImages(ImSSP, ImSS, size);
 								}
@@ -413,40 +474,40 @@ L2:							if (finded_prev == 1)
 										SaveGreyscaleImage(ImS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 										SaveGreyscaleImage(ImSS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 										SaveGreyscaleImage(ImNES, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNES_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-										
+
 										SaveRGBImage(ImFSP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 										SaveGreyscaleImage(ImSP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 										SaveGreyscaleImage(ImSSP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 										SaveGreyscaleImage(ImNESP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNESP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 									}
 
-									Str = VideoTimeToStr(pbt)+string("__")+VideoTimeToStr(pet);
+									Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
 									ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 									ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
-									g_pViewImage[0](ImFSP, W, H);									
-									g_pViewImage[1](ImSSP, W, H);									
-									SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
+									g_pViewImage[0](ImFSP, W, H);
+									g_pViewImage[1](ImSSP, W, H);
+									SaveRGBImage(ImFSP, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
 									SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 
 									pbf = bf;
 									pbt = bt;
-									pef = fn-1;
-									pet = CurPos-1;
+									pef = fn - 1;
+									pet = CurPos - 1;
 
 									memcpy(ImSSP.m_pData, ImSS.m_pData, BufferSize);
 								}
-							}	
+							}
 							else
-							{								
+							{
 								pbf = bf;
 								pbt = bt;
-								pef = fn-1;
-								pet = CurPos-1;
+								pef = fn - 1;
+								pet = CurPos - 1;
 
 								memcpy(ImSSP.m_pData, ImSS.m_pData, BufferSize);
 							}
 
-							if (pef-pbf+1 >= DL)
+							if (pef - pbf + 1 >= DL)
 							{
 								memcpy(ImSP.m_pData, ImS.m_pData, BufferSize);
 								memcpy(ImFSP.m_pData, ImFS.m_pData, BufferSize);
@@ -458,7 +519,7 @@ L2:							if (finded_prev == 1)
 								finded_prev = 0;
 							}
 
-							goto L;	
+							goto L;
 						}
 						else
 						{
@@ -469,14 +530,14 @@ L2:							if (finded_prev == 1)
 				}
 			}
 		}
-		else if ( ( (bln == 0) && (CurPos != prevPos) ) ||
-				  ( (bln == 1) && (CurPos == prevPos) ) )
+		else if (((bln == 0) && (CurPos != prevPos)) ||
+			((bln == 1) && (CurPos == prevPos)))
 		{
 			if (finded_prev == 1)
 			{
-				if (fn-bf <= DL)
-				{					
-					for(i=0; i<nn; i++)
+				if (fn - bf <= DL)
+				{
+					for (i = 0; i < nn; i++)
 					{
 						SimpleCombineTwoImages(ImS, ImS_SQ[i], size);
 					}
@@ -484,15 +545,15 @@ L2:							if (finded_prev == 1)
 
 					bln = AnalyseImage(ImS, w, h);
 
-					if (bln == 0) 
+					if (bln == 0)
 					{
-						Str = VideoTimeToStr(pbt)+string("__")+VideoTimeToStr(pet);
-                        ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
+						Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
+						ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
-						g_pViewImage[0](ImFSP, W, H);									
-						g_pViewImage[1](ImSSP, W, H);									
-						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
-						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!") + g_im_save_format, W, H);														
+						g_pViewImage[0](ImFSP, W, H);
+						g_pViewImage[1](ImSSP, W, H);
+						SaveRGBImage(ImFSP, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 						finded_prev = 0;
 						bf = -2;
 					}
@@ -520,7 +581,7 @@ L2:							if (finded_prev == 1)
 					}
 
 					if (bln == 1)
-					{		
+					{
 						SimpleCombineTwoImages(ImSS, ImSSP, size);
 						memcpy(ImFS.m_pData, ImFSP.m_pData, BufferSize);
 						bf = pbf;
@@ -528,54 +589,93 @@ L2:							if (finded_prev == 1)
 					}
 					else
 					{
-						Str = VideoTimeToStr(pbt)+string("__")+VideoTimeToStr(pet);
+						Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
 						ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
-						g_pViewImage[0](ImFSP, W, H);									
-						g_pViewImage[1](ImSSP, W, H);									
-						SaveRGBImage(ImFSP, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
-						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\")+Str+string("!") + g_im_save_format, W, H);
+						g_pViewImage[0](ImFSP, W, H);
+						g_pViewImage[1](ImSSP, W, H);
+						SaveRGBImage(ImFSP, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 					}
 				}
 			}
 
 			if (bf != -2)
 			{
-				if (fn-bf > DL)
-				{			
-					et = CurPos-1;
-					Str = VideoTimeToStr(bt)+string("__")+VideoTimeToStr(et);
+				if (fn - bf > DL)
+				{
+					et = CurPos - 1;
+					Str = VideoTimeToStr(bt) + string("__") + VideoTimeToStr(et);
 					ImToNativeSize(ImFS, w, h, W, H, xmin, xmax, ymin, ymax);
 					ImToNativeSize(ImSS, w, h, W, H, xmin, xmax, ymin, ymax);
-					g_pViewImage[0](ImFS, W, H);									
-					g_pViewImage[1](ImSS, W, H);									
-					SaveRGBImage(ImFS, string("\\RGBImages\\")+Str + g_im_save_format, W, H);
-					SaveGreyscaleImage(ImSS, string("\\FRDImages\\")+Str+string("!") + g_im_save_format, W, H);														
+					g_pViewImage[0](ImFS, W, H);
+					g_pViewImage[1](ImSS, W, H);
+					SaveRGBImage(ImFS, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
+					SaveGreyscaleImage(ImSS, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 				}
 			}
 
 			finded_prev = 0;
 			bf = -2;
 
-			if (n_fs >= DL)
+			if ((n_fs - n_fs_start) >= DL)
 			{
-				found_sub = 0;
-				prev_pos = CurPos;
+				while ( (thr_n < threads) && (bln == 0) )
+				{
+					if (n_fs < (DL*threads))
+					{
+						pImRGB = &(mImRGB[n_fs]);
+						CurPos = mPrevPos[n_fs];
+
+						if (n_fs == 0) prevPos = prev_pos;
+						else prevPos = mPrevPos[n_fs - 1];
+					}
+					else
+					{
+						pImRGB = &(thrImRGB[thr_n]);
+						prevPos = CurPos;
+						CurPos = thrPrevPos[thr_n];
+					}
+
+					fn++;
+					n_fs++;
+
+					if ((n_fs > (DL*threads)) || (n_fs % DL != 0))
+					{
+						thrs[thr_n].wait();
+						bln = thrs_res[thr_n];
+						pIm = &Im[thr_n];
+						pImNE = &ImNE[thr_n];
+					}
+					else
+					{
+						int thr_nT = (n_fs / DL) - 1;
+						bln = thrs_resT[thr_nT];
+						pIm = &ImT[thr_nT];
+						pImNE = &ImNET[thr_nT];
+					}
+
+					thr_n++;
+				}
+
+				if ((bln == 1) && (CurPos != prevPos))
+				{
+					goto L;
+				}
+				else
+				{
+					found_sub = 0;
+					prev_pos = CurPos;
+					prev_n_fs = n_fs;
+					concurrency::when_all(begin(thrs), end(thrs)).wait();
+				}
 			}
 		}
-	
-		get_next_frame_data_task.get();
-		memcpy(&ImRGB[0], &next_ImRGB[0], BufferSize);
-		memcpy(&ImTF[0], &next_ImTF[0], BufferSize);
-		memcpy(&ImNE[0], &next_ImNE[0], BufferSize);
-		bln = next_bln;
-		fn = next_fn;
-		n_fs = next_n_fs;
-		CurPos = next_CurPos;
-		prevPos = next_prevPos;
-	}	
+	}
 
 	g_pV = NULL;
+
+	concurrency::when_all(begin(thrs), end(thrs)).wait();
 
 	if (g_RunSubSearch == 0)
 	{
@@ -1276,7 +1376,7 @@ void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin
 	}
 }
 
-inline std::string VideoTimeToStr(s64 pos)
+std::string VideoTimeToStr(s64 pos)
 {
 	static char str[100];
 	int hour, min, sec, msec, val;
