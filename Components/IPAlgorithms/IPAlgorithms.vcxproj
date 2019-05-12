@@ -167,6 +167,7 @@
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)IPAlgorithms.lib</OutputFile>

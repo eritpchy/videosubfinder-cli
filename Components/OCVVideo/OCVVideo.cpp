@@ -36,6 +36,8 @@ OCVVideo::OCVVideo()
 
 	m_pVideoWindow = NULL;
 
+	m_pThreadRunVideo = NULL;
+
 	m_play_video = false;
 }
 
@@ -71,7 +73,7 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 		int wnd_w, wnd_h, img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
 		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
 
-		if ((wnd_w > 0) && (wnd_h > 0))
+		if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
 		{
 			unsigned char *img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
 
@@ -246,6 +248,11 @@ s64 OCVVideo::GetPos()
 	if (m_VC.isOpened())
 	{
 		pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+
+		if ((m_cur_frame.empty()) && (pos < m_Duration))
+		{
+			pos = m_Duration;
+		}
 	}
 
     return pos;
@@ -255,7 +262,7 @@ s64 OCVVideo::GetPos()
 // ImRGB in format b:g:r:0
 void OCVVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
-	if (m_VC.isOpened())
+	if (m_VC.isOpened() && (!m_cur_frame.empty()))
 	{
 		int w, h, x, y, i, j, di;
 		u8 *color, *img_data = m_cur_frame.data;
@@ -323,7 +330,7 @@ void OCVVideo::Run()
 		}
 		else
 		{
-			m_play_video = true;
+			m_play_video = true;			
 
 			m_pThreadRunVideo = new ThreadRunVideo(this);
 			m_pThreadRunVideo->Create();
@@ -384,6 +391,10 @@ void *ThreadRunVideo::Entry()
 	{		
 		clock_t start_t = clock();
 		m_pVideo->m_VC >> m_pVideo->m_cur_frame;
+		if (m_pVideo->m_cur_frame.empty())
+		{
+			break;
+		}
 		if ((m_pVideo->m_Width != m_pVideo->m_origWidth) || (m_pVideo->m_Height != m_pVideo->m_origHeight)) cv::resize(m_pVideo->m_cur_frame, m_pVideo->m_cur_frame, cv::Size(m_pVideo->m_Width, m_pVideo->m_Height), 0, 0, cv::INTER_LINEAR);
 		m_pVideo->ShowFrame(m_pVideo->m_cur_frame);
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);

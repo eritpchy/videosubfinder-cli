@@ -566,7 +566,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_msh, "min_symbol_height");
 	ReadProperty(fin, g_msd, "min_symbol_density");
 	ReadProperty(fin, g_mpned, "min_NEdges_points_density");
-
+	
+	ReadProperty(fin, g_threads, "threads");
 	ReadProperty(fin, g_DL, "sub_frame_length");
 	ReadProperty(fin, g_tp, "text_procent");
 	ReadProperty(fin, g_mtpl, "min_text_len_(in_procent)");
@@ -641,6 +642,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_default_string_for_empty_sub, "ssp_oim_property_default_string_for_empty_sub");
 	ReadProperty(fin, m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, "ssp_oim_group_settings_for_multiframe_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_threads, "ssp_oim_property_threads");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_square_error, "ssp_oim_property_sub_square_error");
 	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
@@ -688,6 +690,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_msd, "min_symbol_density");
 	WriteProperty(fout, g_mpned, "min_NEdges_points_density");
 
+	WriteProperty(fout, g_threads, "threads");
 	WriteProperty(fout, g_DL, "sub_frame_length");
 	WriteProperty(fout, g_tp, "text_procent");
 	WriteProperty(fout, g_mtpl, "min_text_len_(in_procent)");

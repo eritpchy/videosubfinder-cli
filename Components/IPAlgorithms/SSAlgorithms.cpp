@@ -22,7 +22,7 @@
 
 int		g_RunSubSearch = 0;
 
-long    g_threads = 4;
+int    g_threads = 4;
 
 int		g_DL = 6;	 //sub frame length
 double	g_tp = 0.3;	 //text procent
@@ -485,9 +485,9 @@ L2:							if (finded_prev == 1)
 									ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 									ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
 									g_pViewImage[0](ImFSP, W, H);
-									g_pViewImage[1](ImSSP, W, H);
+									g_pViewImage[1](ImSP, W, H);
 									SaveRGBImage(ImFSP, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
-									SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
+									SaveGreyscaleImage(ImSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 
 									pbf = bf;
 									pbt = bt;
@@ -547,13 +547,22 @@ L2:							if (finded_prev == 1)
 
 					if (bln == 0)
 					{
+						if (debug)
+						{
+							SaveRGBImage(*pImRGB, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(*pIm, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+
+							SaveRGBImage(ImFS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);							
+						}
+
 						Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
 						ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						g_pViewImage[0](ImFSP, W, H);
-						g_pViewImage[1](ImSSP, W, H);
+						g_pViewImage[1](ImSP, W, H);
 						SaveRGBImage(ImFSP, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
-						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 						finded_prev = 0;
 						bf = -2;
 					}
@@ -589,13 +598,29 @@ L2:							if (finded_prev == 1)
 					}
 					else
 					{
+						if (debug)
+						{
+							SaveRGBImage(*pImRGB, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(*pIm, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+
+							SaveRGBImage(ImFS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImSS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImNES, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNES_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+
+							SaveRGBImage(ImFSP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImSP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImSSP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImNESP, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNESP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+						}
+
 						Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
 						ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						ImToNativeSize(ImSSP, w, h, W, H, xmin, xmax, ymin, ymax);
 						g_pViewImage[0](ImFSP, W, H);
-						g_pViewImage[1](ImSSP, W, H);
+						g_pViewImage[1](ImSP, W, H);
 						SaveRGBImage(ImFSP, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
-						SaveGreyscaleImage(ImSSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImSP, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 					}
 				}
 			}
@@ -604,14 +629,22 @@ L2:							if (finded_prev == 1)
 			{
 				if (fn - bf > DL)
 				{
+					if (debug)
+					{
+						SaveRGBImage(ImFS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+						SaveGreyscaleImage(ImS, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+						SaveRGBImage(*pImRGB, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+						SaveGreyscaleImage(*pIm, string("\\TestImages\\FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+					}
+
 					et = CurPos - 1;
 					Str = VideoTimeToStr(bt) + string("__") + VideoTimeToStr(et);
 					ImToNativeSize(ImFS, w, h, W, H, xmin, xmax, ymin, ymax);
 					ImToNativeSize(ImSS, w, h, W, H, xmin, xmax, ymin, ymax);
 					g_pViewImage[0](ImFS, W, H);
-					g_pViewImage[1](ImSS, W, H);
+					g_pViewImage[1](ImS, W, H);
 					SaveRGBImage(ImFS, string("\\RGBImages\\") + Str + g_im_save_format, W, H);
-					SaveGreyscaleImage(ImSS, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
+					SaveGreyscaleImage(ImS, string("\\FRDImages\\") + Str + string("!") + g_im_save_format, W, H);
 				}
 			}
 
@@ -724,6 +757,8 @@ int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom
 		}
 	}
 	if (dif2 > dif1) dif1 = dif2;
+
+	if (cmp == 0) return 0;
 
 	if ((double)dif1/(double)cmp > g_sse) return 0;
 	
@@ -1179,6 +1214,11 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_bu
 		l++;
 	}
 
+	if (ln == 0)
+	{
+		return 0;
+	}
+
 	bln = 1;
 	for(k=0; k<ln; k++)
 	{
@@ -1219,6 +1259,12 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_bu
 		if (dif2 > dif1) dif = dif2;
 		else dif = dif1;
 
+		if (cmb == 0)
+		{
+			bln = 0;
+			break;
+		}
+
 		if ((double)dif/(double)cmb <= veple)
 		{
 			continue;
@@ -1252,12 +1298,19 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_bu
 		if (dif2 > dif1) dif = dif2;
 		else dif = dif1;
 
+		if (cmb == 0)
+		{
+			bln = 0;
+			break;
+		}
+
 		if ((double)dif/(double)cmb > veple)
 		{
 			bln = 0;
 			break;
 		}
 	}
+
 	return bln;
 }
 

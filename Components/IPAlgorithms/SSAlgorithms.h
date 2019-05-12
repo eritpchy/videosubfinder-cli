@@ -26,8 +26,8 @@ using namespace std;
 
 extern int		g_RunSubSearch;
 
+extern int      g_threads; // number of threads
 extern int		g_DL;	 //sub frame length
-//extern long		g_threads; // number of threads
 extern double	g_tp;	 //text procent
 extern double	g_mtpl;  //min text len (in procent)
 extern double	g_sse;	 //sub square error

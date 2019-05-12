@@ -99,6 +99,7 @@ public:
 	wxString	m_ssp_oim_property_default_string_for_empty_sub;
 	wxString	m_ssp_oim_group_settings_for_multiframe_image_processing;
 	wxString	m_ssp_oim_sub_group_settings_for_sub_detection;
+	wxString	m_ssp_oim_property_threads;
 	wxString	m_ssp_oim_property_sub_frames_length;
 	wxString	m_ssp_oim_property_sub_square_error;
 	wxString	m_ssp_oim_sub_group_settings_for_comparing_subs;

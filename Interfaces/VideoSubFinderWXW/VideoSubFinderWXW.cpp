@@ -61,14 +61,14 @@ bool CVideoSubFinderApp::OnInit()
 	if (m_parser.Found("o", &wxStr))
 	{
 		wxStr.Replace("\\", "/");
-		g_work_dir = wxStr;
-	
-		wxFileName::Mkdir(wxStr + "/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-		wxFileName::Mkdir(wxStr + "/FRDImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-		wxFileName::Mkdir(wxStr + "/TestImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-		wxFileName::Mkdir(wxStr + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-		wxFileName::Mkdir(wxStr + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+		g_work_dir = wxStr;		
 	}
+
+	wxFileName::Mkdir(g_work_dir + "/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/FRDImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/TestImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 
 	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("c"))
 	{

@@ -1342,7 +1342,34 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 		g_IsCreateClearedTextImages = 1;
 		g_RunCreateClearedTextImages = 1;
 
-		if (!(m_pMF->m_blnNoGUI)) m_pCCTI->SetLabel("Stop CCTXTImages");		
+		if (!(m_pMF->m_blnNoGUI))
+		{
+			m_pCCTI->SetLabel("Stop CCTXTImages");
+
+			if (m_pMF->m_VIsOpen)
+			{
+				wxCommandEvent event;
+				m_pMF->OnStop(event);
+
+				m_pMF->m_VIsOpen = false;
+
+				if (m_pMF->m_timer.IsRunning())
+				{
+					m_pMF->m_timer.Stop();
+				}
+
+				m_pMF->m_ct = -1;				
+
+				m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
+				m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
+				m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);				
+				m_pMF->m_pImageBox->ClearScreen();
+				m_pMF->m_pVideo->SetNullRender();
+			}
+
+			m_pMF->m_pPanel->m_pSSPanel->Disable();
+			m_pMF->m_pPanel->m_pSHPanel->Disable();
+		}
 
 		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
 		m_pSearchThread->Create();
@@ -1375,9 +1402,6 @@ void *ThreadCreateClearedTextImages::Entry()
 	int w1, h1, w2, h2, YB1, YB2, bln;
 	wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 	u64 bt1, et1, bt2, et2;
-
-	int *ImRES1 = NULL;
-	int *ImRES2 = NULL;
 
 	int res;	
 
@@ -1427,7 +1451,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	__int64 t1, dt, num_calls;
 
-	//t1 = GetTickCount();
+	//t1 = GetTickCount();	
 
 	for (k=0; k<(int)FileNamesVector.size(); k++)
 	{
@@ -1450,25 +1474,24 @@ void *ThreadCreateClearedTextImages::Entry()
 				ymin = 0;
 				ymax = h-1;           	        
 			}
+			
+			custom_buffer<int> ImRGB(w*h, 0);
+			custom_buffer<custom_buffer<int>> ImF(6, custom_buffer<int>(w*h, 0));
 
-			custom_buffer<int> g_ImRES1(w*h * 3, 0);
-			custom_buffer<int> g_ImRGB(w*h, 0);
-			custom_buffer<custom_buffer<int>> g_ImF(6, custom_buffer<int>(w*h, 0));
-
-			LoadRGBImage(g_ImRGB, string(Str), w, h);		
+			LoadRGBImage(ImRGB, string(Str), w, h);		
 
 			/*num_calls = 100;
 			t1 = GetTickCount();
 			for (__int64 i_call = 0; i_call < num_calls; i_call++)
 			{*/
-			GetTransformedImage(g_ImRGB, g_ImF[3], g_ImF[4], g_ImF[5], g_ImF[1], w, h, W, H);		
+			GetTransformedImage(ImRGB, ImF[3], ImF[4], ImF[5], ImF[1], w, h, W, H);		
 			/*}
 			(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
 
 			if (g_show_transformed_images_only)
 			{
 				Str = wxString("/TXTImages/") + FileNamesVector[k];
-				SaveGreyscaleImage(g_ImF[5], string(Str), w, h);
+				SaveGreyscaleImage(ImF[5], string(Str), w, h);
 				continue;
 			}
 
@@ -1477,7 +1500,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				Str = FileNamesVector[k];
 				Str = GetFileName(Str.ToStdString());
 				Str = g_work_dir + "/FRDImages/"+Str+"!"+g_im_save_format;
-				LoadGreyscaleImage(g_ImF[5], string(Str), w, h);		
+				LoadGreyscaleImage(ImF[5], string(Str), w, h);		
 				//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
 			}
 		
@@ -1490,7 +1513,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			sprintf(str, "%.4d", val);
 			if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
 
-			res = FindTextLines(g_ImRGB, g_ImF[2], g_ImF[5], g_ImF[3], SavedFiles, w, h);
+			res = FindTextLines(ImRGB, ImF[2], ImF[5], ImF[3], SavedFiles, w, h);
 
 			if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
 			{
@@ -1498,9 +1521,8 @@ void *ThreadCreateClearedTextImages::Entry()
 				Str = GetFileName(Str.ToStdString());
 				Str = wxString("/TXTImages/") + Str + wxString("_01") + g_im_save_format;
 
-				memset(g_ImRES1.m_pData, 0, ((w*4)*(h/4))*sizeof(int));
-
-				SaveGreyscaleImage(g_ImRES1, string(Str), w*4, h/4);
+				custom_buffer<int> ImRES1((w * 4)*(h / 4), 0);
+				SaveGreyscaleImage(ImRES1, string(Str), w*4, h/4);
 			
 				val = 14; //LH
 				SaveTextLineParameters(	string(Str), 0, 
@@ -1553,8 +1575,8 @@ void *ThreadCreateClearedTextImages::Entry()
 					bln = 1;
 					for (i=0; i<(int)SavedFiles.size(); i++)
 					{
-						LoadGreyscaleImage(g_ImF[0], prevSavedFiles[i], w1, h1);
-						LoadGreyscaleImage(g_ImF[1], SavedFiles[i], w2, h2);
+						LoadGreyscaleImage(ImF[0], prevSavedFiles[i], w1, h1);
+						LoadGreyscaleImage(ImF[1], SavedFiles[i], w2, h2);
 
 						Str = prevSavedFiles[i].c_str();
 						i = Str.length()-1;
@@ -1574,7 +1596,7 @@ void *ThreadCreateClearedTextImages::Entry()
 						Str = Str.Mid(i+1, j-i-1);
 						YB2 = atoi(Str);
 
-						bln = CompareTXTImages(g_ImF[0], g_ImF[1], w1, h1, w2, h2, YB1, YB2);
+						bln = CompareTXTImages(ImF[0], ImF[1], w1, h1, w2, h2, YB1, YB2);
 						if (bln == 0) break;
 					}
 
@@ -1606,13 +1628,13 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));
 
-	//if (ImRES1 != NULL) delete[] ImRES1;
-	//if (ImRES2 != NULL) delete[] ImRES2;
-
 	if (!(m_pMF->m_blnNoGUI))
 	{
 		m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000");
 		m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
+
+		m_pMF->m_pPanel->m_pSSPanel->Enable();
+		m_pMF->m_pPanel->m_pSHPanel->Enable();
 	}
 
 	g_IsCreateClearedTextImages = 0;
