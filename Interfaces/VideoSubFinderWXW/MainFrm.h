@@ -61,6 +61,7 @@ public:
 	wxString	m_ssp_label_parameters_influencing_image_processing;
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;
 	wxString	m_ssp_oi_group_global_image_processing_settings;
+	wxString	m_ssp_oi_property_use_cuda_gpu;
 	wxString	m_ssp_oi_property_generate_cleared_text_images_on_test;
 	wxString	m_ssp_oi_property_dump_debug_images;
 	wxString	m_ssp_oi_property_dump_debug_second_filtration_images;

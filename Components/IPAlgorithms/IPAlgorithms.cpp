@@ -22,9 +22,12 @@
 #include <chrono>
 #include <iostream>
 #include <algorithm>
+#include "cuda_kernels.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs/legacy/constants_c.h>
+#include <opencv2/core/cuda.hpp>
 #include <ppl.h>
+#include <ppltasks.h>
 using namespace std;
 
 void MergeImagesByIntersectedFigures(custom_buffer<int> &ImInOut, custom_buffer<int> &ImIn2, int w, int h, int white);
@@ -103,6 +106,19 @@ bool g_clear_test_images_folder = true;
 bool g_show_transformed_images_only = false;
 
 bool g_wxImageHandlersInitialized = false;
+
+bool g_use_cuda_gpu = true;
+
+bool InitCUDADevice()
+{
+	bool res = true;
+	int num = cv::cuda::getCudaEnabledDeviceCount();
+	/*if (num == 0)
+	{
+		res = false;
+	}*/
+	return res;
+}
 
 void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)
 {	
@@ -2281,14 +2297,60 @@ inline void GetDDY(int &h, int &LH, int &LMAXY, int &ddy1, int &ddy2)
 	}
 }
 
-void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImRES, custom_buffer<int> &ImMaskWithBorder, int w, int h, int LH, int LMAXY, std::string iter_det, int white, bool clear_from_left_and_right_borders = false, bool check_on_characters_edging = false, int real_im_x_center = 0)
+void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, float threshold = 0.001)
 {
-	custom_buffer<int> ImRES1(w*h, 0), ImRES4(w*h, 0);
-	int x, y, i, j, ddy1, ddy2, val1, val2;
+	int numObjs=w*h;
+	float **clusters;
+	
+	clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
+	free(clusters[0]);
+	free(clusters);
+}
+
+void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations)
+{
+	int i, x, y;
+	cv::Mat samples(w * h, 3, CV_32F);
+	cv::Mat cv_labels(w * h, 1, CV_32S);	
+	cv::Mat centers;
 	int color, rc, gc;
 	u8 *pClr;
+	pClr = (u8*)(&color);
+
+	for (i = 0; i < w*h; i++)
+	{
+		pClr = (u8*)(&ImRGB[i]);
+
+		for (int z = 0; z < 3; z++)
+		{
+			samples.at<float>(i, z) = pClr[z];
+		}
+
+		if (ImFF[i] == 0)
+		{
+			cv_labels.at<int>(i, 0) = 0;
+		}
+		else
+		{
+			cv_labels.at<int>(i, 0) = 1;
+		}
+	}
 
 	cv::theRNG().state = 0;
+	cv::kmeans(samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 10, 1.0), loop_iterations, cv::KMEANS_USE_INITIAL_LABELS, centers);
+	memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));
+}
+
+void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImRES, custom_buffer<int> &ImMaskWithBorder, int w, int h, int LH, int LMAXY, std::string iter_det, int white, bool clear_from_left_and_right_borders = false, bool check_on_characters_edging = false, int real_im_x_center = 0)
+{
+	custom_buffer<int> ImRES1(w*h, 0), ImRES4(w*h, 0), labels1(w*h, 0), labels2(w*h, 0);
+	int x, y, i, j, ddy1, ddy2, val1, val2, clusterCount;
+	int color, rc, gc;
+	u8 *pClr;
+	custom_buffer<int> cluster_cnt;
+	DWORD  start_time;
+
+	start_time = GetTickCount();
 
 	pClr = (u8*)(&color);
 
@@ -2303,72 +2365,59 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 	if (g_show_results) SaveRGBImage(ImRGB, "\\TestImages\\GetMainClusterImage_" + iter_det + "_01_1_ImRGB" + g_im_save_format, w, h);
 	if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\GetMainClusterImage_" + iter_det + "_01_2_ImFF" + g_im_save_format, w, h);
 
-	memset(&ImRES[0], 0, (w*h) * sizeof(int));	
+	memset(&ImRES[0], 0, (w*h) * sizeof(int));
 
 	GetDDY(h, LH, LMAXY, ddy1, ddy2);
 
-	int clusterCount;
-	cv::Mat samples(w * h, 3, CV_32F);
-	cv::Mat orig_labels(w * h, 1, CV_32S), labels;	
-	custom_buffer<int> cluster_cnt;
-	cv::Mat centers;
-
-	for (y = 0; y < h; y++)
-	{
-		for (x = 0; x < w; x++)
-		{
-			pClr = (u8*)(&ImRGB[y*w + x]);
-
-			for (int z = 0; z < 3; z++)
+	concurrency::parallel_invoke(
+		[&ImRGB, &ImFF, &labels1, w, h] {
+			int clusterCount = 4;
+			if (g_use_cuda_gpu)
 			{
-				samples.at<float>(y + x * h, z) = pClr[z];
-			}
-
-			if (ImFF[y*w + x] == 0)
-			{
-				orig_labels.at<int>(y + x * h, 0) = 0;
+				cuda_kmeans(ImRGB, labels1, w, h, clusterCount, 10);
 			}
 			else
 			{
-				orig_labels.at<int>(y + x * h, 0) = 1;
+				opencv_kmeans(ImRGB, ImFF, labels1, w, h, clusterCount, 10);
+			}
+		},	
+		[&ImRGB, &ImFF, &labels2, w, h] {
+			int clusterCount = 6;
+			if (g_use_cuda_gpu)
+			{
+				cuda_kmeans(ImRGB, labels2, w, h, clusterCount, 10);
+			}
+			else
+			{
+				opencv_kmeans(ImRGB, ImFF, labels2, w, h, clusterCount, 10);
 			}
 		}
-	}
-	
+	);
+
+	//wxMessageBox("GetMainClusterImage_dt1_cc4_cc6: " + std::to_string(GetTickCount() - start_time));
+	start_time = GetTickCount();
+
 	clusterCount = 4;
-	centers.release();
-	labels = orig_labels;
-	cv::kmeans(samples, clusterCount, labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 10, 1.0), 10, cv::KMEANS_USE_INITIAL_LABELS, centers);	
 
 	if (g_show_results)
 	{
-		for (y = 0; y < h; y++)
+		for (i = 0; i < w*h; i++)
 		{
-			for (x = 0; x < w; x++)
-			{
-				ImRES[y*w + x] = 0;
-				pClr = (u8*)(&ImRES[y*w + x]);
-				int cluster_idx = labels.at<int>(y + x * h, 0);
-				pClr[0] = centers.at<float>(cluster_idx, 0);
-				pClr[1] = centers.at<float>(cluster_idx, 1);
-				pClr[2] = centers.at<float>(cluster_idx, 2);
-			}
+			int cluster_idx = labels1[i];
+			ImRES[i] = (255 / clusterCount)*(cluster_idx + 1);
 		}
-		SaveRGBImage(ImRES, "\\TestImages\\GetMainClusterImage_" + iter_det + "_02_ImRES4Clusters" + g_im_save_format, w, h);
+		SaveGreyscaleImage(ImRES, "\\TestImages\\GetMainClusterImage_" + iter_det + "_02_ImRES4Clusters" + g_im_save_format, w, h);
 	}
 
 	cluster_cnt = custom_buffer<int>(clusterCount, 0);
 
 	// searching main TXT cluster which intersect with ImFF (ImFF) for save it in ImRES
-	for (y = 0; y < h; y++)
+	for (i = 0; i < w*h; i++)
 	{
-		for (x = 0; x < w; x++)
+		if (ImFF[i] != 0)
 		{
-			if (ImFF[y * w + x] != 0)
-			{
-				int cluster_idx = labels.at<int>(y + x * h, 0);
-				cluster_cnt[cluster_idx]++;
-			}
+			int cluster_idx = labels1[i];
+			cluster_cnt[cluster_idx]++;
 		}
 	}
 
@@ -2384,20 +2433,17 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 	}
 
 	// ImRES - MainTXTCluster
-	for (y = 0; y < h; y++)
+	for (i = 0; i < w*h; i++)
 	{
-		for (x = 0; x < w; x++)
-		{
-			int cluster_idx = labels.at<int>(y + x * h, 0);
+		int cluster_idx = labels1[i];
 
-			if (cluster_idx == j)
-			{
-				ImRES[y*w + x] = white;
-			}
-			else
-			{
-				ImRES[y*w + x] = 0;
-			}
+		if (cluster_idx == j)
+		{
+			ImRES[i] = white;
+		}
+		else
+		{
+			ImRES[i] = 0;
 		}
 	}
 
@@ -2405,6 +2451,10 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 
 	if (check_on_characters_edging)
 	{
+		custom_buffer<CMyClosedFigure> pFigures1, pFigures2;
+		custom_buffer<int> x_range1(w, 0), x_range2(w, 0);
+		int l, ii, min_x1, max_x1, min_x2, max_x2, ww1, ww2;
+
 		memcpy(&ImRES1[0], &ImRES[0], w*h * sizeof(int));
 
 		ClearImageFromBorders(ImRES1, w, h, ddy1, ddy2, white);
@@ -2412,54 +2462,13 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 
 		GetImageWithInsideFigures(ImRES1, ImRES4, w, h, white, val1, val2, LH, LMAXY, real_im_x_center);
 		if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_03_ImRES4_MainTXTClusterIn4ClastersInsideFigures" + g_im_save_format, w, h);
-		
-		ClearImageOpt5(ImRES1, w, h, LH, LMAXY, white);
-		if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_04_ImRES1_MainTXTClusterIn4ClastersClearImageOpt5" + g_im_save_format, w, h);
 
-		ClearImageOpt5(ImRES4, w, h, LH, LMAXY, white);
-		if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_05_ImRES4_MainTXTClusterIn4ClastersInsideFiguresClearImageOpt5" + g_im_save_format, w, h);
-
-		custom_buffer<CMyClosedFigure> pFigures1, pFigures2;
-		custom_buffer<int> x_range1(w, 0), x_range2(w, 0);
-		int l, ii, min_x1, max_x1, min_x2, max_x2, ww1, ww2;		
-
-		SearchClosedFigures(ImRES1, w, h, white, pFigures1);
-		SearchClosedFigures(ImRES4, w, h, white, pFigures2);
-
-		if (g_show_results)
-		{
-			for (x = 0; x < w; x++)
-			{
-				ImRES1[LMAXY*w + x] = rc;
-				ImRES1[(LMAXY - (LH / 10) + 1)*w + x] = rc;
-				ImRES1[(LMAXY - LH + 1)*w + x] = rc;
-				ImRES4[LMAXY*w + x] = rc;
-				ImRES4[(LMAXY - (LH / 10) + 1)*w + x] = rc;
-				ImRES4[(LMAXY - LH + 1)*w + x] = rc;
-			}
-			
-			if (real_im_x_center < w)
-			{
-				for (y = 0; y < h; y++)
-				{
-					ImRES1[y*w + real_im_x_center] = rc;
-					ImRES4[y*w + real_im_x_center] = rc;
-				}
-			}
-
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_06_ImRES1_MainTXTClusterIn4ClastersClearImageOpt5WithLinesInfo" + g_im_save_format, w, h);
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_07_ImRES4_MainTXTClusterIn4ClastersInsideFiguresClearImageOpt5WithLinesInfo" + g_im_save_format, w, h);
-
-			memset(&ImRES1[0], 0, w*h * sizeof(int));
-			memset(&ImRES4[0], 0, w*h * sizeof(int));
-		}
-
-		auto add_info_about_figure = [&real_im_x_center, &LMAXY, &LH, &white](custom_buffer<int> &ImRES, CMyClosedFigure *pFigure, custom_buffer<int> &x_range, int &min_x, int &max_x){
-			if ( (pFigure->m_minX < real_im_x_center) &&
-				 ((pFigure->m_minY + pFigure->m_maxY) / 2 <= LMAXY - (LH / 10) + 1) &&
-				 ((pFigure->m_minY + pFigure->m_maxY) / 2 > LMAXY - LH + 1) &&
-				 !( (pFigure->m_Square >= 0.95*((M_PI*pFigure->m_w*pFigure->m_h) / 4.0)) && //is not like ellipse or rectangle on 95% 
-					 (pFigure->m_h <= 2*pFigure->m_w) )
+		auto add_info_about_figure = [&real_im_x_center, &LMAXY, &LH, &white](custom_buffer<int> &ImRES, CMyClosedFigure *pFigure, custom_buffer<int> &x_range, int &min_x, int &max_x) {
+			if ((pFigure->m_minX < real_im_x_center) &&
+				((pFigure->m_minY + pFigure->m_maxY) / 2 <= LMAXY - (LH / 10) + 1) &&
+				((pFigure->m_minY + pFigure->m_maxY) / 2 > LMAXY - LH + 1) &&
+				!((pFigure->m_Square >= 0.95*((M_PI*pFigure->m_w*pFigure->m_h) / 4.0)) && //is not like ellipse or rectangle on 95% 
+				(pFigure->m_h <= 2 * pFigure->m_w))
 				)
 			{
 				for (int x = pFigure->m_minX; x <= pFigure->m_maxX; x++) x_range[x] = 1;
@@ -2478,29 +2487,90 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 			}
 		};
 
-		min_x1 = w - 1;
-		max_x1 = 0;
-		for (i = 0; i < pFigures1.size(); i++)
-		{
-			add_info_about_figure(ImRES1, &(pFigures1[i]), x_range1, min_x1, max_x1);
-		}
-		if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_08_ImRES1_MainTXTClusterIn4ClastersF" + g_im_save_format, w, h);
+		concurrency::parallel_invoke(
+			[&] {
+				ClearImageOpt5(ImRES1, w, h, LH, LMAXY, white);
+				if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_04_ImRES1_MainTXTClusterIn4ClastersClearImageOpt5" + g_im_save_format, w, h);
+				SearchClosedFigures(ImRES1, w, h, white, pFigures1);
 
-		min_x2 = w - 1;
-		max_x2 = 0;
-		for (i = 0; i < pFigures2.size(); i++)
-		{
-			add_info_about_figure(ImRES4, &(pFigures2[i]), x_range2, min_x2, max_x2);
-		}				
-		if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_09_ImRES4_MainTXTClusterIn4ClastersInsideFiguresF" + g_im_save_format, w, h);
+				if (g_show_results)
+				{
+					for (int x_ = 0; x_ < w; x_++)
+					{
+						ImRES1[LMAXY*w + x_] = rc;
+						ImRES1[(LMAXY - (LH / 10) + 1)*w + x_] = rc;
+						ImRES1[(LMAXY - LH + 1)*w + x_] = rc;
+					}
 
-		ww1 = 0;
-		ww2 = 0;
-		for (x = 0; x < w; x++)
-		{
-			if (x_range1[x] == 1) ww1++;
-			if (x_range2[x] == 1) ww2++;
-		}
+					if (real_im_x_center < w)
+					{
+						for (int y_ = 0; y_ < h; y_++)
+						{
+							ImRES1[y_*w + real_im_x_center] = rc;
+						}
+					}
+
+					if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_06_ImRES1_MainTXTClusterIn4ClastersClearImageOpt5WithLinesInfo" + g_im_save_format, w, h);
+
+					memset(&ImRES1[0], 0, w*h * sizeof(int));
+				}
+
+				min_x1 = w - 1;
+				max_x1 = 0;
+				for (int k = 0; k < pFigures1.size(); k++)
+				{
+					add_info_about_figure(ImRES1, &(pFigures1[k]), x_range1, min_x1, max_x1);
+				}
+				if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_08_ImRES1_MainTXTClusterIn4ClastersF" + g_im_save_format, w, h);
+
+				ww1 = 0;
+				for (int x_ = 0; x_ < w; x_++)
+				{
+					if (x_range1[x_] == 1) ww1++;
+				}
+			},
+			[&] {
+				ClearImageOpt5(ImRES4, w, h, LH, LMAXY, white);
+				if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_05_ImRES4_MainTXTClusterIn4ClastersInsideFiguresClearImageOpt5" + g_im_save_format, w, h);
+				SearchClosedFigures(ImRES4, w, h, white, pFigures2);
+
+				if (g_show_results)
+				{
+					for (int x_ = 0; x_ < w; x_++)
+					{
+						ImRES4[LMAXY*w + x_] = rc;
+						ImRES4[(LMAXY - (LH / 10) + 1)*w + x_] = rc;
+						ImRES4[(LMAXY - LH + 1)*w + x_] = rc;
+					}
+
+					if (real_im_x_center < w)
+					{
+						for (int y_ = 0; y_ < h; y_++)
+						{
+							ImRES4[y_*w + real_im_x_center] = rc;
+						}
+					}
+
+					if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_07_ImRES4_MainTXTClusterIn4ClastersInsideFiguresClearImageOpt5WithLinesInfo" + g_im_save_format, w, h);
+
+					memset(&ImRES4[0], 0, w*h * sizeof(int));
+				}
+
+				min_x2 = w - 1;
+				max_x2 = 0;
+				for (int k = 0; k < pFigures2.size(); k++)
+				{
+					add_info_about_figure(ImRES4, &(pFigures2[k]), x_range2, min_x2, max_x2);
+				}
+				if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_05_09_ImRES4_MainTXTClusterIn4ClastersInsideFiguresF" + g_im_save_format, w, h);
+
+				ww2 = 0;
+				for (int x_ = 0; x_ < w; x_++)
+				{
+					if (x_range2[x_] == 1) ww2++;
+				}
+			}
+		);
 
 		// checking on wrong detected main claster (characters edging instead of characters themselves)
 		if ( (ww2 >=(2*ww1)/3) &&
@@ -2512,15 +2582,12 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 			cluster_cnt = custom_buffer<int>(clusterCount, 0);
 
 			// searching main TXT cluster which intersect with MainTXTClusterIn4ClastersInsideFigures for save it in ImRES
-			for (y = 0; y < h; y++)
+			for (i = 0; i < w*h; i++)
 			{
-				for (x = 0; x < w; x++)
+				if (ImRES4[i] != 0)
 				{
-					if (ImRES4[y * w + x] != 0)
-					{
-						int cluster_idx = labels.at<int>(y + x * h, 0);
-						cluster_cnt[cluster_idx]++;
-					}
+					int cluster_idx = labels1[i];
+					cluster_cnt[cluster_idx]++;
 				}
 			}
 
@@ -2536,24 +2603,20 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 			}
 
 			val2 = 0;
-			for (y = 0; y < h; y++)
+			for (i = 0; i < w*h; i++)
 			{
-				for (x = 0; x < w; x++)
+				int cluster_idx = labels1[i];
+				if (cluster_idx == j)
 				{
-					int cluster_idx = labels.at<int>(y + x * h, 0);
-					i = y * w + x;
-					if (cluster_idx == j)
+					ImRES1[i] = white;
+					if (ImRES4[i] != 0)
 					{
-						ImRES1[i] = white;
-						if (ImRES4[i] != 0)
-						{
-							val2++;
-						}
+						val2++;
 					}
-					else
-					{
-						ImRES1[i] = 0;
-					}
+				}
+				else
+				{
+					ImRES1[i] = 0;
 				}
 			}
 
@@ -2562,25 +2625,22 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 		}
 	}
 
-	clusterCount = 6;
-	centers.release();
-	labels = orig_labels;
-	cv::kmeans(samples, clusterCount, labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 10, 1.0), 10, cv::KMEANS_USE_INITIAL_LABELS, centers);
+	//wxMessageBox("GetMainClusterImage_dt2: " + std::to_string(GetTickCount() - start_time));
+	start_time = GetTickCount();	
 
-	for (y = 0; y < h; y++)
+	clusterCount = 6;
+
+	for (i = 0; i < w*h; i++)
 	{
-		for (x = 0; x < w; x++)
-		{
-			int cluster_idx = labels.at<int>(y + x * h, 0);
-			ImRES4[y*w + x] = (255 / clusterCount)*(cluster_idx + 1);
-		}
+		int cluster_idx = labels2[i];
+		ImRES4[i] = (255 / clusterCount)*(cluster_idx + 1);
 	}
 
 	if (g_show_results) SaveGreyscaleImage(ImRES4, "\\TestImages\\GetMainClusterImage_" + iter_det + "_06_ImRES4_6Clusters" + g_im_save_format, w, h);
 
-
 	if (g_show_results) SaveRGBImage(ImRES, "\\TestImages\\GetMainClusterImage_" + iter_det + "_07_1_ImRES_MainTXTClusterIn4Clasters" + g_im_save_format, w, h);
-	for (int cluster_idx = 0; cluster_idx < clusterCount; cluster_idx++)
+
+	concurrency::parallel_for(0, clusterCount, [&ImRES, &ImMaskWithBorder, &ImRES4, clusterCount, w, h, ddy1, ddy2, clear_from_left_and_right_borders](int cluster_idx)
 	{
 		custom_buffer<CMyClosedFigure> pFigures;
 		SearchClosedFigures(ImRES4, w, h, (255 / clusterCount)*(cluster_idx + 1), pFigures);
@@ -2588,7 +2648,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 		CMyClosedFigure *pFigure;
 		CMyPoint *PA;
 
-		for (i = 0; i < N; i++)
+		for (int i = 0; i < N; i++)
 		{
 			pFigure = &(pFigures[i]);
 
@@ -2608,7 +2668,8 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 				}
 			}
 		}
-	}
+	});
+
 	if (g_show_results) SaveRGBImage(ImRES, "\\TestImages\\GetMainClusterImage_" + iter_det + "_07_2_ImRES_MainTXTClusterIn4ClastersFilteredBy6ClutersFromBorders" + g_im_save_format, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\GetMainClusterImage_" + iter_det + "_07_3_ImMaskWithBorder" + g_im_save_format, w, h);
 
@@ -2654,15 +2715,12 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 	custom_buffer<int> cluster_id(clusterCount, 0);
 
 	// searching main TXT clusters which intersect with ImRES1 (ImFFIntImMaskWithBorder)
-	for (y = 0; y < h; y++)
+	for (i = 0; i < w*h; i++)
 	{
-		for (x = 0; x < w; x++)
+		if (ImRES1[i] != 0)
 		{
-			if (ImRES1[y * w + x] != 0)
-			{
-				int cluster_idx = labels.at<int>(y + x * h, 0);
-				cluster_cnt[cluster_idx]++;
-			}
+			int cluster_idx = labels2[i];
+			cluster_cnt[cluster_idx]++;
 		}
 	}
 
@@ -2691,30 +2749,27 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 	int num_main_clasters = 2;
 
 	// ImRES4 - MainTXTClusters with clusterCount == 6
-	for (y = 0; y < h; y++)
+	for (i = 0; i < w*h; i++)
 	{
-		for (x = 0; x < w; x++)
+		int cluster_idx = labels2[i];
+
+		bool is_main = false;
+		for (j = 0; j < num_main_clasters; j++)
 		{
-			int cluster_idx = labels.at<int>(y + x * h, 0);
+			if (cluster_id[j] == cluster_idx)
+			{
+				is_main = true;
+				break;
+			}
+		}
 
-			bool is_main = false;
-			for (j = 0; j < num_main_clasters; j++)
-			{
-				if (cluster_id[j] == cluster_idx)
-				{
-					is_main = true;
-					break;
-				}
-			}
-
-			if (is_main)
-			{
-				ImRES4[y*w + x] = 255;
-			}
-			else
-			{
-				ImRES4[y*w + x] = 0;
-			}
+		if (is_main)
+		{
+			ImRES4[i] = 255;
+		}
+		else
+		{
+			ImRES4[i] = 0;
 		}
 	}
 
@@ -2724,13 +2779,14 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 
 	if (g_show_results) SaveRGBImage(ImRES, "\\TestImages\\GetMainClusterImage_" + iter_det + "_09_1_ImRES_MainTXTClusterIn4Clasters" + g_im_save_format, w, h);
 	custom_buffer<CMyClosedFigure> pFigures;
-	SearchClosedFigures(ImRES, w, h, white, pFigures);
-	int N = pFigures.size(), l, ii;
-	CMyClosedFigure *pFigure;
-	CMyPoint *PA;
+	SearchClosedFigures(ImRES, w, h, white, pFigures);	
+	int N = pFigures.size();
 
-	for (i = 0; i < N; i++)
+	concurrency::parallel_for(0, N, [&ImRES, &ImRES4, &pFigures, w, h](int i)
 	{
+		CMyClosedFigure *pFigure;
+		CMyPoint *PA;
+		int l, ii, x, y;
 		pFigure = &(pFigures[i]);
 		PA = pFigure->m_PointsArray;
 
@@ -2779,21 +2835,22 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cu
 				((double)(ch*cw) / (pFigure->m_h*pFigure->m_w) < 0.5))
 			)
 		{
-			j = j;
 			for (l = 0; l < pFigure->m_Square; l++)
 			{
 				ii = PA[l].m_i;
 				ImRES[ii] = 0;
 			}
 		}
-	}
+	});
 
 	if (g_show_results) SaveRGBImage(ImRES, "\\TestImages\\GetMainClusterImage_" + iter_det + "_09_2_ImRES3_MainTXTClusterIn4ClastersFilteredByMainTXTClusterIn6Clasters" + g_im_save_format, w, h);	
+
+	//wxMessageBox("GetMainClusterImage_dt4: " + std::to_string(GetTickCount() - start_time));
+	start_time = GetTickCount();
 }
 
 void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImRES, custom_buffer<int> &ImMaskWithBorder, int w, int h, int LH, int LMAXY, std::string iter_det, int white)
-{
-	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0), ImRES3(w*h, 0), ImRES4(w*h, 0), ImRES5(w*h, 0);
+{	
 	custom_buffer<int> TL(w, 0), TR(w, 0);
 	int TN, bln1, bln2, x, y, i, j, ddy1, ddy2;
 	int color, rc, gc;
@@ -2899,6 +2956,7 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 
 	if (g_show_results)
 	{
+		custom_buffer<int> ImRES1(w*h, 0);
 		memcpy(&ImRES1[0], &ImRGB[0], (w*h) * sizeof(int));
 
 		for (i = 0; i < TN; i++)
@@ -2913,9 +2971,10 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 		SaveRGBImage(ImRES1, "\\TestImages\\GetMainClusterImageBySplit" + iter_det + "_02_ImRGBWithSplitInfo" + g_im_save_format, w, h);
 	}
 
-	for (int ti = 0; ti < TN; ti++)
+	concurrency::parallel_for(0, TN, [&TR, &TL, &ImRGB, &ImFF, &ImMaskWithBorder, &ImRES, &h, &w, &LH, &LMAXY, &iter_det, &white](int ti)
 	{
-		int tw = TR[ti] - TL[ti] + 1;
+		int y, i, j, tw = TR[ti] - TL[ti] + 1;
+		custom_buffer<int> ImRES1(tw*h, 0), ImRES2(tw*h, 0), ImRES3(tw*h, 0), ImRES5(tw*h, 0);
 
 		// ImRES1 - RGB image with size tw:h (segment of original image)
 		// ImRES2 - ImFF image with size tw:h (segment of original image)
@@ -2926,14 +2985,14 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 			memcpy(&ImRES5[j], &ImMaskWithBorder[i], tw * sizeof(int));
 		}
 
-		GetMainClusterImage(ImRES1, ImRES2, ImRES3, ImRES5, tw, h, LH, LMAXY, iter_det + "_splititer" + std::to_string(ti+1), white);
+		GetMainClusterImage(ImRES1, ImRES2, ImRES3, ImRES5, tw, h, LH, LMAXY, iter_det + "_splititer" + std::to_string(ti + 1), white);
 
 		for (y = 0, i = TL[ti], j = 0; y < h; y++, i += w, j += tw)
 		{
 			memcpy(&ImRES[i], &ImRES3[j], tw * sizeof(int));
 			memcpy(&ImMaskWithBorder[i], &ImRES5[j], tw * sizeof(int));
 		}
-	}
+	});
 
 	if (g_show_results) SaveRGBImage(ImRES, "\\TestImages\\GetMainClusterImageBySplit" + iter_det + "_03_1_ImRES_MainCluster" + g_im_save_format, w, h);
 
@@ -2956,7 +3015,7 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 		{
 			if (
 				( (2 * pFigure->m_minX > TL[ti] + TR[ti]) ||
-			      (2 * pFigure->m_maxX < TL[ti] + TR[ti]) )
+				  (2 * pFigure->m_maxX < TL[ti] + TR[ti]) )
 				&&
 				( ((pFigure->m_maxX == TR[ti]) && (ti < TN - 1)) ||
 				  ((pFigure->m_minX == TL[ti]) && (ti > 0)) )
@@ -2983,6 +3042,1173 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 	if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\GetMainClusterImageBySplit" + iter_det + "_03_3_ImMaskWithBorder" + g_im_save_format, w, h);
 }
 
+class FindTextRes
+{
+public:
+	int m_res;
+	cv::Mat m_cv_ImRGB;
+	int m_im_h;
+	string m_ImageName;
+	int m_YB;
+	int m_LH;
+	int m_LY;
+	int m_LXB;
+	int m_LXE;
+	int m_LYB;
+	int m_LYE;
+	int m_mY;
+	int m_mI;
+	int m_mQ;
+	custom_buffer<int> m_LL;
+	custom_buffer<int> m_LR;
+	custom_buffer<int> m_LLB;
+	custom_buffer<int> m_LLE;
+	int m_N;
+	int m_k;
+	string m_iter_det;
+
+	FindTextRes()
+	{
+		m_res = 0;
+	}
+};
+
+FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImNF, custom_buffer<int> &FullImY, string SaveName, std::string iter_det, int N, int k, custom_buffer<int> LL, custom_buffer<int> LR, custom_buffer<int> LLB, custom_buffer<int> LLE, int W, int H)
+{
+	int i, j, l, r, x, y, ib, bln, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
+	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
+	int xb, xe, yb, ye, lb, le, segh;
+	int delta, val, val1, val2, val3, val4, val5, cnt1, cnt2, NN, ys1, ys2, ys3, val_min, val_max;
+	int j1, j2, j3, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, j5_min, j5_max;
+	int mY, mI, mQ;
+	int LH, LMAXY;
+	custom_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
+	FindTextRes res;		
+	int color, rc, gc, bc, yc, cc, wc;
+	u8 *pClr;
+	DWORD start_time;
+
+	start_time = GetTickCount();
+
+	pClr = (u8*)(&color);
+
+	color = 0;
+	pClr[2] = 255;
+	rc = color;
+
+	color = 0;
+	pClr[1] = 255;
+	gc = color;
+
+	color = 0;
+	pClr[0] = 255;
+	bc = color;
+
+	color = 0;
+	pClr[1] = 255;
+	pClr[2] = 255;
+	yc = color;
+
+	color = 0;
+	pClr[2] = 128;
+	pClr[0] = 128;
+	cc = color;
+
+	color = 0;
+	pClr[0] = 255;
+	pClr[1] = 255;
+	pClr[2] = 255;
+	wc = color;
+
+	int orig_LLBk = LLB[k];
+	int orig_LLEk = LLE[k];
+	int orig_LLk = LL[k];
+	int orig_LRk = LR[k];
+	int min_h;
+
+	XB = LL[k];
+	XE = LR[k];
+	w = XE - XB + 1;
+	val = (int)((double)w*0.15);
+	if (val < 40) val = 40;
+	XB -= val;
+	XE += val;
+	if (XB < 0) XB = 0;
+	if (XE > W - 1) XE = W - 1;
+	w = XE - XB + 1;
+
+	YB = LLB[k];
+	YE = LLE[k];
+
+	// getting h of sub
+	h = YE - YB + 1;
+	val = (3 * ((int)(0.03*(double)H) + 1)) / 2; // 3/2 * ~ min sub height # (536-520+1)/576
+	if (h < val)
+	{
+		if (N == 1)
+		{
+			LLB[k] -= (val - h) / 2;
+			LLE[k] = LLB[k] + val - 1;
+		}
+		else if (k == 0)
+		{
+			LLE[k] += std::min<int>((val - h) / 2, (LLB[k + 1] - LLE[k]) / 2);
+			LLB[k] = LLE[k] - val + 1;
+		}
+		else if (k == N - 1)
+		{
+			LLB[k] -= std::min<int>((val - h) / 2, (LLB[k] - LLE[k - 1]) / 2);
+			LLE[k] = LLB[k] + val - 1;
+		}
+		else
+		{
+			LLB[k] -= std::min<int>((val - h) / 2, (LLB[k] - LLE[k - 1]) / 2);
+			LLE[k] += std::min<int>((val - h) / 2, (LLB[k + 1] - LLE[k]) / 2);
+		}
+
+		if (LLB[k] < 0) LLB[k] = 0;
+		if (LLE[k] > H - 1) LLE[k] = H - 1;
+
+		YB = LLB[k];
+		YE = LLE[k];
+		h = YE - YB + 1;
+	}
+
+	YB -= h / 2;
+	YE += h / 2;
+	if (YB < 0) YB = 0;
+	if (YE > H - 1) YE = H - 1;
+
+	if (k > 0)
+	{
+		if (YB < LLE[k - 1] - 2) YB = std::max<int>(0, LLE[k - 1] - 2);
+	}
+	if (k < N - 1)
+	{
+		val = (LLB[k + 1] * 5 + LLE[k + 1]) / 6;
+		if (YE > val) YE = val;
+	}
+
+	int max_diff = 20;
+	for (y = YB; y < YE; y++)
+	{
+		bln = 0;
+		for (x = std::max<int>(XB, W / 4), val1 = val2 = FullImY[y*W + x]; x <= std::min<int>(XE, (3 * W) / 4); x++)
+		{
+			i = y * W + x;
+			if (FullImY[i] < val1)
+			{
+				val1 = FullImY[i];
+			}
+
+			if (FullImY[i] > val2)
+			{
+				val2 = FullImY[i];
+			}
+
+			if (val2 - val1 > max_diff)
+			{
+				bln = 1;
+				break;
+			}
+		}
+
+		if (bln == 1)
+		{
+			break;
+		}
+	}
+	YB = y;
+
+	for (y = YE; y > YB; y--)
+	{
+		bln = 0;
+		for (x = std::max<int>(XB, W / 4), val1 = val2 = FullImY[y*W + x]; x <= std::min<int>(XE, (3 * W) / 4); x++)
+		{
+			i = y * W + x;
+			if (FullImY[i] < val1)
+			{
+				val1 = FullImY[i];
+			}
+
+			if (FullImY[i] > val2)
+			{
+				val2 = FullImY[i];
+			}
+
+			if (val2 - val1 > max_diff)
+			{
+				bln = 1;
+				break;
+			}
+		}
+
+		if (bln == 1)
+		{
+			break;
+		}
+	}
+	YE = y;
+
+	if (YB >= YE)
+	{
+		return res;
+	}
+
+	if (YB > orig_LLBk - 2)
+	{
+		orig_LLBk = YB;
+		YB = std::max<int>(0, YB - 2);
+	}
+
+	if (YE < orig_LLEk + 2)
+	{
+		orig_LLEk = YE;
+		YE = std::min<int>(H - 1, YE + 2);
+	}
+
+	if (LLB[k] < YB) LLB[k] = YB;
+	if (LLE[k] > YE) LLE[k] = YE;
+
+	h = YE - YB + 1;
+
+	custom_buffer<int> ImRES1(w*h * 16, 0), ImRES2(w*h * 16, 0), ImRES3(w*h * 16, 0), ImRES4(w*h * 16, 0);
+	custom_buffer<int> ImRES5(w*h * 16, 0), ImRES6(w*h * 16, 0), ImRES7(w*h * 16, 0), ImRES8(w*h * 16, 0);
+	custom_buffer<int> Im(w*h * 16, 0), ImSF(w*h * 16, 0), ImSNF(w*h * 16, 0), ImFF(w*h * 16, 0), ImSFIntTHRF(w*h * 16, 0), ImSNFIntTHRF(w*h * 16, 0);
+	custom_buffer<int> ImY(w*h * 16, 0), ImU(w*h * 16, 0), ImV(w*h * 16, 0), ImI(w*h * 16, 0);
+	custom_buffer<int> ImTHR(w*h * 16, 0);
+
+	if (g_show_results)
+	{
+		custom_buffer<int> ImTMP(W * H, 0);
+		memcpy(&ImTMP[0], &ImRGB[0], W * H * sizeof(int));
+
+		for (i = 0; i < N; i++)
+		{
+			for (x = 0; x < W; x++)
+			{
+				ImTMP[LLB[i] * W + x] = rc;
+				ImTMP[LLE[i] * W + x] = gc;
+			}
+		}
+
+		for (x = 0; x < W; x++)
+		{
+			ImTMP[YB * W + x] = bc;
+			ImTMP[YE * W + x] = bc;
+		}
+
+		SaveRGBImage(ImTMP, "\\TestImages\\FindTextLines_" + iter_det + "_03_1_ImRGB_RGBWithLinesInfo" + g_im_save_format, W, H);
+		SaveRGBImage(ImTMP, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_03_1_ImRGB_RGBWithLinesInfo" + g_im_save_format, W, H);
+	}
+
+	for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
+	{
+		memcpy(&ImRES1[j], &ImRGB[i], w * sizeof(int));
+	}
+
+	if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_03_2_ImRES1_RGB" + g_im_save_format, w, h);
+
+	//wxMessageBox("dt1: " + std::to_string(GetTickCount() - start_time));
+	start_time = GetTickCount();
+
+	{
+		cv::Mat cv_ImRGB, cv_ImY, cv_ImLAB, cv_ImLABSplit[3], cv_ImHSV, cv_ImHSVSplit[3], cv_ImL, cv_ImA, cv_ImB, cv_bw, cv_bw_gaus;
+
+		{
+			cv::Mat cv_ImRGBOrig(h, w, CV_8UC4);
+			memcpy(cv_ImRGBOrig.data, &ImRES1[0], w*h * sizeof(int));
+			cv::resize(cv_ImRGBOrig, cv_ImRGB, cv::Size(0, 0), 4, 4);
+		}
+
+		memcpy(&Im[0], cv_ImRGB.data, w*h * 4 * 4 * sizeof(int));
+		if (g_show_results) SaveRGBImage(Im, "\\TestImages\\FindTextLines_" + iter_det + "_03_3_Im_RGBScaled4x4" + g_im_save_format, w * 4, h * 4);
+		if (g_show_results) SaveRGBImage(Im, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_03_3_Im_RGBScaled4x4" + g_im_save_format, w * 4, h * 4);
+
+		for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
+		{
+			memcpy(&ImRES2[j], &ImNF[i], w * sizeof(int));
+		}
+		SimpleResizeImage4x(ImRES2, ImSNF, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImSNF, "\\TestImages\\FindTextLines_" + iter_det + "_04_2_ImSNF" + g_im_save_format, w * 4, h * 4);
+
+		w *= 4;
+		h *= 4;
+
+		{
+			// extend ImSNF with Internal Figures
+			val = GetImageWithInsideFigures(ImSNF, ImRES1, w, h, 255, val1, val2);
+			if (val == 0)
+			{
+				return res;
+			}
+			if (val2 > 0)
+			{
+				CombineTwoImages(ImSNF, ImRES1, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(ImSNF, "\\TestImages\\FindTextLines_" + iter_det + "_04_4_SNFExtInternalFigures" + g_im_save_format, w, h);
+			}
+		}
+
+		cv::cvtColor(cv_ImRGB, cv_ImY, cv::COLOR_BGR2GRAY);
+		cv::cvtColor(cv_ImRGB, cv_ImLAB, cv::COLOR_BGR2Lab);
+		cv::cvtColor(cv_ImRGB, cv_ImHSV, cv::COLOR_BGR2HSV);
+		cv::split(cv_ImLAB, cv_ImLABSplit);
+		cv::split(cv_ImHSV, cv_ImHSVSplit);
+
+		GreyscaleMatToImage(cv_ImY, w, h, ImY);
+		GreyscaleMatToImage(cv_ImLABSplit[1], w, h, ImU);
+		GreyscaleMatToImage(cv_ImLABSplit[2], w, h, ImV);
+		GreyscaleMatToImage(cv_ImHSVSplit[1], w, h, ImI);
+
+		if (g_show_results) SaveGreyscaleImage(ImU, "\\TestImages\\FindTextLines_" + iter_det + "_06_1_ImU" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImV, "\\TestImages\\FindTextLines_" + iter_det + "_06_2_ImV" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImI, "\\TestImages\\FindTextLines_" + iter_det + "_06_3_ImI" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImY, "\\TestImages\\FindTextLines_" + iter_det + "_06_5_ImY" + g_im_save_format, w, h);
+
+		cv_bw = cv_ImY;
+		cv::medianBlur(cv_bw, cv_bw, 5);
+		cv::adaptiveThreshold(cv_bw, cv_bw_gaus, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 2);
+
+		if (g_show_results)
+		{
+			GreyscaleMatToImage(cv_bw_gaus, w, h, ImRES1);
+			SaveGreyscaleImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_07_1_ImTHRGaus" + g_im_save_format, w, h);
+		}
+
+		// Create a kernel that we will use to sharpen our image
+		cv::Mat kernel_sharp = (cv::Mat_<float>(3, 3) <<
+			1, 1, 1,
+			1, -8, 1,
+			1, 1, 1); // an approximation of second derivative, a quite strong kernel
+		// do the laplacian filtering as it is
+		// well, we need to convert everything in something more deeper then CV_8U
+		// because the kernel has some negative values,
+		// and we can expect in general to have a Laplacian image with negative values
+		// BUT a 8bits unsigned int (the one we are working with) can contain values from 0 to 255
+		// so the possible negative number will be truncated
+		cv::Mat imgLaplacian;
+		cv::filter2D(cv_ImRGB, imgLaplacian, CV_32F, kernel_sharp);
+		cv::Mat sharp;
+		cv_ImRGB.convertTo(sharp, CV_32F);
+		cv::Mat imgResult = sharp - imgLaplacian;
+		// convert back to 8bits gray scale
+		imgResult.convertTo(imgResult, CV_8UC3);
+		imgLaplacian.convertTo(imgLaplacian, CV_8UC3);
+		// Create binary image from source image
+		cv::cvtColor(imgResult, cv_bw, cv::COLOR_BGR2GRAY);
+		cv::threshold(cv_bw, cv_bw, 40, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+		if (g_show_results)
+		{
+			GreyscaleMatToImage(cv_bw, w, h, ImRES1);
+			SaveGreyscaleImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_07_2_ImTHRBinOtsu" + g_im_save_format, w, h);
+		}
+
+		for (int i = 0; i < w*h; i++)
+		{
+			if (cv_bw_gaus.data[i] == 0)
+			{
+				cv_bw.data[i] = 0;
+			}
+		}
+
+		GreyscaleMatToImage(cv_bw, w, h, ImTHR);
+		if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\FindTextLines_" + iter_det + "_07_3_ImTHRMerge" + g_im_save_format, w, h);
+
+		// noise removal
+		cv::Mat kernel_open = cv::Mat::ones(3, 3, CV_8U);
+		cv::Mat opening;
+		cv::morphologyEx(cv_bw, opening, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);
+		//cv::imshow("opening", opening);		
+		//cv::waitKey(0);		
+		GreyscaleMatToImage(opening, w, h, ImSNFIntTHRF);
+		if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_09_1_ImTHROpening" + g_im_save_format, w, h);
+	}
+
+	//wxMessageBox("dt2: " + std::to_string(GetTickCount() - start_time));
+	start_time = GetTickCount();
+
+	ClearImageFromBorders(ImSNFIntTHRF, w, h, 1, h - 2, 255);
+	if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_09_2_ImTHRClearedFromBorders" + g_im_save_format, w, h);
+
+	IntersectTwoImages(ImSNFIntTHRF, ImSNF, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_09_3_ImSNFIntTHRF" + g_im_save_format, w, h);
+
+	{
+		// extend ImSNFIntTHRF with Internal Figures
+		val = GetImageWithInsideFigures(ImSNFIntTHRF, ImRES1, w, h, 255, val1, val2);
+		if (val == 0)
+		{
+			return res;
+		}
+		if (val2 > 0)
+		{
+			CombineTwoImages(ImSNFIntTHRF, ImRES1, w, h, 255);
+			if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_10_1_ImSNFIntTHRFExtInternalFigures" + g_im_save_format, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_10_1_ImSNFIntTHRFExtInternalFigures" + g_im_save_format, w, h);
+		}
+
+		// extend ImTHR with Internal Figures
+		val = GetImageWithInsideFigures(ImTHR, ImRES1, w, h, 255, val1, val2);
+		if (val == 0)
+		{
+			return res;
+		}
+		if (val2 > 0)
+		{
+			CombineTwoImages(ImTHR, ImRES1, w, h, 255);
+			if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\FindTextLines_" + iter_det + "_10_2_ImTHRExtInternalFigures" + g_im_save_format, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_10_2_ImTHRExtInternalFigures" + g_im_save_format, w, h);
+		}
+	}
+
+	val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
+	min_h = (int)(0.4*(double)min<int>(val, orig_LLEk - orig_LLBk + 1));
+
+	ClearImageFromGarbageBetweenLines(ImSNFIntTHRF, w, h, (LLB[k] - YB) * 4, (LLE[k] - YB) * 4, min_h * 4, 255);
+	if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_11_1_ImSNFIntTHRFClearedFromGarbageBetweenLines" + g_im_save_format, w, h);
+
+	// Checking ImSNFIntTHRF on presence more then one line (if yes spliting on two and repeat)
+	//-------------------------------		
+	val = GetSubParams(ImSNFIntTHRF, w, h, 255, LH, LMAXY, lb, le, min_h * 4, ((W / 2) - XB) * 4);
+
+	if (val == 1)
+	{
+		if (g_show_results)
+		{
+			memcpy(&ImRES1[0], &ImSNFIntTHRF[0], w * h * sizeof(int));
+
+			for (x = 0; x < w; x++)
+			{
+				ImRES1[lb * w + x] = cc;
+				ImRES1[le * w + x] = cc;
+
+				ImRES1[(LMAXY - LH + 1) * w + x] = gc;
+				ImRES1[LMAXY * w + x] = gc;
+			}
+
+			SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_11_2_ImSNFIntTHRFWithSubParams" + g_im_save_format, w, h);
+			SaveRGBImage(ImRES1, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_11_2_ImSNFIntTHRFWithSubParams" + g_im_save_format, w, h);
+		}
+	}
+
+	yb = (orig_LLBk - YB) * 4;
+	ye = (orig_LLEk - YB) * 4;
+	xb = (orig_LLk - XB) * 4;
+	xe = std::min<int>(((W / 2) - XB) * 4 + (((W / 2) - XB) * 4 - xb), (orig_LRk - XB) * 4); //sometimes frome the right can be additional not centered text lines which intersect with two centered lines
+
+	if ((val == 1) && (std::max<int>((LLE[k] - LLB[k] + 1) * 4, le - lb + 1) > 1.7*(double)LH))
+	{
+		bln = 0;
+
+		custom_buffer<int> lw(h, 0);
+		int max_txt_w, max_txt_y, min_y, max_y, new_txt_y = 0, new_txt_w, max_txt2_w, max_txt2_y;
+
+		for (y = yb; y <= ye; y++)
+		{
+			for (x = xb; x < xe; x++, i++)
+			{
+				if (ImSNFIntTHRF[y*w + x] != 0)
+				{
+					lw[y]++;
+				}
+			}
+		}
+
+		// searching max text location by y for line [LMAXY-LH+1, LMAXY] -- max_txt_y
+		for (y = LMAXY - LH + 1, max_txt_w = lw[y], max_txt_y = y; y <= LMAXY; y++)
+		{
+			if (lw[y] > max_txt_w)
+			{
+				max_txt_w = lw[y];
+				max_txt_y = y;
+			}
+		}
+
+		if (max_txt_w == 0)
+		{
+			return res;
+		}
+
+		min_y = yb;
+		max_y = LMAXY - LH;
+
+		int y1, y2;
+
+		for (y1 = max_y - 1; y1 >= min_y; y1--)
+		{
+			if (lw[y1] >= min_h * 4) // bigger then min sub height
+			{
+				for (y2 = max_y; y2 >= y1 + 1; y2--)
+				{
+					if ((double)lw[y2] / max_txt_w <= 0.3)
+					{
+						if ((double)lw[y2] / lw[y1] <= 0.3)
+						{
+							new_txt_y = y2;
+							new_txt_w = lw[new_txt_y];
+							break;
+						}
+					}
+				}
+			}
+			if (new_txt_y > 0)
+			{
+				for (y2 = max_y; y2 >= y1 + 1; y2--)
+				{
+					if (lw[y2] < lw[new_txt_y])
+					{
+						new_txt_y = y2;
+						new_txt_w = lw[new_txt_y];
+					}
+				}
+
+				max_txt2_y = y1;
+				max_txt2_w = lw[max_txt2_y];
+
+				break;
+			}
+		}
+
+		if ((new_txt_y > 0) &&
+			(((YB + (new_txt_y / 4)) - orig_LLBk + 1) >= 4) &&
+			((orig_LLEk - (YB + (new_txt_y / 4) + 1) + 1) >= 4)
+			)
+		{
+			for (i = N; i > k + 1; i--)
+			{
+				LL[i] = LL[i - 1];
+				LR[i] = LR[i - 1];
+				LLB[i] = LLB[i - 1];
+				LLE[i] = LLE[i - 1];
+			}
+
+			LL[k + 1] = orig_LLk;
+			LR[k + 1] = orig_LRk;
+			LLB[k + 1] = YB + (new_txt_y / 4) + 1;
+			LLE[k + 1] = orig_LLEk;
+
+			LL[k] = orig_LLk;
+			LR[k] = orig_LRk;
+			LLB[k] = orig_LLBk;
+			LLE[k] = YB + (new_txt_y / 4);
+
+			N++;
+
+			res.m_LL = LL;
+			res.m_LR = LR;
+			res.m_LLB = LLB;
+			res.m_LLE = LLE;
+			res.m_N = N;
+			res.m_k = k;
+			res.m_iter_det = iter_det;
+			return res;
+		}
+	}
+	//----------------------------	
+
+	while (1)
+	{
+		cv::Mat cv_ImGR, cv_ImGRRes;
+		custom_buffer<int> ImMaskWithBorder, ImMaskWithBorderBySplit;
+
+		if (LMAXY == 0)
+		{
+			LMAXY = h - 1;
+		}
+		if (LH == 0)
+		{
+			LH = LMAXY;
+		}
+
+		ImMaskWithBorder = custom_buffer<int>(w*h, 255);
+
+		//wxMessageBox("dt3: " + std::to_string(GetTickCount() - start_time));
+		start_time = GetTickCount();
+
+		GetMainClusterImage(Im, ImSNFIntTHRF, ImSFIntTHRF, ImMaskWithBorder, w, h, LH, LMAXY, "" + iter_det + "_call1", 255, true, true, ((W / 2) - XB) * 4);
+		
+		//wxMessageBox("dt4: " + std::to_string(GetTickCount() - start_time));
+		start_time = GetTickCount();
+		
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_12_2_ImSFIntTHRF_MainTXTCluster" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_12_2_ImSFIntTHRF_MainTXTCluster" + g_im_save_format, w, h);
+		IntersectTwoImages(ImSFIntTHRF, ImSNFIntTHRF, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_12_3_ImSFIntTHRF_MainTXTClusterIntImSNFIntTHRF" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_12_3_ImSFIntTHRF_MainTXTClusterIntImSNFIntTHRF" + g_im_save_format, w, h);		
+
+		delta = 40;
+
+		val1 = (int)((double)((LLE[k] - LLB[k] + 1) * 4)*0.3);
+		val2 = (int)((double)((LR[k] - LL[k] + 1) * 4)*0.1);
+		yb = (LLB[k] - YB) * 4 + val1;
+		ye = (LLE[k] - YB) * 4 - val1;
+		xb = (LL[k] - XB) * 4 + val2;
+		xe = (LR[k] - XB) * 4 - val2;
+
+		StrAnalyseImage(ImSFIntTHRF, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
+		FindMaxStrDistribution(GRStr, delta, smax, smaxi, NN, 0);
+		FindMaxStr(smax, smaxi, j1, ys1, NN);
+
+		if (NN == 0)
+		{
+			memset(&ImFF[0], 0, (w*h) * sizeof(int));
+			break;
+		}
+
+		j1_min = 1000;
+		j1_max = -1000;
+
+		j2_min = 1000;
+		j2_max = -1000;
+
+		j3_min = 1000;
+		j3_max = -1000;
+
+		j4_min = 1000;
+		j4_max = -1000;
+
+		j5_min = 1000;
+		j5_max = -1000;
+
+		custom_buffer<int> GRStr2(STR_SIZE, 0), GRStr3(STR_SIZE, 0), GRStr4(STR_SIZE, 0);
+		int j2, ys2, j3, ys3, j4, ys4, min_delta;
+
+		memset(&GRStr2[0], 0, 256 * sizeof(int));
+		memset(&GRStr3[0], 0, 256 * sizeof(int));
+
+		for (i = 0; i < w*h; i++)
+		{
+			val1 = ImY[i];
+
+			if ((ImSFIntTHRF[i] != 0) && (ImY[i] >= j1) && (ImY[i] <= j1 + delta - 1))
+			{
+				GRStr2[ImU[i]]++;
+				GRStr3[ImV[i]]++;
+				GRStr4[ImI[i]]++;
+
+				if (ImU[i] < j2_min) j2_min = ImU[i];
+				if (ImU[i] > j2_max) j2_max = ImU[i];
+
+				if (ImV[i] < j3_min) j3_min = ImV[i];
+				if (ImV[i] > j3_max) j3_max = ImV[i];
+
+				if (ImI[i] < j4_min) j4_min = ImI[i];
+				if (ImI[i] > j4_max) j4_max = ImI[i];
+			}
+		}
+
+		if (j2_min == 1000)
+		{
+			memset(&ImFF[0], 0, (w*h) * sizeof(int));
+			break;
+		}
+
+		delta = 80;
+		StrAnalyseImage(ImSFIntTHRF, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
+		FindMaxStrDistribution(GRStr, delta, smax, smaxi, NN, 0);
+		FindMaxStr(smax, smaxi, j1, ys1, NN);
+		j1_min = j1;
+		j1_max = j1_min + delta - 1;
+
+		min_delta = 20;
+		delta = j2_max - j2_min + 1;
+		if (delta < min_delta)
+		{
+			delta = delta / 2;
+			FindMaxStrDistribution(GRStr2, delta, smax, smaxi, NN, 0);
+			FindMaxStr(smax, smaxi, j2, ys2, NN);
+			j2_min = std::max<int>(0, std::min<int>(j2_min, j2 + (delta / 2) - (min_delta / 2)));
+			j2_max = std::min<int>(255, std::max<int>(j2_max, j2 + (delta / 2) + (min_delta / 2) - 1));
+		}
+
+		min_delta = 20;
+		delta = j3_max - j3_min + 1;
+		if (delta < min_delta)
+		{
+			delta = delta / 2;
+			FindMaxStrDistribution(GRStr3, delta, smax, smaxi, NN, 0);
+			FindMaxStr(smax, smaxi, j3, ys3, NN);
+			j3_min = std::max<int>(0, std::min<int>(j3_min, j3 + (delta / 2) - (min_delta / 2)));
+			j3_max = std::min<int>(255, std::max<int>(j3_max, j3 + (delta / 2) + (min_delta / 2) - 1));
+		}
+
+		min_delta = 20;
+		delta = j4_max - j4_min + 1;
+		if (delta < min_delta)
+		{
+			delta = delta / 2;
+			FindMaxStrDistribution(GRStr4, delta, smax, smaxi, NN, 0);
+			FindMaxStr(smax, smaxi, j4, ys4, NN);
+			j4_min = std::max<int>(0, std::min<int>(j4_min, j4 + (delta / 2) - (min_delta / 2)));
+			j4_max = std::min<int>(255, std::max<int>(j4_max, j4 + (delta / 2) + (min_delta / 2) - 1));
+		}
+
+		concurrency::parallel_invoke(
+			[&ImY, &ImU, &ImV, &ImI, &ImRES1, &ImTHR, &ImFF, &ImSNFIntTHRF, rc, w, h, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, iter_det] {
+			int i, val1, val2, val3, val4;
+
+			for (i = 0; i < w*h; i++)
+			{
+				val1 = ImY[i];
+				val2 = ImU[i];
+				val3 = ImV[i];
+				val4 = ImI[i];
+
+				if ((val1 >= j1_min) && (val1 <= j1_max) &&
+					(val2 >= j2_min) && (val2 <= j2_max) &&
+					(val3 >= j3_min) && (val3 <= j3_max) &&
+					(val4 >= j4_min) && (val4 <= j4_max)
+					)
+				{
+					ImRES1[i] = rc;
+				}
+				else
+				{
+					ImRES1[i] = 0;
+				}
+			}
+
+			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_42_1_ImRES1" + g_im_save_format, w, h);
+			IntersectTwoImages(ImRES1, ImTHR, w, h);
+			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_42_2_ImRES1IntImTHR" + g_im_save_format, w, h);
+
+			memcpy(&ImFF[0], &ImRES1[0], (w*h) * sizeof(int));
+
+			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_48_1_ImRES1" + g_im_save_format, w, h);
+			IntersectTwoImages(ImSNFIntTHRF, ImRES1, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_" + iter_det + "_48_2_ImSNFIntTHRFIntImRES1" + g_im_save_format, w, h);
+		},
+			[&ImY, &ImU, &ImV, &ImI, &ImRES3, &ImTHR, rc, w, h, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, iter_det] {
+			int i, val1, val2, val3, val4, val_min, val_max;
+
+			val_min = j1_min - 20;
+			val_max = j1_max;
+			for (i = 0; i < w*h; i++)
+			{
+				val1 = ImY[i];
+				val2 = ImU[i];
+				val3 = ImV[i];
+				val4 = ImI[i];
+
+				if ((val1 >= val_min) && (val1 <= val_max) &&
+					(val2 >= j2_min) && (val2 <= j2_max) &&
+					(val3 >= j3_min) && (val3 <= j3_max) &&
+					(val4 >= j4_min) && (val4 <= j4_max)
+					)
+				{
+					ImRES3[i] = rc;
+				}
+				else
+				{
+					ImRES3[i] = 0;
+				}
+			}
+
+			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_44_1_ImRES3" + g_im_save_format, w, h);
+			IntersectTwoImages(ImRES3, ImTHR, w, h);
+			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_44_2_ImRES3IntImTHR" + g_im_save_format, w, h);
+		},
+			[&ImY, &ImU, &ImV, &ImI, &ImRES4, &ImTHR, &ImRES7, rc, w, h, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, iter_det] {
+			int i, val1, val2, val3, val4, val_min, val_max;
+
+			val_min = j1_min + 20;
+			val_max = j1_max + 20;
+			for (i = 0; i < w*h; i++)
+			{
+				val1 = ImY[i];
+				val2 = ImU[i];
+				val3 = ImV[i];
+				val4 = ImI[i];
+
+				if ((val1 >= val_min) && (val1 <= val_max) &&
+					(val2 >= j2_min) && (val2 <= j2_max) &&
+					(val3 >= j3_min) && (val3 <= j3_max) &&
+					(val4 >= j4_min) && (val4 <= j4_max)
+					)
+				{
+					ImRES4[i] = rc;
+				}
+				else
+				{
+					ImRES4[i] = 0;
+				}
+			}
+
+			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_45_1_ImRES4" + g_im_save_format, w, h);
+			IntersectTwoImages(ImRES4, ImTHR, w, h);
+			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_45_2_ImRES4IntImTHR" + g_im_save_format, w, h);
+
+			memcpy(&ImRES7[0], &ImRES4[0], (w*h) * sizeof(int));
+		},
+			[&ImY, &ImU, &ImV, &ImI, &ImRES5, &ImTHR, rc, w, h, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, iter_det] {
+			int i, val1, val2, val3, val4, val_min, val_max;
+
+			val_min = j1_min;
+			val_max = j1_max + 20;
+			for (i = 0; i < w*h; i++)
+			{
+				val1 = ImY[i];
+				val2 = ImU[i];
+				val3 = ImV[i];
+				val4 = ImI[i];
+
+				if ((val1 >= val_min) && (val1 <= val_max) &&
+					(val2 >= j2_min) && (val2 <= j2_max) &&
+					(val3 >= j3_min) && (val3 <= j3_max) &&
+					(val4 >= j4_min) && (val4 <= j4_max)
+					)
+				{
+					ImRES5[i] = rc;
+				}
+				else
+				{
+					ImRES5[i] = 0;
+				}
+			}
+
+			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_" + iter_det + "_46_1_ImRES5" + g_im_save_format, w, h);
+			IntersectTwoImages(ImRES5, ImTHR, w, h);
+			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_" + iter_det + "_46_2_ImRES5IntImTHR" + g_im_save_format, w, h);
+		}
+		);
+
+		yb = (LLB[k] - YB) * 4;
+		ye = (LLE[k] - YB) * 4;
+		xb = (LL[k] - XB) * 4;
+		xe = (LR[k] - XB) * 4;
+
+		val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
+		min_h = (int)(0.4*(double)max<int>(val, orig_LLEk - orig_LLBk + 1));
+		val = GetSubParams(ImSNFIntTHRF, w, h, 255, LH, LMAXY, lb, le, min_h * 4, ((W / 2) - XB) * 4);
+		if (val == 0)
+		{
+			memset(&ImFF[0], 0, (w*h) * sizeof(int));
+			break;
+		}
+
+		if (g_show_results)
+		{
+			memcpy(&ImRES2[0], &ImSNFIntTHRF[0], w * h * sizeof(int));
+
+			int ddy1, ddy2;
+			GetDDY(h, LH, LMAXY, ddy1, ddy2);
+
+			for (x = 0; x < w; x++)
+			{
+				ImRES2[lb * w + x] = cc;
+				ImRES2[le * w + x] = cc;
+
+				ImRES2[(LMAXY - LH + 1) * w + x] = gc;
+				ImRES2[LMAXY * w + x] = gc;
+
+				ImRES2[std::max<int>(0, (LMAXY - ((6 * LH) / 5) + 1)) * w + x] = yc;
+				ImRES2[std::min<int>(h - 1, (LMAXY + (LH / 5))) * w + x] = yc;
+
+				ImRES2[ddy1 * w + x] = wc;
+				ImRES2[ddy2 * w + x] = wc;
+			}
+
+			SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_48_3_ImSNFIntTHRFIntImRES1WithSubParams" + g_im_save_format, w, h);
+			SaveRGBImage(ImRES2, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_48_3_ImSNFIntTHRFIntImRES1WithSubParams" + g_im_save_format, w, h);
+		}
+
+		concurrency::parallel_invoke(
+			[&ImRES1, &N1, w, h, LH, LMAXY, iter_det, rc] {
+			N1 = ClearImageOptimal(ImRES1, w, h, LH, LMAXY, rc);
+			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_48_4_ImRES1F" + g_im_save_format, w, h);
+		},
+			[&ImRES3, &N3, w, h, LH, LMAXY, iter_det, rc] {
+			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_50_1_ImRES3" + g_im_save_format, w, h);
+			N3 = ClearImageOptimal(ImRES3, w, h, LH, LMAXY, rc);
+			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_50_2_ImRES3F" + g_im_save_format, w, h);
+		},
+			[&ImRES4, &N4, w, h, LH, LMAXY, iter_det, rc] {
+			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_51_1_ImRES4" + g_im_save_format, w, h);
+			N4 = ClearImageOptimal(ImRES4, w, h, LH, LMAXY, rc);
+			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_51_2_ImRES4F" + g_im_save_format, w, h);
+		},
+			[&ImRES5, &N5, w, h, LH, LMAXY, iter_det, rc] {
+			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_" + iter_det + "_52_1_ImRES5" + g_im_save_format, w, h);
+			N5 = ClearImageOptimal(ImRES5, w, h, LH, LMAXY, rc);
+			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_" + iter_det + "_52_2_ImRES5F" + g_im_save_format, w, h);
+		}
+		);
+
+		minN = N5 / 2;
+		for (i = 0; i < w*h; i++)
+		{
+			if (((N1 >= minN) && (ImRES1[i] != 0)) ||
+				((N3 >= minN) && (ImRES3[i] != 0)) ||
+				((N4 >= minN) && (ImRES4[i] != 0)) ||
+				((N5 >= minN) && (ImRES5[i] != 0))
+				)
+			{
+				ImRES8[i] = rc;
+			}
+			else
+			{
+				ImRES8[i] = 0;
+			}
+		}
+		if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_" + iter_det + "_54_1_ImRES8(ImRES1+3+4+5)" + g_im_save_format, w, h);
+
+		val = ClearImageOpt2(ImRES8, w, h, LH, LMAXY, rc);
+		if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_" + iter_det + "_54_2_ImRES8ClearImageOpt2" + g_im_save_format, w, h);
+
+		if (val == 0)
+		{
+			memset(&ImFF[0], 0, (w*h) * sizeof(int));
+			break;
+		}
+
+		concurrency::parallel_invoke(
+			[&ImRES8, &ImFF, w, h, LH, LMAXY, iter_det, rc] {
+			CombineTwoImages(ImFF, ImRES8, w, h, rc);
+			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_57_1_ImFF(ImRES1)WithImRES8" + g_im_save_format, w, h);
+
+			ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);
+			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_57_2_ImFF_F" + g_im_save_format, w, h);
+
+			memcpy(&ImRES8[0], &ImFF[0], (w*h) * sizeof(int));
+		},
+			[&ImRES7, &N7, w, h, LH, LMAXY, iter_det, rc] {
+			if (g_show_results) SaveRGBImage(ImRES7, "\\TestImages\\FindTextLines_" + iter_det + "_58_1_ImRES7(ImRES4)" + g_im_save_format, w, h);
+			N7 = ClearImageOpt5(ImRES7, w, h, LH, LMAXY, rc);
+			if (g_show_results) SaveRGBImage(ImRES7, "\\TestImages\\FindTextLines_" + iter_det + "_58_2_ImRES7(ImRES4)_F" + g_im_save_format, w, h);
+		}
+		);
+
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_60_1_ImFF" + g_im_save_format, w, h);
+		for (i = 0; i < w*h; i++)
+		{
+			if (((N1 >= minN) && (ImRES1[i] != 0)) ||
+				((N5 >= minN) && (ImRES5[i] != 0)) ||
+				((N7 >= minN) && (ImRES7[i] != 0))
+				)
+			{
+				ImFF[i] = rc;
+			}
+		}
+
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_60_2_ImFFWithImRES1+5+7" + g_im_save_format, w, h);
+		ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_60_3_ImFF_F" + g_im_save_format, w, h);
+
+		if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\FindTextLines_" + iter_det + "_68_1_ImTHR" + g_im_save_format, w, h);
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_68_2_ImFF" + g_im_save_format, w, h);
+		IntersectTwoImages(ImFF, ImTHR, w, h);
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_68_3_ImFFIntImTHR" + g_im_save_format, w, h);
+		ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_68_4_ImFFIntImTHR_F" + g_im_save_format, w, h);
+
+		// original ImMaskWithBorder can remove some symbols in case of 0_21_28_720__0_22_21_001.jpeg so better to don't use it
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_69_4_ImFF_F" + g_im_save_format, w, h);
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_69_4_ImFF_F" + g_im_save_format, w, h);
+
+		if (g_show_results) SaveRGBImage(Im, "\\TestImages\\FindTextLines_" + iter_det + "_69_5_ImRGB" + g_im_save_format, w, h);		
+
+		int min_x = w - 1, max_x = 0, min_y = h - 1, max_y = 0, ww, hh;
+		for (y = 0, ib = 0; y < h; y++, ib += w)
+		{
+			for (x = 0; x < w; x++)
+			{
+				if (ImFF[ib + x] != 0)
+				{
+					if (x < min_x) min_x = x;
+					if (x > max_x) max_x = x;
+					if (y < min_y) min_y = y;
+					if (y > max_y) max_y = y;
+				}
+			}
+		}
+
+		if (max_x == 0)
+		{
+			memset(&ImFF[0], 0, (w*h) * sizeof(int));
+			break;
+		}
+
+		min_x -= 16;
+		if (min_x < 0) min_x = 0;
+		max_x += 16;
+		if (max_x > w - 1) max_x = w - 1;
+
+		min_y -= 16;
+		if (min_y < 0) min_y = 0;
+		max_y += 16;
+		if (max_y > h - 1) max_y = h - 1;
+
+		ww = max_x - min_x + 1;
+		hh = max_y - min_y + 1;
+
+		if (LMAXY - min_y > hh - 1)
+		{
+			LMAXY = min_y + hh - 1;
+		}
+
+		if (LMAXY - min_y - LH < 0)
+		{
+			LH = LMAXY - min_y;
+		}
+
+		// ImRES1 - RGB image with size ww:hh (segment of original image)
+		// ImRES2 - ImFF image with size ww:hh (segment of original image)
+		for (y = min_y, i = min_y * w + min_x, j = 0; y <= max_y; y++, i += w, j += ww)
+		{
+			memcpy(&ImRES1[j], &Im[i], ww * sizeof(int));
+			memcpy(&ImRES2[j], &ImFF[i], ww * sizeof(int));
+			memcpy(&ImRES6[j], &ImSFIntTHRF[i], ww * sizeof(int));
+			//memcpy(&ImRES7[j], &ImMaskWithBorder[i], ww * sizeof(int));
+		}
+		//memcpy(&ImMaskWithBorder[0], &ImRES7[0], (ww*hh) * sizeof(int));
+
+		if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_" + iter_det + "_70_1_ImRES1_ImRGB" + g_im_save_format, ww, hh);
+		if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_70_2_ImRES2_ImFF" + g_im_save_format, ww, hh);
+		//if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_" + iter_det + "_70_3_ImMaskWithBorder" + g_im_save_format, ww, hh);
+		if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_" + iter_det + "_70_4_ImRES6_ImSFIntTHRF" + g_im_save_format, ww, hh);
+
+		IntersectTwoImages(ImRES6, ImRES2, ww, hh);
+		if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_" + iter_det + "_70_5_ImRES6_ImFFIntImSFIntTHRF" + g_im_save_format, ww, hh);
+
+		// original ImMaskWithBorder can remove some symbols in case of 0_21_28_720__0_22_21_001.jpeg so better to don't use it
+		ImMaskWithBorder = custom_buffer<int>(ww*hh, 255);
+		ImMaskWithBorderBySplit = custom_buffer<int>(ww*hh, 255);
+
+		//wxMessageBox("dt5: " + std::to_string(GetTickCount() - start_time));
+		start_time = GetTickCount();
+
+		concurrency::parallel_invoke(
+			[&] {
+			GetMainClusterImage(ImRES1, ImRES6, ImRES3, ImMaskWithBorder, ww, hh, LH, LMAXY - min_y, "" + iter_det + "_call2", rc, true);
+			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_71_1_ImRES3_MainTXTCluster" + g_im_save_format, ww, hh);
+			ClearImageOpt5(ImRES3, ww, hh, LH, LMAXY - min_y, rc);
+			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_71_2_ImRES3_MainTXTClusterF" + g_im_save_format, ww, hh);
+		},
+			[&] {
+			GetMainClusterImageBySplit(ImRES1, ImRES6, ImRES4, ImMaskWithBorderBySplit, ww, hh, LH, LMAXY - min_y, "" + iter_det + "_call3", rc);
+			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_73_1_ImRES4_MainTXTClusterSplit" + g_im_save_format, ww, hh);
+			ClearImageOpt5(ImRES4, ww, hh, LH, LMAXY - min_y, rc);
+			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_73_2_ImRES4_MainTXTClusterSplitF" + g_im_save_format, ww, hh);
+		}
+		);
+
+		//wxMessageBox("dt6: " + std::to_string(GetTickCount() - start_time));
+		start_time = GetTickCount();
+
+		IntersectTwoImages(ImMaskWithBorder, ImMaskWithBorderBySplit, ww, hh);
+
+		if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_" + iter_det + "_74_1_ImRES4_MainTXTClusterSplitF" + g_im_save_format, ww, hh);
+		if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_74_2_ImRES3_MainTXTClusterF" + g_im_save_format, ww, hh);
+		MergeImagesByIntersectedFigures(ImRES3, ImRES4, ww, hh, rc);
+		if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_74_3_ImRES3_MainTXTClusterFMerge1+2" + g_im_save_format, ww, hh);
+		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_" + iter_det + "_74_4_ImMaskWithBorder" + g_im_save_format, ww, hh);
+		IntersectTwoImages(ImRES3, ImMaskWithBorder, ww, hh);
+		if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_74_5_ImRES3_MainTXTClusterFilteredByImMaskWithBorder" + g_im_save_format, ww, hh);
+
+		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_" + iter_det + "_75_1_ImMaskWithBorder" + g_im_save_format, ww, hh);
+		if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_75_2_ImRES2_ImFF" + g_im_save_format, ww, hh);
+		IntersectTwoImages(ImRES2, ImMaskWithBorder, ww, hh);
+		if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_75_3_ImRES2_ImFFFilteredByImMaskWithBorder" + g_im_save_format, ww, hh);
+
+		if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_" + iter_det + "_76_1_ImRES3_MainTXTCluster" + g_im_save_format, ww, hh);
+		if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_76_2_ImRES2_ImFF" + g_im_save_format, ww, hh);
+		MergeWithClusterImage(ImRES2, ImRES3, ww, hh, rc);
+		if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_76_3_ImRES2_ImFFMergeWithMainTXTCluster" + g_im_save_format, ww, hh);
+		ClearImageOpt5(ImRES2, ww, hh, LH, LMAXY - min_y, rc);
+		if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_" + iter_det + "_76_4_ImRES2_ImFF_F" + g_im_save_format, ww, hh);
+
+		for (y = min_y, i = min_y * w + min_x, j = 0; y <= max_y; y++, i += w, j += ww)
+		{
+			memcpy(&ImFF[i], &ImRES2[j], ww * sizeof(int));
+		}
+
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_77_1_ImFF" + g_im_save_format, w, h);
+
+		if (g_clear_image_logical == true)
+		{
+			val = ClearImageLogical(ImFF, w, h, LH, LMAXY, xb, xe, rc, W * 4, H * 4, ((W / 2) - XB) * 4);
+			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_" + iter_det + "_77_2_ImFFWithClearImageLogical" + g_im_save_format, w, h);
+		}
+
+		if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\" + SaveName + "_FindTextLines_" + iter_det + "_77_3_ImFF" + g_im_save_format, w, h);
+
+		if (g_show_results) SaveRGBImage(Im, "\\TestImages\\FindTextLines_" + iter_det + "_77_2_ImRGB" + g_im_save_format, w, h);
+
+		//wxMessageBox("dt7: " + std::to_string(GetTickCount() - start_time));
+		start_time = GetTickCount();
+
+		//LLE[k] = YB + (LMAXY / 4);
+
+		break;
+	}
+
+	ww = W * 4;
+	hh = h;
+
+	ImRES1 = custom_buffer<int>(ww*hh, 0);
+	for (i = 0; i < ww*hh; i++) ImRES1[i] = wc;
+
+	cnt = 0;
+	for (y = 0, i = 0; y < h; y++)
+	{
+		for (x = 0; x < w; x++, i++)
+		{
+			if (ImFF[i] != 0)
+			{
+				cnt++;
+				ImRES1[y*ww + (XB * 4) + x] = 0;
+			}
+		}
+	}
+
+	if (cnt > 0)
+	{
+		{
+			cv::Mat cv_ImRGBOrig(h, ww, CV_8UC4);
+			memcpy(cv_ImRGBOrig.data, &ImRES1[0], h*ww * sizeof(int));
+			cv::resize(cv_ImRGBOrig, res.m_cv_ImRGB, cv::Size(0, 0), 0.25, 0.25);
+		}
+
+		GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, rc);
+
+		string FullName;
+
+		FullName = string("/TXTImages/");
+		FullName += SaveName;
+		FullName += string("_");
+		FullName += iter_det;
+		FullName += g_im_save_format;
+
+		res.m_ImageName = FullName;
+		res.m_YB = YB;
+		res.m_LH = LH / 4;
+		res.m_LY = YB + LMAXY / 4;
+		res.m_LXB = XB + DXB / 4;
+		res.m_LXE = XB + DXE / 4;
+		res.m_LYB = YB + DYB / 4;
+		res.m_LYE = YB + DYE / 4;
+		res.m_mY = mY;
+		res.m_mI = mI;
+		res.m_mQ = mQ;
+		res.m_im_h = h / 4;
+
+		SaveRGBImage(ImRES1, FullName, ww, hh);
+
+		res.m_res = 1;
+	}
+
+	return res;
+}
+
+inline concurrency::task<FindTextRes> TaskFindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImNF, custom_buffer<int> &FullImY, string &SaveName, std::string &iter_det, int N, int k, custom_buffer<int> &LL, custom_buffer<int> &LR, custom_buffer<int> &LLB, custom_buffer<int> &LLE, int W, int H)
+{	
+	return concurrency::create_task([&ImRGB, &ImNF, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, W, H]	{
+			return FindText(ImRGB, ImNF, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, W, H);
+		}
+	);
+}
+
 int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, vector<string> &SavedFiles, int W, int H)
 {
 	custom_buffer<int> LL(H, 0), LR(H, 0), LLB(H, 0), LLE(H, 0), LW(H, 0);
@@ -2999,10 +4225,11 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 	double mthr;
 	string SaveName, FullName, Str;
 	char str[30];
-	int res;
-	int iter = 0;
+	int res = 0;
+	int iter = 0;	
+	DWORD  start_time;
 
-	res = 0;
+	//start_time = GetTickCount();
 
 	SaveName = SavedFiles[0];
 	SavedFiles.clear();
@@ -3140,1046 +4367,50 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 		k++;		
 	}
 
-	k = 0;
-	while (k < N)
+	//wxMessageBox("dt0: " + std::to_string(GetTickCount() - start_time));
+	//start_time = GetTickCount();
+
+	vector<concurrency::task<FindTextRes>> FindTextTasks;
+	
+	for (k = 0; k < N; k++)
 	{
-		iter++;
-		int orig_LLBk = LLB[k];
-		int orig_LLEk = LLE[k];
-		int orig_LLk = LL[k];
-		int orig_LRk = LR[k];
-		int min_h;
+		FindTextTasks.emplace_back(TaskFindText(ImRGB, ImNF, FullImY, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, W, H));
+	}
+	
+	k = 0;
+	while (k < FindTextTasks.size())
+	{
+		FindTextRes ft_res = FindTextTasks[k].get();
 
-		XB = LL[k];
-		XE = LR[k];
-		w = XE - XB + 1;
-		val = (int)((double)w*0.15);
-		if (val < 40) val = 40;
-		XB -= val;
-		XE += val;
-		if (XB < 0) XB = 0;
-		if (XE > W - 1) XE = W - 1;
-		w = XE - XB + 1;
-
-		YB = LLB[k];
-		YE = LLE[k];
-
-		// getting h of sub
-		h = YE - YB + 1;
-		val = (3 * ((int)(0.03*(double)H) + 1)) / 2; // 3/2 * ~ min sub height # (536-520+1)/576
-		if (h < val)
+		if (ft_res.m_LL.m_size > 0) // ned to split text on 2 parts
 		{
-			if (N == 1)
-			{
-				LLB[k] -= (val - h) / 2;
-				LLE[k] = LLB[k] + val - 1;
-			}
-			else if (k == 0)
-			{
-				LLE[k] += std::min<int>((val - h) / 2, (LLB[k + 1] - LLE[k]) / 2);
-				LLB[k] = LLE[k] - val + 1;
-			}
-			else if (k == N - 1)
-			{
-				LLB[k] -= std::min<int>((val - h) / 2, (LLB[k] - LLE[k - 1]) / 2);
-				LLE[k] = LLB[k] + val - 1;
-			}
-			else
-			{
-				LLB[k] -= std::min<int>((val - h) / 2, (LLB[k] - LLE[k - 1]) / 2);
-				LLE[k] += std::min<int>((val - h) / 2, (LLB[k + 1] - LLE[k]) / 2);
-			}
-
-			if (LLB[k] < 0) LLB[k] = 0;
-			if (LLE[k] > H - 1) LLE[k] = H - 1;
-
-			YB = LLB[k];
-			YE = LLE[k];
-			h = YE - YB + 1;
+			FindTextTasks.emplace_back(TaskFindText(ImRGB, ImNF, FullImY, SaveName, ft_res.m_iter_det + "_sl1", ft_res.m_N, ft_res.m_k, ft_res.m_LL, ft_res.m_LR, ft_res.m_LLB, ft_res.m_LLE, W, H));
+			FindTextTasks.emplace_back(TaskFindText(ImRGB, ImNF, FullImY, SaveName, ft_res.m_iter_det + "_sl2", ft_res.m_N, ft_res.m_k + 1, ft_res.m_LL, ft_res.m_LR, ft_res.m_LLB, ft_res.m_LLE, W, H));
 		}
-
-		YB -= h / 2;
-		YE += h / 2;
-		if (YB < 0) YB = 0;
-		if (YE > H - 1) YE = H - 1;
-
-		if (k > 0)
+		else
 		{
-			if (YB < LLE[k - 1] - 2) YB = std::max<int>(0, LLE[k - 1] - 2);
-		}
-		if (k < N - 1)
-		{
-			val = (LLB[k + 1] * 5 + LLE[k + 1]) / 6;
-			if (YE > val) YE = val;
-		}
-
-		int max_diff = 20;
-		for (y = YB; y < YE; y++)
-		{
-			bln = 0;
-			for (x = std::max<int>(XB, W / 4), val1 = val2 = FullImY[y*W + x]; x <= std::min<int>(XE, (3 * W) / 4); x++)
+			if (ft_res.m_res == 1)
 			{
-				i = y * W + x;
-				if (FullImY[i] < val1)
+				SavedFiles.push_back(ft_res.m_ImageName);
+				SaveTextLineParameters(ft_res.m_ImageName, ft_res.m_YB, ft_res.m_LH, ft_res.m_LY, ft_res.m_LXB, ft_res.m_LXE, ft_res.m_LYB, ft_res.m_LYE, ft_res.m_mY, ft_res.m_mI, ft_res.m_mQ);
+
+				for (y = 0, i = 0; y < ft_res.m_im_h; y++)
 				{
-					val1 = FullImY[i];
-				}
-
-				if (FullImY[i] > val2)
-				{
-					val2 = FullImY[i];
-				}
-
-				if (val2 - val1 > max_diff)
-				{
-					bln = 1;
-					break;
-				}
-			}
-
-			if (bln == 1)
-			{
-				break;
-			}
-		}
-		YB = y;
-
-		for (y = YE; y > YB; y--)
-		{
-			bln = 0;
-			for (x = std::max<int>(XB, W / 4), val1 = val2 = FullImY[y*W + x]; x <= std::min<int>(XE, (3 * W) / 4); x++)
-			{
-				i = y * W + x;
-				if (FullImY[i] < val1)
-				{
-					val1 = FullImY[i];
-				}
-
-				if (FullImY[i] > val2)
-				{
-					val2 = FullImY[i];
-				}
-
-				if (val2 - val1 > max_diff)
-				{
-					bln = 1;
-					break;
-				}
-			}
-
-			if (bln == 1)
-			{
-				break;
-			}
-		}
-		YE = y;
-
-		if (YB >= YE)
-		{
-			k++;
-			continue;
-		}
-
-		if (YB > orig_LLBk - 2)
-		{
-			orig_LLBk = YB;
-			YB = std::max<int>(0, YB - 2);
-		}
-
-		if (YE < orig_LLEk + 2)
-		{
-			orig_LLEk = YE;
-			YE = std::min<int>(H - 1, YE + 2);
-		}
-
-		if (LLB[k] < YB) LLB[k] = YB;
-		if (LLE[k] > YE) LLE[k] = YE;
-
-		h = YE - YB + 1;
-
-		custom_buffer<int> ImRES1(w*h * 16, 0), ImRES2(w*h * 16, 0), ImRES3(w*h * 16, 0), ImRES4(w*h * 16, 0);
-		custom_buffer<int> ImRES5(w*h * 16, 0), ImRES6(w*h * 16, 0), ImRES7(w*h * 16, 0), ImRES8(w*h * 16, 0);
-		custom_buffer<int> Im(w*h * 16, 0), ImSF(w*h * 16, 0), ImSNF(w*h * 16, 0), ImFF(w*h * 16, 0), ImSFIntTHRF(w*h * 16, 0), ImSNFIntTHRF(w*h * 16, 0);
-		custom_buffer<int> ImY(w*h * 16, 0), ImU(w*h * 16, 0), ImV(w*h * 16, 0), ImI(w*h * 16, 0);
-		custom_buffer<int> ImTHR(w*h * 16, 0);
-
-		if (g_show_results)
-		{
-			memcpy(&ImRES1[0], &ImRGB[0], W * H * sizeof(int));
-
-			for (i = 0; i < N; i++)
-			{
-				for (x = 0; x < W; x++)
-				{
-					ImRES1[LLB[i] * W + x] = rc;
-					ImRES1[LLE[i] * W + x] = gc;
-				}
-			}
-
-			for (x = 0; x < W; x++)
-			{
-				ImRES1[YB * W + x] = bc;
-				ImRES1[YE * W + x] = bc;
-			}
-
-			SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_03_1_ImRGB_RGBWithLinesInfo" + g_im_save_format, W, H);
-			SaveRGBImage(ImRES1, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_03_1_ImRGB_RGBWithLinesInfo" + g_im_save_format, W, H);
-		}
-
-		for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
-		{
-			memcpy(&ImRES1[j], &ImRGB[i], w * sizeof(int));
-		}
-
-		if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_03_2_ImRES1_RGB" + g_im_save_format, w, h);
-
-		{
-			cv::Mat cv_ImRGB, cv_ImY, cv_ImLAB, cv_ImLABSplit[3], cv_ImHSV, cv_ImHSVSplit[3], cv_ImL, cv_ImA, cv_ImB, cv_bw, cv_bw_gaus;
-
-			{
-				cv::Mat cv_ImRGBOrig(h, w, CV_8UC4);
-				memcpy(cv_ImRGBOrig.data, &ImRES1[0], w*h * sizeof(int));
-				cv::resize(cv_ImRGBOrig, cv_ImRGB, cv::Size(0, 0), 4, 4);
-			}
-
-			memcpy(&Im[0], cv_ImRGB.data, w*h * 4 * 4 * sizeof(int));
-			if (g_show_results) SaveRGBImage(Im, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_03_3_Im_RGBScaled4x4" + g_im_save_format, w * 4, h * 4);
-			if (g_show_results) SaveRGBImage(Im, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_03_3_Im_RGBScaled4x4" + g_im_save_format, w * 4, h * 4);
-
-			for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
-			{
-				memcpy(&ImRES2[j], &ImNF[i], w * sizeof(int));
-			}
-			SimpleResizeImage4x(ImRES2, ImSNF, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImSNF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_04_2_ImSNF" + g_im_save_format, w * 4, h * 4);
-
-			w *= 4;
-			h *= 4;
-
-			{
-				// extend ImSNF with Internal Figures
-				val = GetImageWithInsideFigures(ImSNF, ImRES1, w, h, 255, val1, val2);
-				if (val == 0)
-				{
-					k++;
-					continue;
-				}
-				if (val2 > 0)
-				{
-					CombineTwoImages(ImSNF, ImRES1, w, h, 255);
-					if (g_show_results) SaveGreyscaleImage(ImSNF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_04_4_SNFExtInternalFigures" + g_im_save_format, w, h);
-				}
-			}			
-
-			cv::cvtColor(cv_ImRGB, cv_ImY, cv::COLOR_BGR2GRAY);
-			cv::cvtColor(cv_ImRGB, cv_ImLAB, cv::COLOR_BGR2Lab);
-			cv::cvtColor(cv_ImRGB, cv_ImHSV, cv::COLOR_BGR2HSV);
-			cv::split(cv_ImLAB, cv_ImLABSplit);
-			cv::split(cv_ImHSV, cv_ImHSVSplit);
-
-			GreyscaleMatToImage(cv_ImY, w, h, ImY);
-			GreyscaleMatToImage(cv_ImLABSplit[1], w, h, ImU);
-			GreyscaleMatToImage(cv_ImLABSplit[2], w, h, ImV);
-			GreyscaleMatToImage(cv_ImHSVSplit[1], w, h, ImI);
-
-			if (g_show_results) SaveGreyscaleImage(ImU, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_06_1_ImU" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImV, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_06_2_ImV" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImI, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_06_3_ImI" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImY, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_06_5_ImY" + g_im_save_format, w, h);
-
-			cv_bw = cv_ImY;
-			cv::medianBlur(cv_bw, cv_bw, 5);
-			cv::adaptiveThreshold(cv_bw, cv_bw_gaus, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 2);
-
-			if (g_show_results)
-			{
-				GreyscaleMatToImage(cv_bw_gaus, w, h, ImRES1);
-				SaveGreyscaleImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_07_1_ImTHRGaus" + g_im_save_format, w, h);
-			}
-
-			// Create a kernel that we will use to sharpen our image
-			cv::Mat kernel_sharp = (cv::Mat_<float>(3, 3) <<
-				1, 1, 1,
-				1, -8, 1,
-				1, 1, 1); // an approximation of second derivative, a quite strong kernel
-			// do the laplacian filtering as it is
-			// well, we need to convert everything in something more deeper then CV_8U
-			// because the kernel has some negative values,
-			// and we can expect in general to have a Laplacian image with negative values
-			// BUT a 8bits unsigned int (the one we are working with) can contain values from 0 to 255
-			// so the possible negative number will be truncated
-			cv::Mat imgLaplacian;
-			cv::filter2D(cv_ImRGB, imgLaplacian, CV_32F, kernel_sharp);
-			cv::Mat sharp;
-			cv_ImRGB.convertTo(sharp, CV_32F);
-			cv::Mat imgResult = sharp - imgLaplacian;
-			// convert back to 8bits gray scale
-			imgResult.convertTo(imgResult, CV_8UC3);
-			imgLaplacian.convertTo(imgLaplacian, CV_8UC3);
-			// Create binary image from source image
-			cv::cvtColor(imgResult, cv_bw, cv::COLOR_BGR2GRAY);
-			cv::threshold(cv_bw, cv_bw, 40, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
-
-			if (g_show_results)
-			{
-				GreyscaleMatToImage(cv_bw, w, h, ImRES1);
-				SaveGreyscaleImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_07_2_ImTHRBinOtsu" + g_im_save_format, w, h);
-			}
-
-			for (int i = 0; i < w*h; i++)
-			{
-				if (cv_bw_gaus.data[i] == 0)
-				{
-					cv_bw.data[i] = 0;
-				}
-			}
-
-			GreyscaleMatToImage(cv_bw, w, h, ImTHR);
-			if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_07_3_ImTHRMerge" + g_im_save_format, w, h);
-
-			// noise removal
-			cv::Mat kernel_open = cv::Mat::ones(3, 3, CV_8U);
-			cv::Mat opening;
-			cv::morphologyEx(cv_bw, opening, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);
-			//cv::imshow("opening", opening);		
-			//cv::waitKey(0);		
-			GreyscaleMatToImage(opening, w, h, ImSNFIntTHRF);
-			if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_1_ImTHROpening" + g_im_save_format, w, h);
-		}
-
-		ClearImageFromBorders(ImSNFIntTHRF, w, h, 1, h-2, 255);
-		if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_2_ImTHRClearedFromBorders" + g_im_save_format, w, h);		
-
-		IntersectTwoImages(ImSNFIntTHRF, ImSNF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_09_3_ImSNFIntTHRF" + g_im_save_format, w, h);		
-
-		{
-			// extend ImSNFIntTHRF with Internal Figures
-			val = GetImageWithInsideFigures(ImSNFIntTHRF, ImRES1, w, h, 255, val1, val2);
-			if (val == 0)
-			{
-				k++;
-				continue;
-			}						
-			if (val2 > 0)
-			{
-				CombineTwoImages(ImSNFIntTHRF, ImRES1, w, h, 255);
-				if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_10_1_ImSNFIntTHRFExtInternalFigures" + g_im_save_format, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_10_1_ImSNFIntTHRFExtInternalFigures" + g_im_save_format, w, h);
-			}
-
-			// extend ImTHR with Internal Figures
-			val = GetImageWithInsideFigures(ImTHR, ImRES1, w, h, 255, val1, val2);
-			if (val == 0)
-			{
-				k++;
-				continue;
-			}
-			if (val2 > 0)
-			{
-				CombineTwoImages(ImTHR, ImRES1, w, h, 255);
-				if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_10_2_ImTHRExtInternalFigures" + g_im_save_format, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_10_2_ImTHRExtInternalFigures" + g_im_save_format, w, h);
-			}			
-		}
-
-		val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
-		min_h = (int)(0.4*(double)min<int>(val, orig_LLEk - orig_LLBk + 1));
-
-		ClearImageFromGarbageBetweenLines(ImSNFIntTHRF, w, h, (LLB[k] - YB) * 4, (LLE[k] - YB) * 4, min_h * 4, 255);
-		if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_11_1_ImSNFIntTHRFClearedFromGarbageBetweenLines" + g_im_save_format, w, h);
-
-		// Checking ImSNFIntTHRF on presence more then one line (if yes spliting on two and repeat)
-		//-------------------------------		
-		val = GetSubParams(ImSNFIntTHRF, w, h, 255, LH, LMAXY, lb, le, min_h*4, ((W / 2) - XB) * 4);		
-
-		if (val == 1)
-		{
-			if (g_show_results)
-			{
-				memcpy(&ImRES1[0], &ImSNFIntTHRF[0], w * h * sizeof(int));
-
-				for (x = 0; x < w; x++)
-				{					
-					ImRES1[lb * w + x] = cc;
-					ImRES1[le * w + x] = cc;
-
-					ImRES1[(LMAXY - LH + 1) * w + x] = gc;
-					ImRES1[LMAXY * w + x] = gc;
-				}
-
-				SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_11_2_ImSNFIntTHRFWithSubParams" + g_im_save_format, w, h);
-				SaveRGBImage(ImRES1, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_11_2_ImSNFIntTHRFWithSubParams" + g_im_save_format, w, h);
-			}
-		}
-
-		yb = (orig_LLBk - YB) * 4;
-		ye = (orig_LLEk - YB) * 4;
-		xb = (orig_LLk - XB) * 4;
-		xe = std::min<int>(((W / 2) - XB) * 4 + (((W / 2) - XB) * 4 - xb), (orig_LRk - XB) * 4); //sometimes frome the right can be additional not centered text lines which intersect with two centered lines
-
-		if ((val == 1) && (std::max<int>((LLE[k] - LLB[k] + 1)*4, le - lb + 1) > 1.7*(double)LH))
-		{
-			bln = 0;
-
-			custom_buffer<int> lw(h, 0);
-			int max_txt_w, max_txt_y, min_y, max_y, new_txt_y = 0, new_txt_w, max_txt2_w, max_txt2_y;
-
-			for (y = yb; y <= ye; y++)
-			{
-				for (x = xb; x < xe; x++, i++)
-				{
-					if (ImSNFIntTHRF[y*w+x] != 0)
+					for (x = 0; x < W; x++, i++)
 					{
-						lw[y]++;
-					}
-				}
-			}			
-
-			// searching max text location by y for line [LMAXY-LH+1, LMAXY] -- max_txt_y
-			for (y = LMAXY - LH + 1, max_txt_w = lw[y], max_txt_y = y; y <= LMAXY; y++)
-			{
-				if (lw[y] > max_txt_w)
-				{
-					max_txt_w = lw[y];
-					max_txt_y = y;
-				}
-			}
-
-			if (max_txt_w == 0)
-			{
-				k++;
-				continue;
-			}
-
-			min_y = yb;
-			max_y = LMAXY - LH;
-
-			int y1, y2;
-
-			for (y1 = max_y - 1; y1 >= min_y; y1--)
-			{					
-				if (lw[y1] >= min_h * 4) // bigger then min sub height
-				{
-					for (y2 = max_y; y2 >= y1 + 1; y2--)
-					{
-						if ((double)lw[y2] / max_txt_w <= 0.3)
+						if (((int*)(ft_res.m_cv_ImRGB.data))[i] == 0)
 						{
-							if ((double)lw[y2] / lw[y1] <= 0.3)
-							{
-								new_txt_y = y2;
-								new_txt_w = lw[new_txt_y];
-								break;
-							}
+							ImClearedText[ft_res.m_YB*W + i] = 0;
 						}
 					}
 				}
-				if (new_txt_y > 0)
-				{
-					for (y2 = max_y; y2 >= y1 + 1; y2--)
-					{
-						if (lw[y2] < lw[new_txt_y])
-						{
-							new_txt_y = y2;
-							new_txt_w = lw[new_txt_y];
-						}
-					}
 
-					max_txt2_y = y1;
-					max_txt2_w = lw[max_txt2_y];
+				g_pViewRGBImage(ImClearedText, W, H);
 
-					break;
-				}
-			}
-
-			if ( (new_txt_y > 0) && 
-				 (((YB + (new_txt_y/4)) - orig_LLBk + 1) >= 4) &&
-				 ((orig_LLEk - (YB + (new_txt_y / 4) + 1) + 1) >= 4)
-				)
-			{
-				for (i = N; i > k + 1; i--)
-				{
-					LL[i] = LL[i - 1];
-					LR[i] = LR[i - 1];
-					LLB[i] = LLB[i - 1];
-					LLE[i] = LLE[i - 1];
-				}
-
-				LL[k + 1] = orig_LLk;
-				LR[k + 1] = orig_LRk;
-				LLB[k + 1] = YB + (new_txt_y / 4) + 1;
-				LLE[k + 1] = orig_LLEk;
-
-				LL[k] = orig_LLk;
-				LR[k] = orig_LRk;
-				LLB[k] = orig_LLBk;
-				LLE[k] = YB + (new_txt_y / 4);
-
-				N++;
-				continue;
-			}
-		}
-		//----------------------------
-		
-		while (1)
-		{
-			cv::Mat cv_ImGR, cv_ImGRRes;
-			custom_buffer<int> ImMaskWithBorder;
-			
-			if (LMAXY == 0)
-			{
-				LMAXY = h - 1;
-			}
-			if (LH == 0)
-			{
-				LH = LMAXY;
-			}
-
-			ImMaskWithBorder = custom_buffer<int>(w*h, 255);
-			GetMainClusterImage(Im, ImSNFIntTHRF, ImSFIntTHRF, ImMaskWithBorder, w, h, LH, LMAXY, "iter" + std::to_string(iter) + "_call1", 255, true, true, ((W / 2) - XB) * 4);
-			if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_12_2_ImSFIntTHRF_MainTXTCluster" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_12_2_ImSFIntTHRF_MainTXTCluster" + g_im_save_format, w, h);
-			IntersectTwoImages(ImSFIntTHRF, ImSNFIntTHRF, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_12_3_ImSFIntTHRF_MainTXTClusterIntImSNFIntTHRF" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImSFIntTHRF, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_12_3_ImSFIntTHRF_MainTXTClusterIntImSNFIntTHRF" + g_im_save_format, w, h);
-
-			delta = 40;
-
-			val1 = (int)((double)((LLE[k] - LLB[k] + 1) * 4)*0.3);
-			val2 = (int)((double)((LR[k] - LL[k] + 1) * 4)*0.1);
-			yb = (LLB[k] - YB) * 4 + val1;
-			ye = (LLE[k] - YB) * 4 - val1;
-			xb = (LL[k] - XB) * 4 + val2;
-			xe = (LR[k] - XB) * 4 - val2;
-
-			StrAnalyseImage(ImSFIntTHRF, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
-			FindMaxStrDistribution(GRStr, delta, smax, smaxi, NN, 0);
-			FindMaxStr(smax, smaxi, j1, ys1, NN);
-
-			if (NN == 0)
-			{
-				memset(&ImFF[0], 0, (w*h) * sizeof(int));
-				break;
-			}
-
-			j1_min = 1000;
-			j1_max = -1000;
-
-			j2_min = 1000;
-			j2_max = -1000;
-
-			j3_min = 1000;
-			j3_max = -1000;
-		
-			j4_min = 1000;
-			j4_max = -1000;
-		
-			j5_min = 1000;
-			j5_max = -1000;
-
-			custom_buffer<int> GRStr2(STR_SIZE, 0), GRStr3(STR_SIZE, 0), GRStr4(STR_SIZE, 0);
-			int j2, ys2, j3, ys3, j4, ys4, min_delta;
-
-			memset(&GRStr2[0], 0, 256 * sizeof(int));
-			memset(&GRStr3[0], 0, 256 * sizeof(int));
-
-			for (i = 0; i < w*h; i++)
-			{
-				val1 = ImY[i];
-
-				if ((ImSFIntTHRF[i] != 0) && (ImY[i] >= j1) && (ImY[i] <= j1 + delta - 1))
-				{
-					GRStr2[ImU[i]]++;
-					GRStr3[ImV[i]]++;
-					GRStr4[ImI[i]]++;
-
-					if (ImU[i] < j2_min) j2_min = ImU[i];
-					if (ImU[i] > j2_max) j2_max = ImU[i];
-
-					if (ImV[i] < j3_min) j3_min = ImV[i];
-					if (ImV[i] > j3_max) j3_max = ImV[i];
-
-					if (ImI[i] < j4_min) j4_min = ImI[i];
-					if (ImI[i] > j4_max) j4_max = ImI[i];
-				}
-			}
-
-			if (j2_min == 1000)
-			{
-				memset(&ImFF[0], 0, (w*h) * sizeof(int));
-				break;
-			}
-
-			delta = 80;
-			StrAnalyseImage(ImSFIntTHRF, ImY, GRStr, w, h, xb, xe, yb, ye, 0);
-			FindMaxStrDistribution(GRStr, delta, smax, smaxi, NN, 0);
-			FindMaxStr(smax, smaxi, j1, ys1, NN);
-			j1_min = j1;
-			j1_max = j1_min + delta - 1;
-
-			min_delta = 20;
-			delta = j2_max - j2_min + 1;
-			if (delta < min_delta)
-			{
-				delta = delta / 2;
-				FindMaxStrDistribution(GRStr2, delta, smax, smaxi, NN, 0);
-				FindMaxStr(smax, smaxi, j2, ys2, NN);
-				j2_min = std::max<int>(0, std::min<int>(j2_min, j2 + (delta / 2) - (min_delta/2)));
-				j2_max = std::min<int>(255, std::max<int>(j2_max, j2 + (delta / 2) + (min_delta/2) - 1));
-			}
-
-			min_delta = 20;
-			delta = j3_max - j3_min + 1;
-			if (delta < min_delta)
-			{
-				delta = delta / 2;
-				FindMaxStrDistribution(GRStr3, delta, smax, smaxi, NN, 0);
-				FindMaxStr(smax, smaxi, j3, ys3, NN);
-				j3_min = std::max<int>(0, std::min<int>(j3_min, j3 + (delta / 2) - (min_delta / 2)));
-				j3_max = std::min<int>(255, std::max<int>(j3_max, j3 + (delta / 2) + (min_delta / 2) - 1));
-			}
-
-			min_delta = 20;
-			delta = j4_max - j4_min + 1;
-			if (delta < min_delta)
-			{
-				delta = delta / 2;
-				FindMaxStrDistribution(GRStr4, delta, smax, smaxi, NN, 0);
-				FindMaxStr(smax, smaxi, j4, ys4, NN);
-				j4_min = std::max<int>(0, std::min<int>(j4_min, j4 + (delta / 2) - (min_delta / 2)));
-				j4_max = std::min<int>(255, std::max<int>(j4_max, j4 + (delta / 2) + (min_delta / 2) - 1));
-			}
-				
-			for (i=0; i<w*h; i++)
-			{
-				val1 = ImY[i];
-				val2 = ImU[i];
-				val3 = ImV[i];
-				val4 = ImI[i];
-
-				if (( val1 >= j1_min ) && (val1 <= j1_max) &&
-					( val2 >= j2_min ) && (val2 <= j2_max) &&
-					( val3 >= j3_min ) && (val3 <= j3_max) &&
-					( val4 >= j4_min ) && (val4 <= j4_max)
-					) 
-				{
-					ImRES1[i] = rc;
-				}
-				else
-				{
-					ImRES1[i] = 0;
-				}
-			}
-
-			val_min = j1_min - 20;
-			val_max = j1_max;			
-			for (i = 0; i < w*h; i++)
-			{
-				val1 = ImY[i];
-				val2 = ImU[i];
-				val3 = ImV[i];
-				val4 = ImI[i];
-
-				if ((val1 >= val_min) && (val1 <= val_max) &&
-					(val2 >= j2_min) && (val2 <= j2_max) &&
-					(val3 >= j3_min) && (val3 <= j3_max) &&
-					(val4 >= j4_min) && (val4 <= j4_max)
-					)
-				{
-					ImRES3[i] = rc;
-				}
-				else
-				{
-					ImRES3[i] = 0;
-				}
-			}
-
-			val_min = j1_min+20;
-			val_max = j1_max+20;
-			for (i = 0; i < w*h; i++)
-			{
-				val1 = ImY[i];
-				val2 = ImU[i];
-				val3 = ImV[i];
-				val4 = ImI[i];
-
-				if ((val1 >= val_min) && (val1 <= val_max) &&
-					(val2 >= j2_min) && (val2 <= j2_max) &&
-					(val3 >= j3_min) && (val3 <= j3_max) &&
-					(val4 >= j4_min) && (val4 <= j4_max)
-					)
-				{
-					ImRES4[i] = rc;
-				}
-				else
-				{
-					ImRES4[i] = 0;
-				}
-			}
-
-			val_min = j1_min;
-			val_max = j1_max+20;
-			for (i=0; i<w*h; i++)
-			{
-				val1 = ImY[i];
-				val2 = ImU[i];
-				val3 = ImV[i];
-				val4 = ImI[i];
-
-				if (( val1 >= val_min ) && (val1 <= val_max) &&
-					( val2 >= j2_min ) && (val2 <= j2_max) &&
-					( val3 >= j3_min ) && (val3 <= j3_max) &&
-					( val4 >= j4_min ) && (val4 <= j4_max)
-					) 
-				{
-					ImRES5[i] = rc;
-				}
-				else
-				{
-					ImRES5[i] = 0;
-				}
-			}
-
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_42_1_ImRES1" + g_im_save_format, w, h);
-			IntersectTwoImages(ImRES1, ImTHR, w, h);
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_42_2_ImRES1IntImTHR" + g_im_save_format, w, h);
-			
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_44_1_ImRES3" + g_im_save_format, w, h);
-			IntersectTwoImages(ImRES3, ImTHR, w, h);
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_44_2_ImRES3IntImTHR" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_45_1_ImRES4" + g_im_save_format, w, h);
-			IntersectTwoImages(ImRES4, ImTHR, w, h);
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_45_2_ImRES4IntImTHR" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_46_1_ImRES5" + g_im_save_format, w, h);
-			IntersectTwoImages(ImRES5, ImTHR, w, h);
-			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_46_2_ImRES5IntImTHR" + g_im_save_format, w, h);
-
-
-			yb = (LLB[k]-YB)*4;
-			ye = (LLE[k]-YB)*4;
-			xb = (LL[k]-XB)*4;
-			xe = (LR[k]-XB)*4;
-
-			memcpy(&ImRES7[0], &ImRES4[0], (w*h)*sizeof(int));
-			memcpy(&ImFF[0], &ImRES1[0], (w*h)*sizeof(int));
-
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_1_ImRES1" + g_im_save_format, w, h);
-			IntersectTwoImages(ImSNFIntTHRF, ImRES1, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImSNFIntTHRF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_2_ImSNFIntTHRFIntImRES1" + g_im_save_format, w, h);
-
-			val = (int)(0.03*(double)H) + 1; // ~ min sub height # (536-520+1)/576
-			min_h = (int)(0.4*(double)max<int>(val, orig_LLEk - orig_LLBk + 1));
-			val = GetSubParams(ImSNFIntTHRF, w, h, 255, LH, LMAXY, lb, le, min_h * 4, ((W / 2) - XB) * 4);
-			if (val == 0)
-			{
-				memset(&ImFF[0], 0, (w*h) * sizeof(int));
-				break;
-			}
-
-			if (g_show_results)
-			{
-				memcpy(&ImRES2[0], &ImSNFIntTHRF[0], w * h * sizeof(int));
-
-				int ddy1, ddy2;
-				GetDDY(h, LH, LMAXY, ddy1, ddy2);
-
-				for (x = 0; x < w; x++)
-				{
-					ImRES2[lb * w + x] = cc;
-					ImRES2[le * w + x] = cc;
-
-					ImRES2[(LMAXY - LH + 1) * w + x] = gc;
-					ImRES2[LMAXY * w + x] = gc;
-
-					ImRES2[std::max<int>(0, (LMAXY - ((6*LH)/5) + 1)) * w + x] = yc;
-					ImRES2[std::min<int>(h-1, (LMAXY + (LH/5))) * w + x] = yc;
-
-					ImRES2[ddy1 * w + x] = wc;
-					ImRES2[ddy2 * w + x] = wc;					
-				}
-
-				SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_3_ImSNFIntTHRFIntImRES1WithSubParams" + g_im_save_format, w, h);
-				SaveRGBImage(ImRES2, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_48_3_ImSNFIntTHRFIntImRES1WithSubParams" + g_im_save_format, w, h);
-			}
-
-			N1 = ClearImageOptimal(ImRES1, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_48_4_ImRES1F" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_50_1_ImRES3" + g_im_save_format, w, h);
-			N3 = ClearImageOptimal(ImRES3, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_50_2_ImRES3F" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_51_1_ImRES4" + g_im_save_format, w, h);
-			N4 = ClearImageOptimal(ImRES4, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_51_2_ImRES4F" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_52_1_ImRES5" + g_im_save_format, w, h);
-			N5 = ClearImageOptimal(ImRES5, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES5, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_52_2_ImRES5F" + g_im_save_format, w, h);
-			
-			minN = N5/2;
-
-			for (i=0; i<w*h; i++)
-			{
-				if ( ( (N1 >= minN) && (ImRES1[i] != 0) ) ||
-					 ( (N3 >= minN) && (ImRES3[i] != 0) ) ||
-					 ( (N4 >= minN) && (ImRES4[i] != 0) ) ||
-					 ( (N5 >= minN) && (ImRES5[i] != 0) )
-				   )
-				{
-					ImRES8[i] = rc;
-				}
-				else
-				{
-					ImRES8[i] = 0;
-				}
-			}
-			if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_54_1_ImRES8(ImRES1+3+4+5)" + g_im_save_format, w, h);
-
-			val = ClearImageOpt2(ImRES8, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES8, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_54_2_ImRES8ClearImageOpt2" + g_im_save_format, w, h);
-
-			if (val == 0)
-			{
-				memset(&ImFF[0], 0, (w*h)*sizeof(int));
-				break;
-			}
-
-			CombineTwoImages(ImFF, ImRES8, w, h, rc);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_57_1_ImFF(ImRES1)WithImRES8" + g_im_save_format, w, h);			
-			
-			ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_57_2_ImFF_F" + g_im_save_format, w, h);
-
-			memcpy(&ImRES8[0], &ImFF[0], (w*h)*sizeof(int));
-
-			if (g_show_results) SaveRGBImage(ImRES7, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_58_1_ImRES7(ImRES4)" + g_im_save_format, w, h);
-			N7 = ClearImageOpt5(ImRES7, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImRES7, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_58_2_ImRES7(ImRES4)_F" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_60_1_ImFF" + g_im_save_format, w, h);
-			for (i=0; i<w*h; i++)
-			{
-				if ( ( (N1 >= minN) && (ImRES1[i] != 0) ) ||
-					 ( (N5 >= minN) && (ImRES5[i] != 0) ) ||
-					 ( (N7 >= minN) && (ImRES7[i] != 0) )
-					)
-				{
-					ImFF[i] = rc;
-				}
-			}
-			
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_60_2_ImFFWithImRES1+5+7" + g_im_save_format, w, h);
-			ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_60_3_ImFF_F" + g_im_save_format, w, h);				
-
-			if (g_show_results) SaveGreyscaleImage(ImTHR, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_68_1_ImTHR" + g_im_save_format, w, h);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_68_2_ImFF" + g_im_save_format, w, h);
-			IntersectTwoImages(ImFF, ImTHR, w, h);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_68_3_ImFFIntImTHR" + g_im_save_format, w, h);
-			ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_68_4_ImFFIntImTHR_F" + g_im_save_format, w, h);
-
-
-			// original ImMaskWithBorder can remove some symbols in case of 0_21_28_720__0_22_21_001.jpeg so better to don't use it
-			/*if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_69_1_ImMaskWithBorder" + g_im_save_format, w, h);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_69_2_ImFF" + g_im_save_format, w, h);
-			IntersectTwoImages(ImFF, ImMaskWithBorder, w, h);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_69_3_ImFFIntImMaskWithBorder" + g_im_save_format, w, h);
-			ClearImageOpt5(ImFF, w, h, LH, LMAXY, rc);*/
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_69_4_ImFF_F" + g_im_save_format, w, h);
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_69_4_ImFF_F" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(Im, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_69_5_ImRGB" + g_im_save_format, w, h);
-
-			int min_x = w-1, max_x = 0, min_y = h-1, max_y = 0, ww, hh;
-			for (y = 0, ib = 0; y < h; y++, ib += w)
-			{
-				for (x = 0; x < w; x++)
-				{
-					if (ImFF[ib + x] != 0)
-					{
-						if (x < min_x) min_x = x;
-						if (x > max_x) max_x = x;
-						if (y < min_y) min_y = y;
-						if (y > max_y) max_y = y;
-					}
-				}
-			}
-
-			if (max_x == 0)
-			{
-				memset(&ImFF[0], 0, (w*h) * sizeof(int));
-				break;
-			}
-
-			min_x -= 16;
-			if (min_x < 0) min_x = 0;
-			max_x += 16;
-			if (max_x > w-1) max_x = w-1;
-			
-			min_y -= 16;
-			if (min_y < 0) min_y = 0;
-			max_y += 16;
-			if (max_y > h - 1) max_y = h - 1;
-
-			ww = max_x - min_x + 1;
-			hh = max_y - min_y + 1;
-
-			if (LMAXY - min_y > hh - 1)
-			{
-				LMAXY = min_y + hh - 1;
-			}
-
-			if (LMAXY - min_y - LH < 0)
-			{
-				LH = LMAXY - min_y;
-			}
-
-			// ImRES1 - RGB image with size ww:hh (segment of original image)
-			// ImRES2 - ImFF image with size ww:hh (segment of original image)
-			for (y = min_y, i = min_y * w + min_x, j = 0; y <= max_y; y++, i += w, j += ww)
-			{
-				memcpy(&ImRES1[j], &Im[i], ww * sizeof(int));
-				memcpy(&ImRES2[j], &ImFF[i], ww * sizeof(int));
-				memcpy(&ImRES6[j], &ImSFIntTHRF[i], ww * sizeof(int));
-				//memcpy(&ImRES7[j], &ImMaskWithBorder[i], ww * sizeof(int));
-			}
-			//memcpy(&ImMaskWithBorder[0], &ImRES7[0], (ww*hh) * sizeof(int));
-
-			if (g_show_results) SaveRGBImage(ImRES1, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_70_1_ImRES1_ImRGB" + g_im_save_format, ww, hh);
-			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_70_2_ImRES2_ImFF" + g_im_save_format, ww, hh);
-			//if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_70_3_ImMaskWithBorder" + g_im_save_format, ww, hh);
-			if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_70_4_ImRES6_ImSFIntTHRF" + g_im_save_format, ww, hh);			
-
-			IntersectTwoImages(ImRES6, ImRES2, ww, hh);
-			if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_70_5_ImRES6_ImFFIntImSFIntTHRF" + g_im_save_format, ww, hh);
-
-			// original ImMaskWithBorder can remove some symbols in case of 0_21_28_720__0_22_21_001.jpeg so better to don't use it
-			ImMaskWithBorder = custom_buffer<int>(ww*hh, 255);
-			GetMainClusterImage(ImRES1, ImRES6, ImRES3, ImMaskWithBorder, ww, hh, LH, LMAXY - min_y, "iter" + std::to_string(iter) + "_call2", rc, true);
-			
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_1_ImRES3_MainTXTCluster" + g_im_save_format, ww, hh);
-			ClearImageOpt5(ImRES3, ww, hh, LH, LMAXY - min_y, rc);
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_71_2_ImRES3_MainTXTClusterF" + g_im_save_format, ww, hh);
-
-			if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_72_1_ImRES6_ImFFIntImSFIntTHRF" + g_im_save_format, ww, hh);
-			CombineTwoImages(ImRES6, ImRES3, ww, hh, 255);
-			if (g_show_results) SaveGreyscaleImage(ImRES6, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_72_2_ImRES6_ImFFIntImSFIntTHRFCombinedWithMainTXTClusterF" + g_im_save_format, ww, hh);
-
-			GetMainClusterImageBySplit(ImRES1, ImRES6, ImRES4, ImMaskWithBorder, ww, hh, LH, LMAXY - min_y, "iter" + std::to_string(iter) + "_call3", rc);
-			
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_73_1_ImRES4_MainTXTClusterSplit" + g_im_save_format, ww, hh);						
-			ClearImageOpt5(ImRES4, ww, hh, LH, LMAXY - min_y, rc);
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_73_2_ImRES4_MainTXTClusterSplitF" + g_im_save_format, ww, hh);						
-
-			if (g_show_results) SaveRGBImage(ImRES4, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_74_1_ImRES4_MainTXTClusterSplitF" + g_im_save_format, ww, hh);
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_74_2_ImRES3_MainTXTClusterF" + g_im_save_format, ww, hh);
-			MergeImagesByIntersectedFigures(ImRES3, ImRES4, ww, hh, rc);
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_74_3_ImRES3_MainTXTClusterFMerge1+2" + g_im_save_format, ww, hh);
-			if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_74_4_ImMaskWithBorder" + g_im_save_format, ww, hh);
-			IntersectTwoImages(ImRES3, ImMaskWithBorder, ww, hh);
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_74_5_ImRES3_MainTXTClusterFilteredByImMaskWithBorder" + g_im_save_format, ww, hh);
-
-			if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_75_1_ImMaskWithBorder" + g_im_save_format, ww, hh);
-			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_75_2_ImRES2_ImFF" + g_im_save_format, ww, hh);			
-			IntersectTwoImages(ImRES2, ImMaskWithBorder, ww, hh);
-			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_75_3_ImRES2_ImFFFilteredByImMaskWithBorder" + g_im_save_format, ww, hh);
-
-			if (g_show_results) SaveRGBImage(ImRES3, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_76_1_ImRES3_MainTXTCluster" + g_im_save_format, ww, hh);
-			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_76_2_ImRES2_ImFF" + g_im_save_format, ww, hh);
-			MergeWithClusterImage(ImRES2, ImRES3, ww, hh, rc);
-			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_76_3_ImRES2_ImFFMergeWithMainTXTCluster" + g_im_save_format, ww, hh);
-			ClearImageOpt5(ImRES2, ww, hh, LH, LMAXY - min_y, rc);
-			if (g_show_results) SaveRGBImage(ImRES2, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_76_4_ImRES2_ImFF_F" + g_im_save_format, ww, hh);
-
-			for (y = min_y, i = min_y * w + min_x, j = 0; y <= max_y; y++, i += w, j += ww)
-			{
-				memcpy(&ImFF[i], &ImRES2[j], ww * sizeof(int));
-			}			
-
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_77_1_ImFF" + g_im_save_format, w, h);
-
-			if (g_clear_image_logical == true)
-			{
-				val = ClearImageLogical(ImFF, w, h, LH, LMAXY, xb, xe, rc, W * 4, H * 4, ((W / 2) - XB) * 4);
-				if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_77_2_ImFFWithClearImageLogical" + g_im_save_format, w, h);
-			}
-
-			if (g_show_results) SaveRGBImage(ImFF, "\\TestImages\\" + SaveName + "_FindTextLines_iter" + std::to_string(iter) + "_77_3_ImFF" + g_im_save_format, w, h);
-
-			if (g_show_results) SaveRGBImage(Im, "\\TestImages\\FindTextLines_iter" + std::to_string(iter) + "_77_2_ImRGB" + g_im_save_format, w, h);
-
-			LLE[k] = YB + (LMAXY/4);
-
-			break;
-		}        
-
-		ww = W*4;
-		hh = h;
-
-		ImRES1 = custom_buffer<int>(ww*hh, 0);
-		for (i = 0; i < ww*hh; i++) ImRES1[i] = wc;
-
-		cnt = 0;
-		for (y = 0, i = 0; y < h; y++)
-		{
-			for (x = 0; x < w; x++, i++)
-			{
-				if (ImFF[i] != 0)
-				{
-					cnt++;
-					ImRES1[y*ww + (XB * 4) + x] = 0;
-				}
+				res = 1;
 			}
 		}
 
-		{
-			cv::Mat cv_ImRGBOrig(h, ww, CV_8UC4), cv_ImRGB;
-			memcpy(cv_ImRGBOrig.data, &ImRES1[0], h*ww * sizeof(int));
-			cv::resize(cv_ImRGBOrig, cv_ImRGB, cv::Size(0, 0), 0.25, 0.25);
-
-			for (y = 0, i = 0; y < (h/4); y++)
-			{
-				for (x = 0; x < W; x++, i++)
-				{
-					if (((int*)(cv_ImRGB.data))[i] == 0)
-					{
-						ImClearedText[YB*W + i] = 0;
-					}
-				}
-			}
-		}
-
-		g_pViewRGBImage(ImClearedText, W, H);
-
-		if (cnt > 0)
-		{
-			GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, rc);
-
-			FullName = string("/TXTImages/");
-			FullName += SaveName;
-
-			sprintf(str, "%.2d", (int)SavedFiles.size() + 1);
-			FullName += string("_");
-			FullName += string(str);
-			FullName += g_im_save_format;
-
-			SaveTextLineParameters(FullName, YB,
-				LH / 4, YB + LMAXY / 4,
-				XB + DXB / 4, XB + DXE / 4,
-				YB + DYB / 4, YB + DYE / 4,
-				mY, mI, mQ);
-
-			SavedFiles.push_back(FullName);
-
-			SaveRGBImage(ImRES1, FullName, ww, hh);
-			
-			res = 1;
-		}
-		
 		k++;
 	}
 

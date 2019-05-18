@@ -4,12 +4,15 @@ VisualStudioVersion = 15.0.27428.2037
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoSubFinderWXW", "VideoSubFinderWXW.vcxproj", "{6786A82F-9596-45FF-9A44-7C1AF39EDE35}"
 	ProjectSection(ProjectDependencies) = postProject
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5} = {3EBF793E-F25B-439F-A59E-EDFF159D4DF5}
 		{B369FFAB-FB94-4F88-A374-39A604762D4B} = {B369FFAB-FB94-4F88-A374-39A604762D4B}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IPAlgorithms", "..\..\Components\IPAlgorithms\IPAlgorithms.vcxproj", "{BFE25C0A-EA0C-484D-B426-6D7511C9958B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OCVVideo", "..\..\Components\OCVVideo\OCVVideo.vcxproj", "{B369FFAB-FB94-4F88-A374-39A604762D4B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CUDAKernels", "..\..\Components\CUDAKernels\CUDAKernels.vcxproj", "{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +60,16 @@ Global
 		{B369FFAB-FB94-4F88-A374-39A604762D4B}.ReleaseWithDebugInfo|Win32.Build.0 = ReleaseWithDebugInfo|Win32
 		{B369FFAB-FB94-4F88-A374-39A604762D4B}.ReleaseWithDebugInfo|x64.ActiveCfg = ReleaseWithDebugInfo|x64
 		{B369FFAB-FB94-4F88-A374-39A604762D4B}.ReleaseWithDebugInfo|x64.Build.0 = ReleaseWithDebugInfo|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Debug|Win32.ActiveCfg = Debug|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Debug|x64.ActiveCfg = Debug|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Debug|x64.Build.0 = Debug|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|Win32.ActiveCfg = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|x64.ActiveCfg = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|x64.Build.0 = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|Win32.ActiveCfg = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|Win32.Build.0 = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|x64.ActiveCfg = ReleaseWithDebugInfo|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|x64.Build.0 = ReleaseWithDebugInfo|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

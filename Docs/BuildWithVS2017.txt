@@ -1,4 +1,4 @@
-1) Microsoft Visual Studio Professional 2017
+1) Microsoft Visual Studio Professional 2017 (WinSDKVersion=10.0.17134.0)
 
 2) wxWidgets (wxMSW-3.1.2-Setup.exe)
 https://www.wxwidgets.org/downloads/
@@ -7,34 +7,47 @@ Open "%WX_WIDGETS_PATH%\build\msw\wx_vc15.sln" in Visual Studio 2017.
 Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/(x64/Win32)" mode and /MT in "Release/(x64/Win32)" mode.
 Build all projects in "(Debug/Release)/(x64/Win32)" mode.
 
-3) OpenCV
+3) Install CUDA Toolkit 10.1
+https://developer.nvidia.com/cuda-downloads
+
+4) OpenCV
 https://docs.opencv.org/4.0.1/d8/dfe/classcv_1_1VideoCapture.html#a85b55cf6a4a50451367ba96b65218ba1
 https://github.com/opencv/opencv/wiki/OE-25.-Fast-VideoIO
 
 Download from
 https://sourceforge.net/projects/opencvlibrary/files/4.0.1/
-OpenCV 4.0.1.zip + opencv-4.0.1-vc14_vc15.exe
-Extract OpenCV 4.0.1.zip to C:\OpenCV 4.0.1
-Extract opencv-4.0.1-vc14_vc15.exe to C:\OpenCV 4.0.1\opencv-opencv-d26b7dd
+OpenCV 4.1.0.zip + opencv-4.1.0-vc14_vc15.exe
+Extract OpenCV 4.1.0.zip to C:\OpenCV 4.1.0
+Extract opencv-4.1.0-vc14_vc15.exe to C:\OpenCV 4.1.0\opencv-opencv-0399435
 
-Setup Env: OPENCV_DIR=C:\OpenCV 4.0.1\opencv-opencv-d26b7dd
+Download from
+https://github.com/opencv/opencv_contrib/releases/tag/4.1.0
+Extract opencv_contrib-4.1.0.zip to C:\OpenCV 4.1.0
+
+Setup Env: OPENCV_DIR=C:\OpenCV 4.1.0\opencv-opencv-0399435
 should exist: %OPENCV_DIR%\opencv\build\include
 
 https://perso.uclouvain.be/allan.barrea/opencv/cmake_config.html
+https://jamesbowley.co.uk/build-compile-opencv-3-4-in-windows-with-cuda-9-0-and-intel-mkl-tbb/
+https://stackoverflow.com/questions/14172856/compile-with-mt-instead-of-md-using-cmake
+
 Run: C:\Program Files\CMake\bin\cmake-gui.exe
-select source directory: C:/OpenCV 4.0.1/opencv-opencv-d26b7dd
-select build directory: C:/OpenCV 4.0.1/opencv-opencv-d26b7dd/builds/Win32
+select source directory: C:/OpenCV 4.1.0/opencv-opencv-0399435
+select build directory: C:/OpenCV 4.1.0/opencv-opencv-0399435/builds/(Win32/Win64)
 Enable the Grouped and Advanced checkboxes just below the build directory name.
 Press the “Configure” button.
 Pick Visual Studio 15 2017
-Platform Win32
+Platform (Win32/x64)
+finish
 !!! * Select BUILD_opencv_world=ON *
+turn on: WITH_CUDA
+set: OPENCV_EXTRA_MODULES_PATH C:/OpenCV 4.1.0/opencv_contrib-4.1.0/modules
 Press again Configure
 Press generate
 Press open project
 Build in Debug and Release mode for Platform Win32
 
-4)
+5)
 Setup Env: WinSDKVersion=10.0.17134.0
 Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2017.
 Build solution in "Debug/x64" mode and in "Release/x64" mode.

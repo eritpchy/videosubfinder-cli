@@ -172,6 +172,11 @@ void CMainFrame::Init()
 
 	LoadSettings();
 
+	if (!InitCUDADevice())
+	{
+		g_use_cuda_gpu = false;
+	}
+
 	cnt = pMenuBar->GetMenuCount();
 
 	wxMenu *pMenu5 = new wxMenu;
@@ -550,6 +555,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_show_sf_results, "dump_debug_second_filtration_images");
 	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
 	ReadProperty(fin, g_show_transformed_images_only, "show_transformed_images_only");
+	ReadProperty(fin, g_use_cuda_gpu, "use_cuda_gpu");
 
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mnthr, "moderate_threshold_for_NEdges");
@@ -601,6 +607,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
 
+	
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(fin, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
@@ -649,7 +657,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
 	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_text_procent, "ssp_oim_property_text_procent");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");	
 
 	fin.close();
 }
@@ -673,6 +681,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_show_sf_results, "dump_debug_second_filtration_images");
 	WriteProperty(fout, g_clear_test_images_folder, "clear_test_images_folder");
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
+	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
 
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mnthr, "moderate_threshold_for_NEdges");
