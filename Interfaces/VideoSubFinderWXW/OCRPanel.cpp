@@ -590,9 +590,7 @@ void COCRPanel::CreateSubFromTXTResults()
 	
     //--------------
 
-    image_name = g_work_dir + "/RGBImages/" + string(FileNamesVector[0]).substr(0, 24) + g_im_save_format;
 	int W, H;
-    GetImageSize(image_name, W, H);
 
     //--------------
     
@@ -647,7 +645,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			AssLine.m_BT = bt;
 			AssLine.m_ET = et;			
 
-			image_name = string("/TXTImages/") + string(FileNamesVector[k]).substr(0, 27) + g_im_save_format;
+			image_name = string("/TXTImages/") + GetFileName(FileNamesVector[k].ToStdString()) + g_im_save_format;
 			
             fname = string("");
 			do
@@ -678,6 +676,10 @@ void COCRPanel::CreateSubFromTXTResults()
 				txt_info >>	AssLine.m_mY;
 				txt_info >>	AssLine.m_mI;
 				txt_info >>	AssLine.m_mQ;
+				txt_info >> str; // "W"
+				txt_info >> AssLine.m_W;
+				txt_info >> str; // "H"
+				txt_info >> AssLine.m_H;
 			}
 			while (fname != image_name);
 			
@@ -1529,7 +1531,7 @@ void *ThreadCreateClearedTextImages::Entry()
 									val, (h+val)/2, 
 									w/2, w/2,
 									(h-val)/2 + 1, (h+val)/2,
-									0, 0, 0 );
+									0, 0, 0, w, h);
 			}
 
 			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == SavedFiles.size()) )

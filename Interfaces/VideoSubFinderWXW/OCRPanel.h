@@ -47,6 +47,9 @@ public:
 
 	AssTXTLine& operator=(const AssTXTLine& other);
 
+	int		m_W;
+	int		m_H;
+
 	string	m_TXTStr;
 	int		m_LH;
 	int		m_LY;

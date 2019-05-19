@@ -280,10 +280,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\msw;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;opencv_world410.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw31u_aui.lib;wxmsw31u_media.lib;wxmsw31u_core.lib;wxmsw31u_adv.lib;wxbase31u.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wxexpat.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Release\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Release\IPAlgorithms.lib;..\..\Components\CUDAKernels\x64\Release\CUDAKernels.lib;cudart.lib;opencv_world410.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\opencv\build\x64\vc15\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_DIR)\opencv\build\x64\vc15\lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>

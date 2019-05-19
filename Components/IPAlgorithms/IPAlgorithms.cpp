@@ -25,7 +25,6 @@
 #include "cuda_kernels.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs/legacy/constants_c.h>
-#include <opencv2/core/cuda.hpp>
 #include <ppl.h>
 #include <ppltasks.h>
 using namespace std;
@@ -112,11 +111,11 @@ bool g_use_cuda_gpu = true;
 bool InitCUDADevice()
 {
 	bool res = true;
-	int num = cv::cuda::getCudaEnabledDeviceCount();
-	/*if (num == 0)
+	int num = GetCUDADeviceCount();
+	if (num == 0)
 	{
 		res = false;
-	}*/
+	}
 	return res;
 }
 
@@ -4392,7 +4391,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 			if (ft_res.m_res == 1)
 			{
 				SavedFiles.push_back(ft_res.m_ImageName);
-				SaveTextLineParameters(ft_res.m_ImageName, ft_res.m_YB, ft_res.m_LH, ft_res.m_LY, ft_res.m_LXB, ft_res.m_LXE, ft_res.m_LYB, ft_res.m_LYE, ft_res.m_mY, ft_res.m_mI, ft_res.m_mQ);
+				SaveTextLineParameters(ft_res.m_ImageName, ft_res.m_YB, ft_res.m_LH, ft_res.m_LY, ft_res.m_LXB, ft_res.m_LXE, ft_res.m_LYB, ft_res.m_LYE, ft_res.m_mY, ft_res.m_mI, ft_res.m_mQ, W, H);
 
 				for (y = 0, i = 0; y < ft_res.m_im_h; y++)
 				{
@@ -5582,7 +5581,7 @@ int IsComma(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	return ret;
 }
 
-void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ)
+void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ, int W, int H)
 {
 	char str[100];
 	string PropString, fname;
@@ -5618,7 +5617,15 @@ void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, i
 
 	sprintf(str, "%.3d %.3d %.3d", mY, mI, mQ);
 	PropString += string(" YIQ ");
-    PropString += string(str);		
+    PropString += string(str);
+
+	sprintf(str, "%d", W);
+	PropString += string(" W ");
+	PropString += string(str);
+
+	sprintf(str, "%d", H);
+	PropString += string(" H ");
+	PropString += string(str);
 	
 	fname = g_work_dir + string("\\text_lines.info");
 	fout.open(fname.c_str(), ios::out | ios::app);
