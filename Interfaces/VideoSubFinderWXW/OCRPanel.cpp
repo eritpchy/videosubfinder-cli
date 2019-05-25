@@ -1385,10 +1385,27 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 	}
 }
 
+ThreadCreateClearedTextImages *pThrCCTI;
+
 ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind)
         : wxThread(kind)
 {
     m_pMF = pMF;
+	pThrCCTI = this;
+}
+
+int FindTextLinesWithExcFilter()
+{
+	int res = 0;
+	__try
+	{
+		res = FindTextLines(pThrCCTI->m_ImRGB, pThrCCTI->m_ImF[2], pThrCCTI->m_ImF[5], pThrCCTI->m_ImF[3], pThrCCTI->m_SavedFiles, pThrCCTI->m_w, pThrCCTI->m_h);
+	}
+	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
+	{
+	}
+
+	return res;
 }
 
 void *ThreadCreateClearedTextImages::Entry()
@@ -1399,7 +1416,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	string fname;
 	ofstream fout;
 	char str[30];
-	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, val;
+	int i, j, k, W, H, xmin, xmax, ymin, ymax, val;
 	
 	int w1, h1, w2, h2, YB1, YB2, bln;
 	wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
@@ -1418,7 +1435,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
-	vector<string> SavedFiles, prevSavedFiles;
+	vector<string> prevSavedFiles;
 	vector<u64> BT, ET;
 	wxString filename;
 	bool bres;
@@ -1448,8 +1465,8 @@ void *ThreadCreateClearedTextImages::Entry()
 
     W = -1;
     H = -1;
-    w = 0;
-    h = 0;
+    m_w = 0;
+    m_h = 0;
 
 	__int64 t1, dt, num_calls;
 
@@ -1464,36 +1481,36 @@ void *ThreadCreateClearedTextImages::Entry()
 			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
 			Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
-			GetImageSize(string(Str), w, h);
+			GetImageSize(string(Str), m_w, m_h);
         
-			if ( (W != w) || (H != h) )
+			if ( (W != m_w) || (H != m_h) )
 			{
-				W = w;
-				H = h;
+				W = m_w;
+				H = m_h;
 
 				xmin = 0;
-				xmax = w-1;
+				xmax = m_w-1;
 				ymin = 0;
-				ymax = h-1;           	        
+				ymax = m_h-1;           	        
 			}
 			
-			custom_buffer<int> ImRGB(w*h, 0);
-			custom_buffer<custom_buffer<int>> ImF(6, custom_buffer<int>(w*h, 0));
+			m_ImRGB = custom_buffer<int>(m_w*m_h, 0);
+			m_ImF = custom_buffer<custom_buffer<int>>(6, custom_buffer<int>(m_w*m_h, 0));
 
-			LoadRGBImage(ImRGB, string(Str), w, h);		
+			LoadRGBImage(m_ImRGB, string(Str), m_w, m_h);		
 
 			/*num_calls = 100;
 			t1 = GetTickCount();
 			for (__int64 i_call = 0; i_call < num_calls; i_call++)
 			{*/
-			GetTransformedImage(ImRGB, ImF[3], ImF[4], ImF[5], ImF[1], w, h, W, H);		
+			GetTransformedImage(m_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[1], m_w, m_h, W, H);		
 			/*}
 			(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
 
 			if (g_show_transformed_images_only)
 			{
 				Str = wxString("/TXTImages/") + FileNamesVector[k];
-				SaveGreyscaleImage(ImF[5], string(Str), w, h);
+				SaveGreyscaleImage(m_ImF[5], string(Str), m_w, m_h);
 				continue;
 			}
 
@@ -1502,39 +1519,39 @@ void *ThreadCreateClearedTextImages::Entry()
 				Str = FileNamesVector[k];
 				Str = GetFileName(Str.ToStdString());
 				Str = g_work_dir + "/FRDImages/"+Str+"!"+g_im_save_format;
-				LoadGreyscaleImage(ImF[5], string(Str), w, h);		
-				//m_pMF->m_pImageBox->ViewImage(ImSF, w, h);
+				LoadGreyscaleImage(m_ImF[5], string(Str), m_w, m_h);		
+				//m_pMF->m_pImageBox->ViewImage(ImSF, m_w, m_h);
 			}
 		
 			Str = FileNamesVector[k];
 			Str = GetFileName(Str.ToStdString());
-			SavedFiles.clear();
-			SavedFiles.push_back(string(Str));
+			m_SavedFiles.clear();
+			m_SavedFiles.push_back(string(Str));
 
 			val = k+1;
 			sprintf(str, "%.4d", val);
 			if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
 
-			res = FindTextLines(ImRGB, ImF[2], ImF[5], ImF[3], SavedFiles, w, h);
+			res = FindTextLinesWithExcFilter();
 
 			if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
 			{
 				Str = FileNamesVector[k];
 				Str = GetFileName(Str.ToStdString());
-				Str = wxString("/TXTImages/") + Str + wxString("_01") + g_im_save_format;
+				Str = wxString("/TXTImages/") + Str + wxString("_00001") + g_im_save_format;
 
-				custom_buffer<int> ImRES1((w * 4)*(h / 4), 0);
-				SaveGreyscaleImage(ImRES1, string(Str), w*4, h/4);
+				custom_buffer<int> ImRES1((int)(m_w * g_scale)*(int)(m_h / g_scale), 0);
+				SaveGreyscaleImage(ImRES1, string(Str), m_w*g_scale, m_h/g_scale);
 			
 				val = 14; //LH
 				SaveTextLineParameters(	string(Str), 0, 
-									val, (h+val)/2, 
-									w/2, w/2,
-									(h-val)/2 + 1, (h+val)/2,
-									0, 0, 0, w, h);
+									val, (m_h+val)/2, 
+									m_w/2, m_w/2,
+									(m_h-val)/2 + 1, (m_h+val)/2,
+									0, 0, 0, m_w, m_h);
 			}
 
-			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == SavedFiles.size()) )
+			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == m_SavedFiles.size()) )
 			{
 				Str = prevSavedFiles[i].c_str();
 				i = Str.length()-1;
@@ -1554,7 +1571,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				bt1 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
 				et1 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
 
-				Str = SavedFiles[i].c_str();
+				Str = m_SavedFiles[i].c_str();
 				i = Str.length()-1;
 				while ((Str[i] != '\\') && (Str[i] != '/')) i--;
 				Str = Str.Mid(i+1);
@@ -1575,10 +1592,10 @@ void *ThreadCreateClearedTextImages::Entry()
 				if (bt2-et1 < 300)
 				{
 					bln = 1;
-					for (i=0; i<(int)SavedFiles.size(); i++)
+					for (i=0; i<(int)m_SavedFiles.size(); i++)
 					{
-						LoadGreyscaleImage(ImF[0], prevSavedFiles[i], w1, h1);
-						LoadGreyscaleImage(ImF[1], SavedFiles[i], w2, h2);
+						LoadGreyscaleImage(m_ImF[0], prevSavedFiles[i], w1, h1);
+						LoadGreyscaleImage(m_ImF[1], m_SavedFiles[i], w2, h2);
 
 						Str = prevSavedFiles[i].c_str();
 						i = Str.length()-1;
@@ -1589,7 +1606,7 @@ void *ThreadCreateClearedTextImages::Entry()
 						Str = Str.Mid(i+1, j-i-1);
 						YB1 = atoi(Str);
 
-						Str = SavedFiles[i].c_str();
+						Str = m_SavedFiles[i].c_str();
 						i = Str.length()-1;
 						while (Str[i] != '_') i--;
 						j = i;
@@ -1598,33 +1615,32 @@ void *ThreadCreateClearedTextImages::Entry()
 						Str = Str.Mid(i+1, j-i-1);
 						YB2 = atoi(Str);
 
-						bln = CompareTXTImages(ImF[0], ImF[1], w1, h1, w2, h2, YB1, YB2);
+						bln = CompareTXTImages(m_ImF[0], m_ImF[1], w1, h1, w2, h2, YB1, YB2);
 						if (bln == 0) break;
 					}
 
 					if (bln == 1)
 					{
-						for (i=0; i<(int)SavedFiles.size(); i++)
+						for (i=0; i<(int)m_SavedFiles.size(); i++)
 						{
 							DeleteFile(wxString(prevSavedFiles[i].c_str()));
 						
 							Str = prevSavedFiles[i].c_str();
 							i = Str.length()-1;
 							while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-							Str = Str.Mid(0,i+1+11)+wxString(SavedFiles[i].c_str()).Mid(i+1+11);
+							Str = Str.Mid(0,i+1+11)+wxString(m_SavedFiles[i].c_str()).Mid(i+1+11);
 
-							MoveFile(wxString(SavedFiles[i].c_str()), Str);
+							MoveFile(wxString(m_SavedFiles[i].c_str()), Str);
 						}
 					}
 				}
 			}
 
-			prevSavedFiles = SavedFiles;
+			prevSavedFiles = m_SavedFiles;
 		}
 		catch (const exception& e)
 		{
-			wxMessageBox(wxString("Got Exception: ") + e.what());
-			continue;
+			g_pMF->SaveError(string("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + e.what());
 		}
 	}
 

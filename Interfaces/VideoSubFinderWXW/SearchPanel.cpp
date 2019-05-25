@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "SearchPanel.h"
+#include <exception>
 
 int g_IsSearching = 0;
 int g_IsClose = 0;
@@ -189,61 +190,95 @@ void CSearchPanel::OnBnClickedClear(wxCommandEvent& event)
 ThreadSearchSubtitles::ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind)
         : wxThread(kind)
 {
-    m_pMF = pMF;
+	g_pMF = pMF;
 }
+
+void ThreadSearchSubtitlesRun();
+void ThreadSearchSubtitlesEnd();
 
 void *ThreadSearchSubtitles::Entry()
 {
-	wxEvtHandler *handler;
+	__try
+	{
+		ThreadSearchSubtitlesRun();
+	}
+	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitlesRun"))
+	{
+	}
 
+	__try
+	{
+		ThreadSearchSubtitlesEnd();
+	}
+	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitlesEnd"))
+	{
+	}
+
+	return 0;
+}
+
+void ThreadSearchSubtitlesRun()
+{
 	g_IsSearching = 1;
 
-    if ( m_pMF->m_pVideo->SetNullRender() )
-    {
-		m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-												m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-												m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-												m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+	if (g_pMF->m_pVideo->SetNullRender())
+	{
+		g_pMF->m_pVideo->SetVideoWindowSettins(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+			g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+			g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+			g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-        m_pMF->m_BegTime = FastSearchSubtitles( m_pMF->m_pVideo, m_pMF->m_BegTime, m_pMF->m_EndTime );
-    }
-	
+		try
+		{
+			g_pMF->m_BegTime = FastSearchSubtitles(g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
+		}
+		catch (const exception& e)
+		{
+			g_pMF->SaveError(string("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + e.what());
+		}
+	}
+}
+
+void ThreadSearchSubtitlesEnd()
+{
+	wxEvtHandler *handler;
+
 	if (g_IsClose == 1) 
 	{
 		g_IsSearching = 0;
-		m_pMF->Close();
-		return 0;
+		g_pMF->Close();
+		return;
 	}
 
-	if (!(m_pMF->m_blnNoGUI))
+	if (!(g_pMF->m_blnNoGUI))
 	{
-		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
+		g_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
 
-		if (m_pMF->m_pVideoBox->m_pImage != NULL)
+		if (g_pMF->m_pVideoBox->m_pImage != NULL)
 		{
-			delete m_pMF->m_pVideoBox->m_pImage;
-			m_pMF->m_pVideoBox->m_pImage = NULL;
+			delete g_pMF->m_pVideoBox->m_pImage;
+			g_pMF->m_pVideoBox->m_pImage = NULL;
 		}
 
-		m_pMF->m_pPanel->m_pSSPanel->Enable();
-		m_pMF->m_pPanel->m_pOCRPanel->Enable();
+		g_pMF->m_pPanel->m_pSSPanel->Enable();
+		g_pMF->m_pPanel->m_pOCRPanel->Enable();
 
 		wxCommandEvent  menu_event(wxEVT_COMMAND_MENU_SELECTED, ID_FILE_REOPENVIDEO);
-		handler = m_pMF->GetEventHandler();
+		handler = g_pMF->GetEventHandler();
 		wxPostEvent(handler, menu_event);
 
 		if ((g_RunSubSearch == 1) && (g_CLEAN_RGB_IMAGES == true))
 		{
 			wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
-			handler = m_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
+			handler = g_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
 			wxPostEvent(handler, bn_event);
-			//m_pMF->m_pPanel->m_pOCRPanel->OnBnClickedCreateClearedTextImages(bn_event);
+			//g_pMF->m_pPanel->m_pOCRPanel->OnBnClickedCreateClearedTextImages(bn_event);
 		}
 	}
 
 	g_IsSearching = 0;
 	g_RunSubSearch = 0;
 
-	return 0;
+	return;
 }
 

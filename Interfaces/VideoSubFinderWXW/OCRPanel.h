@@ -125,6 +125,11 @@ public:
 
 public:
     CMainFrame	*m_pMF;
+	custom_buffer<int> m_ImRGB;
+	custom_buffer<custom_buffer<int>> m_ImF;
+	vector<string> m_SavedFiles;
+	int m_w;
+	int m_h;
 };
 
 class COCRPanel : public wxPanel

@@ -25,6 +25,14 @@ const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
 /////////////////////////////////////////////////////////////////////////////
 
+int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det)
+{
+	g_pMF->SaveError(string("Got C Exception: ") + det);
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 void  ViewImageInImageBox(custom_buffer<int> &Im, int w, int h)
 {
 	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewImage(Im, w, h);
@@ -169,6 +177,8 @@ void CMainFrame::Init()
 	wxMenuBar *pMenuBar = new wxMenuBar;
 
 	m_GeneralSettingsFileName = g_app_dir + string("/settings/general.cfg");
+
+	m_ErrorFileName = g_work_dir + string("/error.log");
 
 	LoadSettings();
 
@@ -556,6 +566,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
 	ReadProperty(fin, g_show_transformed_images_only, "show_transformed_images_only");
 	ReadProperty(fin, g_use_cuda_gpu, "use_cuda_gpu");
+	ReadProperty(fin, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
 
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mnthr, "moderate_threshold_for_NEdges");
@@ -565,7 +576,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_scd, "min_sum_color_diff");
 	ReadProperty(fin, g_btd, "between_text_distace");
 	ReadProperty(fin, g_tco, "text_centre_offset");
-	//ReadProperty(fin, g_tcpo, "text_centre_percent_offset");
+	ReadProperty(fin, g_scale, "image_scale_for_clear_image");
 
 	ReadProperty(fin, g_mpn, "min_points_number");
 	ReadProperty(fin, g_mpd, "min_points_density");
@@ -609,6 +620,8 @@ void CMainFrame::LoadSettings()
 
 	
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
 	ReadProperty(fin, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
@@ -682,6 +695,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_clear_test_images_folder, "clear_test_images_folder");
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
 	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
+	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
 
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mnthr, "moderate_threshold_for_NEdges");
@@ -691,7 +705,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_scd, "min_sum_color_diff");
 	WriteProperty(fout, g_btd, "between_text_distace");
 	WriteProperty(fout, g_tco, "text_centre_offset");
-	//WriteProperty(fout, g_tcpo, "text_centre_percent_offset");
+	WriteProperty(fout, g_scale, "image_scale_for_clear_image");
 
 	WriteProperty(fout, g_mpn, "min_points_number");
 	WriteProperty(fout, g_mpd, "min_points_density");
@@ -721,6 +735,13 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
 
 	fout.close();
+}
+
+void CMainFrame::SaveError(std::string error)
+{
+	ofstream fout;
+	fout.open(m_ErrorFileName.c_str(), ios::out | ios::app);
+	fout << error << '\n';
 }
 
 void CMainFrame::OnEditSetBeginTime(wxCommandEvent& event)
@@ -990,7 +1011,7 @@ void CMainFrame::ClearDir(wxString DirName)
 
 	for(int i=0; i<(int)FileNamesVector.size(); i++)
 	{		
-		res = wxRemoveFile(dir.GetName() + "/" + FileNamesVector[i]);
+		res = wxRemoveFile(dir.GetName() + "\\" + FileNamesVector[i]);
 	}
 	
 	FileNamesVector.clear();

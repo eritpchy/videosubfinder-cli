@@ -62,6 +62,7 @@ extern bool		g_show_transformed_images_only;
 extern int		g_dmaxy;
 
 extern bool		g_use_cuda_gpu;
+extern int		g_cuda_kmeans_loop_iterations;
 
 void RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h);
 void YIQ_to_RGB(int Y, int I, int Q, int &R, int &G, int &B, int max_val);

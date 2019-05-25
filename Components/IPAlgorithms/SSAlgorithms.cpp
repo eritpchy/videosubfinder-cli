@@ -180,6 +180,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			}
 			if (pos >= End)
 			{
+				if (n_fs == 0)
+				{
+					break;
+				}
+
 				while (n_fs < DL*threads)
 				{
 					mPrevPos[n_fs] = pos;

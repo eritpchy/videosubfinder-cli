@@ -237,6 +237,8 @@ void CSettingsPanel::Init()
                            rcOIM.GetPosition(), rcOIM.GetSize() );
 
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scale, 1, 4);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cuda_kmeans_loop_iterations, 1, 1000);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_frdimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_FRD_images);

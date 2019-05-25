@@ -62,6 +62,8 @@ public:
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
+	wxString	m_ssp_oi_property_image_scale_for_clear_image;
+	wxString	m_ssp_oi_property_cuda_kmeans_loop_iterations;
 	wxString	m_ssp_oi_property_generate_cleared_text_images_on_test;
 	wxString	m_ssp_oi_property_dump_debug_images;
 	wxString	m_ssp_oi_property_dump_debug_second_filtration_images;
@@ -155,6 +157,7 @@ public:
 	s64			m_EndTime;
 
 	string		m_GeneralSettingsFileName;
+	string		m_ErrorFileName;
 
 	bool		m_blnReopenVideo;
 
@@ -171,6 +174,7 @@ public:
 	void PauseVideo();
 	void LoadSettings();
 	void SaveSettings();
+	void SaveError(std::string error);
 	void OnFileOpenVideo(int type);
 	void ClearDir(wxString DirName);
 
@@ -219,3 +223,7 @@ bool IsMMX_and_SSE();
 bool IsSSE2();
 
 void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColor& BColor);
+
+int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det);
+
+extern CMainFrame *g_pMF;

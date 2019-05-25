@@ -33,9 +33,6 @@ public:
     ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind = wxTHREAD_DETACHED);
 
     virtual void *Entry();
-
-public:
-    CMainFrame	*m_pMF;
 };
 
 class CSearchPanel : public wxPanel
