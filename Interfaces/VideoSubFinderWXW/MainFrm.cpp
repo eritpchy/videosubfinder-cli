@@ -612,12 +612,12 @@ void CMainFrame::LoadSettings()
 	fin.open((g_app_dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);
 	
 	ReadProperty(fin, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
+	ReadProperty(fin, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
-
 	
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");

@@ -22,6 +22,8 @@ using namespace std;
 
 bool g_use_FRD_images = false;
 
+bool g_join_subs_and_correct_time = true;
+
 int g_IsCreateClearedTextImages = 0;
 int g_RunCreateClearedTextImages = 0;
 bool g_ValidateAndCompareTXTImages = false;
@@ -175,7 +177,7 @@ void COCRPanel::Init()
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 
-	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rcTEST, rcCSCTI, rcCSTXT;
+	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rcTEST, rcCSCTI, rcCSTXT;
 	int w, w2, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 
 	wxClientDC dc(this);
@@ -223,6 +225,11 @@ void COCRPanel::Init()
 	reMSD.width = rlMSD.width;
 	reMSD.height = 18;
 
+	rlJSACT.x = reMSD.x;
+	rlJSACT.y = reMSD.GetBottom() + 10;
+	rlJSACT.width = reMSD.width;
+	rlJSACT.height = 18;
+
 	rcP3 = this->GetRect();
 
 	this->GetClientSize(&w, &h);
@@ -252,6 +259,17 @@ void COCRPanel::Init()
 	m_pMSD = new wxTextCtrl( m_pP3, wxID_ANY,
 		wxString::Format(wxT("%f"), m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_LBLFont);
+
+	//m_pcbJSACT = new wxStaticText(m_pP3, wxID_ANY,
+	//	m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
+	//m_pcbJSACT->SetFont(m_LBLFont);
+	//m_pcbJSACT->SetBackgroundColour(m_CL1);
+
+	m_pcbJSACT = new wxCheckBox(m_pP3, wxID_ANY,
+		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_pcbJSACT->SetFont(m_LBLFont);
+	m_pcbJSACT->SetBackgroundColour(m_CL1);
+	m_pcbJSACT->SetValue(g_join_subs_and_correct_time);
 
 	m_pCES = new wxButton( m_pP3, ID_BTN_CES,
 		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
@@ -293,6 +311,8 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 	vector<u64> BT, ET;
 	wxString filename;
 	bool res;
+
+	g_join_subs_and_correct_time = m_pcbJSACT->GetValue();
 
 	res = dir.GetFirst(&filename);
     while ( res )
@@ -339,17 +359,20 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		ET.push_back(et);
 	}
 
-	for(k=0; k<(int)FileNamesVector.size()-1; k++)
+	if (g_join_subs_and_correct_time)
 	{
-		if (ET[k]-BT[k] < mdt)
+		for (k = 0; k < (int)FileNamesVector.size() - 1; k++)
 		{
-			if (BT[k]+mdt < BT[k+1]) 
+			if (ET[k] - BT[k] < mdt)
 			{
-				ET[k] = BT[k]+mdt;
-			}
-			else
-			{
-				ET[k] = BT[k+1]-1;
+				if (BT[k] + mdt < BT[k + 1])
+				{
+					ET[k] = BT[k] + mdt;
+				}
+				else
+				{
+					ET[k] = BT[k + 1] - 1;
+				}
 			}
 		}
 	}
@@ -411,6 +434,8 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 	wxString filename;
 	bool res;
 
+	g_join_subs_and_correct_time = m_pcbJSACT->GetValue();
+
 	res = dir.GetFirst(&filename);
     while ( res )
     {
@@ -438,9 +463,17 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 	{
 		kb = k;
 		i = 0;
-		while( (k < (int)FileNamesVector.size()) &&
-			   (FileNamesVector[kb].Mid(0, 11) == FileNamesVector[k].Mid(0, 11))
-			 )
+
+		if (g_join_subs_and_correct_time)
+		{
+			while ((k < (int)FileNamesVector.size()) &&
+				(FileNamesVector[kb].Mid(0, 11) == FileNamesVector[k].Mid(0, 11))
+				)
+			{
+				k++;
+			}
+		}
+		else
 		{
 			k++;
 		}
@@ -464,17 +497,20 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		ET.push_back(et);
 	}
 
-	for(k=0; k<(int)BT.size()-1; k++)
+	if (g_join_subs_and_correct_time)
 	{
-		if (ET[k]-BT[k] < mdt)
+		for (k = 0; k < (int)BT.size() - 1; k++)
 		{
-			if (BT[k]+mdt < BT[k+1]) 
+			if (ET[k] - BT[k] < mdt)
 			{
-				ET[k] = BT[k]+mdt;
-			}
-			else
-			{
-				ET[k] = BT[k+1]-1;
+				if (BT[k] + mdt < BT[k + 1])
+				{
+					ET[k] = BT[k] + mdt;
+				}
+				else
+				{
+					ET[k] = BT[k + 1] - 1;
+				}
 			}
 		}
 	}
@@ -524,7 +560,7 @@ void COCRPanel::CreateSubFromTXTResults()
 	int i, j, k, kb, sec, msec, max_mY_dif, max_mI_dif, max_mQ_dif, max_posY_dif;
 	int val1, val2, val3, val4, val5, val6, val7, val8;
 	string fname, image_name;
-	fstream fout, txt_info;
+	fstream fout/*, txt_info*/;
 	u64 bt, et, dt, mdt;
 	char str[1000];
 	double max_LH_dif;
@@ -532,26 +568,28 @@ void COCRPanel::CreateSubFromTXTResults()
 
 	vector<wxString> FileNamesVector;
 	vector<wxString> TXTVector;
-	AssTXTLine *AssTXTVector;
-	AssTXTStyle *AssTXTStyleVector; 
 	vector<u64> BT, ET;
-	AssTXTLine AssLine;
-	AssTXTStyle AssStyle;
-	YIQ_LH_Struct AssStyleDatum;
-	int mR, mG, mB, NT, NS;
-	string BaseStyleName;
-	
-	BaseStyleName = string("Base");
-	max_mY_dif = 16;
-	max_mI_dif = 10;
-	max_mQ_dif = 10;
-	max_posY_dif = 5;
-	max_LH_dif = 0.20;
+
+	//AssTXTLine *AssTXTVector;
+	//AssTXTStyle *AssTXTStyleVector; 	
+	//AssTXTLine AssLine;
+	//AssTXTStyle AssStyle;
+	//YIQ_LH_Struct AssStyleDatum;
+	//int mR, mG, mB, NT, NS;
+	//string BaseStyleName;
+	//BaseStyleName = string("Base");
+	//max_mY_dif = 16;
+	//max_mI_dif = 10;
+	//max_mQ_dif = 10;
+	//max_posY_dif = 5;
+	//max_LH_dif = 0.20;
 
 	wxString dir_path = wxString(g_work_dir + string("/TXTResults/"));
 	wxDir dir(dir_path);
 	wxString filename;
 	bool res;
+
+	g_join_subs_and_correct_time = m_pcbJSACT->GetValue();
 
 	res = dir.GetFirst(&filename, "*.txt");
     while ( res )
@@ -577,16 +615,16 @@ void COCRPanel::CreateSubFromTXTResults()
 	Str = m_pMSD->GetValue();
 	mdt = (s64)atof(Str)*1000;
 
-	str[0] = '\0';
+	//str[0] = '\0';
 
-	fname = g_work_dir + string("/text_lines.info");
-	txt_info.open(fname.c_str(), ios::in);
+	//fname = g_work_dir + string("/text_lines.info");
+	//txt_info.open(fname.c_str(), ios::in);
 
-	NT = 0;
+/*	NT = 0;
 	AssTXTVector = new AssTXTLine[(int)FileNamesVector.size()];
 
 	NS = 0;
-	AssTXTStyleVector = new AssTXTStyle[(int)FileNamesVector.size()];	
+	AssTXTStyleVector = new AssTXTStyle[(int)FileNamesVector.size()];*/	
 	
     //--------------
 
@@ -641,75 +679,80 @@ void COCRPanel::CreateSubFromTXTResults()
 
 			fclose(fin);
 
-			AssLine.m_TXTStr = string(str);
-			AssLine.m_BT = bt;
-			AssLine.m_ET = et;			
+			//AssLine.m_TXTStr = string(str);
+			//AssLine.m_BT = bt;
+			//AssLine.m_ET = et;			
 
-			image_name = string("/TXTImages/") + GetFileName(FileNamesVector[k].ToStdString()) + g_im_save_format;
-			
-            fname = string("");
-			do
-			{
-                if ( txt_info.eof() )                
-                {
-                    break;
-                }
+			//image_name = string("/TXTImages/") + GetFileName(FileNamesVector[k].ToStdString()) + g_im_save_format;
+			//
+   //         fname = string("");
+			//do
+			//{
+   //             if ( txt_info.eof() )                
+   //             {
+   //                 break;
+   //             }
 
-				txt_info >> fname; // file name
-				
-				txt_info >> str; // "="
-				txt_info >> str; // "YB"
-				txt_info >> str; // YB value
-				txt_info >> str; // "LH"
-				txt_info >>	AssLine.m_LH;
-				txt_info >> str; // "LY"
-				txt_info >>	AssLine.m_LY;
-				txt_info >> str; // "LXB"
-				txt_info >>	AssLine.m_LXB;
-				txt_info >> str; // "LXE"
-				txt_info >>	AssLine.m_LXE;
-				txt_info >> str; // "LYB"
-				txt_info >>	AssLine.m_LYB;
-				txt_info >> str; // "LYE"
-				txt_info >>	AssLine.m_LYE;
-				txt_info >> str; // "YIQ"
-				txt_info >>	AssLine.m_mY;
-				txt_info >>	AssLine.m_mI;
-				txt_info >>	AssLine.m_mQ;
-				txt_info >> str; // "W"
-				txt_info >> AssLine.m_W;
-				txt_info >> str; // "H"
-				txt_info >> AssLine.m_H;
-			}
-			while (fname != image_name);
-			
-			if (fname != image_name)
-			{
-				txt_info.close();
-				Str = wxString("There is not info about \"") + wxString(image_name.c_str()) 
-                    + wxString("\" in \"text_lines.info\" file.\n") 
-                    + wxString("Please run \"Create Cleared Text Images\" again.");
+			//	txt_info >> fname; // file name
+			//	
+			//	txt_info >> str; // "="
+			//	txt_info >> str; // "YB"
+			//	txt_info >> str; // YB value
+			//	txt_info >> str; // "LH"
+			//	txt_info >>	AssLine.m_LH;
+			//	txt_info >> str; // "LY"
+			//	txt_info >>	AssLine.m_LY;
+			//	txt_info >> str; // "LXB"
+			//	txt_info >>	AssLine.m_LXB;
+			//	txt_info >> str; // "LXE"
+			//	txt_info >>	AssLine.m_LXE;
+			//	txt_info >> str; // "LYB"
+			//	txt_info >>	AssLine.m_LYB;
+			//	txt_info >> str; // "LYE"
+			//	txt_info >>	AssLine.m_LYE;
+			//	txt_info >> str; // "YIQ"
+			//	txt_info >>	AssLine.m_mY;
+			//	txt_info >>	AssLine.m_mI;
+			//	txt_info >>	AssLine.m_mQ;
+			//	txt_info >> str; // "W"
+			//	txt_info >> AssLine.m_W;
+			//	txt_info >> str; // "H"
+			//	txt_info >> AssLine.m_H;
+			//}
+			//while (fname != image_name);
+			//
+			//if (fname != image_name)
+			//{
+			//	txt_info.close();
+			//	Str = wxString("There is not info about \"") + wxString(image_name.c_str()) 
+   //                 + wxString("\" in \"text_lines.info\" file.\n") 
+   //                 + wxString("Please run \"Create Cleared Text Images\" again.");
 
-				#ifdef WIN32
-				::MessageBox(NULL, Str, L"CreateSubFromTXTResults", MB_ICONERROR);			
-				#endif
+			//	#ifdef WIN32
+			//	::MessageBox(NULL, Str, L"CreateSubFromTXTResults", MB_ICONERROR);			
+			//	#endif
 
-				return;
-			}
+			//	return;
+			//}
 
-			AssTXTVector[NT] = AssLine;
-			NT++;
+			//AssTXTVector[NT] = AssLine;
+			//NT++;
 
 			k++;
+
+			if (!g_join_subs_and_correct_time)
+			{
+				break;
+			}
 		}
 
 		TXTVector.push_back(Str);
 	}
 
-	txt_info.close();
+	//txt_info.close();
 
 	// סמחהאול srt subtitle
-
+	
 	k=0;
 	while(k < (int)TXTVector.size()-1)
 	{
@@ -717,17 +760,20 @@ void COCRPanel::CreateSubFromTXTResults()
 		{
 			if (g_DontDeleteUnrecognizedImages2 == false)
 			{
-				for(i=k; i<(int)TXTVector.size()-1; i++)
+				if (g_join_subs_and_correct_time)
 				{
-					BT[i] = BT[i+1];
-					ET[i] = ET[i+1];
-					TXTVector[i] = TXTVector[i+1];
-				}
-				BT.pop_back();
-				ET.pop_back();
-				TXTVector.pop_back();
+					for (i = k; i < (int)TXTVector.size() - 1; i++)
+					{
+						BT[i] = BT[i + 1];
+						ET[i] = ET[i + 1];
+						TXTVector[i] = TXTVector[i + 1];
+					}
+					BT.pop_back();
+					ET.pop_back();
+					TXTVector.pop_back();
 
-				continue;
+					continue;
+				}
 			}
 			else
 			{
@@ -735,40 +781,46 @@ void COCRPanel::CreateSubFromTXTResults()
 			}
 		}
 
-		if (BT[k+1]-ET[k] <= 333)
+		if (g_join_subs_and_correct_time)
 		{
-			if (TXTVector[k+1] == TXTVector[k])
+			if (BT[k + 1] - ET[k] <= 333)
 			{
-				ET[k] = ET[k+1];
-
-				for(i=k+1; i<(int)TXTVector.size()-1; i++)
+				if (TXTVector[k + 1] == TXTVector[k])
 				{
-					BT[i] = BT[i+1];
-					ET[i] = ET[i+1];
-					TXTVector[i] = TXTVector[i+1];
-				}
-				BT.pop_back();
-				ET.pop_back();
-				TXTVector.pop_back();
+					ET[k] = ET[k + 1];
 
-				continue;
+					for (i = k + 1; i < (int)TXTVector.size() - 1; i++)
+					{
+						BT[i] = BT[i + 1];
+						ET[i] = ET[i + 1];
+						TXTVector[i] = TXTVector[i + 1];
+					}
+					BT.pop_back();
+					ET.pop_back();
+					TXTVector.pop_back();
+
+					continue;
+				}
 			}
 		}
 
 		k++;
 	}
 
-	for(k=0; k<(int)TXTVector.size()-1; k++)
+	if (g_join_subs_and_correct_time)
 	{
-		if (ET[k]-BT[k] < mdt)
+		for (k = 0; k < (int)TXTVector.size() - 1; k++)
 		{
-			if (BT[k]+mdt < BT[k+1]) 
+			if (ET[k] - BT[k] < mdt)
 			{
-				ET[k] = BT[k]+mdt;
-			}
-			else
-			{
-				ET[k] = BT[k+1]-1;
+				if (BT[k] + mdt < BT[k + 1])
+				{
+					ET[k] = BT[k] + mdt;
+				}
+				else
+				{
+					ET[k] = BT[k + 1] - 1;
+				}
 			}
 		}
 	}
@@ -804,537 +856,537 @@ void COCRPanel::CreateSubFromTXTResults()
 
 	fout.close();
 
-	// סמחהאול ass subtitle
-
-	for(i=0; i < NT; i++)
-	{
-		if (AssTXTVector[i].m_TXTStr != string(""))
-		{
-			if (AssTXTVector[i].m_LYE - AssTXTVector[i].m_LY <= g_dmaxy/4)
-			{
-				AssTXTVector[i].m_LYE = max(AssTXTVector[i].m_LYE, AssTXTVector[i].m_LY + (AssTXTVector[i].m_LH*7)/22);
-			}
-		}
-	}
-
-	for(i=0; i < NT-1; i++)
-	{
-		if (AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT)
-		{
-			val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2 - H/2;
-			val2 = AssTXTVector[i+1].m_LY - AssTXTVector[i+1].m_LH/2 - H/2;
-
-			if ( (val1 >= AssTXTVector[i].m_LH/2) &&
-				 (val2 >= AssTXTVector[i+1].m_LH/2) )
-			{
-				AssLine = AssTXTVector[i+1];
-				AssTXTVector[i+1] = AssTXTVector[i];
-				AssTXTVector[i] = AssLine;
-			}
-		}
-	}
-
-	k = 0;
-	while(k < NT)
-	{
-		if (AssTXTVector[k].m_TXTStr == string(""))
-		{
-			if (g_DontDeleteUnrecognizedImages2 == false)
-			{
-				for(i=k; i<NT-1; i++)
-				{
-					AssTXTVector[i] = AssTXTVector[i+1];
-				}
-				NT--;
-
-				continue;
-			}
-			else
-			{
-				AssTXTVector[k].m_TXTStr = string("#unrecognized text#");
-				AssTXTVector[k].m_LH = 14;
-				AssTXTVector[k].m_mY = 0;
-				AssTXTVector[k].m_mI = 0;
-				AssTXTVector[k].m_mQ = 0;
-				/*AssTXTVector[k].m_LXB = AssTXTVector[k].m_LXE = W/2;
-				AssTXTVector[k].m_LY = AssTXTVector[k].m_LYE = H - 20;				
-				AssTXTVector[k].m_LYB = AssTXTVector[k].m_LYE - AssTXTVector[k].m_LH + 1;
-				*/
-			}
-		}
-
-		j = k+1;
-
-		while ( (j < NT) &&
-			    (AssTXTVector[j].m_BT-AssTXTVector[k].m_ET <= 333) )
-		{
-			if ( (AssTXTVector[j].m_TXTStr == AssTXTVector[k].m_TXTStr) &&				
-				 (abs(AssTXTVector[j].m_LY - AssTXTVector[k].m_LY) <= max_posY_dif) &&
-				 (abs(AssTXTVector[j].m_mY - AssTXTVector[k].m_mY) <= max_mY_dif) &&
-				 (abs(AssTXTVector[j].m_mI - AssTXTVector[k].m_mI) <= max_mI_dif) &&
-				 (abs(AssTXTVector[j].m_mQ - AssTXTVector[k].m_mQ) <= max_mQ_dif) &&
-				 ((double)abs(AssTXTVector[j].m_LH - AssTXTVector[k].m_LH)/(double)AssTXTVector[k].m_LH <= max_LH_dif) )
-			{
-				AssTXTVector[k].m_ET = AssTXTVector[j].m_ET;
-
-				for(i=j; i<NT-1; i++)
-				{
-					AssTXTVector[i] = AssTXTVector[i+1];
-				}
-				NT--;
-
-				continue;
-			}
-			else
-			{
-				j++;
-			}
-		}
-
-		k++;
-	}
-
-	for(k=0; k<NT; k++)
-	{
-		if (AssTXTVector[k].m_ET-AssTXTVector[k].m_BT < (s64)mdt)
-		{
-			AssTXTVector[k].m_ET = AssTXTVector[k].m_BT + mdt;
-		}
-	}
-
-	for(i=0; i<NT; i++)
-	{
-		bln = 0;
+	//// סמחהאול ass subtitle
+
+	//for(i=0; i < NT; i++)
+	//{
+	//	if (AssTXTVector[i].m_TXTStr != string(""))
+	//	{
+	//		if (AssTXTVector[i].m_LYE - AssTXTVector[i].m_LY <= g_dmaxy/4)
+	//		{
+	//			AssTXTVector[i].m_LYE = max(AssTXTVector[i].m_LYE, AssTXTVector[i].m_LY + (AssTXTVector[i].m_LH*7)/22);
+	//		}
+	//	}
+	//}
+
+	//for(i=0; i < NT-1; i++)
+	//{
+	//	if (AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT)
+	//	{
+	//		val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2 - H/2;
+	//		val2 = AssTXTVector[i+1].m_LY - AssTXTVector[i+1].m_LH/2 - H/2;
+
+	//		if ( (val1 >= AssTXTVector[i].m_LH/2) &&
+	//			 (val2 >= AssTXTVector[i+1].m_LH/2) )
+	//		{
+	//			AssLine = AssTXTVector[i+1];
+	//			AssTXTVector[i+1] = AssTXTVector[i];
+	//			AssTXTVector[i] = AssLine;
+	//		}
+	//	}
+	//}
+
+	//k = 0;
+	//while(k < NT)
+	//{
+	//	if (AssTXTVector[k].m_TXTStr == string(""))
+	//	{
+	//		if (g_DontDeleteUnrecognizedImages2 == false)
+	//		{
+	//			for(i=k; i<NT-1; i++)
+	//			{
+	//				AssTXTVector[i] = AssTXTVector[i+1];
+	//			}
+	//			NT--;
+
+	//			continue;
+	//		}
+	//		else
+	//		{
+	//			AssTXTVector[k].m_TXTStr = string("#unrecognized text#");
+	//			AssTXTVector[k].m_LH = 14;
+	//			AssTXTVector[k].m_mY = 0;
+	//			AssTXTVector[k].m_mI = 0;
+	//			AssTXTVector[k].m_mQ = 0;
+	//			/*AssTXTVector[k].m_LXB = AssTXTVector[k].m_LXE = W/2;
+	//			AssTXTVector[k].m_LY = AssTXTVector[k].m_LYE = H - 20;				
+	//			AssTXTVector[k].m_LYB = AssTXTVector[k].m_LYE - AssTXTVector[k].m_LH + 1;
+	//			*/
+	//		}
+	//	}
+
+	//	j = k+1;
+
+	//	while ( (j < NT) &&
+	//		    (AssTXTVector[j].m_BT-AssTXTVector[k].m_ET <= 333) )
+	//	{
+	//		if ( (AssTXTVector[j].m_TXTStr == AssTXTVector[k].m_TXTStr) &&				
+	//			 (abs(AssTXTVector[j].m_LY - AssTXTVector[k].m_LY) <= max_posY_dif) &&
+	//			 (abs(AssTXTVector[j].m_mY - AssTXTVector[k].m_mY) <= max_mY_dif) &&
+	//			 (abs(AssTXTVector[j].m_mI - AssTXTVector[k].m_mI) <= max_mI_dif) &&
+	//			 (abs(AssTXTVector[j].m_mQ - AssTXTVector[k].m_mQ) <= max_mQ_dif) &&
+	//			 ((double)abs(AssTXTVector[j].m_LH - AssTXTVector[k].m_LH)/(double)AssTXTVector[k].m_LH <= max_LH_dif) )
+	//		{
+	//			AssTXTVector[k].m_ET = AssTXTVector[j].m_ET;
+
+	//			for(i=j; i<NT-1; i++)
+	//			{
+	//				AssTXTVector[i] = AssTXTVector[i+1];
+	//			}
+	//			NT--;
+
+	//			continue;
+	//		}
+	//		else
+	//		{
+	//			j++;
+	//		}
+	//	}
+
+	//	k++;
+	//}
+
+	//for(k=0; k<NT; k++)
+	//{
+	//	if (AssTXTVector[k].m_ET-AssTXTVector[k].m_BT < (s64)mdt)
+	//	{
+	//		AssTXTVector[k].m_ET = AssTXTVector[k].m_BT + mdt;
+	//	}
+	//}
+
+	//for(i=0; i<NT; i++)
+	//{
+	//	bln = 0;
 
-		for(j=0; j<NS; j++)
-		{
-			val1 = AssTXTStyleVector[j].m_minY;
-			val2 = AssTXTStyleVector[j].m_maxY;
-
-			if (AssTXTVector[i].m_mY < val1) val1 = AssTXTVector[i].m_mY;
-			if (AssTXTVector[i].m_mY > val2) val2 = AssTXTVector[i].m_mY;
-
-			val3 = AssTXTStyleVector[j].m_minI;
-			val4 = AssTXTStyleVector[j].m_maxI;
-
-			if (AssTXTVector[i].m_mI < val3) val3 = AssTXTVector[i].m_mI;
-			if (AssTXTVector[i].m_mI > val4) val4 = AssTXTVector[i].m_mI;
-
-			val5 = AssTXTStyleVector[j].m_minQ;
-			val6 = AssTXTStyleVector[j].m_maxQ;
-
-			if (AssTXTVector[i].m_mQ < val5) val5 = AssTXTVector[i].m_mQ;
-			if (AssTXTVector[i].m_mQ > val6) val6 = AssTXTVector[i].m_mQ;
-
-			val7 = AssTXTStyleVector[j].m_minLH;
-			val8 = AssTXTStyleVector[j].m_maxLH;
-
-			if (AssTXTVector[i].m_LH < val7) val7 = AssTXTVector[i].m_LH;
-			if (AssTXTVector[i].m_LH > val8) val8 = AssTXTVector[i].m_LH;
-
-			if ( ((val2 - val1) <= max_mY_dif) &&
-			     ((val4 - val3) <= max_mI_dif) &&
-			     ((val6 - val5) <= max_mQ_dif) &&
-			     ((double)(val8 - val7)/(double)val7 <= max_LH_dif) )
-			{
-				bln = 1;
-
-				AssTXTStyleVector[j].m_minY = val1;
-				AssTXTStyleVector[j].m_maxY = val2;
-
-				AssTXTStyleVector[j].m_minI = val3;
-				AssTXTStyleVector[j].m_maxI = val4;
-
-				AssTXTStyleVector[j].m_minQ = val5;
-				AssTXTStyleVector[j].m_maxQ = val6;
-
-				AssTXTStyleVector[j].m_minLH = val7;
-				AssTXTStyleVector[j].m_maxLH = val8;
-
-				AssStyleDatum.m_mY = AssTXTVector[i].m_mY;
-				AssStyleDatum.m_mI = AssTXTVector[i].m_mI;
-				AssStyleDatum.m_mQ = AssTXTVector[i].m_mQ;
-				AssStyleDatum.m_LH = AssTXTVector[i].m_LH;
-
-				AssTXTStyleVector[j].m_data.push_back(AssStyleDatum);
-
-				AssTXTVector[i].m_AssStyleIndex = j;
-				//AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[j]);
-			}
-
-			if (bln == 1)
-			{
-				break;
-			}
-		}
-
-		if (bln == 0)
-		{
-			AssStyleDatum.m_mY = AssTXTVector[i].m_mY;
-			AssStyleDatum.m_mI = AssTXTVector[i].m_mI;
-			AssStyleDatum.m_mQ = AssTXTVector[i].m_mQ;
-			AssStyleDatum.m_LH = AssTXTVector[i].m_LH;
-
-			AssStyle.m_data.clear();
-			AssStyle.m_data.push_back(AssStyleDatum);
-
-			AssStyle.m_minY = AssStyleDatum.m_mY;
-			AssStyle.m_maxY = AssStyleDatum.m_mY;
-
-			AssStyle.m_minI = AssStyleDatum.m_mI;
-			AssStyle.m_maxI = AssStyleDatum.m_mI;
-
-			AssStyle.m_minQ = AssStyleDatum.m_mQ;
-			AssStyle.m_maxQ = AssStyleDatum.m_mQ;
-
-			AssStyle.m_minLH = AssStyleDatum.m_LH;
-			AssStyle.m_maxLH = AssStyleDatum.m_LH;
-
-			val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-			val2 = val1 - W/2;
-
-			AssStyle.m_Alignment = 2;
-
-			if ((double)abs(val2)/(W/2) < 0.3)
-			{
-				AssStyle.m_MarginL = -1;
-				AssStyle.m_MarginR = -1;
-			}
-			else
-			{
-				if (val2 < 0)
-				{
-					val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
-					if (val3 < 0) val3 = 0;
-					
-					AssStyle.m_MarginL = val3;
-					AssStyle.m_MarginR = val3;
-				}
-				else
-				{
-					val3 = W-(AssTXTVector[i].m_LXE + AssTXTVector[i].m_LH/10);
-					if (val3 < 0) val3 = 0;
-
-					AssStyle.m_MarginL = val3;
-					AssStyle.m_MarginR = val3;
-				}
-			}
-
-			val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-			val2 = val1 - H/2;
-
-			if (abs(val2) < AssTXTVector[i].m_LH/2)
-			{
-				AssStyle.m_Alignment += 3;
-
-				AssStyle.m_MarginV = 0;
-			}
-			else
-			{
-				if (val2 < 0)
-				{
-					AssStyle.m_Alignment += 6;
-
-					val3 = AssTXTVector[i].m_LYB;
-
-					if (val3 > 0)
-					{
-						AssStyle.m_MarginV = val3;
-					}
-					else
-					{
-						AssStyle.m_MarginV = 0;
-					}
-				}
-				else
-				{
-					val3 = H - AssTXTVector[i].m_LYE;
-
-					if (val3 > 0)
-					{
-						AssStyle.m_MarginV = val3;
-					}
-					else
-					{
-						AssStyle.m_MarginV = 0;
-					}
-				}
-			}
-
-			sprintf(str, "%.2d", NS+1);
-			AssStyle.m_Name = BaseStyleName + string(str);
-
-			AssTXTStyleVector[NS] = AssStyle;
-			NS++;
-
-			AssTXTVector[i].m_AssStyleIndex = NS-1;
-			//AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[AssTXTVector[i].m_AssStyleIndex]);
-		}
-	}
-	
-	for(i=0; i<NS; i++)
-	{
-		AssTXTStyleVector[i].Compute(W, H);
-	}
-
-	for(i=0; i<NT; i++)
-	{
-		AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[AssTXTVector[i].m_AssStyleIndex]);
-	}
-
-	for(i=0; i<NT; i++)
-	{
-		AssTXTVector[i].m_dX = -1;
-		AssTXTVector[i].m_dY = -1;
-		AssTXTVector[i].m_Alignment = -1;
-
-		int ho = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)%3 + 1;
-		int vo = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)/3 + 1;
-
-		val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-		val2 = val1 - W/2;
-
-		val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
-		if (val3 < 0) val3 = 0;
-
-		if (abs(val2) >= AssTXTVector[i].m_LH*2)
-		{
-			if (AssTXTVector[i].m_pAssStyle->m_MarginL == -1)
-			{
-				AssTXTVector[i].m_pAssStyle->m_MarginL = val3;
-				AssTXTVector[i].m_pAssStyle->m_MarginR = val3;				
-			}
-			
-			if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginL - val3) < AssTXTVector[i].m_LH/2 )
-			{
-				if (val2 < 0)
-				{
-					AssTXTVector[i].m_Alignment = 1;
-				}
-				else
-				{
-					AssTXTVector[i].m_Alignment = 3;
-				}
-			}
-			else
-			{
-				val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-				val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-
-				AssTXTVector[i].m_Alignment = 5;
-				AssTXTVector[i].m_dX = val1;
-				AssTXTVector[i].m_dY = val2;
-
-				continue;
-			}
-		}
-
-		val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-		val2 = val1 - H/2;
-
-		if ((double)abs(val2)/(H/2) < 0.05)
-		{
-			if (vo != 2)
-			{
-				if (AssTXTVector[i].m_Alignment == -1)
-				{
-					AssTXTVector[i].m_Alignment = 5;
-				}
-				else
-				{
-					AssTXTVector[i].m_Alignment += 3;
-				}
-			}
-		}
-		else
-		{
-			if (val2 < 0)
-			{
-				val3 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH - AssTXTVector[i].m_LH/5;
-
-				if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
-				{
-					if (vo != 3)
-					{
-						if (AssTXTVector[i].m_Alignment == -1)
-						{
-							AssTXTVector[i].m_Alignment = 8;
-						}
-						else
-						{
-							AssTXTVector[i].m_Alignment += 6;
-						}
-					}
-				}
-				else
-				{
-					val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-					val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-
-					AssTXTVector[i].m_Alignment = 5;
-					AssTXTVector[i].m_dX = val1;
-					AssTXTVector[i].m_dY = val2;
-
-					continue;
-				}
-			}
-			else
-			{
-				val3 = (H - (AssTXTVector[i].m_LY + AssTXTVector[i].m_LH/10));
-
-				if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
-				{
-					if (vo != 1)
-					{
-						if (AssTXTVector[i].m_Alignment == -1)
-						{
-							AssTXTVector[i].m_Alignment = 2;
-						}
-					}
-				}
-				else
-				{
-					val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-					val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-
-					AssTXTVector[i].m_Alignment = 5;
-					AssTXTVector[i].m_dX = val1;
-					AssTXTVector[i].m_dY = val2;
-
-					continue;
-				}
-			}
-		}
-	}
-
-	// מבתוהטםÿול מבתוהטםÿולûו סאבû
-	i=0;
-	while(i<NT-1)
-	{
-		if( (AssTXTVector[i+1].m_AssStyleIndex == AssTXTVector[i].m_AssStyleIndex) &&
-			(AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT) &&
-			(AssTXTVector[i+1].m_ET == AssTXTVector[i].m_ET) )
-		{
-			val1 = abs((AssTXTVector[i+1].m_LXB + AssTXTVector[i+1].m_LXE) - (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE))/2;
-			val2 = abs((AssTXTVector[i+1].m_LYB + AssTXTVector[i+1].m_LYE) - (AssTXTVector[i].m_LYB + AssTXTVector[i].m_LYE))/2 - 
-				   (AssTXTVector[i+1].m_LYE - AssTXTVector[i+1].m_LYB + AssTXTVector[i].m_LYE - AssTXTVector[i].m_LYB)/2;
-			val3 = AssTXTVector[i].m_LH;
-
-			if ( (val1 < val3*2) &&
-				 (val2 < val3) )
-			{
-				if (AssTXTVector[i+1].m_LYE > AssTXTVector[i].m_LYE)
-				{
-					AssTXTVector[i].m_TXTStr = AssTXTVector[i].m_TXTStr + string("\\N") + AssTXTVector[i+1].m_TXTStr;
-				}
-				else
-				{
-					AssTXTVector[i].m_TXTStr = AssTXTVector[i+1].m_TXTStr + string("\\N") + AssTXTVector[i].m_TXTStr;
-				}
-
-				if (AssTXTVector[i].m_dX != -1)
-				{
-					val1 = ((AssTXTVector[i+1].m_LXB + AssTXTVector[i+1].m_LXE)/2 + (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2)/2;
-					val2 = ((AssTXTVector[i+1].m_LYB + AssTXTVector[i+1].m_LYE)/2 + (AssTXTVector[i].m_LYB + AssTXTVector[i].m_LYE)/2)/2;
-
-					AssTXTVector[i].m_dX = val1;
-					AssTXTVector[i].m_dY = val2;
-				}
-
-				for(j=i+1; j<NT-1; j++)
-				{
-					AssTXTVector[j] = AssTXTVector[j+1];
-				}
-				NT--;
-			}
-			else
-			{
-				i = i;
-			}
-		}
-
-		i++;
-	}
-
-	fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);
-
-	fout << "Title: Default Aegisub file\n";
-	fout << "ScriptType: v4.00+\n";
-	fout << "PlayResX: " << W << "\n";
-	fout << "PlayResY: " << H << "\n";
-	fout << "PlayDepth: 16\n";
-	fout << "Timer: 100,0000\n";
-	fout << "WrapStyle: 1\n";
-	fout << "\n";
-	fout << "\n";
-	fout << "[V4+ Styles]\n";
-	fout << "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
-
-	for(i=0; i<NS; i++)
-	{
-		if (AssTXTStyleVector[i].m_MarginL == -1)
-		{
-			AssTXTStyleVector[i].m_MarginL = 10;
-			AssTXTStyleVector[i].m_MarginR = 10;
-		}
-
-		YIQ_to_RGB( AssTXTStyleVector[i].m_mY, 
-					AssTXTStyleVector[i].m_mI, 
-					AssTXTStyleVector[i].m_mQ, 
-					mR, mG, mB, 255 );
-
-		sprintf(str, "&H00%.2X%.2X%.2X", mB, mG, mR);
-
-		fout << "Style: " << AssTXTStyleVector[i].m_Name << ",";
-		fout << "Arial Narrow," << AssTXTStyleVector[i].m_LH << ",";
-		fout << str << ",";
-		fout << "&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,";
-		fout << AssTXTStyleVector[i].m_Alignment << ",";
-		fout << AssTXTStyleVector[i].m_MarginL << ",";
-		fout << AssTXTStyleVector[i].m_MarginR << ",";
-		fout << AssTXTStyleVector[i].m_MarginV << ",";
-		fout << "204\n";
-	}
-
-	fout << "\n";
-	fout << "[Events]\n";
-	fout << "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text";
-
-	for(i=0; i<NT; i++)
-	{
-		fout << "\n";
-
-		fout << "Dialogue: 0,";
-		fout << VideoTimeToStr3(AssTXTVector[i].m_BT) << ",";
-		fout << VideoTimeToStr3(AssTXTVector[i].m_ET) << ",";
-		fout << AssTXTVector[i].m_pAssStyle->m_Name << ",";
-		fout << ",0000,0000,0000,,";
-
-		if ( (AssTXTVector[i].m_Alignment != -1) ||
-			 (AssTXTVector[i].m_dX != -1) )
-		{
-			fout << "{";
-
-			if (AssTXTVector[i].m_Alignment != -1)
-			{
-				fout << "\\an" << AssTXTVector[i].m_Alignment;
-			}
-
-			if (AssTXTVector[i].m_dX != -1)
-			{
-				fout << "\\pos(" << AssTXTVector[i].m_dX << "," << AssTXTVector[i].m_dY << ")";
-			}
-
-			fout << "}";
-		}
-
-		fout << AssTXTVector[i].m_TXTStr;
-	}
-
-	fout.close();
-
-	delete[] AssTXTVector;
-	delete[] AssTXTStyleVector;
+	//	for(j=0; j<NS; j++)
+	//	{
+	//		val1 = AssTXTStyleVector[j].m_minY;
+	//		val2 = AssTXTStyleVector[j].m_maxY;
+
+	//		if (AssTXTVector[i].m_mY < val1) val1 = AssTXTVector[i].m_mY;
+	//		if (AssTXTVector[i].m_mY > val2) val2 = AssTXTVector[i].m_mY;
+
+	//		val3 = AssTXTStyleVector[j].m_minI;
+	//		val4 = AssTXTStyleVector[j].m_maxI;
+
+	//		if (AssTXTVector[i].m_mI < val3) val3 = AssTXTVector[i].m_mI;
+	//		if (AssTXTVector[i].m_mI > val4) val4 = AssTXTVector[i].m_mI;
+
+	//		val5 = AssTXTStyleVector[j].m_minQ;
+	//		val6 = AssTXTStyleVector[j].m_maxQ;
+
+	//		if (AssTXTVector[i].m_mQ < val5) val5 = AssTXTVector[i].m_mQ;
+	//		if (AssTXTVector[i].m_mQ > val6) val6 = AssTXTVector[i].m_mQ;
+
+	//		val7 = AssTXTStyleVector[j].m_minLH;
+	//		val8 = AssTXTStyleVector[j].m_maxLH;
+
+	//		if (AssTXTVector[i].m_LH < val7) val7 = AssTXTVector[i].m_LH;
+	//		if (AssTXTVector[i].m_LH > val8) val8 = AssTXTVector[i].m_LH;
+
+	//		if ( ((val2 - val1) <= max_mY_dif) &&
+	//		     ((val4 - val3) <= max_mI_dif) &&
+	//		     ((val6 - val5) <= max_mQ_dif) &&
+	//		     ((double)(val8 - val7)/(double)val7 <= max_LH_dif) )
+	//		{
+	//			bln = 1;
+
+	//			AssTXTStyleVector[j].m_minY = val1;
+	//			AssTXTStyleVector[j].m_maxY = val2;
+
+	//			AssTXTStyleVector[j].m_minI = val3;
+	//			AssTXTStyleVector[j].m_maxI = val4;
+
+	//			AssTXTStyleVector[j].m_minQ = val5;
+	//			AssTXTStyleVector[j].m_maxQ = val6;
+
+	//			AssTXTStyleVector[j].m_minLH = val7;
+	//			AssTXTStyleVector[j].m_maxLH = val8;
+
+	//			AssStyleDatum.m_mY = AssTXTVector[i].m_mY;
+	//			AssStyleDatum.m_mI = AssTXTVector[i].m_mI;
+	//			AssStyleDatum.m_mQ = AssTXTVector[i].m_mQ;
+	//			AssStyleDatum.m_LH = AssTXTVector[i].m_LH;
+
+	//			AssTXTStyleVector[j].m_data.push_back(AssStyleDatum);
+
+	//			AssTXTVector[i].m_AssStyleIndex = j;
+	//			//AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[j]);
+	//		}
+
+	//		if (bln == 1)
+	//		{
+	//			break;
+	//		}
+	//	}
+
+	//	if (bln == 0)
+	//	{
+	//		AssStyleDatum.m_mY = AssTXTVector[i].m_mY;
+	//		AssStyleDatum.m_mI = AssTXTVector[i].m_mI;
+	//		AssStyleDatum.m_mQ = AssTXTVector[i].m_mQ;
+	//		AssStyleDatum.m_LH = AssTXTVector[i].m_LH;
+
+	//		AssStyle.m_data.clear();
+	//		AssStyle.m_data.push_back(AssStyleDatum);
+
+	//		AssStyle.m_minY = AssStyleDatum.m_mY;
+	//		AssStyle.m_maxY = AssStyleDatum.m_mY;
+
+	//		AssStyle.m_minI = AssStyleDatum.m_mI;
+	//		AssStyle.m_maxI = AssStyleDatum.m_mI;
+
+	//		AssStyle.m_minQ = AssStyleDatum.m_mQ;
+	//		AssStyle.m_maxQ = AssStyleDatum.m_mQ;
+
+	//		AssStyle.m_minLH = AssStyleDatum.m_LH;
+	//		AssStyle.m_maxLH = AssStyleDatum.m_LH;
+
+	//		val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
+	//		val2 = val1 - W/2;
+
+	//		AssStyle.m_Alignment = 2;
+
+	//		if ((double)abs(val2)/(W/2) < 0.3)
+	//		{
+	//			AssStyle.m_MarginL = -1;
+	//			AssStyle.m_MarginR = -1;
+	//		}
+	//		else
+	//		{
+	//			if (val2 < 0)
+	//			{
+	//				val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
+	//				if (val3 < 0) val3 = 0;
+	//				
+	//				AssStyle.m_MarginL = val3;
+	//				AssStyle.m_MarginR = val3;
+	//			}
+	//			else
+	//			{
+	//				val3 = W-(AssTXTVector[i].m_LXE + AssTXTVector[i].m_LH/10);
+	//				if (val3 < 0) val3 = 0;
+
+	//				AssStyle.m_MarginL = val3;
+	//				AssStyle.m_MarginR = val3;
+	//			}
+	//		}
+
+	//		val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
+	//		val2 = val1 - H/2;
+
+	//		if (abs(val2) < AssTXTVector[i].m_LH/2)
+	//		{
+	//			AssStyle.m_Alignment += 3;
+
+	//			AssStyle.m_MarginV = 0;
+	//		}
+	//		else
+	//		{
+	//			if (val2 < 0)
+	//			{
+	//				AssStyle.m_Alignment += 6;
+
+	//				val3 = AssTXTVector[i].m_LYB;
+
+	//				if (val3 > 0)
+	//				{
+	//					AssStyle.m_MarginV = val3;
+	//				}
+	//				else
+	//				{
+	//					AssStyle.m_MarginV = 0;
+	//				}
+	//			}
+	//			else
+	//			{
+	//				val3 = H - AssTXTVector[i].m_LYE;
+
+	//				if (val3 > 0)
+	//				{
+	//					AssStyle.m_MarginV = val3;
+	//				}
+	//				else
+	//				{
+	//					AssStyle.m_MarginV = 0;
+	//				}
+	//			}
+	//		}
+
+	//		sprintf(str, "%.2d", NS+1);
+	//		AssStyle.m_Name = BaseStyleName + string(str);
+
+	//		AssTXTStyleVector[NS] = AssStyle;
+	//		NS++;
+
+	//		AssTXTVector[i].m_AssStyleIndex = NS-1;
+	//		//AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[AssTXTVector[i].m_AssStyleIndex]);
+	//	}
+	//}
+	//
+	//for(i=0; i<NS; i++)
+	//{
+	//	AssTXTStyleVector[i].Compute(W, H);
+	//}
+
+	//for(i=0; i<NT; i++)
+	//{
+	//	AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[AssTXTVector[i].m_AssStyleIndex]);
+	//}
+
+	//for(i=0; i<NT; i++)
+	//{
+	//	AssTXTVector[i].m_dX = -1;
+	//	AssTXTVector[i].m_dY = -1;
+	//	AssTXTVector[i].m_Alignment = -1;
+
+	//	int ho = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)%3 + 1;
+	//	int vo = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)/3 + 1;
+
+	//	val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
+	//	val2 = val1 - W/2;
+
+	//	val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
+	//	if (val3 < 0) val3 = 0;
+
+	//	if (abs(val2) >= AssTXTVector[i].m_LH*2)
+	//	{
+	//		if (AssTXTVector[i].m_pAssStyle->m_MarginL == -1)
+	//		{
+	//			AssTXTVector[i].m_pAssStyle->m_MarginL = val3;
+	//			AssTXTVector[i].m_pAssStyle->m_MarginR = val3;				
+	//		}
+	//		
+	//		if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginL - val3) < AssTXTVector[i].m_LH/2 )
+	//		{
+	//			if (val2 < 0)
+	//			{
+	//				AssTXTVector[i].m_Alignment = 1;
+	//			}
+	//			else
+	//			{
+	//				AssTXTVector[i].m_Alignment = 3;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
+	//			val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
+
+	//			AssTXTVector[i].m_Alignment = 5;
+	//			AssTXTVector[i].m_dX = val1;
+	//			AssTXTVector[i].m_dY = val2;
+
+	//			continue;
+	//		}
+	//	}
+
+	//	val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
+	//	val2 = val1 - H/2;
+
+	//	if ((double)abs(val2)/(H/2) < 0.05)
+	//	{
+	//		if (vo != 2)
+	//		{
+	//			if (AssTXTVector[i].m_Alignment == -1)
+	//			{
+	//				AssTXTVector[i].m_Alignment = 5;
+	//			}
+	//			else
+	//			{
+	//				AssTXTVector[i].m_Alignment += 3;
+	//			}
+	//		}
+	//	}
+	//	else
+	//	{
+	//		if (val2 < 0)
+	//		{
+	//			val3 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH - AssTXTVector[i].m_LH/5;
+
+	//			if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
+	//			{
+	//				if (vo != 3)
+	//				{
+	//					if (AssTXTVector[i].m_Alignment == -1)
+	//					{
+	//						AssTXTVector[i].m_Alignment = 8;
+	//					}
+	//					else
+	//					{
+	//						AssTXTVector[i].m_Alignment += 6;
+	//					}
+	//				}
+	//			}
+	//			else
+	//			{
+	//				val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
+	//				val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
+
+	//				AssTXTVector[i].m_Alignment = 5;
+	//				AssTXTVector[i].m_dX = val1;
+	//				AssTXTVector[i].m_dY = val2;
+
+	//				continue;
+	//			}
+	//		}
+	//		else
+	//		{
+	//			val3 = (H - (AssTXTVector[i].m_LY + AssTXTVector[i].m_LH/10));
+
+	//			if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
+	//			{
+	//				if (vo != 1)
+	//				{
+	//					if (AssTXTVector[i].m_Alignment == -1)
+	//					{
+	//						AssTXTVector[i].m_Alignment = 2;
+	//					}
+	//				}
+	//			}
+	//			else
+	//			{
+	//				val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
+	//				val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
+
+	//				AssTXTVector[i].m_Alignment = 5;
+	//				AssTXTVector[i].m_dX = val1;
+	//				AssTXTVector[i].m_dY = val2;
+
+	//				continue;
+	//			}
+	//		}
+	//	}
+	//}
+
+	//// מבתוהטםÿול מבתוהטםÿולûו סאבû
+	//i=0;
+	//while(i<NT-1)
+	//{
+	//	if( (AssTXTVector[i+1].m_AssStyleIndex == AssTXTVector[i].m_AssStyleIndex) &&
+	//		(AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT) &&
+	//		(AssTXTVector[i+1].m_ET == AssTXTVector[i].m_ET) )
+	//	{
+	//		val1 = abs((AssTXTVector[i+1].m_LXB + AssTXTVector[i+1].m_LXE) - (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE))/2;
+	//		val2 = abs((AssTXTVector[i+1].m_LYB + AssTXTVector[i+1].m_LYE) - (AssTXTVector[i].m_LYB + AssTXTVector[i].m_LYE))/2 - 
+	//			   (AssTXTVector[i+1].m_LYE - AssTXTVector[i+1].m_LYB + AssTXTVector[i].m_LYE - AssTXTVector[i].m_LYB)/2;
+	//		val3 = AssTXTVector[i].m_LH;
+
+	//		if ( (val1 < val3*2) &&
+	//			 (val2 < val3) )
+	//		{
+	//			if (AssTXTVector[i+1].m_LYE > AssTXTVector[i].m_LYE)
+	//			{
+	//				AssTXTVector[i].m_TXTStr = AssTXTVector[i].m_TXTStr + string("\\N") + AssTXTVector[i+1].m_TXTStr;
+	//			}
+	//			else
+	//			{
+	//				AssTXTVector[i].m_TXTStr = AssTXTVector[i+1].m_TXTStr + string("\\N") + AssTXTVector[i].m_TXTStr;
+	//			}
+
+	//			if (AssTXTVector[i].m_dX != -1)
+	//			{
+	//				val1 = ((AssTXTVector[i+1].m_LXB + AssTXTVector[i+1].m_LXE)/2 + (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2)/2;
+	//				val2 = ((AssTXTVector[i+1].m_LYB + AssTXTVector[i+1].m_LYE)/2 + (AssTXTVector[i].m_LYB + AssTXTVector[i].m_LYE)/2)/2;
+
+	//				AssTXTVector[i].m_dX = val1;
+	//				AssTXTVector[i].m_dY = val2;
+	//			}
+
+	//			for(j=i+1; j<NT-1; j++)
+	//			{
+	//				AssTXTVector[j] = AssTXTVector[j+1];
+	//			}
+	//			NT--;
+	//		}
+	//		else
+	//		{
+	//			i = i;
+	//		}
+	//	}
+
+	//	i++;
+	//}
+
+	//fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);
+
+	//fout << "Title: Default Aegisub file\n";
+	//fout << "ScriptType: v4.00+\n";
+	//fout << "PlayResX: " << W << "\n";
+	//fout << "PlayResY: " << H << "\n";
+	//fout << "PlayDepth: 16\n";
+	//fout << "Timer: 100,0000\n";
+	//fout << "WrapStyle: 1\n";
+	//fout << "\n";
+	//fout << "\n";
+	//fout << "[V4+ Styles]\n";
+	//fout << "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
+
+	//for(i=0; i<NS; i++)
+	//{
+	//	if (AssTXTStyleVector[i].m_MarginL == -1)
+	//	{
+	//		AssTXTStyleVector[i].m_MarginL = 10;
+	//		AssTXTStyleVector[i].m_MarginR = 10;
+	//	}
+
+	//	YIQ_to_RGB( AssTXTStyleVector[i].m_mY, 
+	//				AssTXTStyleVector[i].m_mI, 
+	//				AssTXTStyleVector[i].m_mQ, 
+	//				mR, mG, mB, 255 );
+
+	//	sprintf(str, "&H00%.2X%.2X%.2X", mB, mG, mR);
+
+	//	fout << "Style: " << AssTXTStyleVector[i].m_Name << ",";
+	//	fout << "Arial Narrow," << AssTXTStyleVector[i].m_LH << ",";
+	//	fout << str << ",";
+	//	fout << "&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,";
+	//	fout << AssTXTStyleVector[i].m_Alignment << ",";
+	//	fout << AssTXTStyleVector[i].m_MarginL << ",";
+	//	fout << AssTXTStyleVector[i].m_MarginR << ",";
+	//	fout << AssTXTStyleVector[i].m_MarginV << ",";
+	//	fout << "204\n";
+	//}
+
+	//fout << "\n";
+	//fout << "[Events]\n";
+	//fout << "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text";
+
+	//for(i=0; i<NT; i++)
+	//{
+	//	fout << "\n";
+
+	//	fout << "Dialogue: 0,";
+	//	fout << VideoTimeToStr3(AssTXTVector[i].m_BT) << ",";
+	//	fout << VideoTimeToStr3(AssTXTVector[i].m_ET) << ",";
+	//	fout << AssTXTVector[i].m_pAssStyle->m_Name << ",";
+	//	fout << ",0000,0000,0000,,";
+
+	//	if ( (AssTXTVector[i].m_Alignment != -1) ||
+	//		 (AssTXTVector[i].m_dX != -1) )
+	//	{
+	//		fout << "{";
+
+	//		if (AssTXTVector[i].m_Alignment != -1)
+	//		{
+	//			fout << "\\an" << AssTXTVector[i].m_Alignment;
+	//		}
+
+	//		if (AssTXTVector[i].m_dX != -1)
+	//		{
+	//			fout << "\\pos(" << AssTXTVector[i].m_dX << "," << AssTXTVector[i].m_dY << ")";
+	//		}
+
+	//		fout << "}";
+	//	}
+
+	//	fout << AssTXTVector[i].m_TXTStr;
+	//}
+
+	//fout.close();
+
+	//delete[] AssTXTVector;
+	//delete[] AssTXTStyleVector;
 }
 
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
@@ -1428,10 +1480,10 @@ void *ThreadCreateClearedTextImages::Entry()
 	m_pMF->ClearDir(g_work_dir + "/TXTResults");
 
 	// מקטשאול פאיכ text_lines.info
-	fname = g_work_dir + string("/text_lines.info");
-	fout.open(fname.c_str(), ios::out);
-	fout << "";
-	fout.close();
+	//fname = g_work_dir + string("/text_lines.info");
+	//fout.open(fname.c_str(), ios::out);
+	//fout << "";
+	//fout.close();
 
 	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
@@ -1544,11 +1596,11 @@ void *ThreadCreateClearedTextImages::Entry()
 				SaveGreyscaleImage(ImRES1, string(Str), m_w*g_scale, m_h/g_scale);
 			
 				val = 14; //LH
-				SaveTextLineParameters(	string(Str), 0, 
+				/*SaveTextLineParameters(	string(Str), 0, 
 									val, (m_h+val)/2, 
 									m_w/2, m_w/2,
 									(m_h-val)/2 + 1, (m_h+val)/2,
-									0, 0, 0, m_w, m_h);
+									0, 0, 0, m_w, m_h);*/
 			}
 
 			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == m_SavedFiles.size()) )

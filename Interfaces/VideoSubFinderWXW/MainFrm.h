@@ -52,6 +52,7 @@ public:
 	double		m_ocr_min_sub_duration;
 
 	wxString	m_ocr_label_msd_text;
+	wxString	m_ocr_label_jsact_text;
 	wxString	m_ocr_button_ces_text;
 	wxString	m_ocr_button_ccti_text;
 	wxString	m_ocr_button_csftr_text;

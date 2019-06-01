@@ -70,7 +70,8 @@ double  g_msh = 0.01;
 double  g_msd = 0.2;
 double	g_mpned = 0.3;
 
-int g_min_color = 5;
+int g_min_alpha_color = 1;
+
 int g_dmaxy = 8;
 
 /// min-max point size for resolution ~ 480p=640×480 scaled to x4 == 4-18p (1-4.5p in original size)
@@ -4438,7 +4439,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 			if (ft_res.m_res == 1)
 			{
 				SavedFiles.push_back(ft_res.m_ImageName);
-				SaveTextLineParameters(ft_res.m_ImageName, ft_res.m_YB, ft_res.m_LH, ft_res.m_LY, ft_res.m_LXB, ft_res.m_LXE, ft_res.m_LYB, ft_res.m_LYE, ft_res.m_mY, ft_res.m_mI, ft_res.m_mQ, W, H);
+				//SaveTextLineParameters(ft_res.m_ImageName, ft_res.m_YB, ft_res.m_LH, ft_res.m_LY, ft_res.m_LXB, ft_res.m_LXE, ft_res.m_LYB, ft_res.m_LYE, ft_res.m_mY, ft_res.m_mI, ft_res.m_mQ, W, H);
 
 				for (y = 0, i = 0; y < ft_res.m_im_h; y++)
 				{

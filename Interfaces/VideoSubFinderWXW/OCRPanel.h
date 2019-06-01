@@ -142,6 +142,7 @@ public:
 	wxFont    m_LBLFont;
 
 	wxStaticText *m_plblMSD;
+	wxCheckBox   *m_pcbJSACT;
 	wxTextCtrl	 *m_pMSD;
 	wxButton	 *m_pCCTI;
 	wxButton	 *m_pCES;
