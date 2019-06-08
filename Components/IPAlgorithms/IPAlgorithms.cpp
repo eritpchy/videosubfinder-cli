@@ -1502,6 +1502,62 @@ void GetImHE(custom_buffer<int> &ImHE, custom_buffer<int> &ImY, custom_buffer<in
 	CombineTwoImages(ImHE, ImRES1, w, h);
 }
 
+void ClearImagesFromTooBigElements(custom_buffer<int> &ImSF, custom_buffer<int> &ImNE, int w, int h, int W, int H, int white)
+{
+	custom_buffer<int> Im(w*h, 0);
+
+	memcpy(&Im[0], &ImNE[0], w*h * sizeof(int));
+	IntersectTwoImages(Im, ImSF, w, h);
+
+	CMyClosedFigure *pFigure;
+	int i, l, ii, N, res = 0, x, y, y2;
+	CMyPoint *PA;
+	clock_t t;
+
+	custom_buffer<CMyClosedFigure> pFigures;
+	t = SearchClosedFigures(Im, w, h, white, pFigures);
+	N = pFigures.size();
+
+	if (N == 0)	return;
+
+	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	for (i = 0; i < N; i++)
+	{
+		ppFigures[i] = &(pFigures[i]);
+	}
+
+	if (g_show_results) SaveGreyscaleImage(Im, "\\TestImages\\ClearImagesFromTooBigElements_01_01_Im" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImSF, "\\TestImages\\ClearImagesFromTooBigElements_01_02_ImSF" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImNE, "\\TestImages\\ClearImagesFromTooBigElements_01_03_ImNE" + g_im_save_format, w, h);
+
+	i = 0;
+	while (i < N)
+	{
+		pFigure = ppFigures[i];
+
+		if ( (pFigure->m_h >= 0.3*H) &&
+			 (pFigure->m_w < pFigure->m_h) )
+		{
+			PA = pFigure->m_PointsArray;
+
+			for (l = 0; l < pFigure->m_Square; l++)
+			{
+				ii = PA[l].m_i;
+				ImSF[ii] = 0;
+				ImNE[ii] = 0;
+			}
+
+			ppFigures[i] = ppFigures[N - 1];
+			N--;
+			continue;
+		}
+		i++;
+	}
+
+	if (g_show_results) SaveGreyscaleImage(ImSF, "\\TestImages\\ClearImagesFromTooBigElements_02_ImSF" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImNE, "\\TestImages\\ClearImagesFromTooBigElements_02_ImNE" + g_im_save_format, w, h);
+}
+
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
 int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H)
@@ -1515,6 +1571,11 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	res = 0;	
 
 	if (g_show_results) SaveRGBImage(ImRGB, "\\TestImages\\GetTransformedImage_01_ImRGB" + g_im_save_format, w, h);	
+
+	memset(&ImFF[0], 0, w*h * sizeof(int));
+	memset(&ImSF[0], 0, w*h * sizeof(int));
+	memset(&ImTF[0], 0, w*h * sizeof(int));
+	memset(&ImNE[0], 0, w*h * sizeof(int));
 
 	ColorFiltration(ImRGB, LB, LE, N, w, h);
 
@@ -1548,6 +1609,13 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	
 	CombineTwoImages(ImNE, ImHE, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImNE, "\\TestImages\\GetTransformedImage_02_5_ImNE+HE" + g_im_save_format, w, h);
+
+	//ClearImagesFromTooBigElements(ImSF, ImNE, w, h, W, H, 255);
+	//memcpy(&ImFF[0], &ImSF[0], w*h * sizeof(int));
+
+	//if (g_show_results) SaveGreyscaleImage(ImFF, "\\TestImages\\GetTransformedImage_03_1_ImFF" + g_im_save_format, w, h);
+	//if (g_show_results) SaveGreyscaleImage(ImSF, "\\TestImages\\GetTransformedImage_03_2_ImSF" + g_im_save_format, w, h);
+	//if (g_show_results) SaveGreyscaleImage(ImNE, "\\TestImages\\GetTransformedImage_03_3_ImNE" + g_im_save_format, w, h);
 
 	res = SecondFiltration(ImSF, ImNE, LB, LE, N, w, h, W, H);
 	if (g_show_results) SaveGreyscaleImage(ImSF, "\\TestImages\\GetTransformedImage_05_ImSFFSecondFiltration" + g_im_save_format, w, h);
@@ -1722,55 +1790,61 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 					break;
 				}
 
-				l = ln - 2;
-				while ((l >= 0) && (l < (ln - 1)))
+				int ln_start;
+
+				do
 				{
-					//проверяем расстояние между соседними подстроками
-					if ((lb[l + 1] - le[l]) > dw)
+					ln_start = ln;
+					l = ln - 2;
+					while ((l >= 0) && (l < (ln - 1)))
 					{
-						//определяем подстроку наиболее удаленую от центра
-						val1 = lb[l] + le[l] - w;
-						val2 = lb[l + 1] + le[l + 1] - w;
-						if (val1 < 0) val1 = -val1;
-						if (val2 < 0) val2 = -val2;
+						//проверяем расстояние между соседними подстроками
+						if ((lb[l + 1] - le[l]) > dw)
+						{
+							//определяем подстроку наиболее удаленую от центра
+							val1 = lb[l] + le[l] - w;
+							val2 = lb[l + 1] + le[l + 1] - w;
+							if (val1 < 0) val1 = -val1;
+							if (val2 < 0) val2 = -val2;
 
-						offset = le[l] + lb[l] - w;
-						if (offset < 0) offset = -offset;
+							offset = le[l] + lb[l] - w;
+							if (offset < 0) offset = -offset;
 
-						if (IsTooRight(lb[l + 1], le[l + 1], dw2, w) ||
-							(
-							(offset <= dw2) &&
-								((le[l + 1] - lb[l + 1]) < ((le[l] - lb[l])))
+							if (IsTooRight(lb[l + 1], le[l + 1], dw2, w) ||
+								(
+								(offset <= dw2) &&
+									((le[l + 1] - lb[l + 1]) < ((le[l] - lb[l])))
+									)
 								)
-							)
-						{
-							ll = l + 1;
+							{
+								ll = l + 1;
+							}
+							else if (val1 > val2) ll = l;
+							else ll = l + 1;
+
+							//удаляем наиболее удаленую подстроку
+							val = (le[ll] - lb[ll] + 1) * sizeof(int);
+							for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
+							{
+								memset(&Im[i], 0, val);
+							}
+
+							for (i = ll; i < ln - 1; i++)
+							{
+								lb[i] = lb[i + 1];
+								le[i] = le[i + 1];
+							}
+
+							ln--;
+
+							if (l == (ln - 1)) l--;
+
+							continue;
 						}
-						else if (val1 > val2) ll = l;
-						else ll = l + 1;
 
-						//удаляем наиболее удаленую подстроку
-						val = (le[ll] - lb[ll] + 1) * sizeof(int);
-						for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
-						{
-							memset(&Im[i], 0, val);
-						}
-
-						for (i = ll; i < ln - 1; i++)
-						{
-							lb[i] = lb[i + 1];
-							le[i] = le[i + 1];
-						}
-
-						ln--;
-
-						if (l == (ln - 1)) l--;
-
-						continue;
+						l--;
 					}
-
-					l--;
-				}
+				} while (ln != ln_start);
 
 				if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_y" + std::to_string(ia/w) + "_iter" + std::to_string(iter) + "_01_ImFBetweenTextDistace" + g_im_save_format, w, h);
 
@@ -2023,10 +2097,25 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 					}
 				}
 
-				if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_06_ImFMinNEdgesPointsDensity" + g_im_save_format, w, h);
+				if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_06_ImFMinNEdgesPointsDensity" + g_im_save_format, w, h);				
 
 				if (ln == 0)
 				{
+					break;
+				}
+
+				if (lb[0] >= w_2)
+				{
+					// removing all sub lines
+					val = (le[ln - 1] - lb[0] + 1) * sizeof(int);
+					for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
+					{
+						memset(&Im[i], 0, val);
+					}
+					ln = 0;
+
+					if (g_show_sf_results) SaveGreyscaleImage(Im, "\\TestImages\\SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_07_ImFAlignment" + g_im_save_format, w, h);
+
 					break;
 				}
 
