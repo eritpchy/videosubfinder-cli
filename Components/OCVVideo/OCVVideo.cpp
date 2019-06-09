@@ -217,7 +217,25 @@ void OCVVideo::OneStep()
 			Pause();
 		}
 
-		m_VC >> m_cur_frame;
+		s64 prevPos, curPos;
+		s64 prevNumFrameToBeDecoded, curNumFrameToBeDecoded;
+		int num_tries = 0;
+
+		do
+		{
+			prevPos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+			prevNumFrameToBeDecoded = m_VC.get(cv::CAP_PROP_POS_FRAMES);
+			m_VC >> m_cur_frame;
+			curPos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+			curNumFrameToBeDecoded = m_VC.get(cv::CAP_PROP_POS_FRAMES);
+			num_tries++;
+
+			if ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded))
+			{
+				num_tries = 0;
+			}
+		} while ((m_cur_frame.empty()) && ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded) || (num_tries < 100)));
+
 		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 		m_ImageGeted = true;
 		ShowFrame(m_cur_frame);

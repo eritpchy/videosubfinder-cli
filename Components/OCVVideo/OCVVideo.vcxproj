@@ -223,6 +223,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <OmitFramePointers>false</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)OCVVideo.lib</OutputFile>

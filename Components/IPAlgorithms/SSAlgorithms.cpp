@@ -61,6 +61,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	int bln, finded_prev;
 
+	int debug = 0;
+
 	g_RunSubSearch = 1;
 
 	g_pV = pV;
@@ -73,6 +75,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	xmax = g_pV->m_xmax;
 	ymin = g_pV->m_ymin;
 	ymax = g_pV->m_ymax;
+
+	/*if (debug)
+	{
+		ymin = g_pV->m_ymin = 380;
+		ymax = g_pV->m_ymax = 449;
+		h = g_pV->m_h = ymax - ymin + 1;
+	}*/
 
 	size = w * h;
 	BufferSize = size * sizeof(int);
@@ -121,9 +130,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	custom_buffer<s64> thrPrevPos(threads, 0);
 	custom_buffer<s64> PosForward(DL, 0);
 	int thr_n, thr_nT, forward_n;
-	bool thrs_were_created = false;
-
-	int debug = 0;
+	bool thrs_were_created = false;	
 
 	found_sub = 0;
 	prev_pos = -2;
