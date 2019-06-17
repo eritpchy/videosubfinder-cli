@@ -25,7 +25,7 @@
 
 using namespace std;
 
-extern bool g_use_FRD_images;
+extern bool g_use_ISA_images;
 
 extern int g_IsCreateClearedTextImages;
 extern int g_RunCreateClearedTextImages;

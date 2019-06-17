@@ -15,14 +15,14 @@ https://docs.opencv.org/4.0.1/d8/dfe/classcv_1_1VideoCapture.html#a85b55cf6a4a50
 https://github.com/opencv/opencv/wiki/OE-25.-Fast-VideoIO
 
 Download from
-https://sourceforge.net/projects/opencvlibrary/files/4.0.1/
+https://sourceforge.net/projects/opencvlibrary/files/4.1.0/
 OpenCV 4.1.0.zip + opencv-4.1.0-vc14_vc15.exe
 Extract OpenCV 4.1.0.zip to C:\OpenCV 4.1.0
 Extract opencv-4.1.0-vc14_vc15.exe to C:\OpenCV 4.1.0\opencv-opencv-0399435
 
-Download from
-https://github.com/opencv/opencv_contrib/releases/tag/4.1.0
-Extract opencv_contrib-4.1.0.zip to C:\OpenCV 4.1.0
+#rem: Download from
+#rem: https://github.com/opencv/opencv_contrib/releases/tag/4.1.0
+#rem: Extract opencv_contrib-4.1.0.zip to C:\OpenCV 4.1.0
 
 Setup Env: OPENCV_DIR=C:\OpenCV 4.1.0\opencv-opencv-0399435
 should exist: %OPENCV_DIR%\opencv\build\include
@@ -40,8 +40,8 @@ Pick Visual Studio 15 2017
 Platform (Win32/x64)
 finish
 !!! * Select BUILD_opencv_world=ON *
-turn on: WITH_CUDA
-set: OPENCV_EXTRA_MODULES_PATH C:/OpenCV 4.1.0/opencv_contrib-4.1.0/modules
+#rem: turn on: WITH_CUDA
+#rem: set: OPENCV_EXTRA_MODULES_PATH C:/OpenCV 4.1.0/opencv_contrib-4.1.0/modules
 Press again Configure
 Press generate
 Press open project

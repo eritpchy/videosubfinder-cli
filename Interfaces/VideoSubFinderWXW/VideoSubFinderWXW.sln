@@ -63,11 +63,10 @@ Global
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Debug|Win32.ActiveCfg = Debug|x64
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Debug|x64.ActiveCfg = Debug|x64
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Debug|x64.Build.0 = Debug|x64
-		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|Win32.ActiveCfg = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|Win32.ActiveCfg = Release|Win32
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|x64.ActiveCfg = Release|x64
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.Release|x64.Build.0 = Release|x64
-		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|Win32.ActiveCfg = Release|x64
-		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|Win32.Build.0 = Release|x64
+		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|Win32.ActiveCfg = ReleaseWithDebugInfo|Win32
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|x64.ActiveCfg = ReleaseWithDebugInfo|x64
 		{3EBF793E-F25B-439F-A59E-EDFF159D4DF5}.ReleaseWithDebugInfo|x64.Build.0 = ReleaseWithDebugInfo|x64
 	EndGlobalSection

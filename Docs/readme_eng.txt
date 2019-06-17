@@ -13,7 +13,7 @@ How to use:
    processed frame (with a frequency of 1 times per second), if at the moment
    will be found at least one sub, then its image will be displayed in Image
    Box, the search results are dropped into the RGBImages folders (the original screens from
-   video) and FRDImages (processed screens from the video), make sure that
+   video) and ISAImages (Intersected Subtitles Areas (by multiframe usage)), make sure that
    you had at least 100 mb of free disk space.
 
 4) You can set the start and end time of the search for sabs, for this use

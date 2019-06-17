@@ -351,10 +351,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	m_pVideoBox->m_pSB->SetScrollPos(0);
 	m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration));
 
-	i=csFileName.size()-1;
-	while (csFileName[i] != '\\') i--;
-
-	m_pVideoBox->m_plblVB->SetLabel("VideoBox \""+csFileName.substr(i+1, csFileName.size()-i-1)+"\"");
+	m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + GetFileName(csFileName.ToStdString()) + "\"");
 
 	if (m_blnReopenVideo == false) 
 	{
@@ -577,6 +574,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_btd, "between_text_distace");
 	ReadProperty(fin, g_tco, "text_centre_offset");
 	ReadProperty(fin, g_scale, "image_scale_for_clear_image");
+	
+	ReadProperty(fin, g_use_ISA_images, "use_ISA_images");
 
 	ReadProperty(fin, g_mpn, "min_points_number");
 	ReadProperty(fin, g_mpd, "min_points_density");
@@ -656,7 +655,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_frdimages_for_getting_txt_areas, "ssp_oim_property_using_frdimages_for_getting_txt_areas");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
@@ -706,6 +705,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_btd, "between_text_distace");
 	WriteProperty(fout, g_tco, "text_centre_offset");
 	WriteProperty(fout, g_scale, "image_scale_for_clear_image");
+
+	WriteProperty(fout, g_use_ISA_images, "use_ISA_images");
 
 	WriteProperty(fout, g_mpn, "min_points_number");
 	WriteProperty(fout, g_mpd, "min_points_density");
@@ -1011,7 +1012,7 @@ void CMainFrame::ClearDir(wxString DirName)
 
 	for(int i=0; i<(int)FileNamesVector.size(); i++)
 	{		
-		res = wxRemoveFile(dir.GetName() + "\\" + FileNamesVector[i]);
+		res = wxRemoveFile(dir.GetName() + "/" + FileNamesVector[i]);
 	}
 	
 	FileNamesVector.clear();

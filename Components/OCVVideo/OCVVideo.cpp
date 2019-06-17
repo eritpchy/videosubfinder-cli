@@ -129,6 +129,25 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 
 		m_frameNumbers = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
+
+		if (m_frameNumbers < 0)
+		{
+			double Pos = 0, add_pos = 60000, prev_pos, cur_pos;
+
+			do
+			{
+				Pos += add_pos;
+				prev_pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+				m_VC.set(cv::CAP_PROP_POS_MSEC, Pos);
+				cur_pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+			} while (prev_pos != cur_pos);
+
+			m_frameNumbers = cur_pos;
+			m_VC.set(cv::CAP_PROP_POS_FRAMES, 0);
+			m_VC >> m_cur_frame;
+			if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
+		}
+
 		m_fps = m_VC.get(cv::CAP_PROP_FPS);
 		m_Duration = ((m_frameNumbers * 1000.0) / m_fps);
 

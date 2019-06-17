@@ -196,7 +196,12 @@ void CSettingsPanel::Init()
                            rcOI.GetPosition(), rcOI.GetSize() );
 
     m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);
+#ifdef WIN64
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, m_LBLFont, &g_use_cuda_gpu);
+#else
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (on x64 is supported only)", m_CLSP, m_CLSP, m_LBLFont, &g_use_cuda_gpu);
+	m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
+#endif
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, 1, 64);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CL2, m_CL4, m_LBLFont, &g_generate_cleared_text_images_on_test);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CL2, m_CL4, m_LBLFont, &g_show_results);
@@ -238,11 +243,17 @@ void CSettingsPanel::Init()
 
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scale, 1, 4);
+#ifdef WIN64
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cuda_kmeans_loop_iterations, 1, 1000);
+#else
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CLSP, m_CLSP, m_LBLFont, m_LBLFont, &g_cuda_kmeans_loop_iterations, 1, 1000);
+	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
+#endif
 	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
-	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_frdimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_FRD_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CL2, m_CL4, m_LBLFont, &g_ValidateAndCompareTXTImages);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, m_LBLFont, &g_ValidateAndCompareTXTImages);
+	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages2);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DefStringForEmptySub);
@@ -338,7 +349,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	{
 		vector<string> SavedFiles;
 		SavedFiles.push_back(ImgName);
-		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], SavedFiles, w, h);
+		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], SavedFiles, w, h);
 	}
 
 	if (S > 0)

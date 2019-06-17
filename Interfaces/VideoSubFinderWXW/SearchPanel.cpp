@@ -181,7 +181,7 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 void CSearchPanel::OnBnClickedClear(wxCommandEvent& event)
 {
 	m_pMF->ClearDir(g_work_dir + "/RGBImages");
-	m_pMF->ClearDir(g_work_dir + "/FRDImages");
+	m_pMF->ClearDir(g_work_dir + "/ISAImages");
 	m_pMF->ClearDir(g_work_dir + "/TXTImages");
 	m_pMF->ClearDir(g_work_dir + "/TestImages");
 	m_pMF->ClearDir(g_work_dir + "/TXTResults");
