@@ -7759,13 +7759,13 @@ void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int qual
 
 	for (int i = 0; i < w*h; i++)
 	{
-		if (Im[i] > 0)
+		if (Im[i] == 0)
 		{
-			color = 255;
+			color = 0;
 		}
 		else
 		{
-			color = 0;
+			color = 255;
 		}
 		im.data[i * 3] = color;
 		im.data[i * 3 + 1] = color;

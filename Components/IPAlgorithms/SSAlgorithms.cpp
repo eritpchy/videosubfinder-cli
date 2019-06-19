@@ -88,7 +88,7 @@ inline int AnalizeImageForSubPresence(custom_buffer<int> &ImRGB, custom_buffer<i
 	return res;
 }
 
-inline void IntersectYImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h)
+inline void IntersectYImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h, int offset_for_im2)
 {
 	int i, size;
 
@@ -97,11 +97,11 @@ inline void IntersectYImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2,
 	{
 		if (ImRes[i] > 0)
 		{
-			if (Im2[i] < ImRes[i] - g_max_dl_down)
+			if (Im2[i] + offset_for_im2 < ImRes[i] - g_max_dl_down)
 			{
 				ImRes[i] = 0;
 			}
-			else if (Im2[i] > ImRes[i] + g_max_dl_up)
+			else if (Im2[i] + offset_for_im2 > ImRes[i] + g_max_dl_up)
 			{
 				ImRes[i] = 0;
 			}
@@ -453,11 +453,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		pIm = &(ImForward[0]);
 		pImInt = &ImInt;
 
-		for (int i = 0; i <w*h; i++)
-		{
-			(*pImY)[i] += 255;
-		}
-
 		if (n_fs == 0)
 		{
 			prevPos = prev_pos;
@@ -480,24 +475,24 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		n_fs++;
 		thr_n++;
 
-		/*if (CurPos >= 172305)
-		{
-			CurPos = CurPos;
-		}*/
-
 		if (debug)
 		{
 			SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles_ImCombined_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(ImForward[0], string("/TestImages/FastSearchSubtitles_ImForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles_ImNEForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
-			SaveBinaryImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+			SaveGreyscaleImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles_ImRGBForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+
+			if (CurPos >= 172305)
+			{
+				CurPos = CurPos;
+			}
 
 			if (fn >= 28)
 			{
 				fn = fn;
 			}			
-		}
+		}		
 
 		if (fn > ef)
 		{
@@ -513,6 +508,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
 					memcpy(ImYS.m_pData, pImY->m_pData, BufferSize);
 					memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
+
+					for (int i = 0; i < w*h; i++)
+					{
+						ImYS[i] += 255;
+					}
 				}
 				else
 				{
@@ -567,6 +567,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
 						memcpy(ImYS.m_pData, pImY->m_pData, BufferSize);
 						memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
+
+						for (int i = 0; i < w*h; i++)
+						{
+							ImYS[i] += 255;
+						}
 					}
 
 					if (bln == 0)
@@ -602,7 +607,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								}
 
 								IntersectTwoImages(ImYS, ImYSP, w, h);
-								IntersectYImages(ImYS, ImYSP, w, h);
+								IntersectYImages(ImYS, ImYSP, w, h, 0);
 								
 								if (debug)
 								{
@@ -681,7 +686,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 								pef = fn + offset;
 
-								IntersectYImages(ImYS, ImYForward[offset], w, h);
+								IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
 
 								if (pef - pbf + 1 >= DL)
 								{
@@ -726,7 +731,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					}
 					else
 					{
-						IntersectYImages(ImYS, *pImY, w, h);
+						IntersectYImages(ImYS, *pImY, w, h, 255);
 					}
 				}
 			}
@@ -815,7 +820,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									break;
 								}
 
-								IntersectYImages(ImYS, ImYForward[offset], w, h);
+								IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
 
 								pPrevImNE = &(ImNEForward[offset]);
 								//pPrevIm = &(ImForward[offset]);
@@ -875,7 +880,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									break;
 								}
 
-								IntersectYImages(ImYS, ImYForward[offset], w, h);
+								IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
 
 								pPrevImNE = &(ImNEForward[offset]);
 								//pPrevIm = &(ImForward[offset]);
