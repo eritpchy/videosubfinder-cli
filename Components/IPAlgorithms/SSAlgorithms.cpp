@@ -490,7 +490,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles_ImCombined_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(ImForward[0], string("/TestImages/FastSearchSubtitles_ImForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles_ImNEForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
-			SaveGreyscaleImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+			SaveBinaryImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles_ImRGBForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 
 			if (fn >= 28)
@@ -597,8 +597,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							{
 								if (debug)
 								{
-									SaveGreyscaleImage(ImYS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-									SaveGreyscaleImage(ImYSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+									SaveBinaryImage(ImYS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+									SaveBinaryImage(ImYSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								}
 
 								IntersectTwoImages(ImYS, ImYSP, w, h);
@@ -606,7 +606,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								
 								if (debug)
 								{
-									SaveGreyscaleImage(ImYS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYSIntYSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+									SaveBinaryImage(ImYS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYSIntYSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								}
 
 								pef = fn + new_sub_offset - 1;
@@ -630,6 +630,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
 									ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 									ImToNativeSize(ImIntSP, w, h, W, H, xmin, xmax, ymin, ymax);
+									ImToNativeSize(ImYSP, w, h, W, H, xmin, xmax, ymin, ymax);
 									g_pViewImage[0](ImFSP, W, H);
 									g_pViewImage[1](ImIntSP, W, H);
 									SaveRGBImage(ImFSP, string("/RGBImages/") + Str + g_im_save_format, W, H);
@@ -770,6 +771,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
 							ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
 							ImToNativeSize(ImIntSP, w, h, W, H, xmin, xmax, ymin, ymax);
+							ImToNativeSize(ImYSP, w, h, W, H, xmin, xmax, ymin, ymax);
 							g_pViewImage[0](ImFSP, W, H);
 							g_pViewImage[1](ImIntSP, W, H);
 							SaveRGBImage(ImFSP, string("/RGBImages/") + Str + g_im_save_format, W, H);
@@ -935,6 +937,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							Str = VideoTimeToStr(bt) + string("__") + VideoTimeToStr(et);
 							ImToNativeSize(ImFS, w, h, W, H, xmin, xmax, ymin, ymax);
 							ImToNativeSize(ImIntS, w, h, W, H, xmin, xmax, ymin, ymax);
+							ImToNativeSize(ImYS, w, h, W, H, xmin, xmax, ymin, ymax);
 							g_pViewImage[0](ImFS, W, H);
 							g_pViewImage[1](ImIntS, W, H);
 							SaveRGBImage(ImFS, string("/RGBImages/") + Str + g_im_save_format, W, H);
