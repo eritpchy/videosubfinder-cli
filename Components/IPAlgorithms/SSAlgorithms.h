@@ -30,12 +30,15 @@ extern int      g_threads; // number of threads
 extern int		g_DL;	 //sub frame length
 extern double	g_tp;	 //text procent
 extern double	g_mtpl;  //min text len (in procent)
-extern double	g_sse;	 //sub square error
 extern double	g_veple; //vedges points line error
 
-s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
+extern bool g_use_ISA_images_for_search_subtitles;
+extern bool g_use_ILA_images_for_search_subtitles;
+extern bool g_replace_ISA_by_filtered_version;
+extern int g_max_dl_down;
+extern int g_max_dl_up;
 
-int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom_buffer<int> &Im2, custom_buffer<int> &ImNFF2, int size);
+s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
 int AnalyseImage(custom_buffer<int> &Im, int w, int h);
 
@@ -50,10 +53,6 @@ int GetCombinedSquare(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size
 
 void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, int size);
 void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
-
-int ConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H);
-
-int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, CVideo *pVideo, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
 void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 

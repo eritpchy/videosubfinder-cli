@@ -97,6 +97,7 @@ public:
 	wxString	m_ssp_oim_property_clear_rgbimages_after_search_subtitles;
 	wxString	m_ssp_oim_property_using_hard_algorithm_for_text_mining;
 	wxString	m_ssp_oim_property_using_isaimages_for_getting_txt_areas;
+	wxString	m_ssp_oim_property_using_ilaimages_for_getting_txt_areas;
 	wxString	m_ssp_oim_property_validate_and_compare_cleared_txt_images;
 	wxString	m_ssp_oim_property_dont_delete_unrecognized_images_first;
 	wxString	m_ssp_oim_property_dont_delete_unrecognized_images_second;
@@ -105,12 +106,17 @@ public:
 	wxString	m_ssp_oim_sub_group_settings_for_sub_detection;
 	wxString	m_ssp_oim_property_threads;
 	wxString	m_ssp_oim_property_sub_frames_length;
-	wxString	m_ssp_oim_property_sub_square_error;
+	//wxString	m_ssp_oim_property_sub_square_error;
 	wxString	m_ssp_oim_sub_group_settings_for_comparing_subs;
 	wxString	m_ssp_oim_property_vedges_points_line_error;
 	wxString	m_ssp_oim_sub_group_settings_for_checking_sub;
 	wxString	m_ssp_oim_property_text_procent;
 	wxString	m_ssp_oim_property_min_text_length;
+	wxString	m_ssp_oim_property_use_ISA_images_for_search_subtitles;
+	wxString	m_ssp_oim_property_use_ILA_images_for_search_subtitles;
+	wxString	m_ssp_oim_property_replace_ISA_by_filtered_version;
+	wxString	m_ssp_oim_property_max_dl_down;
+	wxString	m_ssp_oim_property_max_dl_up;
 };
 
 class CMainFrame : public wxMDIParentFrame

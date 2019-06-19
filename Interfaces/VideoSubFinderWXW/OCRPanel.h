@@ -25,7 +25,8 @@
 
 using namespace std;
 
-extern bool g_use_ISA_images;
+extern bool g_use_ISA_images_for_get_txt_area;
+extern bool g_use_ILA_images_for_get_txt_area;
 
 extern int g_IsCreateClearedTextImages;
 extern int g_RunCreateClearedTextImages;

@@ -397,7 +397,7 @@ float** cuda_kmeans_img(unsigned char *imgData, int numObjs, int numClusters, fl
 	}
 
 	/* initialize membership[] */
-	for (i = 0; i < numObjs; i++) membership[i] = -1;
+	//for (i = 0; i < numObjs; i++) membership[i] = -1;
 
 	/* need to initialize newClusterSize and newClusters[0] to all 0 */
 	newClusterSize = (int*)calloc(numClusters, sizeof(int));
@@ -447,6 +447,37 @@ float** cuda_kmeans_img(unsigned char *imgData, int numObjs, int numClusters, fl
 		numObjs*numCoords * sizeof(float), cudaMemcpyHostToDevice));
 	checkCuda(cudaMemcpy(deviceMembership, membership,
 		numObjs * sizeof(int), cudaMemcpyHostToDevice));
+
+
+	// Adding initial clusters info (dimClusters) by using membership data
+	//------------------
+	for (i = 0; i < numObjs; i++) {
+		/* find the array index of nestest cluster center */
+		index = membership[i];
+
+		if (index >= 0)
+		{
+			/* update new cluster centers : sum of objects located within */
+			newClusterSize[index]++;
+			for (j = 0; j < numCoords; j++)
+				newClusters[j][index] += dimObjects[j][i];
+		}
+	}
+
+	//  TODO: Flip the nesting order
+	//  TODO: Change layout of newClusters to [numClusters][numCoords]
+	/* average the sum and replace old cluster centers with newClusters */
+	for (i = 0; i < numClusters; i++) {
+		for (j = 0; j < numCoords; j++) {
+			if (newClusterSize[i] > 0)
+			{
+				dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
+			}
+			newClusters[j][i] = 0.0;   /* set back to 0 */
+		}
+		newClusterSize[i] = 0;   /* set back to 0 */
+	}
+	//------------------
 
 	while (loop < loop_iterations)
 	{

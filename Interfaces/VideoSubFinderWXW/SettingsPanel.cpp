@@ -59,6 +59,7 @@ void CSettingsPanel::Init()
 	wxBitmap bmp_na, bmp_od;
 	//CObjectInspector::CProperty *pProp;
 
+	m_CLDBG = wxColour(200, 200, 200);
 	m_CLSP = wxColour(170,170,170);
 	m_CL1 = wxColour(255, 215, 0);
 	m_CL2 = wxColour(127, 255, 0);
@@ -203,11 +204,11 @@ void CSettingsPanel::Init()
 	m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
 #endif
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, 1, 64);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CL2, m_CL4, m_LBLFont, &g_generate_cleared_text_images_on_test);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CL2, m_CL4, m_LBLFont, &g_show_results);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CL2, m_CL4, m_LBLFont, &g_show_sf_results);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CL2, m_CL4, m_LBLFont, &g_clear_test_images_folder);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CL2, m_CL4, m_LBLFont, &g_show_transformed_images_only);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, m_LBLFont, &g_generate_cleared_text_images_on_test);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_results);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_sf_results);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CLDBG, m_CLDBG, m_LBLFont, &g_clear_test_images_folder);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_transformed_images_only);
 	
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
@@ -251,7 +252,8 @@ void CSettingsPanel::Init()
 #endif
 	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_get_txt_area);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, m_LBLFont, &g_ValidateAndCompareTXTImages);
 	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
@@ -261,7 +263,13 @@ void CSettingsPanel::Init()
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1, m_LBLFont);		
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_frames_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DL, 1, 100);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_square_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_sse, 0.0, 1.0);
+
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_search_subtitles);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_search_subtitles);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, m_CL2, m_CL4, m_LBLFont, &g_replace_ISA_by_filtered_version);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_down, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_max_dl_down, 0, 255);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_up, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_max_dl_up, 0, 255);
+
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 1.0);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1, m_LBLFont);
@@ -343,13 +351,15 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-	S = ConvertImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], w, h, W, H);
+	S = GetTransformedImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H);
 	
 	if (g_generate_cleared_text_images_on_test)
 	{
 		vector<string> SavedFiles;
 		SavedFiles.push_back(ImgName);
-		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], SavedFiles, w, h);
+		custom_buffer<int> ImIL(w*h, 0);
+		ImIL[0] = -1;
+		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
 	}
 
 	if (S > 0)

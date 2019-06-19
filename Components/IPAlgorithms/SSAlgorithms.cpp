@@ -27,19 +27,94 @@ int    g_threads = 4;
 int		g_DL = 6;	 //sub frame length
 double	g_tp = 0.3;	 //text procent
 double	g_mtpl = 0.022;  //min text len (in procent)
-double	g_sse = 0.3;   //sub square error
 double	g_veple = 0.35; //vedges points line error
-//double	g_de;	 //density error
-//double	g_lle;	 //line length error
+
+bool g_use_ISA_images_for_search_subtitles = true;
+bool g_use_ILA_images_for_search_subtitles = true;
+bool g_replace_ISA_by_filtered_version = true;
+int g_max_dl_down = 20;
+int g_max_dl_up = 40;
 
 CVideo *g_pV;
 
-inline concurrency::task<void> TaskConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int &w, int &h, int &W, int &H, int &res)
+inline int AnalizeImageForSubPresence(custom_buffer<int> &ImRGB, custom_buffer<int> &ImNE, custom_buffer<int> &ImISA, custom_buffer<int> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H)
+{
+	int res = 1;
+	int debug = 0;
+
+	if (g_use_ISA_images_for_search_subtitles)
+	{
+		custom_buffer<int> LB(1, 0), LE(1, 0);
+		LB[0] = 0;
+		LE[0] = h - 1;
+
+		custom_buffer<int> ImFF(ImISA), ImTF(w*h, 0);
+
+		if (debug)
+		{
+			SaveGreyscaleImage(ImISA, string("/TestImages/AnalizeImageForSubPresence_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + "_01_ImISA_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+		}
+
+		if (g_use_ILA_images_for_search_subtitles)
+		{
+			if (debug)
+			{
+				SaveGreyscaleImage(ImIL, string("/TestImages/AnalizeImageForSubPresence_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + "_02_ImIL_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+			}
+
+			IntersectTwoImages(ImFF, ImIL, w, h);
+
+			if (debug)
+			{
+				SaveGreyscaleImage(ImFF, string("/TestImages/AnalizeImageForSubPresence_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + "_03_ImFF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+			}
+		}
+		
+		custom_buffer<int> ImSF(ImFF);
+
+		res = FilterTransformedImage(ImFF, ImSF, ImTF, ImNE, LB, LE, 1, w, h, W, H, VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn));
+
+		if (debug)
+		{
+			SaveGreyscaleImage(ImTF, string("/TestImages/AnalizeImageForSubPresence_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + "_04_ImTF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+		}
+
+		if (g_replace_ISA_by_filtered_version)
+		{
+			memcpy(&(ImISA[0]), &(ImTF[0]), w*h*sizeof(int));
+		}
+	}
+
+	return res;
+}
+
+inline void IntersectYImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h)
+{
+	int i, size;
+
+	size = w * h;
+	for (i = 0; i < size; i++)
+	{
+		if (ImRes[i] > 0)
+		{
+			if (Im2[i] < ImRes[i] - g_max_dl_down)
+			{
+				ImRes[i] = 0;
+			}
+			else if (Im2[i] > ImRes[i] + g_max_dl_up)
+			{
+				ImRes[i] = 0;
+			}
+		}
+	}
+}
+
+inline concurrency::task<void> TaskConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int &w, int &h, int &W, int &H, int &res)
 {	
 	return concurrency::create_task([&]
 	{
 		custom_buffer<int> ImFF(w*h, 0), ImSF(w*h, 0);
-		res = ConvertImage(ImRGB, ImFF, ImSF, ImF, ImNE, w, h, W, H);
+		res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
 	});
 }
 
@@ -104,18 +179,22 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	custom_buffer<int> lb(H, 0), le(H, 0);
 
 	custom_buffer<int> ImInt(SIZE, 0), ImInt2(SIZE, 0); //store image
-	custom_buffer<int> ImS(SIZE, 0); //store image
-	custom_buffer<int> ImSP(SIZE, 0); //store image prev
+	custom_buffer<int> ImIntS(SIZE, 0); //store image
+	custom_buffer<int> ImIntSP(SIZE, 0); //store image prev
 	custom_buffer<int> ImFS(SIZE, 0); //image for save
 	custom_buffer<int> ImFSP(SIZE, 0); //image for save prev
-	custom_buffer<int> ImNES(SIZE, 0), ImNESS(SIZE, 0), ImNESP(SIZE, 0), ImNESSP(SIZE, 0), ImRES(SIZE, 0);
+	custom_buffer<int> ImNES(SIZE, 0), ImNESP(SIZE, 0);
+	custom_buffer<int> ImYS(SIZE, 0), ImYSP(SIZE, 0);
+	custom_buffer<int> ImRES(SIZE, 0);
 	custom_buffer<custom_buffer<int>> mImRGB(DL*threads, custom_buffer<int>(SIZE, 0)), ImS_SQ(DL + 1, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> ImNET(threads, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> ImYT(threads, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> ImT(threads, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> ImNE(threads, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> ImY(threads, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> Im(threads, custom_buffer<int>(SIZE, 0));
-	custom_buffer<int> *pImRGB, *pIm, *pImNE;
-	custom_buffer<int> prevImRGB(SIZE, 0), prevImNE(SIZE, 0);
+	custom_buffer<int> *pImRGB, *pIm, *pImInt, *pImNE, *pImY;
+	custom_buffer<int> prevImRGB(SIZE, 0), prevImNE(SIZE, 0), prevIm(SIZE, 0);
 
 	custom_buffer<s64> ImS_Pos(DL + 1, 0);
 	custom_buffer<s64> ImS_fn(DL + 1, 0);
@@ -126,6 +205,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	custom_buffer<custom_buffer<int>> thrImRGB(threads, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> ImRGBForward(DL, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> ImNEForward(DL, custom_buffer<int>(SIZE, 0));
+	custom_buffer<custom_buffer<int>> ImYForward(DL, custom_buffer<int>(SIZE, 0));
 	custom_buffer<custom_buffer<int>> ImForward(DL, custom_buffer<int>(SIZE, 0));
 	custom_buffer<s64> thrPrevPos(threads, 0);
 	custom_buffer<s64> PosForward(DL, 0);
@@ -182,7 +262,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				if (n_fs % DL == 0)
 				{
 					int thr_nT = (n_fs / DL) - 1;
-					thrsT[thr_nT] = TaskConvertImage(mImRGB[n_fs - 1], ImT[thr_nT], ImNET[thr_nT], w, h, W, H, thrs_resT[thr_nT]);
+					thrsT[thr_nT] = TaskConvertImage(mImRGB[n_fs - 1], ImT[thr_nT], ImNET[thr_nT], ImYT[thr_nT], w, h, W, H, thrs_resT[thr_nT]);
 				}
 			}
 			if (pos >= End)
@@ -239,7 +319,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 					if ((_n_fs > (DL*threads)) || (_n_fs % DL != 0))
 					{
-						thrsForward[_thr_n] = TaskConvertImage(ImRGBForward[_thr_n], ImForward[_thr_n], ImNEForward[_thr_n], w, h, W, H, thrs_resForward[_thr_n]);
+						thrsForward[_thr_n] = TaskConvertImage(ImRGBForward[_thr_n], ImForward[_thr_n], ImNEForward[_thr_n], ImYForward[_thr_n], w, h, W, H, thrs_resForward[_thr_n]);
 					}
 					else
 					{
@@ -247,6 +327,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						thrs_resForward[_thr_n] = thrs_resT[_thr_nT];
 						memcpy(ImForward[_thr_n].m_pData, ImT[_thr_nT].m_pData, BufferSize);
 						memcpy(ImNEForward[_thr_n].m_pData, ImNET[_thr_nT].m_pData, BufferSize);
+						memcpy(ImYForward[_thr_n].m_pData, ImY[_thr_nT].m_pData, BufferSize);
 					}
 				}
 
@@ -265,6 +346,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						memcpy(ImRGBForward[_thr_n].m_pData, ImRGBForward[_thr_n - 1].m_pData, BufferSize);
 						memcpy(ImForward[_thr_n].m_pData, ImForward[_thr_n - 1].m_pData, BufferSize);
 						memcpy(ImNEForward[_thr_n].m_pData, ImNEForward[_thr_n - 1].m_pData, BufferSize);
+						memcpy(ImYForward[_thr_n].m_pData, ImYForward[_thr_n - 1].m_pData, BufferSize);
 						_thr_n++;
 					}
 				}
@@ -319,7 +401,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 				if ((_n_fs > (DL*threads)) || (_n_fs % DL != 0))
 				{
-					thrs[_thr_n] = TaskConvertImage(thrImRGB[_thr_n], Im[_thr_n], ImNE[_thr_n], w, h, W, H, thrs_res[_thr_n]);
+					thrs[_thr_n] = TaskConvertImage(thrImRGB[_thr_n], Im[_thr_n], ImNE[_thr_n], ImY[_thr_n], w, h, W, H, thrs_res[_thr_n]);
 				}
 				else
 				{
@@ -327,6 +409,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					thrs_res[_thr_n] = thrs_resT[_thr_nT];
 					memcpy(Im[_thr_n].m_pData, ImT[_thr_nT].m_pData, BufferSize);
 					memcpy(ImNE[_thr_n].m_pData, ImNET[_thr_nT].m_pData, BufferSize);
+					memcpy(ImY[_thr_n].m_pData, ImYT[_thr_nT].m_pData, BufferSize);
 				}
 			}
 		}
@@ -341,6 +424,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			memcpy(ImRGBForward[DL - 1].m_pData, thrImRGB[thr_n].m_pData, BufferSize);
 			memcpy(ImForward[DL - 1].m_pData, Im[thr_n].m_pData, BufferSize);
 			memcpy(ImNEForward[DL - 1].m_pData, ImNE[thr_n].m_pData, BufferSize);
+			memcpy(ImYForward[DL - 1].m_pData, ImY[thr_n].m_pData, BufferSize);
 		}
 		else
 		{
@@ -349,6 +433,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			memcpy(ImRGBForward[DL - 1].m_pData, ImRGBForward[DL - 2].m_pData, BufferSize);
 			memcpy(ImForward[DL - 1].m_pData, ImForward[DL - 2].m_pData, BufferSize);
 			memcpy(ImNEForward[DL - 1].m_pData, ImNEForward[DL - 2].m_pData, BufferSize);
+			memcpy(ImYForward[DL - 1].m_pData, ImYForward[DL - 2].m_pData, BufferSize);
 		}
 
 		{
@@ -362,9 +447,16 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		}
 
 		bln = AnalyseImage(ImInt, w, h);
-		pImRGB = &(ImRGBForward[0]);
-		pIm = &ImInt;
+		pImRGB = &(ImRGBForward[0]);		
 		pImNE = &(ImNEForward[0]);
+		pImY = &(ImYForward[0]);
+		pIm = &(ImForward[0]);
+		pImInt = &ImInt;
+
+		for (int i = 0; i <w*h; i++)
+		{
+			(*pImY)[i] += 255;
+		}
 
 		if (n_fs == 0)
 		{
@@ -395,9 +487,10 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 		if (debug)
 		{
-			SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles_ImCombined_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+			SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles_ImCombined_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(ImForward[0], string("/TestImages/FastSearchSubtitles_ImForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles_ImNEForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+			SaveGreyscaleImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles_ImRGBForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 
 			if (fn >= 28)
@@ -416,22 +509,23 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					ef = bf;
 					bt = CurPos;
 
-					memcpy(ImS.m_pData, pIm->m_pData, BufferSize);
+					memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
 					memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
+					memcpy(ImYS.m_pData, pImY->m_pData, BufferSize);
 					memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
 				}
 				else
 				{
-					bln = CompareTwoSubs(ImS, ImNES, *pIm, *pImNE, w, h, W, H, ymin);
+					bln = CompareTwoSubs(ImIntS, ImNES, *pImInt, *pImNE, w, h, W, H, ymin);
 
 					if (bln == 0)
 					{
-						bln = DifficultCompareTwoSubs2(ImS, ImNES, *pIm, *pImNE, w, h, W, H, ymin);
+						bln = DifficultCompareTwoSubs2(ImIntS, ImNES, *pImInt, *pImNE, w, h, W, H, ymin);
 					}
 
 					if (bln == 0)
 					{
-						bln = CompareTwoSubs(ImS, prevImNE, *pIm, *pImNE, w, h, W, H, ymin);
+						bln = CompareTwoSubs(ImIntS, prevImNE, *pImInt, *pImNE, w, h, W, H, ymin);
 
 						if (bln > 0)
 						{
@@ -439,18 +533,18 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							{
 								SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNE_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-								SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 
 								SaveRGBImage(prevImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGBprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								SaveGreyscaleImage(prevImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNEprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-								SaveGreyscaleImage(ImS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							}
 						}
 					}
 
 					if (bln == 0)
 					{
-						bln = DifficultCompareTwoSubs2(ImS, prevImNE, *pIm, *pImNE, w, h, W, H, ymin);
+						bln = DifficultCompareTwoSubs2(ImIntS, prevImNE, *pImInt, *pImNE, w, h, W, H, ymin);
 
 						if (bln > 0)
 						{
@@ -458,19 +552,20 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							{
 								SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNE_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-								SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 
 								SaveRGBImage(prevImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGBprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								SaveGreyscaleImage(prevImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNEprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-								SaveGreyscaleImage(ImS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							}
 						}
 					}
 
 					if ((bln > 0) && (fn - bf + 1 == 3))
 					{
-						memcpy(ImS.m_pData, pIm->m_pData, BufferSize);
+						memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
 						memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
+						memcpy(ImYS.m_pData, pImY->m_pData, BufferSize);
 						memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
 					}
 
@@ -480,26 +575,40 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						{
 							SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNE_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImF_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 
 							SaveRGBImage(prevImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImRGBprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							SaveGreyscaleImage(prevImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNEprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFprev_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 						}
 
 						int new_sub_offset = 0; // DL - 1;							
 
 						if (finded_prev == 1)
 						{
-							bln = CompareTwoSubs(ImSP, ImNESP, ImS, ImNES, w, h, W, H, ymin);
+							bln = CompareTwoSubs(ImIntSP, ImNESP, ImIntS, ImNES, w, h, W, H, ymin);
 
 							if (bln == 0)
 							{
-								bln = DifficultCompareTwoSubs2(ImSP, ImNESP, ImS, ImNES, w, h, W, H, ymin);
+								bln = DifficultCompareTwoSubs2(ImIntSP, ImNESP, ImIntS, ImNES, w, h, W, H, ymin);
 							}
 
 							if (bln == 1)
 							{
+								if (debug)
+								{
+									SaveGreyscaleImage(ImYS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+									SaveGreyscaleImage(ImYSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								}
+
+								IntersectTwoImages(ImYS, ImYSP, w, h);
+								IntersectYImages(ImYS, ImYSP, w, h);
+								
+								if (debug)
+								{
+									SaveGreyscaleImage(ImYS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImYSIntYSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								}
+
 								pef = fn + new_sub_offset - 1;
 								pet = PosForward[new_sub_offset] - 1;
 							}
@@ -508,21 +617,25 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								if (debug)
 								{
 									SaveRGBImage(ImFS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-									SaveGreyscaleImage(ImS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+									SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 									SaveGreyscaleImage(ImNES, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNES_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 
 									SaveRGBImage(ImFSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-									SaveGreyscaleImage(ImSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+									SaveGreyscaleImage(ImIntSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 									SaveGreyscaleImage(ImNESP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNESP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 								}
 
-								Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
-								ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
-								ImToNativeSize(ImSP, w, h, W, H, xmin, xmax, ymin, ymax);
-								g_pViewImage[0](ImFSP, W, H);
-								g_pViewImage[1](ImSP, W, H);
-								SaveRGBImage(ImFSP, string("/RGBImages/") + Str + g_im_save_format, W, H);
-								SaveGreyscaleImage(ImSP, string("/ISAImages/") + Str + g_im_save_format, W, H);
+								if (AnalizeImageForSubPresence(ImFSP, ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H) == 1)
+								{
+									Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
+									ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
+									ImToNativeSize(ImIntSP, w, h, W, H, xmin, xmax, ymin, ymax);
+									g_pViewImage[0](ImFSP, W, H);
+									g_pViewImage[1](ImIntSP, W, H);
+									SaveRGBImage(ImFSP, string("/RGBImages/") + Str + g_im_save_format, W, H);
+									SaveGreyscaleImage(ImIntSP, string("/ISAImages/") + Str + g_im_save_format, W, H);
+									SaveBinaryImage(ImYSP, string("/ILAImages/") + Str + g_im_save_format, W, H);
+								}
 
 								pbf = bf;
 								pbt = bt;
@@ -543,21 +656,21 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							int offset;
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = CompareTwoSubs(ImS, ImNES, ImS, ImNEForward[offset], w, h, W, H, ymin);
+								bln = CompareTwoSubs(ImIntS, ImNES, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, ImNES, ImS, ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, ImNES, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = CompareTwoSubs(ImS, prevImNE, ImS, ImNEForward[offset], w, h, W, H, ymin);
+									bln = CompareTwoSubs(ImIntS, prevImNE, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, prevImNE, ImS, ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, prevImNE, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
@@ -566,6 +679,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								}
 
 								pef = fn + offset;
+
+								IntersectYImages(ImYS, ImYForward[offset], w, h);
 
 								if (pef - pbf + 1 >= DL)
 								{
@@ -576,9 +691,23 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (pef - pbf + 1 >= DL)
 						{
-							memcpy(ImSP.m_pData, ImS.m_pData, BufferSize);
+							if (debug)
+							{
+								SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImIntS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+								SaveGreyscaleImage(prevIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImLast_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							}
+
+							IntersectTwoImages(ImIntS, prevIm, w, h);
+
+							if (debug)
+							{
+								SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImIntSIntImLast_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							}
+
+							memcpy(ImIntSP.m_pData, ImIntS.m_pData, BufferSize);
 							memcpy(ImFSP.m_pData, ImFS.m_pData, BufferSize);
 							memcpy(ImNESP.m_pData, ImNES.m_pData, BufferSize);
+							memcpy(ImYSP.m_pData, ImYS.m_pData, BufferSize);
 							finded_prev = 1;
 						}
 						else
@@ -590,9 +719,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						ef = bf;
 						bt = CurPos;
 
-						memcpy(ImS.m_pData, pIm->m_pData, BufferSize);
+						memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
 						memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
 						memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
+					}
+					else
+					{
+						IntersectYImages(ImYS, *pImY, w, h);
 					}
 				}
 			}
@@ -601,11 +734,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			{
 				if (finded_prev == 1)
 				{
-					bln = CompareTwoSubs(ImSP, ImNESP, ImS, ImNES, w, h, W, H, ymin);
+					bln = CompareTwoSubs(ImIntSP, ImNESP, ImIntS, ImNES, w, h, W, H, ymin);
 
 					if (bln == 0)
 					{
-						bln = DifficultCompareTwoSubs2(ImSP, ImNESP, ImS, ImNES, w, h, W, H, ymin);
+						bln = DifficultCompareTwoSubs2(ImIntSP, ImNESP, ImIntS, ImNES, w, h, W, H, ymin);
 					}
 
 					if (bln == 1)
@@ -621,24 +754,28 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						if (debug)
 						{
 							SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 
 							SaveRGBImage(ImFS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							SaveGreyscaleImage(ImNES, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNES_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 
 							SaveRGBImage(ImFSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImIntSP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImSP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							SaveGreyscaleImage(ImNESP, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImNESP_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 						}
 
-						Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
-						ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
-						ImToNativeSize(ImSP, w, h, W, H, xmin, xmax, ymin, ymax);
-						g_pViewImage[0](ImFSP, W, H);
-						g_pViewImage[1](ImSP, W, H);
-						SaveRGBImage(ImFSP, string("/RGBImages/") + Str + g_im_save_format, W, H);
-						SaveGreyscaleImage(ImSP, string("/ISAImages/") + Str + g_im_save_format, W, H);
+						if (AnalizeImageForSubPresence(ImFSP, ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H) == 1)
+						{
+							Str = VideoTimeToStr(pbt) + string("__") + VideoTimeToStr(pet);
+							ImToNativeSize(ImFSP, w, h, W, H, xmin, xmax, ymin, ymax);
+							ImToNativeSize(ImIntSP, w, h, W, H, xmin, xmax, ymin, ymax);
+							g_pViewImage[0](ImFSP, W, H);
+							g_pViewImage[1](ImIntSP, W, H);
+							SaveRGBImage(ImFSP, string("/RGBImages/") + Str + g_im_save_format, W, H);
+							SaveGreyscaleImage(ImIntSP, string("/ISAImages/") + Str + g_im_save_format, W, H);
+							SaveBinaryImage(ImYSP, string("/ILAImages/") + Str + g_im_save_format, W, H);
+						}
 					}
 				}
 
@@ -648,26 +785,27 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					{
 						int offset;
 						custom_buffer<int> *pPrevImNE = &prevImNE;
+						custom_buffer<int> *pPrevIm = &prevIm;
 
 						if (AnalyseImage(ImForward[DL - 1], w, h) == 0)
 						{
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = CompareTwoSubs(ImS, ImNES, ImS, ImNEForward[offset], w, h, W, H, ymin);
+								bln = CompareTwoSubs(ImIntS, ImNES, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, ImNES, ImS, ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, ImNES, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = CompareTwoSubs(ImS, *pPrevImNE, ImS, ImNEForward[offset], w, h, W, H, ymin);
+									bln = CompareTwoSubs(ImIntS, *pPrevImNE, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, *pPrevImNE, ImS, ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, *pPrevImNE, ImIntS, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
@@ -675,28 +813,31 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									break;
 								}
 
+								IntersectYImages(ImYS, ImYForward[offset], w, h);
+
 								pPrevImNE = &(ImNEForward[offset]);
+								//pPrevIm = &(ImForward[offset]);
 							}
 						}
 						else
 						{
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = CompareTwoSubs(ImS, ImNES, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
+								bln = CompareTwoSubs(ImIntS, ImNES, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, ImNES, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, ImNES, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = CompareTwoSubs(ImS, *pPrevImNE, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
+									bln = CompareTwoSubs(ImIntS, *pPrevImNE, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, *pPrevImNE, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, *pPrevImNE, ImForward[offset], ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
@@ -709,22 +850,22 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 										IntersectTwoImages(ImInt2, ImForward[_thr_n], w, h);
 									}
 
-									bln = CompareTwoSubs(ImS, ImNES, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
+									bln = CompareTwoSubs(ImIntS, ImNES, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, ImNES, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, ImNES, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = CompareTwoSubs(ImS, *pPrevImNE, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
+									bln = CompareTwoSubs(ImIntS, *pPrevImNE, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
 								{
-									bln = DifficultCompareTwoSubs2(ImS, *pPrevImNE, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
+									bln = DifficultCompareTwoSubs2(ImIntS, *pPrevImNE, ImInt2, ImNEForward[offset], w, h, W, H, ymin);
 								}
 
 								if (bln == 0)
@@ -732,8 +873,24 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									break;
 								}
 
+								IntersectYImages(ImYS, ImYForward[offset], w, h);
+
 								pPrevImNE = &(ImNEForward[offset]);
+								//pPrevIm = &(ImForward[offset]);
 							}
+						}
+
+						if (debug)
+						{
+							SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImIntS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(*pPrevIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImLast_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+						}
+
+						IntersectTwoImages(ImIntS, *pPrevIm, w, h);
+
+						if (debug)
+						{
+							SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImIntSIntImLast_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 						}
 
 						ef = fn + offset - 1;
@@ -749,11 +906,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					{
 						if (finded_prev == 1)
 						{
-							bln = CompareTwoSubs(ImS, ImNESP, ImS, ImNES, w, h, W, H, ymin);
+							bln = CompareTwoSubs(ImIntS, ImNESP, ImIntS, ImNES, w, h, W, H, ymin);
 
 							if (bln == 0)
 							{
-								bln = DifficultCompareTwoSubs2(ImS, ImNESP, ImS, ImNES, w, h, W, H, ymin);
+								bln = DifficultCompareTwoSubs2(ImIntS, ImNESP, ImIntS, ImNES, w, h, W, H, ymin);
 							}
 
 							if (bln == 1)
@@ -768,18 +925,22 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						if (debug)
 						{
 							SaveRGBImage(ImFS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImFS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImIntS, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_ImS_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 							SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pImRGB_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-							SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+							SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_pIm_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 						}
 
-						Str = VideoTimeToStr(bt) + string("__") + VideoTimeToStr(et);
-						ImToNativeSize(ImFS, w, h, W, H, xmin, xmax, ymin, ymax);
-						ImToNativeSize(ImS, w, h, W, H, xmin, xmax, ymin, ymax);
-						g_pViewImage[0](ImFS, W, H);
-						g_pViewImage[1](ImS, W, H);
-						SaveRGBImage(ImFS, string("/RGBImages/") + Str + g_im_save_format, W, H);
-						SaveGreyscaleImage(ImS, string("/ISAImages/") + Str + g_im_save_format, W, H);
+						if (AnalizeImageForSubPresence(ImFS, ImNES, ImIntS, ImYS, bt, bf, w, h, W, H) == 1)
+						{
+							Str = VideoTimeToStr(bt) + string("__") + VideoTimeToStr(et);
+							ImToNativeSize(ImFS, w, h, W, H, xmin, xmax, ymin, ymax);
+							ImToNativeSize(ImIntS, w, h, W, H, xmin, xmax, ymin, ymax);
+							g_pViewImage[0](ImFS, W, H);
+							g_pViewImage[1](ImIntS, W, H);
+							SaveRGBImage(ImFS, string("/RGBImages/") + Str + g_im_save_format, W, H);
+							SaveGreyscaleImage(ImIntS, string("/ISAImages/") + Str + g_im_save_format, W, H);
+							SaveBinaryImage(ImYS, string("/ILAImages/") + Str + g_im_save_format, W, H);
+						}
 					}
 				}
 
@@ -809,6 +970,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		{
 			memcpy(prevImRGB.m_pData, pImRGB->m_pData, BufferSize);
 			memcpy(prevImNE.m_pData, pImNE->m_pData, BufferSize);
+			memcpy(prevIm.m_pData, pIm->m_pData, BufferSize);
 
 			{
 				int _thr_n;
@@ -819,6 +981,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					memcpy(ImRGBForward[_thr_n].m_pData, ImRGBForward[_thr_n + 1].m_pData, BufferSize);
 					memcpy(ImForward[_thr_n].m_pData, ImForward[_thr_n + 1].m_pData, BufferSize);
 					memcpy(ImNEForward[_thr_n].m_pData, ImNEForward[_thr_n + 1].m_pData, BufferSize);
+					memcpy(ImYForward[_thr_n].m_pData, ImYForward[_thr_n + 1].m_pData, BufferSize);
 				}
 			}
 		}
@@ -842,45 +1005,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	}
 
 	return 0;
-}
-
-// return 1 if similar else 0
-int CompareTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &ImNFF1, custom_buffer<int> &Im2, custom_buffer<int> &ImNFF2, int size)
-{
-	int i, dif1, dif2, cmp, val1, val2, val3;
-
-	dif1 = 0;
-	dif2 = 0;
-	cmp = 0;
-
-	for(i=0; i<size; i++)
-	{
-		val1 = //Im1[i] | //can skip sequential subs with mostly same size
-				ImNFF1[i];
-		val2 = //Im2[i] | //can skip sequential subs with mostly same size
-				ImNFF2[i];
-		val3 = Im1[i] | Im2[i];
-
-		if (val3 == 255)
-		{
-			if (val1 != val2)
-			{
-				if (val1 == 255) dif1++;
-				else dif2++;
-			}
-			else
-			{
-				if (val1 == 255) cmp++;
-			}
-		}
-	}
-	if (dif2 > dif1) dif1 = dif2;
-
-	if (cmp == 0) return 0;
-
-	if ((double)dif1/(double)cmp > g_sse) return 0;
-	
-	return 1;
 }
 
 int AnalyseImage(custom_buffer<int> &Im, int w, int h)
@@ -1178,8 +1302,8 @@ int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> &ImNE1
 // H - full image include scale (if is) height
 int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h, int W, int H, int ymin)
 {
-	custom_buffer<int> ImFF1(w*h, 0), ImNE1(w*h, 0);
-	custom_buffer<int> ImFF2(w*h, 0), ImNE2(w*h, 0);
+	custom_buffer<int> ImFF1(w*h, 0), ImNE1(w*h, 0), ImY1(w*h, 0);
+	custom_buffer<int> ImFF2(w*h, 0), ImNE2(w*h, 0), ImY2(w*h, 0);
 	custom_buffer<int> ImTEMP1(w*h, 0), ImTEMP2(w*h, 0), ImTEMP3(w*h, 0);
 	custom_buffer<int> lb(h, 0), le(h, 0);
 	int res, size, i;
@@ -1188,8 +1312,8 @@ int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1
 
 	size = w*h;
 
-	GetTransformedImage(ImRGB1, ImTEMP1, ImTEMP2, ImFF1, ImNE1, w, h, W, H);
-	GetTransformedImage(ImRGB2, ImTEMP1, ImTEMP2, ImFF2, ImNE2, w, h, W, H);
+	GetTransformedImage(ImRGB1, ImTEMP1, ImTEMP2, ImFF1, ImNE1, ImY1, w, h, W, H);
+	GetTransformedImage(ImRGB2, ImTEMP1, ImTEMP2, ImFF2, ImNE2, ImY2, w, h, W, H);
 
 	for(i=0; i<size; i++) 
 	{
@@ -1484,39 +1608,6 @@ void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size)
 	{
 		if (Im2[i] == 255) Im1[i] = 255;
 	}
-}
-
-// W - full image include scale (if is) width
-// H - full image include scale (if is) height
-int ConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H)
-{
-	int res = GetTransformedImage(ImRGB, ImFF, ImSF, ImTF, ImNE, w, h, W, H);
-	return res;
-}
-
-int GetAndConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, CVideo *pVideo, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax)
-{
-	custom_buffer<int> ImRES(w*h, 0);
-	int i, wh, S;
-	int res;
-	
-	wh = w*h;
-
-    pVideo->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
-
-	res = GetTransformedImage(ImRGB, ImFF, ImSF, ImTF, ImNE, w, h, W, H);
-
-	S = 0;
-
-	if (res == 1)
-	{		
-		for(i=0; i<wh; i++)
-		{
-			if (ImTF[i] == 255) S++;
-		}
-	}
-
-	return S;
 }
 
 // W - full image include scale (if is) width

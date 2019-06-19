@@ -575,7 +575,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_tco, "text_centre_offset");
 	ReadProperty(fin, g_scale, "image_scale_for_clear_image");
 	
-	ReadProperty(fin, g_use_ISA_images, "use_ISA_images");
+	ReadProperty(fin, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
+	ReadProperty(fin, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
 
 	ReadProperty(fin, g_mpn, "min_points_number");
 	ReadProperty(fin, g_mpd, "min_points_density");
@@ -587,8 +588,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_DL, "sub_frame_length");
 	ReadProperty(fin, g_tp, "text_procent");
 	ReadProperty(fin, g_mtpl, "min_text_len_(in_procent)");
-	ReadProperty(fin, g_sse, "sub_square_error");
-	ReadProperty(fin, g_veple, "vedges_points_line_error");
+	//ReadProperty(fin, g_sse, "sub_square_error");
+	ReadProperty(fin, g_veple, "vedges_points_line_error");	
 	
 	ReadProperty(fin, g_clear_image_logical, "clear_image_logical");
 
@@ -605,6 +606,12 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(fin, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
 	ReadProperty(fin, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
+
+	ReadProperty(fin, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
+	ReadProperty(fin, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
+	ReadProperty(fin, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
+	ReadProperty(fin, g_max_dl_down, "max_dl_down");
+	ReadProperty(fin, g_max_dl_up, "max_dl_up");
 
 	fin.close();
 
@@ -656,6 +663,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, "ssp_oim_property_using_ilaimages_for_getting_txt_areas");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
@@ -664,12 +672,18 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_threads, "ssp_oim_property_threads");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_square_error, "ssp_oim_property_sub_square_error");
+	//ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_square_error, "ssp_oim_property_sub_square_error");
 	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
 	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_text_procent, "ssp_oim_property_text_procent");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");	
+
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, "ssp_oim_property_use_ILA_images_for_search_subtitles");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, "ssp_oim_property_replace_ISA_by_filtered_version");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_max_dl_down, "ssp_oim_property_max_dl_down");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_max_dl_up, "ssp_oim_property_max_dl_up");
 
 	fin.close();
 }
@@ -706,7 +720,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_tco, "text_centre_offset");
 	WriteProperty(fout, g_scale, "image_scale_for_clear_image");
 
-	WriteProperty(fout, g_use_ISA_images, "use_ISA_images");
+	WriteProperty(fout, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
+	WriteProperty(fout, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
 
 	WriteProperty(fout, g_mpn, "min_points_number");
 	WriteProperty(fout, g_mpd, "min_points_density");
@@ -718,7 +733,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_DL, "sub_frame_length");
 	WriteProperty(fout, g_tp, "text_procent");
 	WriteProperty(fout, g_mtpl, "min_text_len_(in_procent)");
-	WriteProperty(fout, g_sse, "sub_square_error");
+	//WriteProperty(fout, g_sse, "sub_square_error");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
 
 	WriteProperty(fout, g_clear_image_logical, "clear_image_logical");
@@ -734,6 +749,12 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
 	WriteProperty(fout, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
+
+	WriteProperty(fout, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
+	WriteProperty(fout, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
+	WriteProperty(fout, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
+	WriteProperty(fout, g_max_dl_down, "max_dl_down");
+	WriteProperty(fout, g_max_dl_up, "max_dl_up");
 
 	fout.close();
 }

@@ -177,6 +177,7 @@
       <CudaRuntime>Shared</CudaRuntime>
       <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_75,compute_75;%(CodeGeneration)</CodeGeneration>
       <Runtime>MT</Runtime>
+      <Optimization>O2</Optimization>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -225,6 +226,7 @@
       </Defines>
       <GenerateRelocatableDeviceCode>false</GenerateRelocatableDeviceCode>
       <CodeGeneration>compute_35,sm_35;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61;compute_70,sm_70;compute_75,sm_75;compute_75,compute_75</CodeGeneration>
+      <Optimization>Od</Optimization>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|Win32'">

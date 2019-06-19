@@ -23,7 +23,8 @@
 #include <streambuf>
 using namespace std;
 
-bool g_use_ISA_images = false;
+bool g_use_ISA_images_for_get_txt_area = true;
+bool g_use_ILA_images_for_get_txt_area = true;
 
 bool g_join_subs_and_correct_time = true;
 
@@ -1533,7 +1534,7 @@ int FindTextLinesWithExcFilter()
 	int res = 0;
 	__try
 	{
-		res = FindTextLines(pThrCCTI->m_ImRGB, pThrCCTI->m_ImF[2], pThrCCTI->m_ImF[5], pThrCCTI->m_ImF[3], pThrCCTI->m_ImF[1], pThrCCTI->m_SavedFiles, pThrCCTI->m_w, pThrCCTI->m_h);
+		res = FindTextLines(pThrCCTI->m_ImRGB, pThrCCTI->m_ImF[2], pThrCCTI->m_ImF[5], pThrCCTI->m_ImF[3], pThrCCTI->m_ImF[1], pThrCCTI->m_ImF[0], pThrCCTI->m_SavedFiles, pThrCCTI->m_w, pThrCCTI->m_h);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
@@ -1637,7 +1638,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			t1 = GetTickCount();
 			for (__int64 i_call = 0; i_call < num_calls; i_call++)
 			{*/
-			GetTransformedImage(m_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[1], m_w, m_h, W, H);		
+			GetTransformedImage(m_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[1], m_ImF[2], m_w, m_h, W, H);
 			/*}
 			(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
 
@@ -1648,7 +1649,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				continue;
 			}
 
-			if (g_use_ISA_images == true) 
+			if (g_use_ISA_images_for_get_txt_area) 
 			{
 				Str = FileNamesVector[k];
 				Str = GetFileName(Str.ToStdString());
@@ -1663,7 +1664,30 @@ void *ThreadCreateClearedTextImages::Entry()
 					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, m_w, m_h);
 				}
 			}
-		
+
+			// IL image
+			m_ImF[0][0] = -1;
+			if (g_use_ILA_images_for_get_txt_area)
+			{
+				Str = FileNamesVector[k];
+				Str = GetFileName(Str.ToStdString());
+				Str = g_work_dir + "/ILAImages/" + Str + g_im_save_format;
+
+				if (wxFileExists(Str))
+				{
+					LoadGreyscaleImage(m_ImF[0], string(Str), m_w, m_h);
+					if (g_show_results) SaveGreyscaleImage(m_ImF[0], "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, m_w, m_h);
+					
+					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, m_w, m_h);
+					IntersectTwoImages(m_ImF[5], m_ImF[0], m_w, m_h);
+					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, m_w, m_h);
+
+					if (g_show_results) SaveGreyscaleImage(m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, m_w, m_h);
+					IntersectTwoImages(m_ImF[3], m_ImF[0], m_w, m_h);
+					if (g_show_results) SaveGreyscaleImage(m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, m_w, m_h);
+				}
+			}
+
 			Str = FileNamesVector[k];
 			Str = GetFileName(Str.ToStdString());
 			m_SavedFiles.clear();

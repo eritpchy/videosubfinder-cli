@@ -53,6 +53,7 @@ public:
 	int		m_W;
 	int		m_H;
 
+	wxColour   m_CLDBG;
 	wxColour   m_CLSP;
 	wxColour   m_CL1;
 	wxColour   m_CL2;

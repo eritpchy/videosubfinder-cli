@@ -95,10 +95,11 @@ void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buff
 void BorderClear(custom_buffer<int> &Im, int dd, int w, int h);
 void EasyBorderClear(custom_buffer<int> &Im, int w, int h);
 
-int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, int w, int h, int W, int H);
+int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int w, int h, int W, int H);
+int FilterTransformedImage(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H, std::string iter_det);
 int FilterImage(custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int w, int h, int W, int H, custom_buffer<int> &LB, custom_buffer<int> &LE, int N);
 
-int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, vector<string> &SavedFiles, int W, int H);
+int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, custom_buffer<int> &ImIL, vector<string> &SavedFiles, int W, int H);
 
 void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset);
@@ -130,6 +131,7 @@ void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h);
 void LoadRGBImage(custom_buffer<int> &Im, string name, int &w, int &h);
 void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h);
+void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int quality = -1, int dpi = -1);
 void IntersectTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h);
 
 bool InitCUDADevice();

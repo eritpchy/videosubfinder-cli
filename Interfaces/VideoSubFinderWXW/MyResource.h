@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"3.50"
+#define VSF_VERSION	"3.60"
 
 #define ID_APP_ABOUT                    1100
 
