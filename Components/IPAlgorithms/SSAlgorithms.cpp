@@ -561,7 +561,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 					}
 
-					if ((bln > 0) && (fn - bf + 1 == 3))
+					if ((bln > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL)))
 					{
 						memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
 						memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
@@ -686,7 +686,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 								pef = fn + offset;
 
-								IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
+								// don't intersect fist DL and last DL frames in ImIL
+								//IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
 
 								if (pef - pbf + 1 >= DL)
 								{
@@ -820,7 +821,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									break;
 								}
 
-								IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
+								// don't intersect fist DL and last DL frames in ImIL
+								//IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
 
 								pPrevImNE = &(ImNEForward[offset]);
 								//pPrevIm = &(ImForward[offset]);
@@ -880,7 +882,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									break;
 								}
 
-								IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
+								// Don't intersect fist DL and last DL frames in ImIL
+								//IntersectYImages(ImYS, ImYForward[offset], w, h, 255);
 
 								pPrevImNE = &(ImNEForward[offset]);
 								//pPrevIm = &(ImForward[offset]);
