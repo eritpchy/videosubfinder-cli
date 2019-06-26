@@ -128,9 +128,9 @@ int CompareTXTImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int w1, i
 
 void GetImageSize(string name, int &w, int &h);
 void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h);
-void LoadRGBImage(custom_buffer<int> &Im, string name, int &w, int &h);
+void LoadRGBImage(custom_buffer<int> &Im, string name, int w, int h);
 void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
-void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h);
+void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h);
 void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int quality = -1, int dpi = -1);
 void IntersectTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h);
 

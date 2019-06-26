@@ -29,7 +29,7 @@ public:
 	int m_y;
 	int	m_i;
 
-	CMyPoint() {}
+	CMyPoint() {/* m_i = -1; */}
 	CMyPoint(int x, int y, int i) {m_x=x; m_y=y; m_i=i;}
 }; 
 

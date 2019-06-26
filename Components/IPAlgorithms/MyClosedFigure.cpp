@@ -707,6 +707,22 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 		}
 	}
 
+	/*int debug = 1;
+
+	if (debug)
+	{
+		for (i = 0; i < N; i++)
+		{
+			pf = &(FiguresArray[i]);
+			CMyPoint *PA = pf->m_PointsArray;
+
+			for (int l = 0; l < pf->m_Square; l++)
+			{
+				custom_assert(PA[l].m_i >= 0, "PA[l].m_i < 0");
+			}
+		}
+	}*/
+
 	delete[] m;
 	delete[] key;
 	delete[] key2;

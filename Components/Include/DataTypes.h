@@ -175,6 +175,46 @@ public:
 
 		return m_pData[idx];
 	}
+
+	inline T get_max_value()
+	{
+		custom_assert(m_size > 0, "m_size is not > 0");
+
+		T res = m_pData[0];
+		for (int i = 1; i < m_size; i++)
+		{
+			if (m_pData[i] > res) res = m_pData[i];
+		}
+
+		return res;
+	}
+
+	inline T get_max_value(int cnt)
+	{
+		custom_assert(m_size > 0, "m_size is not > 0");
+		custom_assert(cnt <= m_size, "cnt is not <= m_size");
+
+		T res = m_pData[0];
+		for (int i = 1; i < cnt; i++)
+		{
+			if (m_pData[i] > res) res = m_pData[i];
+		}
+
+		return res;
+	}
+
+	inline T get_min_value()
+	{
+		custom_assert(m_size > 0, "m_size is not > 0");
+
+		T res = m_pData[0];
+		for (int i = 1; i < m_size; i++)
+		{
+			if (m_pData[i] < res) res = m_pData[i];
+		}
+
+		return res;
+	}
 };
 
 template<>
@@ -196,6 +236,17 @@ custom_buffer<int>::custom_buffer(int size, int val)
 			m_pData[i] = val;
 		}
 	}
+}
+
+template<>
+custom_buffer<char>::custom_buffer(int size, char val)
+{
+	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
+	m_pData = new char[size];
+	m_size = size;
+	m_need_to_release = true;
+
+	memset(m_pData, val, m_size);
 }
 
 template<>
