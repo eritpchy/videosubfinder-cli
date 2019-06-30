@@ -563,7 +563,10 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
 	ReadProperty(fin, g_show_transformed_images_only, "show_transformed_images_only");
 	ReadProperty(fin, g_use_cuda_gpu, "use_cuda_gpu");
-	ReadProperty(fin, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
+	ReadProperty(fin, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
+	ReadProperty(fin, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
+	ReadProperty(fin, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
+	ReadProperty(fin, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
 
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mnthr, "moderate_threshold_for_NEdges");
@@ -627,7 +630,10 @@ void CMainFrame::LoadSettings()
 	
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, "ssp_oi_property_cpu_kmeans_initial_loop_iterations");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, "ssp_oi_property_cpu_kmeans_loop_iterations");
 	ReadProperty(fin, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
 	ReadProperty(fin, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
 	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
@@ -708,8 +714,10 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_clear_test_images_folder, "clear_test_images_folder");
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
 	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
-	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
-
+	WriteProperty(fout, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
+	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");	
+	WriteProperty(fout, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
+	WriteProperty(fout, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mnthr, "moderate_threshold_for_NEdges");
 	WriteProperty(fout, g_segw, "segment_width");

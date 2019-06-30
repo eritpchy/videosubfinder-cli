@@ -27,6 +27,9 @@
 #endif
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs/legacy/constants_c.h>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <ppl.h>
 #include <ppltasks.h>
 using namespace std;
@@ -38,7 +41,7 @@ void ExtendByInsideFigures(custom_buffer<int> &ImRES, int w, int h, int white, b
 void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h);
 int ClearImageByTextDistance(custom_buffer<int> &Im, int w, int h, int W, int H, int real_im_x_center, int white, std::string iter_det);
 void ClearImageByBigLines(custom_buffer<int> &Im, int w, int h, int W, int H);
-int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int white);
+int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, int white);
 void GetMainColorImage(custom_buffer<int> &ImRES, custom_buffer<int> *pImMainCluster, custom_buffer<int> &ImMASK, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h, std::string iter_det, int min_x, int max_x);
 void GreyscaleImageToBinary(custom_buffer<int> &ImRES, custom_buffer<int> &ImGR, int w, int h, int white);
 int GetImageWithOutsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white);
@@ -73,6 +76,7 @@ string  g_im_save_format = ".jpeg";
 //string  g_im_save_format = ".bmp";
 
 double	g_mthr = 0.4;
+double	g_smthr = 0.25;
 double	g_mnthr = 0.3;
 int		g_segw = 8;
 int     g_segh = 3;  
@@ -105,6 +109,8 @@ int g_min_ddQ = 14;
 
 int g_scale = 4;
 
+int g_use_simple = false;
+
 #define STR_SIZE (256 * 2) // 
 
 #define MAX_EDGE_STR 786432 //на сам деле ~ 32*3*255
@@ -126,7 +132,10 @@ bool g_wxImageHandlersInitialized = false;
 
 bool g_use_cuda_gpu = true;
 
-int g_cuda_kmeans_loop_iterations = 20;
+int g_cuda_kmeans_initial_loop_iterations = 10;
+int g_cuda_kmeans_loop_iterations = 30;
+int g_cpu_kmeans_initial_loop_iterations = 10;
+int g_cpu_kmeans_loop_iterations = 10;
 
 double g_min_h = 12.0 / 720.0; // ~ min sub height in percents to image height
 
@@ -1273,7 +1282,7 @@ void CombineStrengthOfTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2
 	}
 }
 
-void GetImCMOEWithThr1(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, custom_buffer<int> &ImUMOE, custom_buffer<int> &ImVMOE, int w, int h, custom_buffer<int> &offsets, custom_buffer<int> &dhs, int N)
+void GetImCMOEWithThr1(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, custom_buffer<int> &ImUMOE, custom_buffer<int> &ImVMOE, int w, int h, custom_buffer<int> &offsets, custom_buffer<int> &dhs, int N, double mthr)
 {
 	custom_buffer<int> ImRES2(w*h, 0), ImRES3(w*h, 0);
 	int mx, my, i, k, y, x;
@@ -1291,7 +1300,7 @@ void GetImCMOEWithThr1(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, c
 		}
 	}
 
-	FindAndApplyGlobalThreshold(ImCMOE, w, h);
+	//FindAndApplyGlobalThreshold(ImCMOE, w, h);
 	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);
 
 	AplyESS(ImCMOE, ImRES2, w, h);
@@ -1313,12 +1322,12 @@ void GetImCMOEWithThr1(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, c
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
-		ApplyModerateThreshold(ImCMOE.get_sub_buffer(i), g_mthr, w, dhs[k]);
+		ApplyModerateThreshold(ImCMOE.get_sub_buffer(i), mthr, w, dhs[k]);
 	}
 }
 
 
-void GetImCMOEWithThr2(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, custom_buffer<int> &ImUMOE, custom_buffer<int> &ImVMOE, int w, int h, custom_buffer<int> &offsets, custom_buffer<int> &dhs, int N)
+void GetImCMOEWithThr2(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, custom_buffer<int> &ImUMOE, custom_buffer<int> &ImVMOE, int w, int h, custom_buffer<int> &offsets, custom_buffer<int> &dhs, int N, double mthr)
 {
 	custom_buffer<int> ImRES5(w*h, 0), ImRES6(w*h, 0);
 	int mx, my, i, k, y, x;
@@ -1339,7 +1348,7 @@ void GetImCMOEWithThr2(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, c
 		}
 	}
 
-	FindAndApplyGlobalThreshold(ImCMOE, w, h);
+	//FindAndApplyGlobalThreshold(ImCMOE, w, h);
 	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);
 
 	AplyESS(ImCMOE, ImRES5, w, h);
@@ -1360,11 +1369,11 @@ void GetImCMOEWithThr2(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, c
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
-		ApplyModerateThreshold(ImCMOE.get_sub_buffer(i), g_mthr, w, dhs[k]);
+		ApplyModerateThreshold(ImCMOE.get_sub_buffer(i), mthr, w, dhs[k]);
 	}
 }
 
-void GetImFF(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImRGB, custom_buffer<int> &ImYFull, custom_buffer<int> &ImUFull, custom_buffer<int> &ImVFull, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h)
+void GetImFF(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImRGB, custom_buffer<int> &ImYFull, custom_buffer<int> &ImUFull, custom_buffer<int> &ImVFull, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w,int h, double mthr)
 {	
 	custom_buffer<int> offsets(N, 0), cnts(N, 0), dhs(N, 0);
 	int i, k, cnt, val;
@@ -1404,8 +1413,8 @@ void GetImFF(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<i
 	);		
 	
 	concurrency::parallel_invoke(
-		[&] { GetImCMOEWithThr1(ImRES4, ImYMOE, ImUMOE, ImVMOE, ww, hh, offsets, dhs, N); },
-		[&] { GetImCMOEWithThr2(ImRES1, ImYMOE, ImUMOE, ImVMOE, ww, hh, offsets, dhs, N); }
+		[&] { GetImCMOEWithThr1(ImRES4, ImYMOE, ImUMOE, ImVMOE, ww, hh, offsets, dhs, N, mthr); },
+		[&] { GetImCMOEWithThr2(ImRES1, ImYMOE, ImUMOE, ImVMOE, ww, hh, offsets, dhs, N, mthr); }
 	);
 
 	CombineTwoImages(ImRES1, ImRES4, ww, hh);
@@ -1615,8 +1624,8 @@ int FilterTransformedImage(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, c
 	if (res == 1) res = ClearImageFromSmallSymbols(ImTF, w, h, W, H, 255);
 	if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_05_ImTFClearedFromSmallSymbols" + g_im_save_format, w, h);
 
-	if (res == 1) res = SecondFiltration(ImTF, ImNE, LB, LE, N, w, h, W, H);
-	if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_06_ImTFFSecondFiltration" + g_im_save_format, w, h);
+	//if (res == 1) res = SecondFiltration(ImTF, ImNE, LB, LE, N, w, h, W, H);
+	//if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_06_ImTFFSecondFiltration" + g_im_save_format, w, h);
 
 	//if (res == 1) res = ThirdFiltration(ImTF, LB, LE, N, w, h, W, H);
 	//if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_07_ImTFFThirdFiltration" + g_im_save_format, w, h);
@@ -1666,7 +1675,7 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	GreyscaleMatToImage(cv_ImLABSplit[2], w, h, ImV);*/
 	
 	concurrency::parallel_invoke(
-		[&] { GetImFF(ImFF, ImSF, ImRGB, ImY, ImU, ImV, LB, LE, N, w, h); },
+		[&] { GetImFF(ImFF, ImSF, ImRGB, ImY, ImU, ImV, LB, LE, N, w, h, g_mthr); },
 		[&] { GetImNE(ImNE, ImY, ImU, ImV, w, h); },
 		[&] { GetImHE(ImHE, ImY, ImU, ImV, w, h); }
 	);	
@@ -2429,13 +2438,13 @@ inline void GetDDY(int &h, int &LH, int &LMAXY, int &ddy1, int &ddy2)
 	}
 }
 
-void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, bool mask_only = false, float threshold = 0.001)
+void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, bool mask_only = false, float threshold = 0.001)
 {	
 #ifdef WIN64
 	int numObjs = w * h, numObjsFF;
 	float **clusters;
 	custom_buffer<int> ImRGBFF(numObjs, 0), labelsFF(numObjs, 0);
-	custom_buffer<char> color_cluster_id(255*255*255, -1);
+	custom_buffer<char> color_cluster_id(1 << 24, -1);
 
 	numObjsFF = 0;
 	for (int i = 0; i < w*h; i++)
@@ -2450,8 +2459,7 @@ void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buf
 
 	if (numObjsFF > 0)
 	{
-		int num_mask_iter = 10;
-		clusters = cuda_kmeans_img((unsigned char*)(ImRGBFF.m_pData), numObjsFF, numClusters, threshold, labelsFF.m_pData, num_mask_iter);
+		clusters = cuda_kmeans_img((unsigned char*)(ImRGBFF.m_pData), numObjsFF, numClusters, threshold, labelsFF.m_pData, initial_loop_iterations);
 		free(clusters[0]);
 		free(clusters);
 	}
@@ -2475,9 +2483,20 @@ void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buf
 		{
 			for (int i = 0; i < w*h; i++)
 			{
-				labels[i] = color_cluster_id[ImRGB[i] >> 8];
+				if (ImFF[i] != 0)
+				{
+					labels[i] = color_cluster_id[ImRGB[i] >> 8];
+				}
+				else
+				{
+					labels[i] = -1;
+				}
 			}
 		}
+		min_x = 0;
+		max_x = w - 1;
+		min_y = 0;
+		max_y = h - 1;
 
 		clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
 		free(clusters[0]);
@@ -2487,13 +2506,23 @@ void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buf
 	{
 		if (numObjsFF == 0)
 		{
+			min_x = 0;
+			max_x = w - 1;
+			min_y = 0;
+			max_y = h - 1;
+
 			clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
 			free(clusters[0]);
 			free(clusters);
 		}
 		else
 		{
-			int i, j, x, y, min_x=w, max_x=0, min_y=h, max_y=0, ww, hh;
+			int i, j, x, y, ww, hh;
+
+			min_x = w-1;
+			max_x = 0;
+			min_y = h-1;
+			max_y = 0;
 
 			for (y = 0, i = 0; y<h; y++)
 			{
@@ -2524,7 +2553,15 @@ void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buf
 				for (x = min_x, i = y * w + min_x; x <= max_x; x++, i++, j++)
 				{
 					ImRGBMASK[j] = ImRGB[i];
-					labelsMASK[j] = color_cluster_id[ImRGBMASK[j] >> 8];
+
+					if (ImFF[i] != 0)
+					{
+						labelsMASK[j] = color_cluster_id[ImRGBMASK[j] >> 8];
+					}
+					else
+					{
+						labelsMASK[j] = -1;
+					}
 				}
 			}
 
@@ -2546,15 +2583,195 @@ void cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buf
 #endif
 }
 
-void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations)
+void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, bool mask_only = false)
 {
-	int i, x, y;
+	//custom_buffer<int> ImRGBFF(numObjs, 0), labelsFF(numObjs, 0);
+	custom_buffer<char> color_cluster_id(1 << 24, 0);
+	int numObjsFF;
+	int i, j, color;
+	u8 *pClr;
+
+	numObjsFF = 0;
+	for (i = 0; i < w*h; i++)
+	{
+		if (ImFF[i] != 0)
+		{
+			numObjsFF++;
+		}
+	}
+	
+	cv::Mat cv_samplesFF(numObjsFF, 3, CV_32F);
+	cv::Mat cv_labelsFF(numObjsFF, 1, CV_32S);	
+	cv::Mat centers;
+
+	j = 0;
+	for (i = 0; i < w*h; i++)
+	{
+		if (ImFF[i] != 0)
+		{
+			pClr = (u8*)(&ImRGB[i]);
+
+			for (int z = 0; z < 3; z++)
+			{
+				cv_samplesFF.at<float>(j, z) = pClr[z];
+			}
+			j++;
+		}
+	}
+
+	if (numObjsFF > 0)
+	{
+		cv::kmeans(cv_samplesFF, numClusters, cv_labelsFF, cv::TermCriteria(cv::TermCriteria::MAX_ITER, initial_loop_iterations, 1.0), 1, cv::KMEANS_PP_CENTERS, centers);
+	}
+
+	if (numObjsFF > 0)
+	{
+		j = 0;
+		for (i = 0; i < w*h; i++)
+		{
+			if (ImFF[i] != 0)
+			{
+				color_cluster_id[ImRGB[i] >> 8] = cv_labelsFF.at<int>(j, 0);
+				j++;
+			}
+		}
+	}
+
+	if (!mask_only)
+	{
+		cv::Mat cv_samples(w*h, 3, CV_32F);
+		cv::Mat cv_labels(w*h, 1, CV_32S);
+
+		for (i = 0; i < w*h; i++)
+		{
+			pClr = (u8*)(&ImRGB[i]);
+
+			for (int z = 0; z < 3; z++)
+			{
+				cv_samples.at<float>(i, z) = pClr[z];
+			}
+		}
+
+		if (numObjsFF > 0)
+		{
+			for (i = 0; i < w*h; i++)
+			{
+				cv_labels.at<int>(i, 0) = color_cluster_id[ImRGB[i] >> 8];				
+			}
+		}
+		min_x = 0;
+		max_x = w - 1;
+		min_y = 0;
+		max_y = h - 1;
+
+		cv::kmeans(cv_samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_USE_INITIAL_LABELS, centers);
+		memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));
+	}
+	else
+	{
+		if (numObjsFF == 0)
+		{
+			min_x = 0;
+			max_x = w - 1;
+			min_y = 0;
+			max_y = h - 1;
+
+			cv::Mat cv_samples(w*h, 3, CV_32F);
+			cv::Mat cv_labels(w*h, 1, CV_32S);
+
+			for (i = 0; i < w*h; i++)
+			{
+				pClr = (u8*)(&ImRGB[i]);
+
+				for (int z = 0; z < 3; z++)
+				{
+					cv_samples.at<float>(i, z) = pClr[z];
+				}
+			}
+
+			cv::kmeans(cv_samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_PP_CENTERS, centers);
+			memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));
+		}
+		else
+		{
+			int i, j, x, y, ww, hh;
+
+			min_x = w - 1;
+			max_x = 0;
+			min_y = h - 1;
+			max_y = 0;
+
+			for (y = 0, i = 0; y < h; y++)
+			{
+				for (x = 0; x < w; x++, i++)
+				{
+					if (ImFF[i] != 0)
+					{
+						if (x < min_x) min_x = x;
+						if (x > max_x) max_x = x;
+						if (y < min_y) min_y = y;
+						if (y > max_y) max_y = y;
+					}
+				}
+			}
+			min_x = std::max<int>(min_x - 2, 0);
+			max_x = std::min<int>(max_x + 2, w - 1);
+			min_y = std::max<int>(min_y - 2, 0);
+			max_y = std::min<int>(max_y + 2, h - 1);
+
+			ww = max_x - min_x + 1;
+			hh = max_y - min_y + 1;
+
+			cv::Mat cv_samplesMASK(ww*hh, 3, CV_32F);
+			cv::Mat cv_labelsMASK(ww*hh, 1, CV_32S);
+
+			int numObjsMASK = ww * hh;
+
+			for (y = min_y, j = 0; y <= max_y; y++)
+			{
+				for (x = min_x, i = y * w + min_x; x <= max_x; x++, i++, j++)
+				{
+					pClr = (u8*)(&ImRGB[i]);
+
+					for (int z = 0; z < 3; z++)
+					{
+						cv_samplesMASK.at<float>(j, z) = pClr[z];
+					}
+
+					cv_labelsMASK.at<int>(j, 0) = color_cluster_id[ImRGB[i] >> 8];
+				}
+			}
+
+			cv::kmeans(cv_samplesMASK, numClusters, cv_labelsMASK, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_USE_INITIAL_LABELS, centers);
+
+			for (y = min_y, j = 0; y <= max_y; y++)
+			{
+				for (x = min_x, i = y * w + min_x; x <= max_x; x++, i++, j++)
+				{
+					color_cluster_id[ImRGB[i] >> 8] = cv_labelsMASK.at<int>(j, 0);
+				}
+			}
+
+			for (int i = 0; i < w*h; i++)
+			{
+				labels[i] = color_cluster_id[ImRGB[i] >> 8];
+			}
+		}
+	}
+	//--------------------------------------------------
+
+	/*int i, x, y;
 	cv::Mat samples(w * h, 3, CV_32F);
 	cv::Mat cv_labels(w * h, 1, CV_32S);	
 	cv::Mat centers;
 	int color, rc, gc;
 	u8 *pClr;
 	pClr = (u8*)(&color);
+
+	min_x = 0;
+	max_x = w - 1;
+	min_y = 0;
+	max_y = h - 1;
 
 	for (i = 0; i < w*h; i++)
 	{
@@ -2576,8 +2793,9 @@ void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_b
 	}
 
 	cv::theRNG().state = 0;
-	cv::kmeans(samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 10, 1.0), loop_iterations, cv::KMEANS_USE_INITIAL_LABELS, centers);
-	memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));
+	cv::kmeans(samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 10, 1.0), 10, cv::KMEANS_USE_INITIAL_LABELS, centers);
+	//cv::kmeans(samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_USE_INITIAL_LABELS, centers);
+	memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));*/
 }
 
 void GetClustersImage(custom_buffer<int> &ImRES, custom_buffer<int> &labels, int clusterCount, int w, int h)
@@ -2624,10 +2842,14 @@ void SortClustersData(custom_buffer<int> &cluster_id, custom_buffer<int> &cluste
 	}
 }
 
-void SortClusters(custom_buffer<int> &labels, custom_buffer<int> &cluster_id, custom_buffer<int> &ImMASK, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y)
+void SortClusters(custom_buffer<int> &labels, custom_buffer<int> &cluster_id, custom_buffer<int> &cluster_cnt, custom_buffer<int> &ImMASK, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y)
 {
-	int x, y, i, j, val;
-	custom_buffer<int> cluster_cnt(clusterCount, 0);
+	int x, y, i, j, val;	
+
+	for (i = 0; i < clusterCount; i++)
+	{
+		cluster_cnt[i] = 0;
+	}
 
 	for (y = min_y; y <= max_y; y++)
 	{
@@ -2845,14 +3067,15 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 {
 	custom_buffer<int> ImRES4(w*h, 0);
 	int val, i, j;
-	double ww_thr = 0.7;
+	double ww_thr = 0.5;
 	double ww_in_thr = 0.7;
-	double max_section_thr = 0.5;
-	double len_thr = 0.0;
+	double max_section_thr = 0.5;	
 	double cnt_thr = 0.33;
+	//double len_thr = 0.0;
+	//double placement_cnt_thr = 0.2;
 	int num_main_clusters;
-	custom_buffer<int> ImInside(w*h, 0), ImInsideClose(w*h, 0);
-	custom_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0), cluster_ids(clusterCount, 0), cnts(clusterCount, 0);	
+	custom_buffer<int> ImInside(w*h, 0), ImInsideClose(w*h, 0), ImInside2(w*h, 0);
+	custom_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0), cluster_ids(clusterCount, 0), cnts(clusterCount, 0), placement_cnts(clusterCount, 0);
 	int max_ww, max_max_section, max_len, max_cnt;
 
 	deleted_by_location = 0;
@@ -2861,7 +3084,14 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	IntersectTwoImages(ImRES4, ImMASKF, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImRES4, "/TestImages/FilterImMask_" + iter_det + "_01_ImClustersInImMASKF" + g_im_save_format, w, h);
 
-	GetClustersInfoByLocation(ImRES4, len, ww, max_section, cnts, clusterCount, w, h, max_x, iter_det);
+	/*concurrency::parallel_invoke(
+		[&ImRES4, &len, &ww, &max_section, &cnts, w, h, max_x, clusterCount, iter_det] {*/
+			GetClustersInfoByLocation(ImRES4, len, ww, max_section, cnts, clusterCount, w, h, max_x, iter_det);
+		/*},
+		[&ImRES4, &placement_cnts, w, h, max_x, clusterCount, iter_det] {
+			GetClustersInfoByPlacement(placement_cnts, ImRES4, clusterCount, w, h, 0, max_x, 0, h - 1, iter_det);
+		}
+	);*/
 
 	for (int cluster_id = 0; cluster_id < clusterCount; cluster_id++)
 	{
@@ -2873,6 +3103,11 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	i = 0;
 	while (i < num_main_clusters)
 	{
+		if (num_main_clusters == 1)
+		{
+			break;
+		}
+
 		int cluster_id = cluster_ids[i];
 		int white = GetClusterColor(clusterCount, cluster_id);
 		int len_in, ww_in, max_section_in, cnt_in;
@@ -2907,29 +3142,84 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 			}
 
 			IntersectTwoImages(ImInside, ImRES4, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImInside, "/TestImages/FilterImMask_" + iter_det + "_02_id" + std::to_string(cluster_id) + "_07_ImClusterInsideFiguresIntImMASK" + g_im_save_format, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImInside, "/TestImages/FilterImMask_" + iter_det + "_02_id" + std::to_string(cluster_id) + "_07_01_ImClusterInsideFiguresIntImMASK" + g_im_save_format, w, h);
 
-			GetInfoByLocation(ImInside, len_in, ww_in, max_section_in, cnt_in, w, h, max_x, white, iter_det);
+			GetInfoByLocation(ImInside, len_in, ww_in, max_section_in, cnt_in, w, h, max_x, white, iter_det);							
 
 			if (ww_in >= ww[i] * ww_in_thr)
 			{
-				if (i < num_main_clusters - 1)
+				int rem_i = i;
+				int cnt1 = 0, cnt2 = 0, cnt3 = 0;
+				if (GetImageWithInsideFigures(ImInside, ImInside2, w, h, white, false) > 0)
 				{
-					ww[i] = ww[num_main_clusters - 1];
-					max_section[i] = max_section[num_main_clusters - 1];
-					len[i] = len[num_main_clusters - 1];
-					cluster_ids[i] = cluster_ids[num_main_clusters - 1];
-					cnts[i] = cnts[num_main_clusters - 1];
-				}
-				num_main_clusters--;
-				continue;
-			}
-		}
+					IntersectTwoImages(ImInside2, ImRES4, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImInside2, "/TestImages/FilterImMask_" + iter_det + "_02_id" + std::to_string(cluster_id) + "_07_02_ImClusterInside2FiguresIntImMASK" + g_im_save_format, w, h);
 
-		if (num_main_clusters == 1)
-		{
-			break;
-		}
+					for (j = 0; j < w*h; j++)
+					{
+						if (ImInside2[j] != 0)
+						{
+							cnt1++;
+
+							if (ImRES4[j] == white)
+							{
+								cnt2++;
+							}
+						}
+
+						if (ImInside[j] != 0)
+						{
+							cnt3++;
+						}
+					}
+				}
+
+				if ((cnt2 > cnt1*0.5) && (cnt2 > cnt3*0.5))
+				{
+					custom_buffer<int> cluster_ids_rem(clusterCount, 0);
+					custom_buffer<int> cluster_cnt(clusterCount, 0);
+					SortClusters(labels, cluster_ids_rem, cluster_cnt, ImInside, clusterCount, w, h, 0, max_x, 0, h - 1);
+
+					rem_i = num_main_clusters;
+					for (j = 0; j < num_main_clusters; j++)
+					{
+						if (cluster_ids[j] == cluster_ids_rem[0])
+						{
+							rem_i = j;
+							break;
+						}
+					}
+					
+				}
+
+				if (rem_i < num_main_clusters)
+				{
+					if (g_show_results)
+					{
+						GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[rem_i], clusterCount, w, h);
+						SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_02_id" + std::to_string(cluster_ids[rem_i]) + "_08_RemovingCluster" + g_im_save_format, w, h);
+					}
+
+					for (j=rem_i; j<num_main_clusters - 1; j++)
+					{
+						ww[j] = ww[j+1];
+						max_section[j] = max_section[j+1];
+						len[j] = len[j+1];
+						cluster_ids[j] = cluster_ids[j+1];
+						cnts[j] = cnts[j+1];
+						placement_cnts[j] = placement_cnts[j+1];
+					}					
+					num_main_clusters--;
+
+					if (rem_i > i)
+					{
+						i++;
+					}
+
+					continue;
+				}
+			}
+		}		
 
 		i++;
 	}
@@ -2941,11 +3231,20 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 		return 0;
 	}
 
+	max_max_section = max_section.get_max_value(num_main_clusters);
+
 	i = 0;
 	while (i < num_main_clusters)
 	{
-		if (ww[i] < max_ww * ww_thr)
+		if ((ww[i] < max_ww * ww_thr)/* && (max_section[i] < max_max_section * std::max<double>(max_section_thr, ww_thr))*/)
 		{
+			if (g_show_results)
+			{
+				custom_buffer<int> ImCluster(w*h, 0);
+				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_03_id" + std::to_string(cluster_ids[i]) + "_01_RemovingCluster" + g_im_save_format, w, h);
+			}
+
 			if (ww[i] > 0) deleted_by_location++;
 			if (i < num_main_clusters - 1)
 			{
@@ -2954,6 +3253,37 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 				len[i] = len[num_main_clusters - 1];
 				cluster_ids[i] = cluster_ids[num_main_clusters - 1];
 				cnts[i] = cnts[num_main_clusters - 1];
+				placement_cnts[i] = placement_cnts[num_main_clusters - 1];
+			}
+			num_main_clusters--;
+			continue;
+		}
+		i++;
+	}	
+
+	max_max_section = max_section.get_max_value(num_main_clusters);
+
+	i = 0;
+	while (i < num_main_clusters)
+	{
+		if (max_section[i] < max_max_section * max_section_thr)
+		{
+			if (g_show_results)
+			{
+				custom_buffer<int> ImCluster(w*h, 0);
+				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_04_id" + std::to_string(cluster_ids[i]) + "_01_RemovingCluster" + g_im_save_format, w, h);
+			}
+
+			if (ww[i] > 0) deleted_by_location++;
+			if (i < num_main_clusters - 1)
+			{
+				ww[i] = ww[num_main_clusters - 1];
+				max_section[i] = max_section[num_main_clusters - 1];
+				len[i] = len[num_main_clusters - 1];
+				cluster_ids[i] = cluster_ids[num_main_clusters - 1];
+				cnts[i] = cnts[num_main_clusters - 1];
+				placement_cnts[i] = placement_cnts[num_main_clusters - 1];
 			}
 			num_main_clusters--;
 			continue;
@@ -2961,28 +3291,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 		i++;
 	}
 
-	max_max_section = max_section.get_max_value(num_main_clusters);
-	i = 0;
-	while (i < num_main_clusters)
-	{
-		if (max_section[i] < max_max_section * max_section_thr)
-		{
-			if (ww[i] > 0) deleted_by_location++;
-			if (i < num_main_clusters - 1)
-			{
-				ww[i] = ww[num_main_clusters - 1];
-				max_section[i] = max_section[num_main_clusters - 1];
-				len[i] = len[num_main_clusters - 1];
-				cluster_ids[i] = cluster_ids[num_main_clusters - 1];
-				cnts[i] = cnts[num_main_clusters - 1];
-			}
-			num_main_clusters--;			
-			continue;
-		}
-		i++;
-	}
-
-	max_len = len.get_max_value(num_main_clusters);
+	/*max_len = len.get_max_value(num_main_clusters);
 	i = 0;
 	while (i < num_main_clusters)
 	{
@@ -2996,12 +3305,13 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 				len[i] = len[num_main_clusters - 1];
 				cluster_ids[i] = cluster_ids[num_main_clusters - 1];
 				cnts[i] = cnts[num_main_clusters - 1];
+				placement_cnts[i] = placement_cnts[num_main_clusters - 1];
 			}
 			num_main_clusters--;
 			continue;
 		}
 		i++;
-	}
+	}*/
 
 	max_cnt = cnts.get_max_value(num_main_clusters);
 	i = 0;
@@ -3009,6 +3319,13 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	{
 		if (cnts[i] < max_cnt * cnt_thr)
 		{
+			if (g_show_results)
+			{
+				custom_buffer<int> ImCluster(w*h, 0);
+				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_05_id" + std::to_string(cluster_ids[i]) + "_01_RemovingCluster" + g_im_save_format, w, h);
+			}
+
 			if (ww[i] > 0) deleted_by_location++;
 			if (i < num_main_clusters - 1)
 			{
@@ -3017,12 +3334,42 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 				len[i] = len[num_main_clusters - 1];
 				cluster_ids[i] = cluster_ids[num_main_clusters - 1];
 				cnts[i] = cnts[num_main_clusters - 1];
+				placement_cnts[i] = placement_cnts[num_main_clusters - 1];
 			}
 			num_main_clusters--;
 			continue;
 		}
 		i++;
 	}
+
+	/*max_cnt = placement_cnts.get_max_value(num_main_clusters);
+	i = 0;
+	while (i < num_main_clusters)
+	{
+		if (placement_cnts[i] < max_cnt * placement_cnt_thr)
+		{
+			if (g_show_results)
+			{
+				custom_buffer<int> ImCluster(w*h, 0);
+				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_05_id" + std::to_string(cluster_ids[i]) + "_02_RemovingCluster" + g_im_save_format, w, h);
+			}
+
+			if (ww[i] > 0) deleted_by_location++;
+			if (i < num_main_clusters - 1)
+			{
+				ww[i] = ww[num_main_clusters - 1];
+				max_section[i] = max_section[num_main_clusters - 1];
+				len[i] = len[num_main_clusters - 1];
+				cluster_ids[i] = cluster_ids[num_main_clusters - 1];
+				cnts[i] = cnts[num_main_clusters - 1];
+				placement_cnts[i] = placement_cnts[num_main_clusters - 1];
+			}
+			num_main_clusters--;
+			continue;
+		}
+		i++;
+	}	*/
 
 	for (i = 0; i < w*h; i++)
 	{
@@ -3050,9 +3397,9 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	GreyscaleImageToBinary(ImMASKF, ImRES4, w, h, 255);
 	if (g_show_results)
 	{
-		SaveGreyscaleImage(ImMASKF, "/TestImages/FilterImMask_" + iter_det + "_03_01_ImMASKFIntMainClustersByLocation" + g_im_save_format, w, h);
-		SaveGreyscaleImage(ImRES4, "/TestImages/FilterImMask_" + iter_det + "_03_02_ImClustersInImMASKF" + g_im_save_format, w, h);
-		SaveGreyscaleImage(ImClusters, "/TestImages/FilterImMask_" + iter_det + "_03_03_ImClustersOrig" + g_im_save_format, w, h);
+		SaveGreyscaleImage(ImMASKF, "/TestImages/FilterImMask_" + iter_det + "_06_01_ImMASKFIntMainClustersByLocation" + g_im_save_format, w, h);
+		SaveGreyscaleImage(ImRES4, "/TestImages/FilterImMask_" + iter_det + "_06_02_ImClustersInImMASKF" + g_im_save_format, w, h);
+		SaveGreyscaleImage(ImClusters, "/TestImages/FilterImMask_" + iter_det + "_06_03_ImClustersOrig" + g_im_save_format, w, h);
 	}
 
 	/*if (num_main_clusters == 1)
@@ -3099,87 +3446,11 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	return num_main_clusters;
 }
 
-void GetFirstFilteredClusters(custom_buffer<int> &ImRGB, custom_buffer<int> &ImMASK, custom_buffer<int> &ImMASK2, custom_buffer<int> &ImMaskWithBorder, custom_buffer<int> &ImClusters2, custom_buffer<int> &labels1, custom_buffer<int> &labels2, int clusterCount, int clusterCount2, int w, int h, std::string iter_det)
-{
-	custom_buffer<int> ImRES1(w*h, 0), ImMaskWithBorderF(w*h, 0);
-
-	concurrency::parallel_invoke(
-		[&ImRGB, &ImMASK, &labels1, w, h, clusterCount] {
-			if (g_use_cuda_gpu)
-			{
-				cuda_kmeans(ImRGB, ImMASK, labels1, w, h, clusterCount, g_cuda_kmeans_loop_iterations, false);
-			}
-			else
-			{
-				opencv_kmeans(ImRGB, ImMASK, labels1, w, h, clusterCount, 10);
-			}
-		},
-		[&ImRGB, &ImMASK, &labels2, w, h, clusterCount2] {
-			if (g_use_cuda_gpu)
-			{
-				cuda_kmeans(ImRGB, ImMASK, labels2, w, h, clusterCount2, g_cuda_kmeans_loop_iterations, false);
-			}
-			else
-			{
-				opencv_kmeans(ImRGB, ImMASK, labels2, w, h, clusterCount2, 10);
-			}
-		}
-	);	
-
-	if (g_show_results)
-	{
-		GetClustersImage(ImRES1, labels1, clusterCount, w, h);
-		SaveGreyscaleImage(ImRES1, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_01_Im4Clusters" + g_im_save_format, w, h);
-	}
-
-	GetClustersImage(ImClusters2, labels2, clusterCount2, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_02_Im6Clusters" + g_im_save_format, w, h);
-
-	{
-		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h](int cluster_idx)
-		{
-			ClearImageOptimal(ImClusters2, w, h, GetClusterColor(clusterCount2, cluster_idx));
-		});
-
-		GreyscaleImageToBinary(ImMaskWithBorder, ImClusters2, w, h, 255);
-
-		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_03_01_ImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_03_02_ImMASK" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK, ImMaskWithBorder, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_03_04_ImMASKIntImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_03_05_ImMASK2" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK2, ImMaskWithBorder, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_03_06_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);
-	}
-
-	memcpy(&ImMaskWithBorderF[0], &ImMaskWithBorder[0], w * h * sizeof(int));
-
-	{
-		concurrency::parallel_for(0, clusterCount2, [&ImMASK2, &ImClusters2, clusterCount2, w, h](int cluster_idx)
-		{
-			ClearImageByMask(ImClusters2, ImMASK2, w, h, GetClusterColor(clusterCount2, cluster_idx));
-		});
-
-		GreyscaleImageToBinary(ImMaskWithBorderF, ImClusters2, w, h, 255);
-		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorderF, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_04_01_ImMaskWithBorderFByMASK2" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_04_02_ImMASK" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK, ImMaskWithBorderF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_04_03_ImMASKIntImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_04_04_ImMASK2" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK2, ImMaskWithBorderF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_04_05_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);
-	}
-}
-
 void DistanceTransformImage(custom_buffer<int> &ImGR, custom_buffer<int> &ImRES, int w, int h)
 {
 	cv::Mat cv_im_gr;
 	GreyscaleImageToMat(ImGR, w, h, cv_im_gr);
-	
+
 	cv::distanceTransform(cv_im_gr, cv_im_gr, cv::DIST_C, 5);
 
 	cv::normalize(cv_im_gr, cv_im_gr, 0, 255, cv::NORM_MINMAX, CV_8UC1);
@@ -3193,13 +3464,56 @@ void DistanceTransformImage(custom_buffer<int> &ImGR, custom_buffer<int> &ImRES,
 	IntersectTwoImages(ImRES, ImGR, w, h);
 }
 
-void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, custom_buffer<int> ImMASK2, custom_buffer<int> &ImRES, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h, int W, int H, std::string iter_det, int real_im_x_center, int min_h)
+void GetFirstFilteredClusters(custom_buffer<int> &ImRGB, custom_buffer<int> &ImMASK, custom_buffer<int> &ImMASK2, custom_buffer<int> &ImMaskWithBorder, custom_buffer<int> &ImMaskWithBorderF, custom_buffer<int> &ImClusters2, custom_buffer<int> &labels2, int clusterCount2, int w, int h, std::string iter_det)
 {
-	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0), ImRES3(w*h, 0), ImRES4(w*h, 0), ImClusters1(w*h, 0), ImClusters2(w*h, 0), ImMaskWithBorder(w*h, 255), ImMaskWithBorderF(w*h, 255), labels1(w*h, 0), labels2(w*h, 0), ImMainCluster(w*h, 0), ImMainCluster2(w*h, 0), ImMainClusterF(w*h, 0), ImMainClusterF2(w*h, 0);
-	bool clear_from_left_and_right_borders = true;
-	int x, y, i, j, j2, val1, val2, clusterCount = 4, clusterCount2 = 6;
-	custom_buffer<int> cluster_cnt1(clusterCount, 0), cluster_cnt2(clusterCount2, 0);
-	custom_buffer<int> cluster_id1(clusterCount, 0), cluster_id2(clusterCount2, 0);
+	int min_x, max_x, min_y, max_y;
+
+	if (g_use_cuda_gpu)
+	{
+		cuda_kmeans(ImRGB, ImMASK, labels2, w, h, clusterCount2, g_cuda_kmeans_loop_iterations, g_cuda_kmeans_initial_loop_iterations, min_x, max_x, min_y, max_y, false);
+	}
+	else
+	{
+		opencv_kmeans(ImRGB, ImMASK, labels2, w, h, clusterCount2, g_cpu_kmeans_loop_iterations, g_cpu_kmeans_initial_loop_iterations, min_x, max_x, min_y, max_y, false);
+	}
+
+	GetClustersImage(ImClusters2, labels2, clusterCount2, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_01_ImClusters" + g_im_save_format, w, h);
+
+	{
+		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h](int cluster_idx)
+		{
+			ClearImageOptimal(ImClusters2, w, h, GetClusterColor(clusterCount2, cluster_idx));
+		});
+
+		GreyscaleImageToBinary(ImMaskWithBorder, ImClusters2, w, h, 255);
+
+		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_02_ImMaskWithBorder" + g_im_save_format, w, h);
+	}
+
+	memcpy(&ImMaskWithBorderF[0], &ImMaskWithBorder[0], w * h * sizeof(int));
+
+	{
+		concurrency::parallel_for(0, clusterCount2, [&ImMASK2, &ImClusters2, clusterCount2, w, h](int cluster_idx)
+		{
+			ClearImageByMask(ImClusters2, ImMASK2, w, h, GetClusterColor(clusterCount2, cluster_idx));
+		});
+
+		GreyscaleImageToBinary(ImMaskWithBorderF, ImClusters2, w, h, 255);
+		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorderF, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_ImMaskWithBorderFByMASK2" + g_im_save_format, w, h);
+	}
+}
+
+void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, custom_buffer<int> ImMASK2, custom_buffer<int> &ImIL, custom_buffer<int> &ImRES, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, custom_buffer<int> &ImMaskWithBorder, custom_buffer<int> &ImMaskWithBorderF, custom_buffer<int> &ImClusters2, custom_buffer<int> &labels2, int w, int h, int W, int H, std::string iter_det, int real_im_x_center, int min_h)
+{
+	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0), ImRES3(w*h, 0), ImRES4(w*h, 0), ImMainCluster(w*h, 0), ImMainCluster2(w*h, 0);
+	int x, y, i, j, j2, val1, val2;
+	int clusterCount2 = 6;
+	custom_buffer<int> cluster_cnt2(clusterCount2, 0);
+	custom_buffer<int> cluster_id2(clusterCount2, 0);
+	int clusterCount3 = 4;
+	custom_buffer<int> cluster_cnt3(clusterCount3, 0);
+	custom_buffer<int> cluster_id3(clusterCount3, 0);
 	DWORD  start_time;
 	int ddy1 = 1, ddy2 = h - 2;
 	int LH, LMAXY, lb, le, val;
@@ -3208,98 +3522,18 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_01_2_ImMASK" + g_im_save_format, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_01_3_ImMASK2" + g_im_save_format, w, h);
 
-	memset(&ImRES[0], 0, (w*h) * sizeof(int));
+	memset(&ImRES[0], 0, (w*h) * sizeof(int));	
 
-	start_time = GetTickCount();
-
-	concurrency::parallel_invoke(
-		[&ImRGB, &ImMASK, &labels1, w, h, clusterCount] {
-			if (g_use_cuda_gpu)
-			{
-				cuda_kmeans(ImRGB, ImMASK, labels1, w, h, clusterCount, g_cuda_kmeans_loop_iterations, false);
-			}
-			else
-			{
-				opencv_kmeans(ImRGB, ImMASK, labels1, w, h, clusterCount, 10);
-			}
-		},	
-		[&ImRGB, &ImMASK, &labels2, w, h, clusterCount2] {
-			if (g_use_cuda_gpu)
-			{
-				cuda_kmeans(ImRGB, ImMASK, labels2, w, h, clusterCount2, g_cuda_kmeans_loop_iterations, false);
-			}
-			else
-			{
-				opencv_kmeans(ImRGB, ImMASK, labels2, w, h, clusterCount2, 10);
-			}
-		}
-	);	
-
-	//wxMessageBox("GetMainClusterImage_dt1_cc4_cc6: " + std::to_string(GetTickCount() - start_time));
-	start_time = GetTickCount();
-
-	if (g_show_results)
-	{
-		GetClustersImage(ImRES, labels1, clusterCount, w, h);		
-		SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_02_01_Im4Clusters" + g_im_save_format, w, h);
-	}
-
-	GetClustersImage(ImClusters2, labels2, clusterCount2, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_02_01_Im6Clusters" + g_im_save_format, w, h);
-
-	GetClustersImage(ImClusters1, labels1, clusterCount, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_02_02_Im4Clusters" + g_im_save_format, w, h);
-
-	{
-		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h](int cluster_idx)
-		{
-			ClearImageOptimal(ImClusters2, w, h, GetClusterColor(clusterCount2, cluster_idx));
-		});
-
-		GreyscaleImageToBinary(ImMaskWithBorder, ImClusters2, w, h, 255);				
-
-		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetMainClusterImage_" + iter_det + "_02_03_01_ImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_03_02_ImMASK" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK, ImMaskWithBorder, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_03_04_ImMASKIntImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_03_05_ImMASK2" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK2, ImMaskWithBorder, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_03_06_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);
-	}
-
-	MergeImagesByIntersectedFigures(ImMASK, ImMASK2, w, h, 255);
-	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_01_4_ImMASKMergeImMASK2" + g_im_save_format, w, h);
-
-	memcpy(&ImMaskWithBorderF[0], &ImMaskWithBorder[0], w * h * sizeof(int));
-
-	{
-		concurrency::parallel_for(0, clusterCount2, [&ImMASK2, &ImClusters2, clusterCount2, w, h, LH, LMAXY](int cluster_idx)
-		{
-			ClearImageByMask(ImClusters2, ImMASK2, w, h, GetClusterColor(clusterCount2, cluster_idx));
-		});
-
-		GreyscaleImageToBinary(ImMaskWithBorderF, ImClusters2, w, h, 255);
-		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorderF, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_01_ImMaskWithBorderFByMASK2" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_02_ImMASK" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK, ImMaskWithBorderF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_03_ImMASKIntImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_04_ImMASK2" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK2, ImMaskWithBorderF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_05_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);
-	}
-
-	custom_buffer<int> ImMASKF(ImMASK);	
+	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_02_ImMASK" + g_im_save_format, w, h);
+	IntersectTwoImages(ImMASK, ImMaskWithBorderF, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_03_ImMASKIntImMaskWithBorderF" + g_im_save_format, w, h);
 
 	{				
-		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h, W, H, min_h, real_im_x_center, &ImMASKF, iter_det](int cluster_idx)
+		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h, W, H, min_h, real_im_x_center, &ImMASK, iter_det](int cluster_idx)
 		//for (int cluster_idx=0; cluster_idx<clusterCount2; cluster_idx++)
 		{
 			int i, val, LH, LMAXY, lb, le, white = GetClusterColor(clusterCount2, cluster_idx);
-			custom_buffer<int> ImTMP(ImMASKF);
+			custom_buffer<int> ImTMP(ImMASK);
 
 			for (i=0; i<w*h; i++)
 			{
@@ -3314,38 +3548,39 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 			val = GetSubParams(ImTMP, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
 			if (val == 1)
 			{
-				if (g_show_results) SaveImageWithSubParams(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_01_id" + std::to_string(cluster_idx) + "_02_ImClusters2_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+				if (g_show_results) SaveImageWithSubParams(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_01_id" + std::to_string(cluster_idx) + "_02_ImMASKIntCluster_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
 				ClearImageOpt2(ImClusters2, w, h, W, H, LH, LMAXY, real_im_x_center, white, iter_det + "_02_05_01_id" + std::to_string(cluster_idx));
-				if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_01_id" + std::to_string(cluster_idx) + "_03_ImClusters2FOpt2" + g_im_save_format, w, h);				
+				if (g_show_results)
+				{
+					GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters2, cluster_idx, clusterCount2, w, h);
+					IntersectTwoImages(ImTMP, ImMASK, w, h);
+					SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_01_id" + std::to_string(cluster_idx) + "_03_ImMASKIntClusterFOpt2" + g_im_save_format, w, h);
+				}
 			}			
 		});
 
 		GreyscaleImageToBinary(ImMaskWithBorderF, ImClusters2, w, h, 255);
 		if (g_show_results) SaveGreyscaleImage(ImMaskWithBorderF, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_02_ImMaskWithBorderFByOpt2Res" + g_im_save_format, w, h);
 
-		if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_03_ImMASK" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASKF, ImMaskWithBorderF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_04_ImMASKIntImMaskWithBorder" + g_im_save_format, w, h);
-
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_05_ImMASK2" + g_im_save_format, w, h);
-		IntersectTwoImages(ImMASK2, ImMaskWithBorderF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_06_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);		
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_03_ImMASK" + g_im_save_format, w, h);
+		IntersectTwoImages(ImMASK, ImMaskWithBorderF, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_02_05_04_ImMASKIntImMaskWithBorder" + g_im_save_format, w, h);
 	}	
 
-	if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_01_ImMASKF" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_01_ImMASK" + g_im_save_format, w, h);
 
-	RestoreImMask(ImClusters2, ImMASKF, clusterCount2, w, h, iter_det + "_call1");	
-	if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_04_01_ImMASKFRestore" + g_im_save_format, w, h);	
+	RestoreImMask(ImClusters2, ImMASK, clusterCount2, w, h, iter_det + "_call1");	
+	if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_04_01_ImMASKRestore" + g_im_save_format, w, h);	
 
-	ClearImageByTextDistance(ImMASKF, w, h, W, H, real_im_x_center, 255, iter_det);
-	if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_04_02_ImMASKFByTextDistance" + g_im_save_format, w, h);
+	ClearImageByTextDistance(ImMASK, w, h, W, H, real_im_x_center, 255, iter_det);
+	if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_04_02_ImMASKByTextDistance" + g_im_save_format, w, h);
 
 	if (g_show_results)
 	{
 		SaveGreyscaleImage(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_05_ImClusters2" + g_im_save_format, w, h);
 		memcpy(&ImRES4[0], &ImClusters2[0], w * h * sizeof(int));
-		IntersectTwoImages(ImRES4, ImMASKF, w, h);
-		SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_06_ImClusters2InImMASKF" + g_im_save_format, w, h);
+		IntersectTwoImages(ImRES4, ImMASK, w, h);
+		SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_06_ImClusters2InImMASK" + g_im_save_format, w, h);
 	}
 	
 	int num_main_clusters = 0;
@@ -3354,7 +3589,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 
 	for (i = 0; i < w*h; i++)
 	{
-		if ((ImMASKF[i] != 0) && (ImClusters2[i] != 0))
+		if ((ImMASK[i] != 0) && (ImClusters2[i] != 0))
 		{
 			int cluster_id = GetClusterId(clusterCount2, ImClusters2[i]);
 			cnts[cluster_id]++;
@@ -3376,51 +3611,104 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 		memset(&ImMASK[0], 0, (w*h) * sizeof(int));
 		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_01_01_07_ImMASKRes" + g_im_save_format, w, h);
 		return;
-	}
+	}	
 
 	if (num_main_clusters > 1)
 	{
-		if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_01_ImMASKF" + g_im_save_format, w, h);
-
-		int clusterCount3 = 4;
-		custom_buffer<int> cluster_cnt3(clusterCount3, 0);
-		custom_buffer<int> cluster_id3(clusterCount3, 0);
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_01_ImMASK" + g_im_save_format, w, h);
 		custom_buffer<int> labels3(w*h, 0);
 		custom_buffer<int> ImClusters3(w*h, 0);
-		custom_buffer<int> ImMASKFR(w*h, 0);
+		custom_buffer<int> ImMASKR(w*h, 0), ImMASKR2(w*h, 0);
+		int min_x, max_x, min_y, max_y;
 
 		if (g_use_cuda_gpu)
 		{
-			cuda_kmeans(ImRGB, ImMASKF, labels3, w, h, clusterCount3, g_cuda_kmeans_loop_iterations, true);
+			cuda_kmeans(ImRGB, ImMASK, labels3, w, h, clusterCount3, g_cuda_kmeans_loop_iterations, g_cuda_kmeans_initial_loop_iterations, min_x, max_x, min_y, max_y, true);
 		}
 		else
 		{
-			opencv_kmeans(ImRGB, ImMASKF, labels3, w, h, clusterCount3, 10);
+			opencv_kmeans(ImRGB, ImMASK, labels3, w, h, clusterCount3, g_cpu_kmeans_loop_iterations, g_cpu_kmeans_initial_loop_iterations, min_x, max_x, min_y, max_y, true);
 		}
 
 		GetClustersImage(ImClusters3, labels3, clusterCount3, w, h);
 		if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_02_ImClusters3" + g_im_save_format, w, h);
 
-		concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h, min_h, real_im_x_center, iter_det](int cluster_idx)
+		concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h, min_h, real_im_x_center, min_x, max_x, min_y, max_y, iter_det](int cluster_idx)
 		{
 			int white = GetClusterColor(clusterCount3, cluster_idx);
-			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_03_id" + std::to_string(cluster_idx) + "_01_ImClusters3" + g_im_save_format, w, h);
-			ClearImageOptimal2(ImClusters3, w, h, white);
-			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_03_id" + std::to_string(cluster_idx) + "_02_ImClusters3FOptimal2" + g_im_save_format, w, h);
+			if (g_show_results)
+			{
+				custom_buffer<int> ImTMP(w*h, 0);
+				GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+				SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_03_id" + std::to_string(cluster_idx) + "_01_ImCluster" + g_im_save_format, w, h);
+			}
+			ClearImageOptimal2(ImClusters3, w, h, min_x, max_x, min_y, max_y, white);
+			if (g_show_results)
+			{
+				custom_buffer<int> ImTMP(w*h, 0);
+				GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+				SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_03_id" + std::to_string(cluster_idx) + "_02_ImClusterFOptimal2" + g_im_save_format, w, h);
+			}
 		});
-		if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_ImClusters3FOptimal2Res" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_01_01_ImClusters3FOptimal2Res" + g_im_save_format, w, h);
 
-		IntersectTwoImages(ImClusters3, ImMaskWithBorder, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_05_ImClusters3IntImMaskWithBorder" + g_im_save_format, w, h);
+		//CombineTwoImages(ImMaskWithBorder, ImClusters3, w, h, 255);
+		//if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_01_02_ImMaskWithBorderCombinedWithImClusters3" + g_im_save_format, w, h);
 
-		IntersectTwoImages(ImMASKF, ImClusters3, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_06_ImMASKFIntImClusters3" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_02_ImMASK2" + g_im_save_format, w, h);
+		IntersectTwoImages(ImMASK2, ImMaskWithBorder, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_03_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);
+		IntersectTwoImages(ImMASK2, ImClusters3, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_04_ImMASK2IntImClusters3" + g_im_save_format, w, h);
 
-		ClearImageByTextDistance(ImMASKF, w, h, W, H, real_im_x_center, 255, iter_det);
-		if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_07_ImMASKFByTextDistance" + g_im_save_format, w, h);
+		{
+			cv::Mat cv_im_gr;
+			GreyscaleImageToMat(ImMASK2, w, h, cv_im_gr);
+			cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
+			cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
+			BinaryMatToImage(cv_im_gr, w, h, ImMASK2, 255);
+			if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_05_ImMASK2Close" + g_im_save_format, w, h);
+		}
 
-		IntersectTwoImages(ImClusters3, ImMASKF, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_08_ImClusters3IntImMASKF" + g_im_save_format, w, h);				
+		ExtendByInsideFigures(ImMASK2, w, h, 255);
+		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_06_ImMASK2ExtendByInsideFigures" + g_im_save_format, w, h);
+
+		IntersectTwoImages(ImMASK2, ImMaskWithBorder, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_07_ImMASK2IntImMaskWithBorder" + g_im_save_format, w, h);
+		IntersectTwoImages(ImMASK2, ImClusters3, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_08_ImMASK2IntImClusters3" + g_im_save_format, w, h);
+
+		if (ImIL[0] != -1)
+		{
+			IntersectTwoImages(ImMASK2, ImIL, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_09_ImMASK2IntImIL" + g_im_save_format, w, h);
+		}
+
+		{
+			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_05_01_ImClusters3" + g_im_save_format, w, h);
+
+			concurrency::parallel_for(0, clusterCount3, [&ImMASK2, &ImClusters3, clusterCount3, w, h](int cluster_idx)
+			{
+				ClearImageByMask(ImClusters3, ImMASK2, w, h, GetClusterColor(clusterCount3, cluster_idx));
+			});
+
+			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_05_02_ImClusters3FWithImMASK2" + g_im_save_format, w, h);
+		}
+
+		//IntersectTwoImages(ImClusters3, ImMaskWithBorder, w, h);
+		//if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_05_ImClusters3IntImMaskWithBorder" + g_im_save_format, w, h);
+
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_06_01_ImMASK" + g_im_save_format, w, h);
+		IntersectTwoImages(ImMASK, ImClusters3, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_06_02_ImMASKIntImClusters3" + g_im_save_format, w, h);
+
+		ClearImageByTextDistance(ImMASK, w, h, W, H, real_im_x_center, 255, iter_det);
+		if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_07_ImMASKByTextDistance" + g_im_save_format, w, h);
+
+		//RestoreImMask(ImClusters3, ImMASK, clusterCount3, w, h, iter_det + "_call2");
+		//if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_08_ImMASKRestore" + g_im_save_format, w, h);
+
+		custom_buffer<int> ImClusters3FR(ImClusters3);
 
 		/*concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h](int cluster_idx)
 		{
@@ -3429,50 +3717,114 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 		});
 		if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_01_ImClusters3ExtendByInsideFigures" + g_im_save_format, w, h);
 
-		GreyscaleImageToBinary(ImMASKF, ImClusters3, w, h, 255);
-		if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_02_ImMASKFRes" + g_im_save_format, w, h);*/
-
-		val = GetSubParams(ImMASKF, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
-		if (val == 1)
-		{
-			if (g_show_results) SaveImageWithSubParams(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_03_02_05_ImMASKF_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
-
-			concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h, W, H, LH, LMAXY, min_h, real_im_x_center, iter_det](int cluster_idx)
-			{
-				int white = GetClusterColor(clusterCount3, cluster_idx);
-				if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_03_03_id" + std::to_string(cluster_idx) + "_01_ImClusters3" + g_im_save_format, w, h);
-				ClearImageOpt4(ImClusters3, w, h, W, H, LH, LMAXY, real_im_x_center, white);
-				if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_03_03_id" + std::to_string(cluster_idx) + "_02_ImClusters3FOptimal4" + g_im_save_format, w, h);
-			});
-			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_03_04_ImClusters3FOptimal4Res" + g_im_save_format, w, h);
-
-			IntersectTwoImages(ImMASKF, ImClusters3, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_03_05_ImMASKFOpt4" + g_im_save_format, w, h);
-		}
-
-		ClearImageByTextDistance(ImMASKF, w, h, W, H, real_im_x_center, 255, iter_det);
-		if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_03_06_ImMASKFByTextDistance" + g_im_save_format, w, h);
+		GreyscaleImageToBinary(ImMASK, ImClusters3, w, h, 255);
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_02_ImMASKRes" + g_im_save_format, w, h);*/
 
 		int sub_iter = 0;
 
 		while (1)
 		{
 			sub_iter++;
+
+			IntersectTwoImages(ImClusters3, ImMASK, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_01_01_ImClusters3IntImMASK" + g_im_save_format, w, h);
+
+			if (sub_iter == 1)
+			{
+				val = GetSubParams(ImMASK, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
+
+				if (val == 1)
+				{
+					if (g_show_results) SaveImageWithSubParams(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_01_02_ImMASK_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+
+					concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h, W, H, lb, le, LH, LMAXY, min_h, real_im_x_center, iter_det, sub_iter](int cluster_idx)
+					{
+						int white = GetClusterColor(clusterCount3, cluster_idx);
+						if (g_show_results)
+						{
+							custom_buffer<int> ImTMP(w*h, 0);
+							GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+							SaveImageWithSubParams(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_01_ImCluster" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+						}
+						ClearImageOpt4(ImClusters3, w, h, W, H, LH, LMAXY, real_im_x_center, white);
+						if (g_show_results)
+						{
+							custom_buffer<int> ImTMP(w*h, 0);
+							GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+							SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_02_ImClusterFOptimal4" + g_im_save_format, w, h);
+						}
+
+						int val, LH2, LMAXY2, lb2, le2;
+						val = GetSubParams(ImClusters3, w, h, white, LH2, LMAXY2, lb2, le2, min_h, real_im_x_center, h - 1, iter_det);
+
+						if (val == 1)
+						{
+							if (g_show_results)
+							{
+								custom_buffer<int> ImTMP(w*h, 0);
+								GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+								SaveImageWithSubParams(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_03_ImCluster_WSP" + g_im_save_format, lb2, le2, LH2, LMAXY2, real_im_x_center, w, h);
+							}
+
+							ClearImageOpt4(ImClusters3, w, h, W, H, LH2, LMAXY2, real_im_x_center, white);
+							if (g_show_results)
+							{
+								custom_buffer<int> ImTMP(w*h, 0);
+								GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+								SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_04_ImClusterFOptimal4Second" + g_im_save_format, w, h);
+							}
+						}
+						else
+						{
+							// remove entire cluster
+							if (g_show_results)
+							{
+								custom_buffer<int> ImTMP(w*h, 0);
+								GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
+								SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_05_ImClusterRemove" + g_im_save_format, w, h);
+							}
+
+							for (int i = 0; i < w*h; i++)
+							{
+								if (ImClusters3[i] == white)
+								{
+									ImClusters3[i] = 0;
+								}
+							}
+
+						}
+					});
+					if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_04_ImClusters3FOptimal4Res" + g_im_save_format, w, h);
+
+					if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_05_01_ImMASK" + g_im_save_format, w, h);
+					IntersectTwoImages(ImMASK, ImClusters3, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_05_02_ImMASKOpt4" + g_im_save_format, w, h);
+				}
+
+				memcpy(&ImMASKR2[0], &ImMASK[0], w * h * sizeof(int));
+			}
+
+			if (g_use_simple)
+			{
+				num_main_clusters = 1;
+				break;
+			}
+
 			val = num_main_clusters;
 			int deleted_by_location = 0;
-			num_main_clusters = FilterImMask(ImClusters3, ImMASKF, labels3, clusterCount3, w, h, w-1, deleted_by_location, iter_det + "_call1_sub_iter" + std::to_string(sub_iter));
+			num_main_clusters = FilterImMask(ImClusters3, ImMASK, labels3, clusterCount3, w, h, w - 1, deleted_by_location, iter_det + "_call1_sub_iter" + std::to_string(sub_iter));
 
 			if ((num_main_clusters > 1) && (deleted_by_location > 0))
 			{
-				num_main_clusters = FilterImMask(ImClusters3, ImMASKF, labels3, clusterCount3, w, h, w - 1, deleted_by_location, iter_det + "_call2_sub_iter" + std::to_string(sub_iter));
+				num_main_clusters = FilterImMask(ImClusters3, ImMASK, labels3, clusterCount3, w, h, w - 1, deleted_by_location, iter_det + "_call2_sub_iter" + std::to_string(sub_iter));
 			}
 
 			if (g_show_results)
 			{
-				SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_03_ImMASKFIntImClusters3FByLocation" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_03_ImMASKIntImClusters3FByLocation" + g_im_save_format, w, h);
 				memcpy(&ImRES4[0], &ImClusters3[0], w * h * sizeof(int));
-				IntersectTwoImages(ImRES4, ImMASKF, w, h);
-				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_04_ImClusters3InImMASKF" + g_im_save_format, w, h);
+				IntersectTwoImages(ImRES4, ImMASK, w, h);
+				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_04_ImClusters3InImMASK" + g_im_save_format, w, h);
 				SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_05_01_ImClusters3Orig" + g_im_save_format, w, h);
 			}
 
@@ -3481,10 +3833,10 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 				break;
 			}
 			else
-			{			
+			{
 				if (num_main_clusters > 0)
-				{						
-					memcpy(&ImMASKFR[0], &ImMASKF[0], w * h * sizeof(int));
+				{
+					memcpy(&ImMASKR[0], &ImMASK[0], w * h * sizeof(int));
 				}
 
 				if (sub_iter == 3)
@@ -3493,7 +3845,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 				}
 
 				cv::Mat cv_im_gr;
-				GreyscaleImageToMat(ImMASKF, w, h, cv_im_gr);
+				GreyscaleImageToMat(ImMASK, w, h, cv_im_gr);
 
 				cv::Mat kernel = cv::Mat::ones(5, 5, CV_8U);
 				cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
@@ -3501,7 +3853,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 				if (g_show_results)
 				{
 					BinaryMatToImage(cv_im_gr, w, h, ImRES1, 255);
-					if (g_show_results) SaveGreyscaleImage(ImRES1, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_16_ImMASKFClose" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImRES1, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_16_ImMASKClose" + g_im_save_format, w, h);
 				}
 
 				int erosion_size = 1, erosion_type = 0;
@@ -3512,109 +3864,287 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 				cv::erode(cv_im_gr, cv_im_gr, element, cv::Point(-1, -1), 2);
 				//cv::imshow("ImErode: " + iter_det, cv_im_gr);
 
-				if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_17_ImMASKF" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_17_ImMASK" + g_im_save_format, w, h);
 				BinaryMatToImage(cv_im_gr, w, h, ImRES1, 255);
-				IntersectTwoImages(ImMASKF, ImRES1, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_18_ImMASKFErode" + g_im_save_format, w, h);
-			}			
+				IntersectTwoImages(ImMASK, ImRES1, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_18_ImMASKErode" + g_im_save_format, w, h);
+			}
 		}
 
-		if (num_main_clusters == 1)
+		if (num_main_clusters > 1)
 		{
-			//memcpy(&ImRES1[0], &ImMASKF[0], w * h * sizeof(int));
-			//GetMainColorImage(ImMASKF, NULL, ImRES1, ImY, ImU, ImV, w, h, iter_det + "_call1_01", real_im_x_center);			
+			memcpy(&ImMASK[0], &ImMASKR[0], w * h * sizeof(int));
+			memcpy(&ImClusters3[0], &ImClusters3FR[0], w * h * sizeof(int));
+			if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_01_ImMASK" + g_im_save_format, w, h);
+			RestoreImMask(ImClusters3, ImMASK, clusterCount3, w, h, iter_det + "_call3");
+			if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_02_01_ImMASKRestore" + g_im_save_format, w, h);
+			IntersectTwoImages(ImMASK, ImMASKR2, w, h);
+			if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_02_02_ImMASKFImMASKR2" + g_im_save_format, w, h);
 
-			if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_ImMASKF" + g_im_save_format, w, h);
+			int deleted_by_location = 0;
+			num_main_clusters = FilterImMask(ImClusters3, ImMASK, labels3, clusterCount3, w, h, w - 1, deleted_by_location, iter_det + "_call3");
 
-			SortClusters(labels3, cluster_id3, ImMASKF, clusterCount3, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
-			GetBinaryImageByClusterId(ImMainCluster, labels3, cluster_id3[0], w, h);
-			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_02_ImMainClusterInImClusters3" + g_im_save_format, w, h);
-
-			val = GetSubParams(ImMASKF, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
-			if (val == 1)
+			if ((num_main_clusters > 1) && (deleted_by_location > 0))
 			{
-				if (g_show_results) SaveImageWithSubParams(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_03_ImMASKF_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
-				ClearImageOpt4(ImMASKF, w, h, W, H, LH, LMAXY, real_im_x_center, 255);
-				if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_04_ImMASKFOpt4" + g_im_save_format, w, h);
+				num_main_clusters = FilterImMask(ImClusters3, ImMASK, labels3, clusterCount3, w, h, w - 1, deleted_by_location, iter_det + "_call4");
 			}
 
-			SortClusters(labels2, cluster_id2, ImMASKF, clusterCount2, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
+			if (g_show_results)
+			{
+				SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_03_ImMASKIntImClusters3FByLocation" + g_im_save_format, w, h);
+				memcpy(&ImRES4[0], &ImClusters3[0], w * h * sizeof(int));
+				IntersectTwoImages(ImRES4, ImMASK, w, h);
+				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_04_ImClusters3InImMASK" + g_im_save_format, w, h);
+			}
+		}
+
+		if (num_main_clusters > 1)
+		{
+			SortClusters(labels2, cluster_id2, cluster_cnt2, ImMASK, clusterCount2, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
+			GetBinaryImageByClusterId(ImMainCluster, labels2, cluster_id2[0], w, h);
+			GetBinaryImageByClusterId(ImMainCluster2, labels2, cluster_id2[1], w, h);
+
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_11_02_ImMainClusterInImClusters2" + g_im_save_format, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_11_03_ImMainCluster2InImClusters2" + g_im_save_format, w, h);
+
+			memcpy(&ImRES2[0], &ImMainCluster[0], w * h * sizeof(int));
+			CombineTwoImages(ImRES2, ImMainCluster2, w, h, 255);
+			if (g_show_results) SaveGreyscaleImage(ImRES2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_12_01_Im2MainClustersInImClusters2" + g_im_save_format, w, h);
+
+			memcpy(&ImRES4[0], &ImRES2[0], w * h * sizeof(int));
+			IntersectTwoImages(ImRES4, ImMASK, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_12_02_Im2MainClustersInImClusters2IntWithImMASK" + g_im_save_format, w, h);
+			{
+				cv::Mat cv_im_gr;
+				GreyscaleImageToMat(ImRES4, w, h, cv_im_gr);
+				cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 8);
+				BinaryMatToImage(cv_im_gr, w, h, ImRES4, 255);
+				if (g_show_results) SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_12_03_Im2MainClustersInImClusters2Dilate" + g_im_save_format, w, h);
+			}
+			IntersectTwoImages(ImRES4, ImRES2, w, h);
+			GetClustersImage(ImClusters2, labels2, clusterCount2, w, h);
+			IntersectTwoImages(ImClusters2, ImRES4, w, h);
+
+			if (g_show_results)
+			{
+				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_12_04_Im2MainClustersInImClusters2IntOrig2MainClustersInImClusters2" + g_im_save_format, w, h);
+				memcpy(&ImRES3[0], &ImClusters2[0], w * h * sizeof(int));
+				IntersectTwoImages(ImRES3, ImRES4, w, h);
+				SaveGreyscaleImage(ImRES3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_13_ImClusters2InIm2MainClustersInImClusters2IntOrig2MainClustersInImClusters2" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_14_ImClusters2" + g_im_save_format, w, h);
+			}
+
+			int deleted_by_location = 0;
+			num_main_clusters = FilterImMask(ImClusters2, ImRES4, labels2, clusterCount2, w, h, w - 1, deleted_by_location, iter_det + "_call5");
+
+			if (num_main_clusters < 2)
+			{
+				IntersectTwoImages(ImMASK, ImRES4, w, h);
+			}
+			else
+			{
+				//IntersectTwoImages(ImMASK, ImMainCluster, w, h);
+				//num_main_clusters = 1;
+
+				//memcpy(&ImMASK[0], &ImRES4[0], w * h * sizeof(int));
+
+				int len1 = 0, len2 = 0;
+				int cnt1 = cluster_cnt2[0], cnt2 = cluster_cnt2[1];
+
+				memcpy(&ImRES2[0], &ImMainCluster[0], w * h * sizeof(int));
+				IntersectTwoImages(ImRES2, ImRES4, w, h);
+				memcpy(&ImRES3[0], &ImMainCluster2[0], w * h * sizeof(int));
+				IntersectTwoImages(ImRES3, ImRES4, w, h);
+
+				if (g_show_results) SaveGreyscaleImage(ImRES2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_15_01_ImMainClusterInImClusters2IntImMASK" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImRES3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_15_02_ImMainCluster2InImClusters2IntImMASK" + g_im_save_format, w, h);
+
+				{
+					cv::Mat cv_im;
+					vector<vector<cv::Point> > contours;
+					vector<cv::Vec4i> hierarchy;
+
+					BinaryImageToMat(ImRES2, w, h, cv_im);
+					cv::findContours(cv_im, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+					for (j = 0; j < contours.size(); j++) len1 += cv::arcLength(contours[j], true);
+					//len1 = cv::arcLength(contours, true);
+				}
+
+				{
+					cv::Mat cv_im;
+					vector<vector<cv::Point> > contours;
+					vector<cv::Vec4i> hierarchy;
+
+					BinaryImageToMat(ImRES3, w, h, cv_im);
+					cv::findContours(cv_im, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+					for (j = 0; j < contours.size(); j++) len2 += cv::arcLength(contours[j], true);
+					//len2 = cv::arcLength(contours, true);
+				}
+
+				if ((len1 > len2*1.2) && (cnt2 >= cnt1 * 0.4))
+				{
+					//memcpy(&ImMainCluster[0], &ImMainCluster2[0], w * h * sizeof(int));
+					IntersectTwoImages(ImMASK, ImRES3, w, h);
+					num_main_clusters = 1;
+				}
+				else
+				{
+					IntersectTwoImages(ImMASK, ImRES2, w, h);
+					num_main_clusters = 1;
+				}
+			}
+		}
+		
+		if (num_main_clusters == 1)
+		{
+			//memcpy(&ImRES1[0], &ImMASK[0], w * h * sizeof(int));
+			//GetMainColorImage(ImMASK, NULL, ImRES1, ImY, ImU, ImV, w, h, iter_det + "_call1_01", real_im_x_center);			
+
+			if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_02_01_ImMASK" + g_im_save_format, w, h);
+
+			SortClusters(labels3, cluster_id3, cluster_cnt3, ImMASK, clusterCount3, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
+			GetBinaryImageByClusterId(ImMainCluster, labels3, cluster_id3[0], w, h);
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_02_02_ImMainClusterInImClusters3" + g_im_save_format, w, h);
+
+			/*val = GetSubParams(ImMASK, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
+			if (val == 1)
+			{
+				if (g_show_results) SaveImageWithSubParams(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_03_ImMASK_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+				ClearImageOpt4(ImMASK, w, h, W, H, LH, LMAXY, real_im_x_center, 255);
+				if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_04_ImMASKOpt4" + g_im_save_format, w, h);
+			}*/
+
+			SortClusters(labels2, cluster_id2, cluster_cnt2, ImMASK, clusterCount2, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
 			GetBinaryImageByClusterId(ImMainCluster2, labels2, cluster_id2[0], w, h);
 
 			if (g_show_results)
 			{
-				SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_03_08_ImMASKF" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_08_ImMASK" + g_im_save_format, w, h);
 				memcpy(&ImRES4[0], &ImClusters2[0], w * h * sizeof(int));
-				IntersectTwoImages(ImRES4, ImMASKF, w, h);
-				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_09_ImClusters2InImMASKF" + g_im_save_format, w, h);
-				SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_ImMainClusterInImClusters2" + g_im_save_format, w, h);
+				IntersectTwoImages(ImRES4, ImMASK, w, h);
+				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_09_01_ImClusters2InImMASK" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_09_02_ImMainClusterInImClusters2" + g_im_save_format, w, h);
 			}
+
+			concurrency::parallel_invoke(
+				[&ImMainCluster, &ImMaskWithBorder, w, h, iter_det] {
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_01_ImMainCluster" + g_im_save_format, w, h);
+				IntersectTwoImages(ImMainCluster, ImMaskWithBorder, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_02_ImMainClusterFByMaskWithBorder" + g_im_save_format, w, h);
+				ClearImageOptimal(ImMainCluster, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_03_ImMainClusterFOptimal" + g_im_save_format, w, h);
+			},
+				[&ImMainCluster2, &ImMaskWithBorder, w, h, iter_det] {
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_04_ImMainCluster2" + g_im_save_format, w, h);
+				IntersectTwoImages(ImMainCluster2, ImMaskWithBorder, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_05_ImMainCluster2FByMaskWithBorder" + g_im_save_format, w, h);
+				ClearImageOptimal(ImMainCluster2, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_10_06_ImMainCluster2FOptimal" + g_im_save_format, w, h);
+			}
+			);
 		}
 		else
 		{
-			memcpy(&ImMASKF[0], &ImMASKFR[0], w * h * sizeof(int));
-			SortClusters(labels2, cluster_id2, ImMASKF, clusterCount2, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
-			GetBinaryImageByClusterId(ImMainCluster, labels2, cluster_id2[0], w, h);
-			GetBinaryImageByClusterId(ImMainCluster2, labels2, cluster_id2[1], w, h);
-			CombineTwoImages(ImMainCluster, ImMainCluster2, w, h, 255);
-			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_04_01_ImMainCluster" + g_im_save_format, w, h);
-			IntersectTwoImages(ImMASKF, ImMainCluster, w, h);
+			val = GetSubParams(ImMASK, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
 
-			val = GetSubParams(ImMASKF, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
-			if (val == 1)
+			concurrency::parallel_invoke(
+				[&ImMainCluster, &ImMaskWithBorder, w, h, LH, LMAXY, lb, le, real_im_x_center, iter_det] {
+				//if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_13_01_ImMainCluster" + g_im_save_format, w, h);
+				IntersectTwoImages(ImMainCluster, ImMaskWithBorder, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_13_02_ImMainClusterFByMaskWithBorder" + g_im_save_format, w, h);
+				//ClearImageOpt5(ImMainCluster, w, h, LH, LMAXY, real_im_x_center, 255);
+				//if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_13_03_ImMainClusterFOpt5" + g_im_save_format, w, h);				
+			},
+				[&ImMainCluster2, &ImMaskWithBorder, w, h, LH, LMAXY, lb, le, real_im_x_center, iter_det] {
+				//if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_13_04_ImMainCluster2" + g_im_save_format, w, h);
+				IntersectTwoImages(ImMainCluster2, ImMaskWithBorder, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_13_05_ImMainCluster2FByMaskWithBorder" + g_im_save_format, w, h);				
+				//ClearImageOpt5(ImMainCluster2, w, h, LH, LMAXY, real_im_x_center, 255);
+				//if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_13_06_ImMainCluster2FOpt5" + g_im_save_format, w, h);
+			}
+			);			
+
+			int len1 = 0, len2 = 0;
+			int cnt1 = cluster_cnt2[0], cnt2 = cluster_cnt2[1];
+
 			{
-				if (g_show_results) SaveImageWithSubParams(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_04_02_ImMASKF_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
-				ClearImageOpt4(ImMASKF, w, h, W, H, LH, LMAXY, real_im_x_center, 255);
-				if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_04_03_mMASKFOpt4" + g_im_save_format, w, h);
+				cv::Mat cv_im;
+				vector<vector<cv::Point> > contours;
+				vector<cv::Vec4i> hierarchy;
+
+				BinaryImageToMat(ImMainCluster, w, h, cv_im);				
+				cv::findContours(cv_im, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));				
+				for (j=0; j<contours.size(); j++) len1 += cv::arcLength(contours[j], true);
+				//len1 = cv::arcLength(contours, true);
+			}
+			
+			{
+				cv::Mat cv_im;
+				vector<vector<cv::Point> > contours;
+				vector<cv::Vec4i> hierarchy;
+
+				BinaryImageToMat(ImMainCluster2, w, h, cv_im);
+				cv::findContours(cv_im, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+				for (j = 0; j < contours.size(); j++) len2 += cv::arcLength(contours[j], true);
+				//len2 = cv::arcLength(contours, true);
 			}
 
-			SortClusters(labels1, cluster_id1, ImMASKF, clusterCount, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
-			GetBinaryImageByClusterId(ImMainCluster2, labels1, cluster_id1[0], w, h);
+			if ( (len1 > len2*1.2) && (cnt2 >= cnt1*0.4) )
+			{
+				memcpy(&ImMainCluster[0], &ImMainCluster2[0], w * h * sizeof(int));				
+			}			
+
+			//CombineTwoImages(ImMainCluster, ImMainCluster2, w, h, 255);
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_04_03_ImMainCluster" + g_im_save_format, w, h);
+
+			IntersectTwoImages(ImMASK, ImMainCluster, w, h);
+
+			/*val = GetSubParams(ImMASK, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, h - 1, iter_det);
+			if (val == 1)
+			{
+				if (g_show_results) SaveImageWithSubParams(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_04_02_ImMASK_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+				ClearImageOpt4(ImMASK, w, h, W, H, LH, LMAXY, real_im_x_center, 255);
+				if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_04_03_mMASKFOpt4" + g_im_save_format, w, h);
+			}*/
+
+			SortClusters(labels3, cluster_id3, cluster_cnt3, ImMASK, clusterCount3, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
+			GetBinaryImageByClusterId(ImMainCluster2, labels3, cluster_id3[0], w, h);
 
 			if (g_show_results)
 			{
-				SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_04_04_ImMASKF" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_04_04_ImMASK" + g_im_save_format, w, h);
 				memcpy(&ImRES4[0], &ImClusters2[0], w * h * sizeof(int));
-				IntersectTwoImages(ImRES4, ImMASKF, w, h);
-				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_04_05_ImClusters2InImMASKF" + g_im_save_format, w, h);
-				SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_04_06_ImMainClusterInImClusters2" + g_im_save_format, w, h);
+				IntersectTwoImages(ImRES4, ImMASK, w, h);
+				SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_04_05_ImClusters2InImMASK" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_04_06_ImMainClusterInImClusters3" + g_im_save_format, w, h);
 			}
+
+			IntersectTwoImages(ImMainCluster2, ImMaskWithBorder, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_04_06_ImMainCluster2FByMaskWithBorder" + g_im_save_format, w, h);
+			ClearImageOptimal(ImMainCluster2, w, h, 255);
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_04_08_ImMainCluster2FOptimal" + g_im_save_format, w, h);
 		}
 	}
 	else
 	{
-		if (g_show_results) SaveGreyscaleImage(ImMASKF, "/TestImages/GetMainClusterImage_" + iter_det + "_04_07_ImMASKF" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_05_01_ImMASK" + g_im_save_format, w, h);
 
 		GetBinaryImageByClusterId(ImMainCluster, labels2, id_last_main_cluster, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_04_08_ImMainClusterInImClusters2" + g_im_save_format, w, h);
-		memcpy(&ImMainCluster2[0], &ImMainCluster[0], w * h * sizeof(int));		
-	}
-	
+		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_05_02_ImMainClusterInImClusters2" + g_im_save_format, w, h);		
+
+		IntersectTwoImages(ImMainCluster, ImMaskWithBorder, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_05_03_ImMainClusterFByMaskWithBorder" + g_im_save_format, w, h);
+		ClearImageOptimal(ImMainCluster, w, h, 255);
+		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_05_04_ImMainClusterFOptimal" + g_im_save_format, w, h);
+
+		memcpy(&ImMainCluster2[0], &ImMainCluster[0], w * h * sizeof(int));
+	}	
+
 	memcpy(&ImRES[0], &ImMainCluster[0], w * h * sizeof(int));
-	if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_05_01_ImMainCluster" + g_im_save_format, w, h);
-	
-	IntersectTwoImages(ImRES, ImMaskWithBorder, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_05_02_ImMainClusterFByMaskWithBorder" + g_im_save_format, w, h);
-	
-	if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_05_03_ImMainCluster2" + g_im_save_format, w, h);
-	IntersectTwoImages(ImMainCluster2, ImMaskWithBorder, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_05_04_ImMainCluster2FByMaskWithBorder" + g_im_save_format, w, h);
-
-	memcpy(&ImRES1[0], &ImRES[0], w * h * sizeof(int));
-	IntersectTwoImages(ImRES1, ImMASK2, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImRES1, "/TestImages/GetMainClusterImage_" + iter_det + "_06_01_ImMainMASK" + g_im_save_format, w, h);
-
-	if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_06_02_ImMainCluster" + g_im_save_format, w, h);
-
-	ClearImageOptimal(ImRES, w, h, 255);
-	if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_06_03_ImMainClusterFOptimal" + g_im_save_format, w, h);
-
-	ClearImageOptimal(ImMainCluster2, w, h, 255);
-	if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_06_04_ImMainCluster2FOptimal" + g_im_save_format, w, h);
 
 	memcpy(&ImRES4[0], &ImMainCluster2[0], w * h * sizeof(int));
 	IntersectTwoImages(ImRES4, ImRES, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_06_07_ImMainClusterIntImMainCluster2" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_07_ImMainClusterIntImMainCluster2" + g_im_save_format, w, h);
 
 	MergeImagesByIntersectedFigures(ImRES, ImMainCluster2, w, h, 255);
 	if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_08_1_ImMainClusterMergeWithImMainCluster2" + g_im_save_format, w, h);
@@ -4320,7 +4850,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			break;
 		}
 	}
-	YE = y;
+	YE = std::min<int>(y+2, H-1);
 
 	if (YE - YB < (2 * min_h) / 3)
 	{
@@ -4378,24 +4908,63 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	}	
 
 	{
-		cv::Mat cv_ImRGB, cv_ImY, cv_Im, cv_ImSplit[3];
+		cv::Mat cv_ImRGB;
 
-		for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
-		{
-			memcpy(&ImRGBOrig[j], &ImRGB[i], w * sizeof(int));
-		}
+		concurrency::parallel_invoke(
+			[&ImRGB, &ImRGBOrig, &ImRGBScaled, &cv_ImRGB, YB, YE, XB, W, w, h, iter_det] {
+				int y, i, j;
+				for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
+				{
+					memcpy(&ImRGBOrig[j], &ImRGB[i], w * sizeof(int));
+				}
 
-		if (g_show_results) SaveRGBImage(ImRGBOrig, "/TestImages/FindTextLines_" + iter_det + "_03_2_ImRES1_RGB" + g_im_save_format, w, h);
+				if (g_show_results) SaveRGBImage(ImRGBOrig, "/TestImages/FindTextLines_" + iter_det + "_03_2_1_ImRES1_RGB" + g_im_save_format, w, h);
 
-		cv::Mat cv_ImRGBOrig(h, w, CV_8UC4);
-		memcpy(cv_ImRGBOrig.data, &ImRGBOrig[0], w*h * sizeof(int));
-		cv::resize(cv_ImRGBOrig, cv_ImRGB, cv::Size(0, 0), g_scale, g_scale);
-		memcpy(&ImRGBScaled[0], cv_ImRGB.data, (int)(w * g_scale) * (int)(h * g_scale) * sizeof(int));
+				cv::Mat cv_ImRGBOrig(h, w, CV_8UC4);
+				memcpy(cv_ImRGBOrig.data, &ImRGBOrig[0], w*h * sizeof(int));
+				cv::resize(cv_ImRGBOrig, cv_ImRGB, cv::Size(0, 0), g_scale, g_scale);
+				memcpy(&ImRGBScaled[0], cv_ImRGB.data, (int)(w * g_scale) * (int)(h * g_scale) * sizeof(int));
 
-		if (g_show_results) SaveRGBImage(ImRGBScaled, "/TestImages/FindTextLines_" + iter_det + "_03_3_Im_RGBScaled4x4" + g_im_save_format, w * g_scale, h * g_scale);
-		if (g_show_results) SaveRGBImage(ImRGBScaled, "/TestImages/" + SaveName + "_FindTextLines_" + iter_det + "_03_3_Im_RGBScaled4x4" + g_im_save_format, w * g_scale, h * g_scale);
+				if (g_show_results) SaveRGBImage(ImRGBScaled, "/TestImages/FindTextLines_" + iter_det + "_03_2_2_Im_RGBScaled4x4" + g_im_save_format, w * g_scale, h * g_scale);
+			},
+			[&ImNF, &ImSNFOrig, YB, YE, XB, W, w, h, iter_det] {
+				custom_buffer<int> ImTMP(w * h, 0);
+				int y, i, j;
 
-		//cv::cvtColor(cv_ImRGB, cv_ImY, cv::COLOR_BGR2GRAY);
+				for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
+				{
+					memcpy(&ImTMP[j], &ImNF[i], w * sizeof(int));
+				}
+
+				cv::Mat cv_ImGROrig, cv_ImGR;
+				GreyscaleImageToMat(ImTMP, w, h, cv_ImGROrig);
+				cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), g_scale, g_scale);
+				BinaryMatToImage(cv_ImGR, w * g_scale, h * g_scale, ImSNFOrig, 255);
+				if (g_show_results) SaveGreyscaleImage(ImSNFOrig, "/TestImages/FindTextLines_" + iter_det + "_03_2_3_ImSNFOrig" + g_im_save_format, w * g_scale, h * g_scale);
+			},
+			[&FullImIL, &ImIL, YB, YE, XB, W, w, h, iter_det] {
+				if (FullImIL[0] != -1)
+				{
+					custom_buffer<int> ImTMP(w * h, 0);
+					int y, i, j;
+
+					for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
+					{
+						memcpy(&ImTMP[j], &FullImIL[i], w * sizeof(int));
+					}
+
+					cv::Mat cv_ImGROrig, cv_ImGR;
+					GreyscaleImageToMat(ImTMP, w, h, cv_ImGROrig);
+					cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), g_scale, g_scale);
+					BinaryMatToImage(cv_ImGR, w * g_scale, h * g_scale, ImIL, 255);
+					if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/FindTextLines_" + iter_det + "_03_2_4_ImIL" + g_im_save_format, w * g_scale, h * g_scale);
+				}
+				else
+				{
+					ImIL[0] = -1;
+				}
+			}
+		);
 
 		concurrency::parallel_invoke(
 			[&cv_ImRGB, &ImY, &ImU, &ImV, w, h, iter_det] {
@@ -4420,40 +4989,9 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 				if (g_show_results) SaveGreyscaleImage(ImL, "/TestImages/FindTextLines_" + iter_det + "_03_5_1_ImL" + g_im_save_format, w * g_scale, h * g_scale);
 				if (g_show_results) SaveGreyscaleImage(ImA, "/TestImages/FindTextLines_" + iter_det + "_03_5_2_ImA" + g_im_save_format, w * g_scale, h * g_scale);
 				if (g_show_results) SaveGreyscaleImage(ImB, "/TestImages/FindTextLines_" + iter_det + "_03_5_3_ImB" + g_im_save_format, w * g_scale, h * g_scale);
-			}
+			}			
 		);			
-	}
-		
-	{
-		custom_buffer<int> ImTMP(w * h, 0);
-
-		for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
-		{
-			memcpy(&ImTMP[j], &ImNF[i], w * sizeof(int));
-		}
-
-		cv::Mat cv_ImGROrig, cv_ImGR;
-		GreyscaleImageToMat(ImTMP, w, h, cv_ImGROrig);
-		cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), g_scale, g_scale);
-		BinaryMatToImage(cv_ImGR, w * g_scale, h * g_scale, ImSNFOrig, 255);
-		if (g_show_results) SaveGreyscaleImage(ImSNFOrig, "/TestImages/FindTextLines_" + iter_det + "_04_1_ImSNFOrig" + g_im_save_format, w * g_scale, h * g_scale);
-	}
-
-	if (FullImIL[0] != -1)
-	{
-		custom_buffer<int> ImTMP(w * h, 0);
-
-		for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
-		{
-			memcpy(&ImTMP[j], &FullImIL[i], w * sizeof(int));
-		}
-
-		cv::Mat cv_ImGROrig, cv_ImGR;
-		GreyscaleImageToMat(ImTMP, w, h, cv_ImGROrig);
-		cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), g_scale, g_scale);
-		BinaryMatToImage(cv_ImGR, w * g_scale, h * g_scale, ImIL, 255);
-		if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/FindTextLines_" + iter_det + "_05_1_ImIL" + g_im_save_format, w * g_scale, h * g_scale);
-	}
+	}		
 
 	w *= g_scale;
 	h *= g_scale;		
@@ -4465,14 +5003,16 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		custom_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = h - 1;
-		GetImFF(ImSNF, ImTMP, ImRGBScaled, ImY, ImU, ImV, LB, LE, 1, w, h);
+		GetImFF(ImSNF, ImTMP, ImRGBScaled, ImY, ImU, ImV, LB, LE, 1, w, h, g_smthr);
 		if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_1_ImSNF" + g_im_save_format, w, h);
-	}
+	}	
 
-	ClearImageByBigLines(ImSNF, w, h, (W*g_scale), (H*g_scale));
-	if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_2_ImSNF_F" + g_im_save_format, w, h);
+	/*ClearImageByBigLines(ImSNF, w, h, (W*g_scale), (H*g_scale));
+	if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_2_ImSNF_F" + g_im_save_format, w, h);*/
 
 	// note: ImSNF can be too broken due to color filtration, don't merge it with ImSNF before extending internal figures
+
+	custom_buffer<int> ImSNFS(ImSNF);
 
 	concurrency::parallel_invoke(
 		[&ImSNF, w, h, iter_det] {
@@ -4503,21 +5043,24 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	});
 
 	IntersectTwoImages(ImSNF, ImSNFOrig, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_5_ImSNFIntImSNFOrig" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_5_01_ImSNFIntImSNFOrig" + g_im_save_format, w, h);	
+
+	//IntersectTwoImages(ImSNFS, ImSNFOrig, w, h);
+	//if (g_show_results) SaveGreyscaleImage(ImSNFS, "/TestImages/FindTextLines_" + iter_det + "_06_5_02_ImSNFSIntImSNFOrig" + g_im_save_format, w, h);
 
 	//ExtendByInsideFigures(ImSNF, w, h, 255);
-	//if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_6_ImSNFExtInternalFigures2" + g_im_save_format, w, h);
+	//if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_6_ImSNFExtInternalFigures" + g_im_save_format, w, h);
 
-	if (FullImIL[0] != -1)
+	if (ImIL[0] != -1)
 	{
 		IntersectTwoImages(ImSNF, ImIL, w, h);
-		if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_7_SNFIntImIL" + g_im_save_format, w, h);
-	}		
+		if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_06_7_01_SNFIntImIL" + g_im_save_format, w, h);
+	}
 
 	//dont use: cv::threshold(cv_bw, cv_bw, 40, 255, cv::THRESH_BINARY | cv::THRESH_OTSU) produce on some images (0_00_48_648__0_00_50_115.jpeg) too bad results (half of image black (half of subs losed))
 	//cv_bw = cv_ImY;
 
-	cv::Mat cv_bw;
+	/*cv::Mat cv_bw;
 
 	GreyscaleImageToMat(ImY, w, h, cv_bw);
 	cv::medianBlur(cv_bw, cv_bw, 5);
@@ -4539,67 +5082,72 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	}
 	if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_07_2_ImTHRInsideFigures" + g_im_save_format, w, h);
 
-	if (g_scale >= 4.0)
 	{
 		// noise removal
 		cv::Mat kernel_open = cv::Mat::ones(3, 3, CV_8U);
-		cv::Mat cv_opening;
+		
+		concurrency::parallel_invoke(
+			[&ImTHR, &ImSNF, &cv_bw, &kernel_open, w, h, iter_det] {
+				custom_buffer<int> ImTMP(ImTHR);
+				cv::Mat cv_opening;
 
-		cv::morphologyEx(cv_bw, cv_opening, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);
-		GreyscaleMatToImage(cv_opening, w, h, ImTHR);
-		if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_1_ImTHROpening" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_1_ImTHR" + g_im_save_format, w, h);
+				ClearImageFromBorders(ImTMP, w, h, 1, h - 2, 255);				
+				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/FindTextLines_" + iter_det + "_09_2_ImTHRClearedFromBorders" + g_im_save_format, w, h);
+				cv::morphologyEx(cv_bw, cv_opening, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);				
+				BinaryMatToImage(cv_opening, w, h, ImTHR, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_3_ImTHROpen" + g_im_save_format, w, h);
+				ClearImageFromBorders(ImTHR, w, h, 1, h - 2, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_4_ImTHROpenClearedFromBorders" + g_im_save_format, w, h);
+				CombineTwoImages(ImTHR, ImTMP, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_5_ImTHRCombinedClearedFromBorders" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_09_6_ImSNF" + g_im_save_format, w, h);
+				IntersectTwoImages(ImTHR, ImSNF, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_7_ImTHRIntImSNF" + g_im_save_format, w, h);
+			},
+			[&ImTHRInside, &ImSNF, &kernel_open, w, h, iter_det] {
+				custom_buffer<int> ImTMP(ImTHRInside);
+				cv::Mat cv_inside;
 
-		cv::Mat cv_inside;
-		GreyscaleImageToMat(ImTHRInside, w, h, cv_inside);
-		cv::morphologyEx(cv_inside, cv_opening, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);
-		GreyscaleMatToImage(cv_opening, w, h, ImTHRInside);
-		if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_09_2_ImTHRInsideFiguresOpening" + g_im_save_format, w, h);			
-	}		
-
-	ClearImageFromBorders(ImTHR, w, h, 1, h - 2, 255);
-	if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_3_ImTHRClearedFromBorders" + g_im_save_format, w, h);		
-
-	// note: ImSNF can be too broken even generated on scaled image: 0_01_05_002__0_01_05_003.jpeg
-	//ClearImageByMask(ImTHR, ImSNF, w, h, 255);
-	//if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_4_ImTHRClearedByMask" + g_im_save_format, w, h);
-
-	ClearImageFromBorders(ImTHRInside, w, h, 1, h - 2, 255);
-	if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_09_5_ImTHRInsideFiguresClearedFromBorders" + g_im_save_format, w, h);		
-
-	// note: ImSNF can be too broken even generated on scaled image: 0_01_05_002__0_01_05_003.jpeg
-	//ClearImageByMask(ImTHRInside, ImSNF, w, h, 255);
-	//if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_09_6_ImTHRInsideClearedByMask" + g_im_save_format, w, h);
-
-	if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_10_01_ImSNF" + g_im_save_format, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_10_02_ImTHR" + g_im_save_format, w, h);
-	IntersectTwoImages(ImTHR, ImSNF, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_10_03_ImTHRIntImSNF" + g_im_save_format, w, h);
-
-	if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_10_04_ImSNF" + g_im_save_format, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_05_ImTHRInside" + g_im_save_format, w, h);
-	IntersectTwoImages(ImTHRInside, ImSNF, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_06_ImTHRInsideIntImSNF" + g_im_save_format, w, h);	
+				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_1_ImTHRInsideFigures" + g_im_save_format, w, h);
+				ClearImageFromBorders(ImTMP, w, h, 1, h - 2, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/FindTextLines_" + iter_det + "_10_2_ImTHRInsideFiguresClearedFromBorders" + g_im_save_format, w, h);
+				GreyscaleImageToMat(ImTHRInside, w, h, cv_inside);
+				cv::morphologyEx(cv_inside, cv_inside, cv::MORPH_OPEN, kernel_open, cv::Point(-1, -1), 2);				
+				BinaryMatToImage(cv_inside, w, h, ImTHRInside, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_3_ImTHRInsideFiguresOpen" + g_im_save_format, w, h);
+				ClearImageFromBorders(ImTHRInside, w, h, 1, h - 2, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_4_ImTHRInsideFiguresOpenClearedFromBorders" + g_im_save_format, w, h);
+				CombineTwoImages(ImTHRInside, ImTMP, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_5_ImTHRInsideFiguresCombinedClearedFromBorders" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindTextLines_" + iter_det + "_10_6_ImSNF" + g_im_save_format, w, h);
+				IntersectTwoImages(ImTHRInside, ImSNF, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_7_ImTHRInsideIntImSNF" + g_im_save_format, w, h);
+			}
+		);
+	}			
 
 	memcpy(&ImTHRMerge[0], &ImTHR[0], w * h * sizeof(int));
 	CombineTwoImages(ImTHRMerge, ImTHRInside, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindTextLines_" + iter_det + "_10_07_ImTHRMerge" + g_im_save_format, w, h);
+	if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindTextLines_" + iter_det + "_10_07_ImTHRMerge" + g_im_save_format, w, h);*/
+
+	memcpy(&ImTHRMerge[0], &ImSNF[0], w * h * sizeof(int));
 
 	ClearImageByTextDistance(ImTHRMerge, w, h, (W*g_scale), (H*g_scale), real_im_x_center, 255, iter_det);
 	if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindTextLines_" + iter_det + "_10_08_ImTHRMergeFByTextDistance" + g_im_save_format, w, h);
 
+	custom_buffer<int> ImMaskWithBorder(w*h, 0), ImMaskWithBorderF(w*h, 0);
+	custom_buffer<int> ImClusters2(w*h, 0), labels2(w*h, 0);
+
 	{
 		custom_buffer<int> Im1(w * h, 0), ImTHRMergeF(ImTHRMerge), ImTHRMergeF2(w * h, 0);
 
-		vector<custom_buffer<int>*> ImagesForCheck;		
+		vector<custom_buffer<int>*> ImagesForCheck;				
+		int clusterCount2 = 6;
+		custom_buffer<int> cluster_id2(clusterCount2, 0);
+		custom_buffer<int> cluster_cnt2(clusterCount2, 0);
 
-		custom_buffer<int> ImMaskWithBorder(w*h, 0);
-		custom_buffer<int> ImClusters2(w*h, 0), labels1(w*h, 0), labels2(w*h, 0);
-		int clusterCount = 4, clusterCount2 = 6;
-		custom_buffer<int> cluster_id1(clusterCount2, 0);
-
-		GetFirstFilteredClusters(ImRGBScaled, ImTHRMergeF, ImSNF, ImMaskWithBorder, ImClusters2, labels1, labels2, clusterCount, clusterCount2, w, h, iter_det + "_call1");
-
-		if (g_show_results) SaveGreyscaleImage(ImTHRMergeF, "/TestImages/FindTextLines_" + iter_det + "_11_02_01_ImTHRMergeFRes" + g_im_save_format, w, h);
+		GetFirstFilteredClusters(ImRGBScaled, ImTHRMerge, ImSNF, ImMaskWithBorder, ImMaskWithBorderF, ImClusters2, labels2, clusterCount2, w, h, iter_det + "_call1");
 		
 		if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindTextLines_" + iter_det + "_11_02_02_ImTHRMergeOrig" + g_im_save_format, w, h);
 		IntersectTwoImages(ImTHRMerge, ImMaskWithBorder, w, h);
@@ -4620,46 +5168,56 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		if (g_show_results) SaveGreyscaleImage(ImTHRMergeF, "/TestImages/FindTextLines_" + iter_det + "_11_03_01_ImTHRMergeF" + g_im_save_format, w, h);
 		IntersectTwoImages(ImTHRMergeF, ImTHRMerge, w, h);
 		if (g_show_results) SaveGreyscaleImage(ImTHRMergeF, "/TestImages/FindTextLines_" + iter_det + "_11_03_02_ImTHRMergeFIntImTHRMergeOrig" + g_im_save_format, w, h);
-
-		SortClusters(labels1, cluster_id1, ImTHRMergeF, clusterCount, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
-		GetBinaryImageByClusterId(Im1, labels1, cluster_id1[0], w, h);		
-		//GetBinaryImageByClusterId(Im2, labels1, cluster_id1[1], w, h);		
+		IntersectTwoImages(ImTHRMergeF, ImMaskWithBorderF, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImTHRMergeF, "/TestImages/FindTextLines_" + iter_det + "_11_03_03_ImTHRMergeFIntImMaskWithBorderF" + g_im_save_format, w, h);
+		
+		SortClusters(labels2, cluster_id2, cluster_cnt2, ImTHRMergeF, clusterCount2, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
+		GetBinaryImageByClusterId(Im1, labels2, cluster_id2[0], w, h);		
 		custom_buffer<int> Im2(Im1);		
 
-		if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_03_03_ImTHRMergeFMainCluster1" + g_im_save_format, w, h);
-		IntersectTwoImages(Im1, ImTHRMerge, w, h);
-		if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_01_ImTHRMergeFMainCluster1IntImTHRMergeOrig" + g_im_save_format, w, h);
+		concurrency::parallel_invoke(
+			[&Im1, &ImTHRMerge, w, h, W, H, real_im_x_center, iter_det] {
+				if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_01_01_ImTHRMergeFMainCluster1" + g_im_save_format, w, h);
+				ExtendByInsideFigures(Im1, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_01_02_ImTHRMergeFMainCluster1ExtInternalFigures" + g_im_save_format, w, h);
 
-		ClearImageByTextDistance(Im1, w, h, (W*g_scale), (H*g_scale), real_im_x_center, 255, iter_det);
-		if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_02_ImTHRMergeFMainCluster1FByTextDistance" + g_im_save_format, w, h);
+				IntersectTwoImages(Im1, ImTHRMerge, w, h);
+				if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_02_ImTHRMergeFMainCluster1IntImTHRMergeOrig" + g_im_save_format, w, h);
 
-		ClearImageOpt3(Im1, w, h, real_im_x_center, 255);
-		if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_03_ImTHRMergeFMainCluster1FByOpt3" + g_im_save_format, w, h);
-		
-		// note: needed for: 0_01_05_295__0_01_05_594.jpeg (in other case line with two symbols can be too thin)		
-		// also needed for: 0_14_28_040__0_14_30_399.jpeg in other case first cluster is too thin
-		{
-			cv::Mat cv_im_gr;
-			GreyscaleImageToMat(Im2, w, h, cv_im_gr);
-			cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
-			cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
-			cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 2);
-			BinaryMatToImage(cv_im_gr, w, h, Im2, 255);
-			if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_05_ImTHRMergeFMainCluster1CloseDilate" + g_im_save_format, w, h);
-		}
-		ExtendByInsideFigures(Im2, w, h, 255);		
-		if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_06_ImTHRMergeFMainCluster1ExtInternalFigures" + g_im_save_format, w, h);
-		IntersectTwoImages(Im2, ImTHRMerge, w, h);
-		if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_07_ImTHRMergeFMainCluster1IntImTHRMergeOrig" + g_im_save_format, w, h);
-		
-		ClearImageByTextDistance(Im2, w, h, (W*g_scale), (H*g_scale), real_im_x_center, 255, iter_det);
-		if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_08_ImTHRMergeFMainCluster1FByTextDistance" + g_im_save_format, w, h);
+				ClearImageByTextDistance(Im1, w, h, (W*g_scale), (H*g_scale), real_im_x_center, 255, iter_det);
+				if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_03_ImTHRMergeFMainCluster1FByTextDistance" + g_im_save_format, w, h);
 
-		ClearImageOpt3(Im2, w, h, real_im_x_center, 255);
-		if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_09_ImTHRMergeFMainCluster1FByOpt3" + g_im_save_format, w, h);
+				ClearImageOpt3(Im1, w, h, real_im_x_center, 255);
+				if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindTextLines_" + iter_det + "_11_04_04_ImTHRMergeFMainCluster1FByOpt3" + g_im_save_format, w, h);
+			},
+			[&Im2, &ImTHRMerge, w, h, W, H, real_im_x_center, iter_det] {
+				// note: needed for: 0_01_05_295__0_01_05_594.jpeg (in other case line with two symbols can be too thin)		
+				// also needed for: 0_14_28_040__0_14_30_399.jpeg in other case first cluster is too thin
+				{
+					cv::Mat cv_im_gr;
+					GreyscaleImageToMat(Im2, w, h, cv_im_gr);
+					cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
+					cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
+					cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 2);
+					BinaryMatToImage(cv_im_gr, w, h, Im2, 255);
+					if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_05_ImTHRMergeFMainCluster1CloseDilate" + g_im_save_format, w, h);
+				}
+				ExtendByInsideFigures(Im2, w, h, 255);
+				if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_06_ImTHRMergeFMainCluster1ExtInternalFigures" + g_im_save_format, w, h);
+				IntersectTwoImages(Im2, ImTHRMerge, w, h);
+				if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_07_ImTHRMergeFMainCluster1IntImTHRMergeOrig" + g_im_save_format, w, h);
+
+				ClearImageByTextDistance(Im2, w, h, (W*g_scale), (H*g_scale), real_im_x_center, 255, iter_det);
+				if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_08_ImTHRMergeFMainCluster1FByTextDistance" + g_im_save_format, w, h);
+
+				ClearImageOpt3(Im2, w, h, real_im_x_center, 255);
+				if (g_show_results) if (g_show_results) SaveGreyscaleImage(Im2, "/TestImages/FindTextLines_" + iter_det + "_11_09_ImTHRMergeFMainCluster1FByOpt3" + g_im_save_format, w, h);
+			}
+		);
 
 		ImagesForCheck.push_back(&Im2);
 		ImagesForCheck.push_back(&Im1);
+		ImagesForCheck.push_back(&ImTHRMerge);		
 
 		for (int i_im = 0; i_im < ImagesForCheck.size(); i_im++)
 		{
@@ -4866,7 +5424,6 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		}
 	}
 
-	//while (1)
 	{
 		custom_buffer<int> ImMainMASK(w*h, 0);
 		
@@ -4878,7 +5435,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		{
 			custom_buffer<int> ImMainMASKF(w*h, 0), ImMainCluster(w*h, 0), ImMainClusterF(w*h, 0);					
 
-			GetMainClusterImage(ImRGBScaled, ImTHRMerge, ImSNF, ImMainCluster, ImL, ImA, ImB, w, h, W * g_scale, H * g_scale, iter_det, ((W / 2) - XB) * g_scale, min_h * g_scale);
+			GetMainClusterImage(ImRGBScaled, ImTHRMerge, ImSNFS, ImIL, ImMainCluster, ImL, ImA, ImB, ImMaskWithBorder, ImMaskWithBorderF, ImClusters2, labels2, w, h, W * g_scale, H * g_scale, iter_det, ((W / 2) - XB) * g_scale, min_h * g_scale);
 
 			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindTextLines_" + iter_det + "_13_02_ImMainCluster" + g_im_save_format, w, h);
 
@@ -5644,7 +6201,7 @@ int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int white)
 	return 1;
 }
 
-int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int white)
+int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
@@ -5670,9 +6227,9 @@ int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int white)
 		pFigure = ppFigures[i];
 
 		if (
-			(pFigure->m_minY < 1) ||
-			(pFigure->m_maxY > h - 2) ||
-			((pFigure->m_minX <= 4) || (pFigure->m_maxX >= (w - 1) - 4)) ||
+			(pFigure->m_minY <= min_y) ||
+			(pFigure->m_maxY >= max_y) ||
+			((pFigure->m_minX <= min_x) || (pFigure->m_maxX >= max_x)) ||
 			(pFigure->m_w >= h * 1.5) ||
 			((pFigure->m_w < 3) || (pFigure->m_h < 3)) //|| bad for multiple points with main color like: ......
 			//( (pFigure->m_Square >= 0.95*((M_PI*pFigure->m_w*pFigure->m_h) / 4.0)) && //is like ellipse or rectangle on 95% 
@@ -6087,9 +6644,9 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 			//(pFigure->m_maxY >= LMAXY + (LH / 2)) ||
 			//(pFigure->m_maxY < LMAXY - (4 * LH) / 5) ||
 			(pFigure->m_maxY > LMAXY + (LH / 3)) ||
-			(pFigure->m_minY > LMAXY - LH / 5) ||
-			(pFigure->m_w >= max_len) ||
-			(pFigure->m_Square >= (LH * LH)/2)
+			//(pFigure->m_minY > LMAXY - LH / 5) ||
+			(pFigure->m_w >= max_len) //||
+			//(pFigure->m_Square >= (LH * LH)/2) //remove good symbols
 			)
 		{
 			PA = pFigure->m_PointsArray;
@@ -6253,11 +6810,15 @@ int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (6 * LH) / 5) ||
 			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (1 * LH) / 5) ||
 			((pFigure->m_w < 3) || (pFigure->m_h < 3)) ||
-			(pFigure->m_maxY < LMAXY - LH) ||
-			//(pFigure->m_maxY < LMAXY - (4*LH)/5) ||
-			(pFigure->m_maxY > LMAXY + (LH / 3)) ||
-			(pFigure->m_minY > LMAXY - LH / 5) //||
-			//(pFigure->m_h < min_h/2)
+			( ((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) <= (LH/8))  &&
+			  ((pFigure->m_maxY - LMAXY) >= (LH / 16)) ) ||
+			  (pFigure->m_maxY > LMAXY + (LH / 3)) //||
+			//(pFigure->m_maxY < LMAXY - (LH / 2)) || // only main characters are saved
+			//(pFigure->m_minY > LMAXY - LH / 5) ||
+			//(pFigure->m_Square >= (LH * LH) / 2) //|| remove good symbols
+			//(pFigure->m_Square <= 0.1*(pFigure->m_w*pFigure->m_h)) ||
+			//( (pFigure->m_Square >= 0.7*(pFigure->m_w*pFigure->m_h)) &&
+			// (pFigure->m_h >= LH/2) && (pFigure->m_w >= pFigure->m_h/3) )
 			)
 		{
 			PA = pFigure->m_PointsArray;
@@ -6357,6 +6918,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 			(pFigure->m_minY < ddy1) ||
 			(pFigure->m_maxY > ddy2) ||
 			(pFigure->m_w >= LH * 2) ||
+			(pFigure->m_w >= h * 1.5) ||
 			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (6 * LH) / 5) ||
 			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (1 * LH) / 5) ||
 			((pFigure->m_w < 3) || (pFigure->m_h < 3))
@@ -9154,6 +9716,9 @@ void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le,
 		ImTMP[(LMAXY - LH + 1) * w + x] = gc;
 		ImTMP[LMAXY * w + x] = gc;
 	}
+
+	if (real_im_x_center < 0) real_im_x_center = 0;
+	if (real_im_x_center >= w) real_im_x_center = w - 1;
 
 	for (y = 0; y < h; y++)
 	{

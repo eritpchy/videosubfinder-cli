@@ -1559,8 +1559,8 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	int res;	
 
-	m_pMF->ClearDir(g_work_dir + "/TXTImages");
-	m_pMF->ClearDir(g_work_dir + "/TXTResults");
+	//m_pMF->ClearDir(g_work_dir + "/TXTImages");
+	//m_pMF->ClearDir(g_work_dir + "/TXTResults");
 
 	// очищаем файл text_lines.info
 	//fname = g_work_dir + string("/text_lines.info");

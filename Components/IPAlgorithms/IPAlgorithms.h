@@ -62,7 +62,11 @@ extern bool		g_show_transformed_images_only;
 extern int		g_dmaxy;
 
 extern bool		g_use_cuda_gpu;
+extern int		g_cuda_kmeans_initial_loop_iterations;
 extern int		g_cuda_kmeans_loop_iterations;
+
+extern int		g_cpu_kmeans_initial_loop_iterations;
+extern int		g_cpu_kmeans_loop_iterations;
 
 extern int		g_min_alpha_color;
 

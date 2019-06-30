@@ -64,7 +64,10 @@ public:
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
 	wxString	m_ssp_oi_property_image_scale_for_clear_image;
+	wxString	m_ssp_oi_property_cuda_kmeans_initial_loop_iterations;
 	wxString	m_ssp_oi_property_cuda_kmeans_loop_iterations;
+	wxString	m_ssp_oi_property_cpu_kmeans_initial_loop_iterations;
+	wxString	m_ssp_oi_property_cpu_kmeans_loop_iterations;
 	wxString	m_ssp_oi_property_generate_cleared_text_images_on_test;
 	wxString	m_ssp_oi_property_dump_debug_images;
 	wxString	m_ssp_oi_property_dump_debug_second_filtration_images;
