@@ -585,9 +585,13 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_mpd, "min_points_density");
 	ReadProperty(fin, g_msh, "min_symbol_height");
 	ReadProperty(fin, g_msd, "min_symbol_density");
-	ReadProperty(fin, g_mpned, "min_NEdges_points_density");
-	
+	ReadProperty(fin, g_mpned, "min_NEdges_points_density");				
+
+	ReadProperty(fin, g_clear_txt_folders, "clear_txt_folders");
+	ReadProperty(fin, g_join_subs_and_correct_time, "join_subs_and_correct_time");
+
 	ReadProperty(fin, g_threads, "threads");
+	ReadProperty(fin, g_ocr_threads, "ocr_threads");
 	ReadProperty(fin, g_DL, "sub_frame_length");
 	ReadProperty(fin, g_tp, "text_procent");
 	ReadProperty(fin, g_mtpl, "min_text_len_(in_procent)");
@@ -622,6 +626,7 @@ void CMainFrame::LoadSettings()
 	
 	ReadProperty(fin, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
 	ReadProperty(fin, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
+	ReadProperty(fin, m_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
 	ReadProperty(fin, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
@@ -629,6 +634,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
 	
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+	ReadProperty(fin, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
@@ -698,6 +704,9 @@ void CMainFrame::SaveSettings()
 {
 	ofstream fout;
 
+	g_clear_txt_folders = m_pPanel->m_pOCRPanel->m_pcbCTXTF->GetValue();
+	g_join_subs_and_correct_time = m_pPanel->m_pOCRPanel->m_pcbJSACT->GetValue();
+
 	m_pPanel->m_pSSPanel->m_pOI->SaveEditControlValue();
 	m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
 
@@ -738,11 +747,15 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_mpned, "min_NEdges_points_density");
 
 	WriteProperty(fout, g_threads, "threads");
+	WriteProperty(fout, g_ocr_threads, "ocr_threads");
 	WriteProperty(fout, g_DL, "sub_frame_length");
 	WriteProperty(fout, g_tp, "text_procent");
 	WriteProperty(fout, g_mtpl, "min_text_len_(in_procent)");
 	//WriteProperty(fout, g_sse, "sub_square_error");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
+
+	WriteProperty(fout, g_clear_txt_folders, "clear_txt_folders");
+	WriteProperty(fout, g_join_subs_and_correct_time, "join_subs_and_correct_time");
 
 	WriteProperty(fout, g_clear_image_logical, "clear_image_logical");
 

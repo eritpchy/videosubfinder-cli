@@ -5728,7 +5728,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 
 	for (i = 0; i < W*H; i++) ImClearedText[i] = wc;
 
-	g_pViewImage[0](ImRGB, W, H);	
+	//g_pViewImage[0](ImRGB, W, H);	
 
 	if (g_show_results) SaveRGBImage(ImRGB, "/TestImages/FindTextLines_01_1_ImRGB" + g_im_save_format, W, H);
 	if (g_show_results) SaveRGBImage(ImRGB, "/TestImages/" + SaveName + g_im_save_format, W, H);
@@ -5878,7 +5878,7 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 					}
 				}
 
-				g_pViewRGBImage(ImClearedText, W, H);
+				//g_pViewRGBImage(ImClearedText, W, H);
 
 				res = 1;
 			}
@@ -9728,11 +9728,13 @@ void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le,
 	SaveRGBImage(ImTMP, name, w, h);
 }
 
-void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h)
+void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h)
 {
 	cv::Mat im = cv::imread(name, cv::IMREAD_COLOR); // load in BGR format
 	w = im.cols;
 	h = im.rows;
+
+	custom_assert(Im.m_size >= w * h, "Im.m_size < w*h");
 
 	for (int i = 0; i < w*h; i++)
 	{

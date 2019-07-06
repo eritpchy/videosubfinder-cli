@@ -53,6 +53,7 @@ public:
 
 	wxString	m_ocr_label_msd_text;
 	wxString	m_ocr_label_jsact_text;
+	wxString	m_ocr_label_clear_txt_folders;
 	wxString	m_ocr_button_ces_text;
 	wxString	m_ocr_button_ccti_text;
 	wxString	m_ocr_button_csftr_text;
@@ -63,6 +64,7 @@ public:
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
+	wxString	m_ssp_ocr_threads;
 	wxString	m_ssp_oi_property_image_scale_for_clear_image;
 	wxString	m_ssp_oi_property_cuda_kmeans_initial_loop_iterations;
 	wxString	m_ssp_oi_property_cuda_kmeans_loop_iterations;

@@ -36,6 +36,11 @@ extern bool g_DontDeleteUnrecognizedImages2;
 extern wxString g_DefStringForEmptySub;
 
 extern bool g_CLEAN_RGB_IMAGES;
+extern int  g_ocr_threads;
+
+extern bool g_join_subs_and_correct_time;
+extern bool g_clear_txt_folders;
+
 
 class CMainFrame;
 class CSSOWnd;
@@ -126,11 +131,6 @@ public:
 
 public:
     CMainFrame	*m_pMF;
-	custom_buffer<int> m_ImRGB;
-	custom_buffer<custom_buffer<int>> m_ImF;
-	vector<string> m_SavedFiles;
-	int m_w;
-	int m_h;
 };
 
 class COCRPanel : public wxPanel
@@ -144,6 +144,7 @@ public:
 
 	wxStaticText *m_plblMSD;
 	wxCheckBox   *m_pcbJSACT;
+	wxCheckBox   *m_pcbCTXTF;
 	wxTextCtrl	 *m_pMSD;
 	wxButton	 *m_pCCTI;
 	wxButton	 *m_pCES;

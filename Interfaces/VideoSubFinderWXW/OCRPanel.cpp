@@ -21,12 +21,15 @@
 #include <regex>
 #include <fstream>
 #include <streambuf>
+#include <ppl.h>
+#include <ppltasks.h>
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
 bool g_use_ILA_images_for_get_txt_area = true;
 
 bool g_join_subs_and_correct_time = true;
+bool g_clear_txt_folders = true;
 
 int g_IsCreateClearedTextImages = 0;
 int g_RunCreateClearedTextImages = 0;
@@ -37,6 +40,8 @@ bool g_DontDeleteUnrecognizedImages2 = true;
 wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
 
 bool g_CLEAN_RGB_IMAGES = false;
+
+int  g_ocr_threads = 8;
 
 AssTXTLine::AssTXTLine()
 {
@@ -200,7 +205,7 @@ void COCRPanel::Init()
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 
-	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rcTEST, rcCSCTI, rcCSTXT;
+	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rcTEST, rcCSCTI, rcCSTXT;
 	int w, w2, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 
 	wxClientDC dc(this);
@@ -253,6 +258,11 @@ void COCRPanel::Init()
 	rlJSACT.width = reMSD.width;
 	rlJSACT.height = 18;
 
+	rlCTXTF.x = rlJSACT.x;
+	rlCTXTF.y = rlJSACT.GetBottom() + 10;
+	rlCTXTF.width = rlJSACT.width;
+	rlCTXTF.height = 18;
+
 	rcP3 = this->GetRect();
 
 	this->GetClientSize(&w, &h);
@@ -283,16 +293,17 @@ void COCRPanel::Init()
 		wxString::Format(wxT("%f"), m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_LBLFont);
 
-	//m_pcbJSACT = new wxStaticText(m_pP3, wxID_ANY,
-	//	m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
-	//m_pcbJSACT->SetFont(m_LBLFont);
-	//m_pcbJSACT->SetBackgroundColour(m_CL1);
-
 	m_pcbJSACT = new wxCheckBox(m_pP3, wxID_ANY,
 		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbJSACT->SetFont(m_LBLFont);
 	m_pcbJSACT->SetBackgroundColour(m_CL1);
 	m_pcbJSACT->SetValue(g_join_subs_and_correct_time);
+
+	m_pcbCTXTF = new wxCheckBox(m_pP3, wxID_ANY,
+		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_pcbCTXTF->SetFont(m_LBLFont);
+	m_pcbCTXTF->SetBackgroundColour(m_CL1);
+	m_pcbCTXTF->SetValue(g_clear_txt_folders);
 
 	m_pCES = new wxButton( m_pP3, ID_BTN_CES,
 		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
@@ -1515,32 +1526,150 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 	}
 	else
 	{
-		m_pCCTI->SetLabel("Create Cleared Text Images");
+		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		g_RunCreateClearedTextImages = 0;
 	}
 }
-
-ThreadCreateClearedTextImages *pThrCCTI;
 
 ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind)
         : wxThread(kind)
 {
     m_pMF = pMF;
-	pThrCCTI = this;
 }
 
-int FindTextLinesWithExcFilter()
+class FindTextLinesRes
 {
-	int res = 0;
+public:
+	int m_res;
+	int m_w;
+	int m_h;
+	vector<string> m_SavedFiles;
+	custom_buffer<int> m_ImRGB;
+	custom_buffer<int> m_ImClearedText;
+	custom_buffer<custom_buffer<int>> m_ImF;
+
+	FindTextLinesRes()
+	{
+		m_res = 0;
+	}
+};
+
+void FindTextLinesWithExcFilter(FindTextLinesRes *res)
+{
 	__try
 	{
-		res = FindTextLines(pThrCCTI->m_ImRGB, pThrCCTI->m_ImF[2], pThrCCTI->m_ImF[5], pThrCCTI->m_ImF[3], pThrCCTI->m_ImF[1], pThrCCTI->m_ImF[0], pThrCCTI->m_SavedFiles, pThrCCTI->m_w, pThrCCTI->m_h);
+		res->m_res = FindTextLines(res->m_ImRGB, res->m_ImClearedText, res->m_ImF[5], res->m_ImF[3], res->m_ImF[1], res->m_ImF[0], res->m_SavedFiles, res->m_w, res->m_h);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
 	}
+}
+
+FindTextLinesRes FindTextLines(wxString FileName)
+{
+	FindTextLinesRes res;
+
+	try
+	{
+		wxString Str;
+		int w, h;
+
+		GetImageSize(string(FileName), w, h);
+		res.m_w = w;
+		res.m_h = h;
+		res.m_ImRGB = custom_buffer<int>(w*h, 0);
+		res.m_ImClearedText = custom_buffer<int>(w*h, 0);
+		res.m_ImF = custom_buffer<custom_buffer<int>>(6, custom_buffer<int>(w*h, 0));
+
+		LoadRGBImage(res.m_ImRGB, string(FileName), w, h);
+
+		res.m_res = GetTransformedImage(res.m_ImRGB, res.m_ImF[3], res.m_ImF[4], res.m_ImF[5], res.m_ImF[1], res.m_ImF[2], w, h, w, h);
+
+		if (g_show_transformed_images_only)
+		{
+			Str = FileName;
+			Str = GetFileName(Str.ToStdString());
+			Str = g_work_dir + "/TXTImages/" + Str + g_im_save_format;
+			SaveGreyscaleImage(res.m_ImF[5], string(Str), w, h);
+			res.m_ImClearedText = res.m_ImF[5];
+			return res;
+		}
+
+		if (g_use_ISA_images_for_get_txt_area)
+		{
+			Str = FileName;
+			Str = GetFileName(Str.ToStdString());
+			Str = g_work_dir + "/ISAImages/" + Str + g_im_save_format;
+
+			if (wxFileExists(Str))
+			{
+				LoadGreyscaleImage(res.m_ImF[5], string(Str), w, h);
+
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
+				ExtendImFWithDataFromImNF(res.m_ImF[5], res.m_ImF[3], w, h);
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
+			}
+		}
+
+		// IL image
+		res.m_ImF[0][0] = -1;
+		if (g_use_ILA_images_for_get_txt_area)
+		{
+			Str = FileName;
+			Str = GetFileName(Str.ToStdString());
+			Str = g_work_dir + "/ILAImages/" + Str + g_im_save_format;
+
+			if (wxFileExists(Str))
+			{
+				LoadGreyscaleImage(res.m_ImF[0], string(Str), w, h);
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[0], "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
+
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
+				IntersectTwoImages(res.m_ImF[5], res.m_ImF[0], w, h);
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, w, h);
+
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, w, h);
+				IntersectTwoImages(res.m_ImF[3], res.m_ImF[0], w, h);
+				if (g_show_results) SaveGreyscaleImage(res.m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, w, h);
+			}
+		}		
+
+		Str = GetFileName(FileName.ToStdString());
+		res.m_SavedFiles.push_back(string(Str));
+
+		FindTextLinesWithExcFilter(&res);
+		//res.m_res = FindTextLines(res.m_ImRGB, res.m_ImClearedText, res.m_ImF[5], res.m_ImF[3], res.m_ImF[1], res.m_ImF[0], res.m_SavedFiles, w, h);
+	}
+	catch (const exception& e)
+	{
+		g_pMF->SaveError(string("Got C++ Exception: got error in FindTextLines: ") + e.what());
+	}
 
 	return res;
+}
+
+inline concurrency::task<FindTextLinesRes> TaskFindTextLines(vector<concurrency::task<FindTextLinesRes>> &tasks, vector<wxString> &FileNamesVector, int k)
+{
+	return concurrency::create_task([&tasks, &FileNamesVector, k] {
+		FindTextLinesRes res;
+
+		if (g_RunCreateClearedTextImages == 0)
+		{
+			return res;
+		}		
+
+		res = FindTextLines(g_work_dir + "/RGBImages/" + FileNamesVector[k]);
+		
+		res.m_ImF.set_size(0);
+
+		if (k + g_ocr_threads < (int)FileNamesVector.size())
+		{
+			tasks[k + g_ocr_threads] = TaskFindTextLines(tasks, FileNamesVector, k + g_ocr_threads);
+		}
+
+		return res;
+	}
+	);
 }
 
 void *ThreadCreateClearedTextImages::Entry()
@@ -1551,7 +1680,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	string fname;
 	ofstream fout;
 	char str[30];
-	int i, j, k, W, H, xmin, xmax, ymin, ymax, val;
+	int i, j, k, xmin, xmax, ymin, ymax, val;
 	
 	int w1, h1, w2, h2, YB1, YB2, bln;
 	wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
@@ -1559,14 +1688,13 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	int res;	
 
-	//m_pMF->ClearDir(g_work_dir + "/TXTImages");
-	//m_pMF->ClearDir(g_work_dir + "/TXTResults");
+	g_clear_txt_folders = m_pMF->m_pPanel->m_pOCRPanel->m_pcbCTXTF->GetValue();
 
-	// очищаем файл text_lines.info
-	//fname = g_work_dir + string("/text_lines.info");
-	//fout.open(fname.c_str(), ios::out);
-	//fout << "";
-	//fout.close();
+	if (g_clear_txt_folders)
+	{
+		m_pMF->ClearDir(g_work_dir + "/TXTImages");
+		m_pMF->ClearDir(g_work_dir + "/TXTResults");
+	}
 
 	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
@@ -1598,106 +1726,42 @@ void *ThreadCreateClearedTextImages::Entry()
 	sprintf(str, "%.4d", val);
 	dStr = wxString(" : ") + wxString(str);
 
-    W = -1;
-    H = -1;
-    m_w = 0;
-    m_h = 0;
-
 	__int64 t1, dt, num_calls;
 
 	//t1 = GetTickCount();	
 
-	for (k=0; k<(int)FileNamesVector.size(); k++)
+	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+	
+	int NImages = FileNamesVector.size();
+	vector<concurrency::task<FindTextLinesRes>> tasks(NImages, concurrency::create_task([] {FindTextLinesRes res; return res;}));
+
+	for (k = 0; (k < g_ocr_threads) && (k < NImages); k++)
+	{
+		tasks[k] = TaskFindTextLines(tasks, FileNamesVector, k);
+	}
+
+	for (k=0; k < NImages; k++)
 	{
 		try
 		{
-			if (g_RunCreateClearedTextImages == 0) break;
+			FindTextLinesRes task_res = tasks[k].get();
 
-			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+			res = task_res.m_res;
+			g_pViewImage[0](task_res.m_ImRGB, task_res.m_w, task_res.m_h);
+			g_pViewRGBImage(task_res.m_ImClearedText, task_res.m_w, task_res.m_h);
 
-			Str = g_work_dir + "/RGBImages/" + FileNamesVector[k];
-			GetImageSize(string(Str), m_w, m_h);
-        
-			if ( (W != m_w) || (H != m_h) )
+			if (g_RunCreateClearedTextImages == 0)
 			{
-				W = m_w;
-				H = m_h;
-
-				xmin = 0;
-				xmax = m_w-1;
-				ymin = 0;
-				ymax = m_h-1;           	        
-			}
-			
-			m_ImRGB = custom_buffer<int>(m_w*m_h, 0);
-			m_ImF = custom_buffer<custom_buffer<int>>(6, custom_buffer<int>(m_w*m_h, 0));
-
-			LoadRGBImage(m_ImRGB, string(Str), m_w, m_h);		
-
-			/*num_calls = 100;
-			t1 = GetTickCount();
-			for (__int64 i_call = 0; i_call < num_calls; i_call++)
-			{*/
-			GetTransformedImage(m_ImRGB, m_ImF[3], m_ImF[4], m_ImF[5], m_ImF[1], m_ImF[2], m_w, m_h, W, H);
-			/*}
-			(void)wxMessageBox("dt: " + std::to_string(GetTickCount()-t1));*/
-
-			if (g_show_transformed_images_only)
-			{
-				Str = wxString("/TXTImages/") + FileNamesVector[k];
-				SaveGreyscaleImage(m_ImF[5], string(Str), m_w, m_h);
-				continue;
-			}
-
-			if (g_use_ISA_images_for_get_txt_area) 
-			{
-				Str = FileNamesVector[k];
-				Str = GetFileName(Str.ToStdString());
-				Str = g_work_dir + "/ISAImages/" + Str + g_im_save_format;
-
-				if (wxFileExists(Str))
-				{
-					LoadGreyscaleImage(m_ImF[5], string(Str), m_w, m_h);
-
-					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, m_w, m_h);
-					ExtendImFWithDataFromImNF(m_ImF[5], m_ImF[3], m_w, m_h);
-					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, m_w, m_h);
-				}
-			}
-
-			// IL image
-			m_ImF[0][0] = -1;
-			if (g_use_ILA_images_for_get_txt_area)
-			{
-				Str = FileNamesVector[k];
-				Str = GetFileName(Str.ToStdString());
-				Str = g_work_dir + "/ILAImages/" + Str + g_im_save_format;
-
-				if (wxFileExists(Str))
-				{
-					LoadGreyscaleImage(m_ImF[0], string(Str), m_w, m_h);
-					if (g_show_results) SaveGreyscaleImage(m_ImF[0], "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, m_w, m_h);
-					
-					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, m_w, m_h);
-					IntersectTwoImages(m_ImF[5], m_ImF[0], m_w, m_h);
-					if (g_show_results) SaveGreyscaleImage(m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, m_w, m_h);
-
-					if (g_show_results) SaveGreyscaleImage(m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, m_w, m_h);
-					IntersectTwoImages(m_ImF[3], m_ImF[0], m_w, m_h);
-					if (g_show_results) SaveGreyscaleImage(m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, m_w, m_h);
-				}
+				concurrency::when_all(begin(tasks), end(tasks)).wait();
+				break;
 			}
 
 			Str = FileNamesVector[k];
-			Str = GetFileName(Str.ToStdString());
-			m_SavedFiles.clear();
-			m_SavedFiles.push_back(string(Str));
+			Str = GetFileName(Str.ToStdString());			
 
-			val = k+1;
+			val = k + 1;
 			sprintf(str, "%.4d", val);
 			if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
-
-			res = FindTextLinesWithExcFilter();
 
 			if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
 			{
@@ -1714,18 +1778,11 @@ void *ThreadCreateClearedTextImages::Entry()
 				pClr[2] = 255;
 				wc = color;
 
-				custom_buffer<int> ImRES1((int)(m_w * g_scale)*(int)(m_h / g_scale), wc);
-				SaveGreyscaleImage(ImRES1, string(Str), m_w*g_scale, m_h/g_scale);
-			
-				val = 14; //LH
-				/*SaveTextLineParameters(	string(Str), 0, 
-									val, (m_h+val)/2, 
-									m_w/2, m_w/2,
-									(m_h-val)/2 + 1, (m_h+val)/2,
-									0, 0, 0, m_w, m_h);*/
+				custom_buffer<int> ImRES1((int)(task_res.m_w * g_scale)*(int)(task_res.m_h / g_scale), wc);
+				SaveGreyscaleImage(ImRES1, string(Str), task_res.m_w*g_scale, task_res.m_h/g_scale);			
 			}
 
-			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == m_SavedFiles.size()) )
+			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == task_res.m_SavedFiles.size()) )
 			{
 				Str = prevSavedFiles[i].c_str();
 				i = Str.length()-1;
@@ -1745,7 +1802,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				bt1 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
 				et1 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
 
-				Str = m_SavedFiles[i].c_str();
+				Str = task_res.m_SavedFiles[i].c_str();
 				i = Str.length()-1;
 				while ((Str[i] != '\\') && (Str[i] != '/')) i--;
 				Str = Str.Mid(i+1);
@@ -1766,10 +1823,13 @@ void *ThreadCreateClearedTextImages::Entry()
 				if (bt2-et1 < 300)
 				{
 					bln = 1;
-					for (i=0; i<(int)m_SavedFiles.size(); i++)
+					for (i=0; i<(int)task_res.m_SavedFiles.size(); i++)
 					{
-						LoadGreyscaleImage(m_ImF[0], prevSavedFiles[i], w1, h1);
-						LoadGreyscaleImage(m_ImF[1], m_SavedFiles[i], w2, h2);
+						custom_buffer<int> ImRES1(task_res.m_w*task_res.m_h, 0);
+						custom_buffer<int> ImRES2(task_res.m_w*task_res.m_h, 0);
+
+						LoadGreyscaleImage(ImRES1, prevSavedFiles[i], w1, h1);
+						LoadGreyscaleImage(ImRES2, task_res.m_SavedFiles[i], w2, h2);
 
 						Str = prevSavedFiles[i].c_str();
 						i = Str.length()-1;
@@ -1780,7 +1840,7 @@ void *ThreadCreateClearedTextImages::Entry()
 						Str = Str.Mid(i+1, j-i-1);
 						YB1 = atoi(Str);
 
-						Str = m_SavedFiles[i].c_str();
+						Str = task_res.m_SavedFiles[i].c_str();
 						i = Str.length()-1;
 						while (Str[i] != '_') i--;
 						j = i;
@@ -1789,28 +1849,28 @@ void *ThreadCreateClearedTextImages::Entry()
 						Str = Str.Mid(i+1, j-i-1);
 						YB2 = atoi(Str);
 
-						bln = CompareTXTImages(m_ImF[0], m_ImF[1], w1, h1, w2, h2, YB1, YB2);
+						bln = CompareTXTImages(ImRES1, ImRES2, w1, h1, w2, h2, YB1, YB2);
 						if (bln == 0) break;
 					}
 
 					if (bln == 1)
 					{
-						for (i=0; i<(int)m_SavedFiles.size(); i++)
+						for (i=0; i<(int)task_res.m_SavedFiles.size(); i++)
 						{
 							DeleteFile(wxString(prevSavedFiles[i].c_str()));
 						
 							Str = prevSavedFiles[i].c_str();
 							i = Str.length()-1;
 							while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-							Str = Str.Mid(0,i+1+11)+wxString(m_SavedFiles[i].c_str()).Mid(i+1+11);
+							Str = Str.Mid(0,i+1+11)+wxString(task_res.m_SavedFiles[i].c_str()).Mid(i+1+11);
 
-							MoveFile(wxString(m_SavedFiles[i].c_str()), Str);
+							MoveFile(wxString(task_res.m_SavedFiles[i].c_str()), Str);
 						}
 					}
 				}
 			}
 
-			prevSavedFiles = m_SavedFiles;
+			prevSavedFiles = task_res.m_SavedFiles;
 		}
 		catch (const exception& e)
 		{
@@ -1825,8 +1885,9 @@ void *ThreadCreateClearedTextImages::Entry()
 		m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000");
 		m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
 
-		m_pMF->m_pPanel->m_pSSPanel->Enable();
 		m_pMF->m_pPanel->m_pSHPanel->Enable();
+		m_pMF->m_pPanel->m_pSSPanel->Enable();		
+		m_pMF->m_pPanel->m_pOCRPanel->Enable();
 	}
 
 	g_IsCreateClearedTextImages = 0;
