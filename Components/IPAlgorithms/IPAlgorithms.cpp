@@ -25,6 +25,8 @@
 #ifdef WIN64
 #include "cuda_kernels.h"
 #endif
+#include <opencv2/core.hpp>
+#include <opencv2/core/ocl.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs/legacy/constants_c.h>
 #include <opencv2/imgcodecs.hpp>
@@ -49,10 +51,6 @@ void MergeImagesByIntersectedFigures(custom_buffer<int> &ImInOut, custom_buffer<
 void MergeWithClusterImage(custom_buffer<int> &ImInOut, custom_buffer<int> &ImCluser, int w, int h, int white);
 void(*g_pViewRGBImage)(custom_buffer<int> &Im, int w, int h);
 void(*g_pViewImage[2])(custom_buffer<int> &Im, int w, int h);
-void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::Mat &res);
-void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, custom_buffer<int> &res);
-void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::Mat &res);
-void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, int white);
 int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center, int ye, std::string iter_det, bool combine_figures_related_to_each_other = true);
 int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det);
 int ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int real_im_x_center, int white);
@@ -68,6 +66,18 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
 int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white, bool simple = false);
 void InvertBinaryImage(custom_buffer<int> &Im, int w, int h);
+
+void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::Mat &res);
+void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, custom_buffer<int> &res);
+void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::Mat &res);
+void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, int white);
+void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::UMat &res);
+void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, custom_buffer<int> &res);
+void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::UMat &res);
+void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, custom_buffer<int> &res, int white);
+void RGBMatToImage(cv::UMat &ImRGB, int w, int h, custom_buffer<int> &res);
+void RGBImageToMat(custom_buffer<int> &ImRGB, int w, int h, cv::UMat &res);
+void InvertBinaryMat(cv::UMat &ImBinary, int w, int h, cv::UMat &res);
 
 string  g_work_dir;
 string  g_app_dir;
@@ -110,6 +120,8 @@ int g_min_ddQ = 14;
 int g_scale = 4;
 
 int g_use_simple = false;
+
+int g_use_ocl = true;
 
 #define STR_SIZE (256 * 2) // 
 
@@ -2621,6 +2633,7 @@ void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_b
 
 	if (numObjsFF > 0)
 	{
+		cv::theRNG().state = 0;
 		cv::kmeans(cv_samplesFF, numClusters, cv_labelsFF, cv::TermCriteria(cv::TermCriteria::MAX_ITER, initial_loop_iterations, 1.0), 1, cv::KMEANS_PP_CENTERS, centers);
 	}
 
@@ -2664,6 +2677,7 @@ void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_b
 		min_y = 0;
 		max_y = h - 1;
 
+		cv::theRNG().state = 0;
 		cv::kmeans(cv_samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_USE_INITIAL_LABELS, centers);
 		memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));
 	}
@@ -2689,6 +2703,7 @@ void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_b
 				}
 			}
 
+			cv::theRNG().state = 0;
 			cv::kmeans(cv_samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_PP_CENTERS, centers);
 			memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));
 		}
@@ -2742,6 +2757,7 @@ void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_b
 				}
 			}
 
+			cv::theRNG().state = 0;
 			cv::kmeans(cv_samplesMASK, numClusters, cv_labelsMASK, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_USE_INITIAL_LABELS, centers);
 
 			for (y = min_y, j = 0; y <= max_y; y++)
@@ -2757,45 +2773,7 @@ void opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_b
 				labels[i] = color_cluster_id[ImRGB[i] >> 8];
 			}
 		}
-	}
-	//--------------------------------------------------
-
-	/*int i, x, y;
-	cv::Mat samples(w * h, 3, CV_32F);
-	cv::Mat cv_labels(w * h, 1, CV_32S);	
-	cv::Mat centers;
-	int color, rc, gc;
-	u8 *pClr;
-	pClr = (u8*)(&color);
-
-	min_x = 0;
-	max_x = w - 1;
-	min_y = 0;
-	max_y = h - 1;
-
-	for (i = 0; i < w*h; i++)
-	{
-		pClr = (u8*)(&ImRGB[i]);
-
-		for (int z = 0; z < 3; z++)
-		{
-			samples.at<float>(i, z) = pClr[z];
-		}
-
-		if (ImFF[i] == 0)
-		{
-			cv_labels.at<int>(i, 0) = 0;
-		}
-		else
-		{
-			cv_labels.at<int>(i, 0) = 1;
-		}
-	}
-
-	cv::theRNG().state = 0;
-	cv::kmeans(samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 10, 1.0), 10, cv::KMEANS_USE_INITIAL_LABELS, centers);
-	//cv::kmeans(samples, numClusters, cv_labels, cv::TermCriteria(cv::TermCriteria::MAX_ITER, loop_iterations, 1.0), 1, cv::KMEANS_USE_INITIAL_LABELS, centers);
-	memcpy(&labels[0], cv_labels.data, w*h * sizeof(int));*/
+	}	
 }
 
 void GetClustersImage(custom_buffer<int> &ImRES, custom_buffer<int> &labels, int clusterCount, int w, int h)
@@ -3078,6 +3056,8 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	custom_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0), cluster_ids(clusterCount, 0), cnts(clusterCount, 0), placement_cnts(clusterCount, 0);
 	int max_ww, max_max_section, max_len, max_cnt;
 
+	cv::ocl::setUseOpenCL(g_use_ocl);
+
 	deleted_by_location = 0;
 
 	memcpy(&ImRES4[0], &ImClusters[0], w * h * sizeof(int));
@@ -3125,7 +3105,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 			}
 
 			{
-				cv::Mat cv_im_gr;
+				cvMAT cv_im_gr;
 				GreyscaleImageToMat(ImCluster, w, h, cv_im_gr);
 				cv::Mat kernel = cv::Mat::ones(3, 3, CV_8U);
 				cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 1);
@@ -3448,7 +3428,9 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 
 void DistanceTransformImage(custom_buffer<int> &ImGR, custom_buffer<int> &ImRES, int w, int h)
 {
-	cv::Mat cv_im_gr;
+	cv::ocl::setUseOpenCL(g_use_ocl);
+
+	cvMAT cv_im_gr;
 	GreyscaleImageToMat(ImGR, w, h, cv_im_gr);
 
 	cv::distanceTransform(cv_im_gr, cv_im_gr, cv::DIST_C, 5);
@@ -3517,6 +3499,8 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 	DWORD  start_time;
 	int ddy1 = 1, ddy2 = h - 2;
 	int LH, LMAXY, lb, le, val;
+
+	cv::ocl::setUseOpenCL(g_use_ocl);
 
 	if (g_show_results) SaveRGBImage(ImRGB, "/TestImages/GetMainClusterImage_" + iter_det + "_01_1_ImRGB" + g_im_save_format, w, h);
 	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_01_2_ImMASK" + g_im_save_format, w, h);
@@ -3662,7 +3646,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 		if (g_show_results) SaveGreyscaleImage(ImMASK2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_04_ImMASK2IntImClusters3" + g_im_save_format, w, h);
 
 		{
-			cv::Mat cv_im_gr;
+			cvMAT cv_im_gr;
 			GreyscaleImageToMat(ImMASK2, w, h, cv_im_gr);
 			cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
 			cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
@@ -3844,7 +3828,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 					break;
 				}
 
-				cv::Mat cv_im_gr;
+				cvMAT cv_im_gr;
 				GreyscaleImageToMat(ImMASK, w, h, cv_im_gr);
 
 				cv::Mat kernel = cv::Mat::ones(5, 5, CV_8U);
@@ -3915,7 +3899,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 			IntersectTwoImages(ImRES4, ImMASK, w, h);
 			if (g_show_results) SaveGreyscaleImage(ImRES4, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_12_02_Im2MainClustersInImClusters2IntWithImMASK" + g_im_save_format, w, h);
 			{
-				cv::Mat cv_im_gr;
+				cvMAT cv_im_gr;
 				GreyscaleImageToMat(ImRES4, w, h, cv_im_gr);
 				cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 8);
 				BinaryMatToImage(cv_im_gr, w, h, ImRES4, 255);
@@ -3960,7 +3944,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 				if (g_show_results) SaveGreyscaleImage(ImRES3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_01_15_02_ImMainCluster2InImClusters2IntImMASK" + g_im_save_format, w, h);
 
 				{
-					cv::Mat cv_im;
+					cvMAT cv_im;
 					vector<vector<cv::Point> > contours;
 					vector<cv::Vec4i> hierarchy;
 
@@ -3971,7 +3955,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 				}
 
 				{
-					cv::Mat cv_im;
+					cvMAT cv_im;
 					vector<vector<cv::Point> > contours;
 					vector<cv::Vec4i> hierarchy;
 
@@ -4068,7 +4052,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 			int cnt1 = cluster_cnt2[0], cnt2 = cluster_cnt2[1];
 
 			{
-				cv::Mat cv_im;
+				cvMAT cv_im;
 				vector<vector<cv::Point> > contours;
 				vector<cv::Vec4i> hierarchy;
 
@@ -4079,7 +4063,7 @@ void GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, c
 			}
 			
 			{
-				cv::Mat cv_im;
+				cvMAT cv_im;
 				vector<vector<cv::Point> > contours;
 				vector<cv::Vec4i> hierarchy;
 
@@ -4597,36 +4581,23 @@ int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, cus
 	custom_buffer<int> ImTMP(w*h, 0);
 	int i, j, x, y, ww, hh, res = 0;
 
+	cv::ocl::setUseOpenCL(g_use_ocl);
+
 	memset(&ImFRes[0], 0, w*h * sizeof(int));
 
-	cv::Mat cv_im_gr;
-	GreyscaleImageToMat(ImMASK, w, h, cv_im_gr);
-	cv::resize(cv_im_gr, cv_im_gr, cv::Size(0, 0), 1.0 / g_scale, 1.0 / g_scale);
-	ww = cv_im_gr.cols;
-	hh = cv_im_gr.rows;
+	if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/CheckOnSubPresence_" + iter_det + "_01_01_ImFF" + g_im_save_format, w, h);
 
-	for (i = 0; i < ww*hh; i++)
 	{
-		if (cv_im_gr.data[i] != 0)
-		{
-			cv_im_gr.data[i] = 255;
-		}
-	}
-	cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 1);
+		cvMAT cv_im_gr, cv_im_gr_resize;
+		BinaryImageToMat(ImMASK, w, h, cv_im_gr);
+		cv::resize(cv_im_gr, cv_im_gr_resize, cv::Size(0, 0), 1.0 / g_scale, 1.0 / g_scale);
+		ww = cv_im_gr_resize.cols;
+		hh = cv_im_gr_resize.rows;
+		cv::dilate(cv_im_gr_resize, cv_im_gr_resize, cv::Mat(), cv::Point(-1, -1), 1);
+		BinaryMatToImage(cv_im_gr_resize, ww, hh, ImTMP, 255);
 
-	for (i = 0; i < ww*hh; i++)
-	{
-		if (cv_im_gr.data[i] != 0)
-		{
-			ImTMP[i] = 255;
-		}
-		else
-		{
-			ImTMP[i] = 0;
-		}
+		if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/CheckOnSubPresence_" + iter_det + "_01_02_ImFFDilate" + g_im_save_format, ww, hh);
 	}
-
-	if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/CheckOnSubPresence_" + iter_det + "_01_ImFFDilate" + g_im_save_format, ww, hh);
 
 	custom_buffer<int> ImFFD(W*hh, 0), ImSF(W*hh, 0), ImTF(W*hh, 0);
 
@@ -4651,7 +4622,6 @@ int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, cus
 		return res;
 	}
 
-	// ww should be == W, hh == (h/g_scale)
 	for (y = 0, i = XB, j = 0; y < hh; y++, i += W, j += ww)
 	{
 		memcpy(&ImTMP[j], &ImTF[i], ww * sizeof(int));
@@ -4659,9 +4629,12 @@ int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, cus
 
 	if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/CheckOnSubPresence_" + iter_det + "_04_ImFF_F_Aligned" + g_im_save_format, ww, hh);
 
-	GreyscaleImageToMat(ImTMP, ww, hh, cv_im_gr);
-	cv::resize(cv_im_gr, cv_im_gr, cv::Size(0, 0), g_scale, g_scale);
-	BinaryMatToImage(cv_im_gr, w, h, ImFRes, 255);
+	{
+		cvMAT cv_im_gr, cv_im_gr_resize;
+		BinaryImageToMat(ImTMP, ww, hh, cv_im_gr);
+		cv::resize(cv_im_gr, cv_im_gr_resize, cv::Size(0, 0), g_scale, g_scale);
+		BinaryMatToImage(cv_im_gr_resize, w, h, ImFRes, 255);
+	}
 
 	if (g_show_results) SaveGreyscaleImage(ImFRes, "/TestImages/CheckOnSubPresence_" + iter_det + "_05_ImFF_F" + g_im_save_format, w, h);
 
@@ -4688,6 +4661,8 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	int color, rc, gc, bc, yc, cc, wc, min_h;
 	u8 *pClr;
 	DWORD start_time;
+
+	cv::ocl::setUseOpenCL(g_use_ocl);
 
 	start_time = GetTickCount();
 
@@ -5017,7 +4992,9 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	concurrency::parallel_invoke(
 		[&ImSNF, w, h, iter_det] {
 			{
-				cv::Mat cv_im_gr;
+				cv::ocl::setUseOpenCL(g_use_ocl);
+
+				cvMAT cv_im_gr;
 				GreyscaleImageToMat(ImSNF, w, h, cv_im_gr);
 				cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
 				cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
@@ -5030,7 +5007,9 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		},
 		[&ImSNFOrig, w, h, iter_det] {
 			{
-				cv::Mat cv_im_gr;
+				cv::ocl::setUseOpenCL(g_use_ocl);
+
+				cvMAT cv_im_gr;
 				GreyscaleImageToMat(ImSNFOrig, w, h, cv_im_gr);
 				cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
 				cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
@@ -5060,7 +5039,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	//dont use: cv::threshold(cv_bw, cv_bw, 40, 255, cv::THRESH_BINARY | cv::THRESH_OTSU) produce on some images (0_00_48_648__0_00_50_115.jpeg) too bad results (half of image black (half of subs losed))
 	//cv_bw = cv_ImY;
 
-	/*cv::Mat cv_bw;
+	/*cvMAT cv_bw;
 
 	GreyscaleImageToMat(ImY, w, h, cv_bw);
 	cv::medianBlur(cv_bw, cv_bw, 5);
@@ -5088,8 +5067,10 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		
 		concurrency::parallel_invoke(
 			[&ImTHR, &ImSNF, &cv_bw, &kernel_open, w, h, iter_det] {
+				cv::ocl::setUseOpenCL(g_use_ocl);
+
 				custom_buffer<int> ImTMP(ImTHR);
-				cv::Mat cv_opening;
+				cvMAT cv_opening;
 
 				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_1_ImTHR" + g_im_save_format, w, h);
 				ClearImageFromBorders(ImTMP, w, h, 1, h - 2, 255);				
@@ -5106,8 +5087,10 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_7_ImTHRIntImSNF" + g_im_save_format, w, h);
 			},
 			[&ImTHRInside, &ImSNF, &kernel_open, w, h, iter_det] {
+				cv::ocl::setUseOpenCL(g_use_ocl);
+
 				custom_buffer<int> ImTMP(ImTHRInside);
-				cv::Mat cv_inside;
+				cvMAT cv_inside;
 
 				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_1_ImTHRInsideFigures" + g_im_save_format, w, h);
 				ClearImageFromBorders(ImTMP, w, h, 1, h - 2, 255);
@@ -5194,7 +5177,9 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 				// note: needed for: 0_01_05_295__0_01_05_594.jpeg (in other case line with two symbols can be too thin)		
 				// also needed for: 0_14_28_040__0_14_30_399.jpeg in other case first cluster is too thin
 				{
-					cv::Mat cv_im_gr;
+					cv::ocl::setUseOpenCL(g_use_ocl);
+
+					cvMAT cv_im_gr;
 					GreyscaleImageToMat(Im2, w, h, cv_im_gr);
 					cv::Mat kernel = cv::Mat::ones(7, 7, CV_8U);
 					cv::morphologyEx(cv_im_gr, cv_im_gr, cv::MORPH_CLOSE, kernel, cv::Point(-1, -1), 2);
@@ -5466,97 +5451,6 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			//memcpy(&ImMainMASK[0], &ImMainMASKF[0], w*h * sizeof(int));
 			memcpy(&ImFF[0], &ImMainCluster[0], w*h * sizeof(int));
 		}		
-
-		/*MergeImagesByIntersectedFigures(ImMainMASK, ImFF, w, h, 255);
-		if (g_show_results) SaveGreyscaleImage(ImMainMASK, "/TestImages/FindTextLines_" + iter_det + "_14_1_ImMASKMergeImMainCluster" + g_im_save_format, w, h);
-
-		{	
-			custom_buffer<int> ImTMP(w*h, 0);
-
-			cv::Mat cv_im_gr;
-			GreyscaleImageToMat(ImFF, w, h, cv_im_gr);
-			cv::resize(cv_im_gr, cv_im_gr, cv::Size(0, 0), 1.0 / g_scale, 1.0 / g_scale);
-			ww = cv_im_gr.cols;
-			hh = cv_im_gr.rows;			
-
-			for (i = 0; i < ww*hh; i++)
-			{
-				if (cv_im_gr.data[i] != 0)
-				{
-					cv_im_gr.data[i] = 255;
-				}
-			}
-			cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 1);
-
-			for (i = 0; i < ww*hh; i++)
-			{
-				if (cv_im_gr.data[i] != 0)
-				{
-					ImTMP[i] = 255;
-				}
-				else
-				{
-					ImTMP[i] = 0;
-				}
-			}
-
-			if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/FindTextLines_" + iter_det + "_19_1_ImFFDilate" + g_im_save_format, ww, hh);
-
-			custom_buffer<int> ImFFD(W*hh, 0), ImSF(W*hh, 0), ImTF(W*hh, 0);
-
-			for (y = 0, i = XB, j = 0; y < hh; y++, i += W, j += ww)
-			{
-				memcpy(&ImFFD[i], &ImTMP[j], ww * sizeof(int));
-			}
-
-			if (g_show_results) SaveGreyscaleImage(ImFFD, "/TestImages/FindTextLines_" + iter_det + "_19_2_ImFFAligned" + g_im_save_format, W, hh);
-
-			memcpy(&ImSF[0], &ImFFD[0], W*hh * sizeof(int));
-
-			custom_buffer<int> LB(1, 0), LE(1, 0);
-			LB[0] = 0;
-			LE[0] = hh - 1;
-			res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(YB*W), LB, LE, 1, W, hh, W, H, iter_det);
-
-			if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FindTextLines_" + iter_det + "_19_3_ImFF_F" + g_im_save_format, W, hh);
-
-			if (res.m_res == 0)
-			{
-				memset(&ImFF[0], 0, w*h * sizeof(int));
-				break;
-			}
-
-			// ww should be == W, hh == (h/g_scale)
-			for (y = 0, i = XB, j = 0; y < hh; y++, i += W, j += ww)
-			{
-				memcpy(&ImTMP[j], &ImTF[i], ww * sizeof(int));
-			}
-
-			if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/FindTextLines_" + iter_det + "_19_4_ImFF_F_Aligned" + g_im_save_format, ww, hh);
-
-			GreyscaleImageToMat(ImTMP, ww, hh, cv_im_gr);
-			cv::resize(cv_im_gr, cv_im_gr, cv::Size(0, 0), g_scale, g_scale);
-
-			for (i = 0; i < w*h; i++)
-			{
-				if (cv_im_gr.data[i] != 0)
-				{
-					ImTMP[i] = 255;
-				}
-				else
-				{
-					ImTMP[i] = 0;
-				}
-			}
-
-			if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/FindTextLines_" + iter_det + "_19_5_ImFF_F" + g_im_save_format, w, h);
-
-			IntersectTwoImages(ImTMP, ImMainMASK, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/FindTextLines_" + iter_det + "_19_6_ImFF_F_IntImMASK" + g_im_save_format, w, h);
-
-			MergeImagesByIntersectedFigures(ImMainMASK, ImTMP, w, h, 255);
-			if (g_show_results) SaveGreyscaleImage(ImMainMASK, "/TestImages/FindTextLines_" + iter_det + "_19_7_ImMASKMergeImFF_F" + g_im_save_format, w, h);
-		}*/
 	}
 
 	ww = W * g_scale;
@@ -5685,6 +5579,10 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 	int iter = 0;	
 	DWORD  start_time;
 	int min_h = g_min_h * H;
+	
+	//cv::String info;
+	//cv::ocl::Device device = cv::ocl::Device::getDefault();
+	//info = "Device name: " + device.name() + "\n";
 
 	//start_time = GetTickCount();
 
@@ -9759,11 +9657,35 @@ void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::Mat &res)
 	}
 }
 
+void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::UMat &res)
+{
+	cv::Mat im(h, w, CV_8UC1);
+
+	for (int i = 0; i < w*h; i++)
+	{
+		im.data[i] = ImGR[i];
+	}
+
+	im.copyTo(res);
+}
+
+
 void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, custom_buffer<int> &res)
 {
 	for (int i = 0; i < w*h; i++)
 	{
 		res[i] = ImGR.data[i];
+	}
+}
+
+void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, custom_buffer<int> &res)
+{
+	cv::Mat im;
+	ImGR.copyTo(im);
+
+	for (int i = 0; i < w*h; i++)
+	{
+		res[i] = im.data[i];
 	}
 }
 
@@ -9785,6 +9707,26 @@ void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::Mat &res)
 	}
 }
 
+// ImBinary - 0 or some_color!=0 (like 0 and 1) 
+void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::UMat &res)
+{
+	cv::Mat im(h, w, CV_8UC1);
+
+	for (int i = 0; i < w*h; i++)
+	{
+		if (ImBinary[i] != 0)
+		{
+			im.data[i] = 255;
+		}
+		else
+		{
+			im.data[i] = 0;
+		}
+	}
+
+	im.copyTo(res);
+}
+
 // ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255) 
 void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, int white)
 {
@@ -9799,6 +9741,59 @@ void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, 
 			res[i] = 0;
 		}
 	}
+}
+
+// ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255) 
+void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, custom_buffer<int> &res, int white)
+{
+	cv::Mat im;
+	ImBinary.copyTo(im);
+
+	for (int i = 0; i < w*h; i++)
+	{
+		if (im.data[i] != 0)
+		{
+			res[i] = white;
+		}
+		else
+		{
+			res[i] = 0;
+		}
+	}
+}
+
+void RGBMatToImage(cv::UMat &ImRGB, int w, int h, custom_buffer<int> &res)
+{
+	cv::Mat im;
+	ImRGB.copyTo(im);
+	memcpy(&res[0], im.data, w*h * sizeof(int));
+}
+
+void RGBImageToMat(custom_buffer<int> &ImRGB, int w, int h, cv::UMat &res)
+{
+	cv::Mat cv_ImRGB(h, w, CV_8UC4);	
+	memcpy(cv_ImRGB.data, &ImRGB[0], w*h * sizeof(int));
+	cv_ImRGB.copyTo(res);
+}
+
+void InvertBinaryMat(cv::UMat &ImBinary, int w, int h, cv::UMat &res)
+{
+	cv::Mat im;
+	ImBinary.copyTo(im);
+
+	for (int i = 0; i < w*h; i++)
+	{
+		if (im.data[i] == 0)
+		{
+			im.data[i] = 255;
+		}
+		else
+		{
+			im.data[i] = 0;
+		}
+	}
+
+	im.copyTo(res);
 }
 
 void GreyscaleImageToBinary(custom_buffer<int> &ImRES, custom_buffer<int> &ImGR, int w, int h, int white)

@@ -32,6 +32,8 @@ wxString get_add_info();
 //#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
 #define custom_assert(cond, msg)
 
+#define cvMAT cv::UMat
+
 template <typename T>
 class custom_buffer
 {
