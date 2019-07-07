@@ -773,7 +773,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			//AssLine.m_BT = bt;
 			//AssLine.m_ET = et;			
 
-			//image_name = string("/TXTImages/") + GetFileName(FileNamesVector[k].ToStdString()) + g_im_save_format;
+			//image_name = string("/TXTImages/") + GetFileName(FileNamesVector[k]) + g_im_save_format;
 			//
    //         fname = string("");
 			//do
@@ -1543,7 +1543,7 @@ public:
 	int m_res;
 	int m_w;
 	int m_h;
-	vector<string> m_SavedFiles;
+	vector<wxString> m_SavedFiles;
 	custom_buffer<int> m_ImRGB;
 	custom_buffer<int> m_ImClearedText;
 	custom_buffer<custom_buffer<int>> m_ImF;
@@ -1562,6 +1562,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res)
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
+		int j = 2;
 	}
 }
 
@@ -1588,7 +1589,7 @@ FindTextLinesRes FindTextLines(wxString FileName)
 		if (g_show_transformed_images_only)
 		{
 			Str = FileName;
-			Str = GetFileName(Str.ToStdString());
+			Str = GetFileName(Str);
 			Str = g_work_dir + "/TXTImages/" + Str + g_im_save_format;
 			SaveGreyscaleImage(res.m_ImF[5], string(Str), w, h);
 			res.m_ImClearedText = res.m_ImF[5];
@@ -1598,14 +1599,14 @@ FindTextLinesRes FindTextLines(wxString FileName)
 		if (g_use_ISA_images_for_get_txt_area)
 		{
 			Str = FileName;
-			Str = GetFileName(Str.ToStdString());
+			Str = GetFileName(Str);
 			Str = g_work_dir + "/ISAImages/" + Str + g_im_save_format;
 
 			if (wxFileExists(Str))
 			{
-				LoadGreyscaleImage(res.m_ImF[5], string(Str), w, h);
-
+				LoadGreyscaleImage(res.m_ImF[5], string(Str), w, h);				
 				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
+				RestoreStillExistLines(res.m_ImF[5], res.m_ImF[3], w, h);
 				ExtendImFWithDataFromImNF(res.m_ImF[5], res.m_ImF[3], w, h);
 				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
 			}
@@ -1616,7 +1617,7 @@ FindTextLinesRes FindTextLines(wxString FileName)
 		if (g_use_ILA_images_for_get_txt_area)
 		{
 			Str = FileName;
-			Str = GetFileName(Str.ToStdString());
+			Str = GetFileName(Str);
 			Str = g_work_dir + "/ILAImages/" + Str + g_im_save_format;
 
 			if (wxFileExists(Str))
@@ -1634,8 +1635,8 @@ FindTextLinesRes FindTextLines(wxString FileName)
 			}
 		}		
 
-		Str = GetFileName(FileName.ToStdString());
-		res.m_SavedFiles.push_back(string(Str));
+		Str = GetFileName(FileName);
+		res.m_SavedFiles.push_back(Str);
 
 		FindTextLinesWithExcFilter(&res);
 		//res.m_res = FindTextLines(res.m_ImRGB, res.m_ImClearedText, res.m_ImF[5], res.m_ImF[3], res.m_ImF[1], res.m_ImF[0], res.m_SavedFiles, w, h);
@@ -1698,7 +1699,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
-	vector<string> prevSavedFiles;
+	vector<wxString> prevSavedFiles;
 	vector<u64> BT, ET;
 	wxString filename;
 	bool bres;
@@ -1757,7 +1758,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			}
 
 			Str = FileNamesVector[k];
-			Str = GetFileName(Str.ToStdString());			
+			Str = GetFileName(Str);			
 
 			val = k + 1;
 			sprintf(str, "%.4d", val);
@@ -1766,7 +1767,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			if ( (res == 0) && (g_DontDeleteUnrecognizedImages1 == true) )
 			{
 				Str = FileNamesVector[k];
-				Str = GetFileName(Str.ToStdString());
+				Str = GetFileName(Str);
 				Str = wxString("/TXTImages/") + Str + wxString("_00001") + g_im_save_format;
 
 				int color, wc;
@@ -1781,7 +1782,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				custom_buffer<int> ImRES1((int)(task_res.m_w * g_scale)*(int)(task_res.m_h / g_scale), wc);
 				SaveGreyscaleImage(ImRES1, string(Str), task_res.m_w*g_scale, task_res.m_h/g_scale);			
 			}
-
+			/*
 			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == task_res.m_SavedFiles.size()) )
 			{
 				Str = prevSavedFiles[i].c_str();
@@ -1869,7 +1870,7 @@ void *ThreadCreateClearedTextImages::Entry()
 					}
 				}
 			}
-
+			*/
 			prevSavedFiles = task_res.m_SavedFiles;
 		}
 		catch (const exception& e)

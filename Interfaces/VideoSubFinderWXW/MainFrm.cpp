@@ -333,7 +333,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	fstream fout;
 	string rpl_path = g_work_dir + string("/report.log");
 	fout.open(rpl_path.c_str(), ios::out);
-	fout <<	m_pVideo->m_log;
+	fout <<	"Filename: " << m_FileName << "\n" << m_pVideo->m_log;
 	fout.close();
 
 	if (m_blnOpenVideoResult == false) 
@@ -351,7 +351,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	m_pVideoBox->m_pSB->SetScrollPos(0);
 	m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration));
 
-	m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + GetFileName(csFileName.ToStdString()) + "\"");
+	m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + GetFileName(csFileName) + "\"");
 
 	if (m_blnReopenVideo == false) 
 	{
@@ -562,12 +562,14 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_show_sf_results, "dump_debug_second_filtration_images");
 	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
 	ReadProperty(fin, g_show_transformed_images_only, "show_transformed_images_only");
+	ReadProperty(fin, g_use_ocl, "use_ocl");
 	ReadProperty(fin, g_use_cuda_gpu, "use_cuda_gpu");
 	ReadProperty(fin, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	ReadProperty(fin, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
 	ReadProperty(fin, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
 	ReadProperty(fin, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
 
+	ReadProperty(fin, g_smthr, "moderate_threshold_for_scaled_image");
 	ReadProperty(fin, g_mthr, "moderate_threshold");
 	ReadProperty(fin, g_mnthr, "moderate_threshold_for_NEdges");
 	ReadProperty(fin, g_segw, "segment_width");
@@ -580,6 +582,10 @@ void CMainFrame::LoadSettings()
 	
 	ReadProperty(fin, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
 	ReadProperty(fin, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
+
+	ReadProperty(fin, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
+	ReadProperty(fin, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
+	ReadProperty(fin, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");	
 
 	ReadProperty(fin, g_mpn, "min_points_number");
 	ReadProperty(fin, g_mpd, "min_points_density");
@@ -633,9 +639,11 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
 	
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(fin, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
+	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, "ssp_oi_property_cpu_kmeans_initial_loop_iterations");
@@ -697,6 +705,10 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_max_dl_down, "ssp_oim_property_max_dl_down");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_max_dl_up, "ssp_oim_property_max_dl_up");
 
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, "ssp_oim_property_use_gradient_images_for_clear_txt_images");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, "ssp_oim_property_clear_txt_images_by_main_color");
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
+
 	fin.close();
 }
 
@@ -722,11 +734,14 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_show_sf_results, "dump_debug_second_filtration_images");
 	WriteProperty(fout, g_clear_test_images_folder, "clear_test_images_folder");
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
+	WriteProperty(fout, g_use_ocl, "use_ocl");
 	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
 	WriteProperty(fout, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");	
 	WriteProperty(fout, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
 	WriteProperty(fout, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
+
+	WriteProperty(fout, g_smthr, "moderate_threshold_for_scaled_image");
 	WriteProperty(fout, g_mthr, "moderate_threshold");
 	WriteProperty(fout, g_mnthr, "moderate_threshold_for_NEdges");
 	WriteProperty(fout, g_segw, "segment_width");
@@ -739,6 +754,10 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
 	WriteProperty(fout, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
+
+	WriteProperty(fout, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
+	WriteProperty(fout, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
+	WriteProperty(fout, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");
 
 	WriteProperty(fout, g_mpn, "min_points_number");
 	WriteProperty(fout, g_mpd, "min_points_density");

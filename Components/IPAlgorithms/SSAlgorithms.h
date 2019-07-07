@@ -58,4 +58,4 @@ void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin
 
 std::string VideoTimeToStr(s64 pos);
 
-std::string GetFileName(std::string FilePath);
+wxString GetFileName(wxString FilePath);

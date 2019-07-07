@@ -63,9 +63,11 @@ public:
 	wxString	m_ssp_label_parameters_influencing_image_processing;
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;
 	wxString	m_ssp_oi_group_global_image_processing_settings;
+	wxString	m_ssp_oi_property_use_ocl;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
 	wxString	m_ssp_ocr_threads;
 	wxString	m_ssp_oi_property_image_scale_for_clear_image;
+	wxString	m_ssp_oi_property_moderate_threshold_for_scaled_image;
 	wxString	m_ssp_oi_property_cuda_kmeans_initial_loop_iterations;
 	wxString	m_ssp_oi_property_cuda_kmeans_loop_iterations;
 	wxString	m_ssp_oi_property_cpu_kmeans_initial_loop_iterations;
@@ -122,6 +124,9 @@ public:
 	wxString	m_ssp_oim_property_replace_ISA_by_filtered_version;
 	wxString	m_ssp_oim_property_max_dl_down;
 	wxString	m_ssp_oim_property_max_dl_up;
+	wxString	m_ssp_oim_property_use_gradient_images_for_clear_txt_images;
+	wxString	m_ssp_oim_property_clear_txt_images_by_main_color;
+	wxString	m_ssp_oim_property_use_ILA_images_for_clear_txt_images;
 };
 
 class CMainFrame : public wxMDIParentFrame

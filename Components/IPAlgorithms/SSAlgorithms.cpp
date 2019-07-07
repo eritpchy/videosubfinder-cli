@@ -16,7 +16,7 @@
 
 #include "SSAlgorithms.h"
 #include <math.h>
-#include <regex>
+#include <wx/regex.h>
 #include <ppl.h>
 #include <ppltasks.h>
 
@@ -1665,14 +1665,14 @@ std::string VideoTimeToStr(s64 pos)
 	return string(str);
 }
 
-std::string GetFileName(std::string FilePath)
+wxString GetFileName(wxString FilePath)
 {
-	std::regex re("([^\\\\\\/\\.]+)\\.[^\\\\\\/\\.]+$");
-	std::smatch match;
-	std::string res;
+	wxString res;
 
-	if (std::regex_search(FilePath, match, re) && match.size() > 1) {
-		res = match.str(1);
+	wxRegEx re = "([^\\\\\\/]+)\\.[^\\\\\\/\\.]+$";
+	if (re.Matches(FilePath))
+	{
+		res = re.GetMatch(FilePath, 1);
 	}
 
 	return res;

@@ -33,6 +33,7 @@ extern string   g_work_dir;
 extern string   g_app_dir;
 extern string   g_im_save_format;
 
+extern double	g_smthr;  //moderate threshold for scaled image
 extern double	g_mthr;  //moderate threshold
 extern double	g_mnthr; //moderate threshold for NEdges
 extern int		g_segw;  //segment width
@@ -61,6 +62,7 @@ extern bool		g_show_transformed_images_only;
 
 extern int		g_dmaxy;
 
+extern bool		g_use_ocl;
 extern bool		g_use_cuda_gpu;
 extern int		g_cuda_kmeans_initial_loop_iterations;
 extern int		g_cuda_kmeans_loop_iterations;
@@ -69,6 +71,10 @@ extern int		g_cpu_kmeans_initial_loop_iterations;
 extern int		g_cpu_kmeans_loop_iterations;
 
 extern int		g_min_alpha_color;
+
+extern bool		g_use_gradient_images_for_clear_txt_images;
+extern bool		g_clear_txt_images_by_main_color;
+extern bool		g_use_ILA_images_for_clear_txt_images;
 
 void RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h);
 void YIQ_to_RGB(int Y, int I, int Q, int &R, int &G, int &B, int max_val);
@@ -103,7 +109,7 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 int FilterTransformedImage(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H, std::string iter_det);
 int FilterImage(custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int w, int h, int W, int H, custom_buffer<int> &LB, custom_buffer<int> &LE, int N);
 
-int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, custom_buffer<int> &ImIL, vector<string> &SavedFiles, int W, int H);
+int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, custom_buffer<int> &ImIL, vector<wxString> &SavedFiles, int W, int H);
 
 void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset);
@@ -139,3 +145,5 @@ void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int qual
 void IntersectTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h);
 
 bool InitCUDADevice();
+
+void RestoreStillExistLines(custom_buffer<int> &Im, custom_buffer<int> &ImOrig, int w, int h);

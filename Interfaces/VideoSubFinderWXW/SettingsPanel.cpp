@@ -196,14 +196,14 @@ void CSettingsPanel::Init()
 	m_pOI = new CDataGrid( m_pP2, ID_OI,
                            rcOI.GetPosition(), rcOI.GetSize() );
 
-    m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);
+    m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);	
 #ifdef WIN64
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, m_LBLFont, &g_use_cuda_gpu);
 #else
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (on x64 is supported only)", m_CLSP, m_CLSP, m_LBLFont, &g_use_cuda_gpu);
 	m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
 #endif
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, 1, 100);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, m_LBLFont, &g_use_ocl);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, m_LBLFont, &g_generate_cleared_text_images_on_test);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_results);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_sf_results);
@@ -245,6 +245,7 @@ void CSettingsPanel::Init()
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ocr_threads, 1, 100);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scale, 1, 4);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smthr, 0.0, 1.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cpu_kmeans_loop_iterations, 1, 1000);
 #ifdef WIN64
@@ -266,7 +267,12 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages2);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DefStringForEmptySub);
 	
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_gradient_images_for_clear_txt_images);	
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_clear_txt_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, m_LBLFont, &g_clear_txt_images_by_main_color);
+
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, 1, 100);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1, m_LBLFont);		
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_frames_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DL, 1, 100);
 
@@ -292,7 +298,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
 	char str[30];
 	clock_t t;
-	string ImgName;
+	wxString ImgName;
 		
 	if (m_pMF->m_VIsOpen)
 	{
@@ -315,7 +321,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		m_pMF->m_pVideo->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
 
 		s64 CurPos = m_pMF->m_pVideo->GetPos();
-		ImgName = GetFileName(m_pMF->m_pVideo->m_MovieName.ToStdString());
+		ImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
 		ImgName += " -- " + VideoTimeToStr(CurPos);
 	}
 	else
@@ -342,7 +348,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 			g_pViewImage[0](ImRGB, W, H);
 
-			ImgName = GetFileName(filename.ToStdString());
+			ImgName = GetFileName(filename);
 		}
 	}
 
@@ -361,7 +367,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	if (g_generate_cleared_text_images_on_test)
 	{
-		vector<string> SavedFiles;
+		vector<wxString> SavedFiles;
 		SavedFiles.push_back(ImgName);
 		custom_buffer<int> ImIL(w*h, 0);
 		ImIL[0] = -1;
