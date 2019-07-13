@@ -34,6 +34,8 @@ wxString get_add_info();
 
 #define cvMAT cv::UMat
 
+extern bool g_use_ocl;
+
 template <typename T>
 class custom_buffer
 {

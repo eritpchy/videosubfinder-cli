@@ -40,12 +40,12 @@ extern int g_max_dl_up;
 
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
-int AnalyseImage(custom_buffer<int> &Im, int w, int h);
+int AnalyseImage(custom_buffer<int> &Im, custom_buffer<int> *pImILA, int w, int h);
 
-int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> &ImVE1, custom_buffer<int> &Im2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
+int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImVE1, custom_buffer<int> &Im2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
 
-int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> &ImNE1, custom_buffer<int> &ImF2, custom_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin);
-int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h, int W, int H, int ymin);
+int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImNE1, custom_buffer<int> &ImF2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin);
+//int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h, int W, int H, int ymin);
 
 int SimpleCombineTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
 
