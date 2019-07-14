@@ -63,7 +63,7 @@ void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures
 void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white, std::string iter_det);
 int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int white);
 int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H);
-int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
+//int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
 int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white, bool simple = false);
 void InvertBinaryImage(custom_buffer<int> &Im, int w, int h);
 
@@ -1728,8 +1728,8 @@ int FilterImage(custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int w, int h,
 		res = SecondFiltration(ImF, ImNE, LB, LE, N, w, h, W, H);
 		if (g_show_results) SaveGreyscaleImage(ImF, "/TestImages/FilterImage_iter" + std::to_string(iter) + "_02_ImSFFSecondFiltration" + g_im_save_format, w, h);
 
-		if (res == 1) res = ThirdFiltration(ImF, LB, LE, N, w, h, W, H);
-		if (g_show_results) SaveGreyscaleImage(ImF, "/TestImages/FilterImage_iter" + std::to_string(iter) + "_03_ImTFFThirdFiltration" + g_im_save_format, w, h);
+		//if (res == 1) res = ThirdFiltration(ImF, LB, LE, N, w, h, W, H);
+		//if (g_show_results) SaveGreyscaleImage(ImF, "/TestImages/FilterImage_iter" + std::to_string(iter) + "_03_ImTFFThirdFiltration" + g_im_save_format, w, h);
 
 		if (res == 1) res = ClearImageFromSmallSymbols(ImF, w, h, W, H, 255);
 		if (g_show_results) SaveGreyscaleImage(ImF, "/TestImages/FilterImage_iter" + std::to_string(iter) + "_04_ImTFClearedFromSmallSymbols" + g_im_save_format, w, h);
@@ -2200,6 +2200,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 	return res;
 }
 
+/*
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
 int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H)
@@ -2436,7 +2437,7 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffe
 	}
 
 	return res;
-}
+}*/
 
 inline void GetDDY(int &h, int &LH, int &LMAXY, int &ddy1, int &ddy2)
 {

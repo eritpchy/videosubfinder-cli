@@ -160,27 +160,7 @@ int CompareTwoSubsByOffset(custom_buffer<custom_buffer<int>> &ImForward, custom_
 		);
 	}
 
-	{
-		if (bln == 0)
-		{
-			bln = CompareTwoSubs(ImIntS, &ImYS, ImNES, ImInt2, &ImYInt2, ImNEForward[offset], w, h, W, H, ymin);
-		}
-
-		if (bln == 0)
-		{
-			bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, ImNES, ImInt2, &ImYInt2, ImNEForward[offset], w, h, W, H, ymin);
-		}
-
-		if (bln == 0)
-		{
-			bln = CompareTwoSubs(ImIntS, &ImYS, prevImNE, ImInt2, &ImYInt2, ImNEForward[offset], w, h, W, H, ymin);
-		}
-
-		if (bln == 0)
-		{
-			bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, prevImNE, ImInt2, &ImYInt2, ImNEForward[offset], w, h, W, H, ymin);
-		}
-	}
+	bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, ImInt2, &ImYInt2, ImNEForward[offset], w, h, W, H, ymin);	
 
 	return bln;
 }
@@ -188,19 +168,96 @@ int CompareTwoSubsByOffset(custom_buffer<custom_buffer<int>> &ImForward, custom_
 int FindOffsetForNewSub(custom_buffer<custom_buffer<int>> &ImForward, custom_buffer<custom_buffer<int>> &ImYForward, custom_buffer<custom_buffer<int>> &ImNEForward,
 	custom_buffer<int> &ImIntS, custom_buffer<int> &ImYS, custom_buffer<int> &ImNES, custom_buffer<int> &prevImNE,
 	int w, int h, int ymin, int W, int H)
-{
-	int bln;
+{	
 	int DL = g_DL;
 	int offset = 0;
 
-	for (offset = 0; offset < DL - 1; offset++)
+	if (g_threads == 1)
 	{
-		bln = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, offset);
-
-		if (bln == 0)
+		for (offset = 0; offset < DL - 1; offset++)
 		{
-			break;
+			if (CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, offset) == 0)
+			{
+				break;
+			}
 		}
+	}
+	
+	if (g_threads >= 2)
+	{
+		custom_buffer<int> blns(DL, -1);
+		int l = 0, r = (DL - 2)/2;
+
+		while (1)
+		{
+			if ((l != r) && (blns[l] == -1) && (blns[r] == -1))
+			{
+				concurrency::parallel_invoke(
+					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, ymin, W, H, l] {
+						blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, l);
+					},
+					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, ymin, W, H, r] {
+						blns[r] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, r);
+					}
+				);				
+			}
+			else
+			{
+				if (blns[l] == -1)
+				{
+					blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, l);
+				}
+
+				if (blns[r] == -1)
+				{
+					blns[r] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, r);
+				}
+			}
+
+			if ((blns[l] == 0) || (l == r))
+			{
+				break;
+			}
+			else
+			{
+				if (blns[r] == 0)
+				{
+					while(blns[l] != -1) l++;
+					if (l > r)
+					{
+						break;
+					}
+					r = (l + r) / 2;
+				}
+				else
+				{			
+					if (r == DL - 2)
+					{
+						break;
+					}
+
+					l = r;
+					while (blns[l] != -1) l++;
+
+					if (r == DL - 3)
+					{
+						r = DL - 2;
+					}
+					else
+					{
+						r = (r + DL - 2) / 2;
+					}
+
+					if (l > r)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		offset = 0;
+		while (((blns[offset] > 0) || (blns[offset] == -1)) && (offset < DL - 1)) offset++;
 	}
 
 	return offset;
@@ -636,30 +693,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				}
 				else
 				{
-					bln = 0;
+					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, &ImYInt, *pImNE, w, h, W, H, ymin);
 					
-					{
-						if (bln == 0)
-						{
-							bln = CompareTwoSubs(ImIntS, &ImYS, ImNES, *pImInt, &ImYInt, *pImNE, w, h, W, H, ymin);
-						}
-
-						if (bln == 0)
-						{
-							bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, ImNES, *pImInt, &ImYInt, *pImNE, w, h, W, H, ymin);
-						}
-
-						if (bln == 0)
-						{
-							bln = CompareTwoSubs(ImIntS, &ImYS, prevImNE, *pImInt, &ImYInt, *pImNE, w, h, W, H, ymin);
-						}
-
-						if (bln == 0)
-						{
-							bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, prevImNE, *pImInt, &ImYInt, *pImNE, w, h, W, H, ymin);
-						}
-					}					
-
 					if ((bln > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL)))
 					{
 						memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
@@ -693,20 +728,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (finded_prev == 1)
 						{
-							bln = 0;
+							bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
 							
-							{
-								if (bln == 0)
-								{
-									bln = CompareTwoSubs(ImIntSP, &ImYSP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
-								}
-
-								if (bln == 0)
-								{
-									bln = DifficultCompareTwoSubs2(ImIntSP, &ImYSP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
-								}
-							}
-
 							if (bln == 0)
 							{														
 								if (debug)
@@ -815,19 +838,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			{
 				if (finded_prev == 1)
 				{
-					bln = 0;
-					
-					{
-						if (bln == 0)
-						{
-							bln = CompareTwoSubs(ImIntSP, &ImYSP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
-						}
-
-						if (bln == 0)
-						{
-							bln = DifficultCompareTwoSubs2(ImIntSP, &ImYSP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
-						}
-					}
+					bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
 
 					if (bln == 1)
 					{
@@ -885,29 +896,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						{
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = 0;
-								
-								{
-									if (bln == 0)
-									{
-										bln = CompareTwoSubs(ImIntS, &ImYS, ImNES, ImIntS, &ImYS, ImNEForward[offset], w, h, W, H, ymin);
-									}
-
-									if (bln == 0)
-									{
-										bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, ImNES, ImIntS, &ImYS, ImNEForward[offset], w, h, W, H, ymin);
-									}
-
-									if (bln == 0)
-									{
-										bln = CompareTwoSubs(ImIntS, &ImYS, *pPrevImNE, ImIntS, &ImYS, ImNEForward[offset], w, h, W, H, ymin);
-									}
-
-									if (bln == 0)
-									{
-										bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, *pPrevImNE, ImIntS, &ImYS, ImNEForward[offset], w, h, W, H, ymin);
-									}
-								}
+								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, ImNEForward[offset], w, h, W, H, ymin);
 
 								if (bln == 0)
 								{
@@ -942,19 +931,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					{
 						if (finded_prev == 1)
 						{
-							bln = 0;
-							
-							{
-								if (bln == 0)
-								{
-									bln = CompareTwoSubs(ImIntS, &ImYS, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
-								}
-
-								if (bln == 0)
-								{
-									bln = DifficultCompareTwoSubs2(ImIntS, &ImYS, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
-								}
-							}
+							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
 
 							if (bln == 1)
 							{
@@ -1033,6 +1010,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					memcpy(ImNEForward[_thr_n].m_pData, ImNEForward[_thr_n + 1].m_pData, BufferSize);
 					memcpy(ImYForward[_thr_n].m_pData, ImYForward[_thr_n + 1].m_pData, BufferSize);
 				}
+				_thr_n = _thr_n;
 			}
 		}
 	}
@@ -1306,7 +1284,7 @@ int GetLinesInfo(custom_buffer<int> &ImRES, custom_buffer<int> &lb, custom_buffe
 	return ln;
 }
 
-int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImNE1, custom_buffer<int> &ImF2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin)
+int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImNE11, custom_buffer<int> &ImNE12, custom_buffer<int> &ImF2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin)
 {
 	custom_buffer<int> ImFF1(ImF1), ImFF2(ImF2);
 	custom_buffer<int> ImRES(w*h, 0);
@@ -1354,7 +1332,7 @@ int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> *pImIL
 	concurrency::parallel_invoke(
 		[&] {
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_1_ImFF1" + g_im_save_format, w, h);
-			FilterImage(ImFF1, ImNE1, w, h, W, H, lb, le, ln);
+			FilterImage(ImFF1, ImNE11, w, h, W, H, lb, le, ln);
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_2_ImFF1F" + g_im_save_format, w, h);
 			filter_image(ImFF1);
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_3_ImFF1FF" + g_im_save_format, w, h);
@@ -1368,7 +1346,7 @@ int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> *pImIL
 		}
 	);	
 
-	res = CompareTwoSubs(ImFF1, pImILA1, ImNE1, ImFF2, pImILA2, ImNE2, w, h, W, H, ymin);
+	res = CompareTwoSubs(ImFF1, pImILA1, ImNE11, ImNE12, ImFF2, pImILA2, ImNE2, w, h, W, H, ymin);
 
 	return res;
 }
@@ -1408,9 +1386,9 @@ int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1
 	return res;
 }*/
 
-int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImVE1, custom_buffer<int> &Im2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin)
+int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImVE11, custom_buffer<int> &ImVE12, custom_buffer<int> &Im2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin)
 {
-	custom_buffer<int> ImRES(w*h, 0), ImVE1R(ImVE1), ImVE2R(ImVE2), lb(h, 0), le(h, 0);
+	custom_buffer<int> ImRES(w*h, 0), ImVE11R(ImVE11), ImVE12R(ImVE12), ImVE2R(ImVE2), lb(h, 0), le(h, 0);
 	int i, ib, ie, k, y, l, ln, bln, val1, val2, dif, dif1, dif2, cmb, segh, dn;
 	double veple;
 
@@ -1421,30 +1399,52 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_
 	{
 		custom_buffer<int> ImFF1(Im1), ImFF2(Im2);
 
-		if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/CompareTwoSubs_01_01_ImFF1" + g_im_save_format, w, h);
-		if (pImILA1 != NULL)
-		{
-			if (g_show_results) SaveBinaryImage(*pImILA1, "/TestImages/CompareTwoSubs_01_02_ImILA1" + g_im_save_format, w, h);
-			IntersectTwoImages(ImFF1, *pImILA1, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/CompareTwoSubs_01_03_ImFF1IntImILA1" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImVE1R, "/TestImages/CompareTwoSubs_01_04_ImVE1R" + g_im_save_format, w, h);
-			IntersectTwoImages(ImVE1R, *pImILA1, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImVE1R, "/TestImages/CompareTwoSubs_01_05_ImVE1RIntImILA1" + g_im_save_format, w, h);
-		}
-
-		if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/CompareTwoSubs_01_06_ImFF2" + g_im_save_format, w, h);
-		if (pImILA2 != NULL)
-		{
-			if (g_show_results) SaveBinaryImage(*pImILA2, "/TestImages/CompareTwoSubs_01_07_ImILA2" + g_im_save_format, w, h);
-			IntersectTwoImages(ImFF2, *pImILA2, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/CompareTwoSubs_01_08_ImFF2IntImILA2" + g_im_save_format, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImVE2R, "/TestImages/CompareTwoSubs_01_09_ImVE2R" + g_im_save_format, w, h);
-			IntersectTwoImages(ImVE2R, *pImILA2, w, h);
-			if (g_show_results) SaveGreyscaleImage(ImVE2R, "/TestImages/CompareTwoSubs_01_10_ImVE2RIntImILA2" + g_im_save_format, w, h);
-		}
+		concurrency::parallel_invoke(
+			[&ImFF1, pImILA1, w, h] {
+			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/CompareTwoSubs_01_01_01_ImFF1" + g_im_save_format, w, h);
+			if (pImILA1 != NULL)
+			{
+				if (g_show_results) SaveBinaryImage(*pImILA1, "/TestImages/CompareTwoSubs_01_01_02_ImILA1" + g_im_save_format, w, h);
+				IntersectTwoImages(ImFF1, *pImILA1, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/CompareTwoSubs_01_01_03_ImFF1IntImILA1" + g_im_save_format, w, h);
+			}
+		},
+			[&ImVE11R, pImILA1, w, h] {
+			if (pImILA1 != NULL)
+			{
+				if (g_show_results) SaveGreyscaleImage(ImVE11R, "/TestImages/CompareTwoSubs_01_01_04_ImVE11R" + g_im_save_format, w, h);
+				IntersectTwoImages(ImVE11R, *pImILA1, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImVE11R, "/TestImages/CompareTwoSubs_01_01_05_ImVE11RIntImILA1" + g_im_save_format, w, h);
+			}
+		},
+			[&ImVE12R, &ImVE11, &ImVE12, pImILA1, w, h] {
+			if ((pImILA1 != NULL) && (ImVE11.m_pData != ImVE12.m_pData))
+			{
+				if (g_show_results) SaveGreyscaleImage(ImVE12R, "/TestImages/CompareTwoSubs_01_02_01_ImVE12R" + g_im_save_format, w, h);
+				IntersectTwoImages(ImVE12R, *pImILA1, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImVE12R, "/TestImages/CompareTwoSubs_01_02_01_ImVE12RIntImILA1" + g_im_save_format, w, h);
+			}
+		},
+			[&ImFF2, pImILA2, w, h] {
+			if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/CompareTwoSubs_01_02_01_ImFF2" + g_im_save_format, w, h);
+			if (pImILA2 != NULL)
+			{
+				if (g_show_results) SaveBinaryImage(*pImILA2, "/TestImages/CompareTwoSubs_01_02_02_ImILA2" + g_im_save_format, w, h);
+				IntersectTwoImages(ImFF2, *pImILA2, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/CompareTwoSubs_01_02_03_ImFF2IntImILA2" + g_im_save_format, w, h);
+			}
+		},
+			[&ImVE2R, pImILA2, w, h] {
+			if (pImILA2 != NULL)
+			{
+				if (g_show_results) SaveGreyscaleImage(ImVE2R, "/TestImages/CompareTwoSubs_01_02_04_ImVE2R" + g_im_save_format, w, h);
+				IntersectTwoImages(ImVE2R, *pImILA2, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImVE2R, "/TestImages/CompareTwoSubs_01_02_05_ImVE2RIntImILA2" + g_im_save_format, w, h);
+			}
+		});
 
 		AddTwoImages(ImFF1, ImFF2, ImRES, w*h);
-		if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/CompareTwoSubs_01_11_ImRES" + g_im_save_format, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/CompareTwoSubs_01_03_ImRES" + g_im_save_format, w, h);
 	}
 	else
 	{
@@ -1566,110 +1566,148 @@ int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_
 		return 0;
 	}
 
-	bln = 1;
-	for(k=0; k<ln; k++)
+	auto compare = [&ImRES, &lb, &le, ln, l, w, ymin, H, veple](custom_buffer<int> &ImVE1, custom_buffer<int> &ImVE2) {
+		int bln = 1, k, i, ib, ie, dif, dif1, dif2, cmb, val1, val2;
+		for (k = 0; k < ln; k++)
+		{
+			ib = (lb[k] + 1)*w;
+			ie = (le[k] - 1)*w;
+
+			if (((ln > 0) && (l < ln - 1) && (lb[l] + ymin > H / 4) &&
+				(le[l] + ymin < H / 2) && (lb[ln - 1] + ymin > H / 2))) // egnoring garbage line
+			{
+				continue;
+			}
+
+			dif1 = 0;
+			dif2 = 0;
+			cmb = 0;
+
+			for (i = ib; i < ie; i++)
+			{
+				if (ImRES[i] == 255)
+				{
+					val1 = ImVE1[i];
+					val2 = ImVE2[i];
+
+					if (val1 != val2)
+					{
+						if (val1 == 255) dif1++;
+						else dif2++;
+					}
+					else
+					{
+						if (val1 == 255) cmb++;
+					}
+				}
+			}
+
+			if (dif2 > dif1) dif = dif2;
+			else dif = dif1;
+
+			if (cmb == 0)
+			{
+				bln = 0;
+				break;
+			}
+
+			if ((double)dif / (double)cmb <= veple)
+			{
+				continue;
+			}
+
+			dif1 = 0;
+			dif2 = 0;
+			cmb = 0;
+
+			for (i = ib; i < ie; i++)
+			{
+				if (ImRES[i] == 255)
+				{
+					if ((ImRES[i - w] == 255) && (ImRES[i + w] == 255))
+					{
+						val1 = ImVE1[i] | ImVE1[i - w] | ImVE1[i + w];
+						val2 = ImVE2[i] | ImVE2[i - w] | ImVE2[i + w];
+					}
+					else if (ImRES[i - w] == 255)
+					{
+						val1 = ImVE1[i] | ImVE1[i - w];
+						val2 = ImVE2[i] | ImVE2[i - w];
+					}
+					else if (ImRES[i + w] == 255)
+					{
+						val1 = ImVE1[i] | ImVE1[i + w];
+						val2 = ImVE2[i] | ImVE2[i + w];
+					}
+					else
+					{
+						val1 = ImVE1[i];
+						val2 = ImVE2[i];
+					}
+
+					if (val1 != val2)
+					{
+						if (val1 == 255) dif1++;
+						else dif2++;
+					}
+					else
+					{
+						if (val1 == 255) cmb++;
+					}
+				}
+			}
+
+			if (dif2 > dif1) dif = dif2;
+			else dif = dif1;
+
+			if (cmb == 0)
+			{
+				bln = 0;
+				break;
+			}
+
+			if ((double)dif / (double)cmb > veple)
+			{
+				bln = 0;
+				break;
+			}
+		}
+
+		return bln;
+	};
+
+	if (ImVE11.m_pData != ImVE12.m_pData)
 	{
-		ib = (lb[k]+1)*w;
-		ie = (le[k]-1)*w;
-		
-		if (((ln > 0) && (l < ln - 1) && (lb[l] + ymin > H / 4) &&
-			(le[l] + ymin < H / 2) && (lb[ln - 1] + ymin > H / 2))) // egnoring garbage line
-		{
-			continue;
-		}
+		concurrency::parallel_invoke(
+			[&ImVE11R, &ImVE2R, &val1, &compare] {
+			val1 = compare(ImVE11R, ImVE2R);
+		},
+			[&ImVE12R, &ImVE2R, &val2, &compare] {
+			val2 = compare(ImVE12R, ImVE2R);
+		});
 
-		dif1 = 0;
-		dif2 = 0;
-		cmb = 0;
+		bln = val1 | val2;
+	}
+	else
+	{
+		bln = compare(ImVE11R, ImVE2R);
+	}
 
-		for(i=ib; i<ie; i++)
-		{
-			if (ImRES[i] == 255)
-			{
-				val1 = ImVE1R[i];
-				val2 = ImVE2R[i];
+	return bln;
+}
 
-				if (val1 != val2) 
-				{
-					if (val1 == 255) dif1++;
-					else dif2++;
-				}
-				else 
-				{
-					if (val1 == 255) cmb++;
-				}
-			}
-		}
+int CompareTwoSubsOptimal(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImVE11, custom_buffer<int> &ImVE12, custom_buffer<int> &Im2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin)
+{
+	int bln = 0;
+	
+	if (bln == 0)
+	{
+		bln = CompareTwoSubs(Im1, pImILA1, ImVE11, ImVE12, Im2, pImILA2, ImVE2, w, h, W, H, ymin);
+	}
 
-		if (dif2 > dif1) dif = dif2;
-		else dif = dif1;
-
-		if (cmb == 0)
-		{
-			bln = 0;
-			break;
-		}
-
-		if ((double)dif/(double)cmb <= veple)
-		{
-			continue;
-		}
-
-		dif1 = 0;
-		dif2 = 0;
-		cmb = 0;
-
-		for(i=ib; i<ie; i++)
-		{
-			if (ImRES[i] == 255)
-			{
-				if ((ImRES[i - w] == 255) && (ImRES[i + w] == 255))
-				{
-					val1 = ImVE1R[i] | ImVE1R[i - w] | ImVE1R[i + w];
-					val2 = ImVE2R[i] | ImVE2R[i - w] | ImVE2R[i + w];
-				}
-				else if (ImRES[i - w] == 255)
-				{
-					val1 = ImVE1R[i] | ImVE1R[i - w];
-					val2 = ImVE2R[i] | ImVE2R[i - w];
-				}
-				else if (ImRES[i + w] == 255)
-				{
-					val1 = ImVE1R[i] | ImVE1R[i + w];
-					val2 = ImVE2R[i] | ImVE2R[i + w];
-				}
-				else
-				{
-					val1 = ImVE1R[i];
-					val2 = ImVE2R[i];
-				}
-
-				if (val1 != val2) 
-				{
-					if (val1 == 255) dif1++;
-					else dif2++;
-				}
-				else 
-				{
-					if (val1 == 255) cmb++;
-				}
-			}
-		}
-
-		if (dif2 > dif1) dif = dif2;
-		else dif = dif1;
-
-		if (cmb == 0)
-		{
-			bln = 0;
-			break;
-		}
-
-		if ((double)dif/(double)cmb > veple)
-		{
-			bln = 0;
-			break;
-		}
+	if (bln == 0)
+	{
+		bln = DifficultCompareTwoSubs2(Im1, pImILA1, ImVE11, ImVE12, Im2, pImILA2, ImVE2, w, h, W, H, ymin);
 	}
 
 	return bln;
