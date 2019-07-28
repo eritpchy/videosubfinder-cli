@@ -24,7 +24,7 @@
 
 int		g_RunSubSearch = 0;
 
-int    g_threads = 4;
+int    g_threads = -1;
 
 int		g_DL = 6;	 //sub frame length
 double	g_tp = 0.3;	 //text procent
@@ -120,7 +120,7 @@ inline concurrency::task<void> TaskConvertImage(custom_buffer<int> &ImRGB, custo
 	});
 }
 
-int CompareTwoSubsByOffset(custom_buffer<custom_buffer<int>> &ImForward, custom_buffer<custom_buffer<int>> &ImYForward, custom_buffer<custom_buffer<int>> &ImNEForward,
+int CompareTwoSubsByOffset(custom_buffer<custom_buffer<int>*> &ImForward, custom_buffer<custom_buffer<int>*> &ImYForward, custom_buffer<custom_buffer<int>*> &ImNEForward,
 			custom_buffer<int> &ImIntS, custom_buffer<int> &ImYS, custom_buffer<int> &ImNES, custom_buffer<int> &prevImNE,
 			int w, int h, int ymin, int W, int H, int offset )
 {
@@ -134,38 +134,38 @@ int CompareTwoSubsByOffset(custom_buffer<custom_buffer<int>> &ImForward, custom_
 	{
 		concurrency::parallel_invoke(
 			[&ImInt2, &ImForward, DL, BufferSize, offset, w, h] {
-			memcpy(ImInt2.m_pData, ImForward[offset].m_pData, BufferSize);
-
-			for (int _thr_n = offset + 1; _thr_n < DL - 1; _thr_n++)
-			{
-				IntersectTwoImages(ImInt2, ImForward[_thr_n], w, h);
-			}
-		},
-			[&ImYInt2, &ImYForward, DL, BufferSize, offset, w, h] {
-			if (g_use_ILA_images_for_search_subtitles)
-			{
-				memcpy(ImYInt2.m_pData, ImYForward[offset].m_pData, BufferSize);
-
-				for (int i = 0; i < w*h; i++)
-				{
-					ImYInt2[i] += 255;
-				}
+				memcpy(ImInt2.m_pData, ImForward[offset]->m_pData, BufferSize);
 
 				for (int _thr_n = offset + 1; _thr_n < DL - 1; _thr_n++)
 				{
-					IntersectYImages(ImYInt2, ImYForward[_thr_n], w, h, 255);
+					IntersectTwoImages(ImInt2, *(ImForward[_thr_n]), w, h);
+				}
+			},
+				[&ImYInt2, &ImYForward, DL, BufferSize, offset, w, h] {
+				if (g_use_ILA_images_for_search_subtitles)
+				{
+					memcpy(ImYInt2.m_pData, ImYForward[offset]->m_pData, BufferSize);
+
+					for (int i = 0; i < w*h; i++)
+					{
+						ImYInt2[i] += 255;
+					}
+
+					for (int _thr_n = offset + 1; _thr_n < DL - 1; _thr_n++)
+					{
+						IntersectYImages(ImYInt2, *(ImYForward[_thr_n]), w, h, 255);
+					}
 				}
 			}
-		}
 		);
 	}
 
-	bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, ImInt2, &ImYInt2, ImNEForward[offset], w, h, W, H, ymin);	
+	bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, ImInt2, &ImYInt2, *(ImNEForward[offset]), w, h, W, H, ymin);	
 
 	return bln;
 }
 
-int FindOffsetForNewSub(custom_buffer<custom_buffer<int>> &ImForward, custom_buffer<custom_buffer<int>> &ImYForward, custom_buffer<custom_buffer<int>> &ImNEForward,
+int FindOffsetForNewSub(custom_buffer<custom_buffer<int>*> &ImForward, custom_buffer<custom_buffer<int>*> &ImYForward, custom_buffer<custom_buffer<int>*> &ImNEForward,
 	custom_buffer<int> &ImIntS, custom_buffer<int> &ImYS, custom_buffer<int> &ImNES, custom_buffer<int> &prevImNE,
 	int w, int h, int ymin, int W, int H)
 {	
@@ -263,12 +263,272 @@ int FindOffsetForNewSub(custom_buffer<custom_buffer<int>> &ImForward, custom_buf
 	return offset;
 }
 
+class RunSearch
+{
+	int m_threads;
+	int m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax, m_size, m_BufferSize, m_N;
+	CVideo *m_pV;
+	int m_fn_start;
+	s64 m_prevPos;
+	custom_buffer<s64> m_Pos;
+	custom_buffer<custom_buffer<int>> m_ImRGB;
+	custom_buffer<custom_buffer<int>*> m_pImRGB;
+	custom_buffer<custom_buffer<int>> m_ImNE;
+	custom_buffer<custom_buffer<int>*> m_pImNE;
+	custom_buffer<custom_buffer<int>> m_ImY;
+	custom_buffer<custom_buffer<int>*> m_pImY;
+	custom_buffer<custom_buffer<int>> m_Im;
+	custom_buffer<custom_buffer<int>*> m_pIm;
+	vector<concurrency::task<void>> m_thrs;
+	custom_buffer<int> m_thrs_res;
+	custom_buffer<int*> m_pthrs_res;
+
+public:
+	RunSearch(int threads, CVideo *pV)
+	{
+		m_threads = threads;
+		m_pV = pV;
+		m_w = pV->m_w;
+		m_h = pV->m_h;
+		m_W = pV->m_Width;
+		m_H = pV->m_Height;
+		m_xmin = pV->m_xmin;
+		m_xmax = pV->m_xmax;
+		m_ymin = pV->m_ymin;
+		m_ymax = pV->m_ymax;
+		m_size = m_w * m_h;
+		m_BufferSize = m_size * sizeof(int);
+		m_fn_start = 0;
+		m_prevPos = -2;
+
+		m_N = std::max<int>(g_DL + threads, (g_DL / 2) * threads);
+		m_Pos = custom_buffer<s64>(m_N, -1);
+		m_ImRGB = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
+		m_pImRGB = custom_buffer<custom_buffer<int>*>(m_N);
+		m_ImNE = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
+		m_pImNE = custom_buffer<custom_buffer<int>*>(m_N);
+		m_ImY = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
+		m_pImY = custom_buffer<custom_buffer<int>*>(m_N);
+		m_Im = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
+		m_pIm = custom_buffer<custom_buffer<int>*>(m_N);
+		m_thrs_res = custom_buffer<int>(m_N, -1);
+		m_pthrs_res = custom_buffer<int*>(m_N);
+
+		for (int i = 0; i < m_N; i++)
+		{
+			m_pImRGB[i] = &(m_ImRGB[i]);
+			m_pImNE[i] = &(m_ImNE[i]);
+			m_pImY[i] = &(m_ImY[i]);
+			m_pIm[i] = &(m_Im[i]);
+			m_pthrs_res[i] = &(m_thrs_res[i]);
+		}
+
+		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));		
+	}
+
+	~RunSearch()
+	{
+		concurrency::when_all(begin(m_thrs), end(m_thrs)).wait();
+	}
+
+	s64 GetRGBImage(int fn)
+	{
+		int fdn = fn - m_fn_start;
+		s64 pos = 0;
+
+		if (m_Pos[fdn] == -1)
+		{
+			m_Pos[fdn] = pos = m_pV->OneStepWithTimeout();
+			m_pV->GetRGBImage(*(m_pImRGB[fdn]), m_xmin, m_xmax, m_ymin, m_ymax);
+		}
+		else
+		{
+			pos = m_Pos[fdn];
+		}
+
+		return pos;
+	}
+
+	void AddConvertImageTask(int fn)
+	{
+		int fdn = fn - m_fn_start;
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			*(m_pthrs_res[fdn]) = 0;
+			m_thrs[fdn] = TaskConvertImage(*(m_pImRGB[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
+		}
+	}
+
+	int GetConvertImageCopy(int fn, custom_buffer<int> *pImRGB = NULL, custom_buffer<int> *pIm = NULL, custom_buffer<int> *pImNE = NULL, custom_buffer<int> *pImY = NULL)
+	{
+		int fdn = fn - m_fn_start;
+		
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_res[fdn] == -1");
+		}		
+		m_thrs[fdn].wait();
+		
+		if (pImRGB != NULL)
+		{
+			memcpy(pImRGB->m_pData, m_pImRGB[fdn]->m_pData, m_BufferSize);
+		}
+		if (pIm != NULL)
+		{
+			memcpy(pIm->m_pData, m_pIm[fdn]->m_pData, m_BufferSize);
+		}
+		if (pImNE != NULL)
+		{
+			memcpy(pImNE->m_pData, m_pImNE[fdn]->m_pData, m_BufferSize);
+		}
+		if (pImY != NULL)
+		{
+			memcpy(pImY->m_pData, m_pImY[fdn]->m_pData, m_BufferSize);
+		}
+
+		return *(m_pthrs_res[fdn]);
+	}
+
+	int GetConvertImage(int fn, custom_buffer<int> *&pImRGB, custom_buffer<int> *&pIm, custom_buffer<int> *&pImNE, custom_buffer<int> *&pImY, s64 &pos)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_res[fdn] == -1");
+		}
+		m_thrs[fdn].wait();
+
+		pImRGB = m_pImRGB[fdn];
+		pIm = m_pIm[fdn];
+		pImNE = m_pImNE[fdn];
+		pImY = m_pImY[fdn];
+		pos = m_Pos[fdn];
+
+		return *(m_pthrs_res[fdn]);
+	}
+
+	s64 GetPos(int fn)
+	{
+		int fdn = fn - m_fn_start;		
+
+		custom_assert(fdn >= -1, "fdn >= -1");
+
+		int pos;
+
+		if (fdn >= 0)
+		{
+			pos = m_Pos[fdn];
+		}
+		else
+		{
+			pos = m_prevPos;
+		}
+
+		return pos;
+	}
+
+	custom_buffer<int>& GetImRGB(int fn)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_res[fdn] == -1");
+		}
+		m_thrs[fdn].wait();
+
+		return *(m_pImRGB[fdn]);
+	}
+
+	custom_buffer<int>& GetIm(int fn)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_res[fdn] == -1");
+		}
+		m_thrs[fdn].wait();
+
+		return *(m_pIm[fdn]);
+	}
+
+	custom_buffer<int>& GetImNE(int fn)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_res[fdn] == -1");
+		}
+		m_thrs[fdn].wait();
+
+		return *(m_pImNE[fdn]);
+	}
+
+	custom_buffer<int>& GetImY(int fn)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (*(m_pthrs_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_res[fdn] == -1");
+		}
+		m_thrs[fdn].wait();
+
+		return *(m_pImY[fdn]);
+	}	
+
+	void ShiftStartFrameNumberTo(int fn)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (fdn > 0)
+		{
+			custom_buffer<custom_buffer<int>*> pImRGB(m_pImRGB);
+			custom_buffer<custom_buffer<int>*> pImNE(m_pImNE);
+			custom_buffer<custom_buffer<int>*> pImY(m_pImY);
+			custom_buffer<custom_buffer<int>*> pIm(m_pIm);
+			custom_buffer<s64> Pos(m_Pos);
+			custom_buffer<int*> pthrs_res(m_pthrs_res);
+			int i, j;
+
+			m_prevPos = m_Pos[fdn - 1];
+
+			for (i = 0; i < (m_N - fdn); i++)
+			{
+				m_pImRGB[i] = pImRGB[i + fdn];
+				m_pImNE[i] = pImNE[i + fdn];
+				m_pImY[i] = pImY[i + fdn];
+				m_pIm[i] = pIm[i + fdn];
+				m_Pos[i] = Pos[i + fdn];
+				m_thrs[i] = m_thrs[i + fdn];
+				m_pthrs_res[i] = pthrs_res[i + fdn];
+			}
+
+			for (i = m_N - fdn, j=0; i < m_N; i++, j++)
+			{
+				m_pImRGB[i] = pImRGB[j];
+				m_pImNE[i] = pImNE[j];
+				m_pImY[i] = pImY[j];
+				m_pIm[i] = pIm[j];
+				m_pthrs_res[i] = pthrs_res[j];
+				m_Pos[i] = -1;
+				*(m_pthrs_res[i]) = -1;
+			}
+
+			m_fn_start = fn;
+		}
+	}
+};
+
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 {
 	cv::ocl::setUseOpenCL(g_use_ocl);
 
 	string Str;
-	s64 CurPos, prevPos, prev_pos, pos;
+	s64 CurPos, prevPos;
 	int fn; //frame num
 	int w, h, W, H, xmin, xmax, ymin, ymax, size, BufferSize;
 	int DL, threads;
@@ -278,7 +538,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	s64 bt, et; // begin, end time
 	s64 pbt, pet;
 
-	int found_sub, n_fs, n_fs_start, prev_n_fs;
+	int found_sub;
 
 	int bln, finded_prev;
 
@@ -311,6 +571,16 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	CurPos = pV->GetPos();
 
 	DL = g_DL;
+
+	if (g_threads <= 0)
+	{
+		g_threads = std::thread::hardware_concurrency();
+	}
+	if (g_threads < 2)
+	{
+		g_threads = 2;
+	}
+
 	threads = g_threads;
 
 	bf = -2;
@@ -327,186 +597,135 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	custom_buffer<int> ImFSP(size, 0); //image for save prev
 	custom_buffer<int> ImNES(size, 0), ImNESP(size, 0);
 	custom_buffer<int> ImYS(size, 0), ImYSP(size, 0);
-	custom_buffer<int> ImRES(size, 0);
-	custom_buffer<custom_buffer<int>> mImRGB(DL*threads, custom_buffer<int>(size, 0)), ImS_SQ(DL + 1, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImNET(threads, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImYT(threads, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImT(threads, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImNE(threads, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImY(threads, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> Im(threads, custom_buffer<int>(size, 0));
 	custom_buffer<int> *pImRGB, *pIm, *pImInt, *pImNE, *pImY;
 	custom_buffer<int> prevImRGB(size, 0), prevImNE(size, 0), prevIm(size, 0);
 
-	custom_buffer<s64> ImS_Pos(DL + 1, 0);
-	custom_buffer<s64> ImS_fn(DL + 1, 0);
-	custom_buffer<s64> mPrevPos(DL*threads, 0);
-	vector<concurrency::task<void>> thrsT(threads), thrsForward(DL, concurrency::create_task([] {})), thrs(threads, concurrency::create_task([]{}));
-	custom_buffer<int> thrs_resT(threads, 0), thrs_res(threads, 0), thrs_resForward(DL, 0);
-	custom_buffer<int> thrs_fn(threads, 0);
-	custom_buffer<custom_buffer<int>> thrImRGB(threads, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImRGBForward(DL, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImNEForward(DL, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImYForward(DL, custom_buffer<int>(size, 0));
-	custom_buffer<custom_buffer<int>> ImForward(DL, custom_buffer<int>(size, 0));
-	custom_buffer<s64> thrPrevPos(threads, 0);
+	custom_buffer<custom_buffer<int>*> ImRGBForward(DL, NULL);
+	custom_buffer<custom_buffer<int>*> ImNEForward(DL, NULL);
+	custom_buffer<custom_buffer<int>*> ImYForward(DL, NULL);
+	custom_buffer<custom_buffer<int>*> ImForward(DL, NULL);
 	custom_buffer<s64> PosForward(DL, 0);
-	int thr_n, thr_nT, forward_n;
-	bool thrs_were_created = false;	
 
 	found_sub = 0;
-	prev_pos = -2;
-	mPrevPos[0] = CurPos;
-	pV->GetRGBImage(mImRGB[0], xmin, xmax, ymin, ymax);
-	n_fs = 0;
-	n_fs_start = 0;
-	prev_n_fs = DL * threads;
 
 	prevPos = -2;
 
-	thr_n = threads;
-	forward_n = DL;
+	RunSearch rs(threads, pV);
+	fn = 0;
+	
+	const int ddl = (DL / 2);
+	const int ddl1_ofset = (DL / 2) - 1;
+	const int ddl2_ofset = ((DL / 2) * 2) - 1;
+
+	int fn_start;
+
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
-		while (found_sub == 0)
+		int create_new_threads = threads;		
+
+		if (found_sub == 0)
 		{
-			pos = CurPos;
-			n_fs = 0;
-			n_fs_start = 0;
+			fn_start = fn;
+		}
 
-			while ((n_fs < DL*threads) && (pos < End))
+		while ((found_sub == 0) && (CurPos < End) && (CurPos != prevPos) && (g_RunSubSearch == 1))
+		{
+			for (int thr_n = 0; thr_n < create_new_threads; thr_n++)
 			{
-				if (prev_n_fs < DL * threads)
+				for (int i = 0; i < ddl; i++)
 				{
-					mPrevPos[n_fs] = mPrevPos[prev_n_fs];
-					mImRGB[n_fs] = mImRGB[prev_n_fs];
-					prev_n_fs++;
-					forward_n++;
-				}
-				else if (forward_n < DL)
-				{
-					mPrevPos[n_fs] = PosForward[forward_n];
-					mImRGB[n_fs] = ImRGBForward[forward_n];
-					forward_n++;
-				}
-				else
-				{
-					if (fn > 0)
-					{
-						mPrevPos[n_fs] = pos = pV->OneStepWithTimeout();
-						pV->GetRGBImage(mImRGB[n_fs], xmin, xmax, ymin, ymax);
-					}					
-				}
-
-				fn++;
-				n_fs++;
-
-				if (n_fs % DL == 0)
-				{
-					int thr_nT = (n_fs / DL) - 1;
-					thrsT[thr_nT] = TaskConvertImage(mImRGB[n_fs - 1], ImT[thr_nT], ImNET[thr_nT], ImYT[thr_nT], w, h, W, H, thrs_resT[thr_nT]);
-				}
-			}
-			if (pos >= End)
-			{
-				if (n_fs == 0)
-				{
-					break;
-				}
-
-				while (n_fs < DL*threads)
-				{
-					mPrevPos[n_fs] = pos;
-					memcpy(&(mImRGB[n_fs][0]), &(mImRGB[n_fs - 1][0]), BufferSize);
-
+					prevPos = CurPos;
+					CurPos = rs.GetRGBImage(fn);
 					fn++;
-					n_fs++;
+				}
+				rs.AddConvertImageTask(fn - 1);
+			}
+
+			bln = 0;
+
+			int bln1 = rs.GetConvertImageCopy(fn_start + ddl1_ofset);
+			int bln2 = rs.GetConvertImageCopy(fn_start + ddl2_ofset);
+
+			if (bln1 &&
+				bln2)
+			{
+				rs.GetConvertImageCopy(fn_start + ddl1_ofset, NULL, &ImInt, NULL, &ImYInt);
+				rs.GetConvertImage(fn_start + ddl2_ofset, ImRGBForward[1], ImForward[1], ImNEForward[1], ImYForward[1], PosForward[1]);
+
+				IntersectTwoImages(ImInt, *(ImForward[1]), w, h);
+			
+				if (g_use_ILA_images_for_search_subtitles)
+				{
+					for (int i = 0; i < w*h; i++)
+					{
+						ImYInt[i] += 255;
+					}
+					IntersectYImages(ImYInt, *(ImYForward[1]), w, h, 255);
+				}
+
+				bln = AnalyseImage(ImInt, &ImYInt, w, h);
+			}
+			
+			if (bln)
+			{
+				for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+				{
+					rs.AddConvertImageTask(fn_start + i);
+				}
+
+				bln = 1;
+				for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+				{
+					bln = bln && rs.GetConvertImage(fn_start + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
+				}
+
+				if (bln)
+				{
+					for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+					{
+						IntersectTwoImages(ImInt, *(ImForward[i]), w, h);
+					}
+								
+					if (g_use_ILA_images_for_search_subtitles)
+					{
+						for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+						{
+							IntersectYImages(ImYInt, *(ImYForward[i]), w, h, 255);
+						}
+					}
+
+					bln = AnalyseImage(ImInt, &ImYInt, w, h);
 				}
 			}
 
-			concurrency::when_all(begin(thrsT), end(thrsT)).wait();
-
-			for (thr_nT = 0; thr_nT < threads; thr_nT++)
+			if (bln)
 			{
-				bln = thrs_resT[thr_nT];
-				if (bln == 1) break;
-			}
-
-			if (bln == 1)
-			{
-				fn = (fn - DL * threads) + DL * thr_nT;
-				n_fs = DL * thr_nT;
-				n_fs_start = n_fs;
-				found_sub = 1;
-				thr_n = 0;
-
-				int _thr_n, _n_fs;
-				pos = CurPos = mPrevPos[n_fs];
-				for (_thr_n = 0, _n_fs = n_fs; (_thr_n < DL - 1) && (pos < End); _thr_n++)
+				found_sub = true;
+				fn = fn_start;
+				for (int i = 0; i < (DL + threads - 1); i++)
 				{
-					if (_n_fs >= (DL*threads))
-					{
-						PosForward[_thr_n] = pV->OneStepWithTimeout();
-						pV->GetRGBImage(ImRGBForward[_thr_n], xmin, xmax, ymin, ymax);
-					}
-					else
-					{
-						PosForward[_thr_n] = mPrevPos[_n_fs];
-						memcpy(ImRGBForward[_thr_n].m_pData, mImRGB[_n_fs].m_pData, BufferSize);
-					}
-
-					pos = PosForward[_thr_n];
-
-					_n_fs++;
-
-					if ((_n_fs > (DL*threads)) || (_n_fs % DL != 0))
-					{
-						thrsForward[_thr_n] = TaskConvertImage(ImRGBForward[_thr_n], ImForward[_thr_n], ImNEForward[_thr_n], ImYForward[_thr_n], w, h, W, H, thrs_resForward[_thr_n]);
-					}
-					else
-					{
-						int _thr_nT = (_n_fs / DL) - 1;
-						thrs_resForward[_thr_n] = thrs_resT[_thr_nT];
-						memcpy(ImForward[_thr_n].m_pData, ImT[_thr_nT].m_pData, BufferSize);
-						memcpy(ImNEForward[_thr_n].m_pData, ImNET[_thr_nT].m_pData, BufferSize);
-						memcpy(ImYForward[_thr_n].m_pData, ImY[_thr_nT].m_pData, BufferSize);
-					}
-				}
-
-				concurrency::when_all(begin(thrsForward), end(thrsForward)).wait();
-
-				if (pos >= End)
-				{
-					if (_thr_n == 0)
-					{
-						break;
-					}
-
-					while (_thr_n < DL - 1)
-					{
-						PosForward[_thr_n] = PosForward[_thr_n - 1];
-						memcpy(ImRGBForward[_thr_n].m_pData, ImRGBForward[_thr_n - 1].m_pData, BufferSize);
-						memcpy(ImForward[_thr_n].m_pData, ImForward[_thr_n - 1].m_pData, BufferSize);
-						memcpy(ImNEForward[_thr_n].m_pData, ImNEForward[_thr_n - 1].m_pData, BufferSize);
-						memcpy(ImYForward[_thr_n].m_pData, ImYForward[_thr_n - 1].m_pData, BufferSize);
-						_thr_n++;
-					}
-				}
+					rs.GetRGBImage(fn + i);
+					rs.AddConvertImageTask(fn + i);
+				}				
 			}
 			else
 			{
-				prev_pos = CurPos = mPrevPos[(DL * threads) - 1];
-				n_fs = 0;
-				n_fs_start = 0;
+				if (bln2)
+				{
+					fn_start += (DL / 2);
+					rs.ShiftStartFrameNumberTo(fn_start);
+					create_new_threads = 1;
+				}
+				else
+				{
+					fn_start += ((DL / 2) * 2);
+					rs.ShiftStartFrameNumberTo(fn_start);
+					create_new_threads = 2;
+				}
 			}
+		}		
 
-			if ((mPrevPos[n_fs_start + DL - 1] >= End) || (g_RunSubSearch == 0) || (mPrevPos[n_fs_start + DL - 1] == mPrevPos[n_fs_start + DL - 2]))
-			{
-				break;
-			}
-		}
-
-		if ((mPrevPos[n_fs_start + DL - 1] >= End) || (g_RunSubSearch == 0) || (mPrevPos[n_fs_start + DL - 1] == mPrevPos[n_fs_start + DL - 2]) || (found_sub == 0))
+		if ((g_RunSubSearch == 0) || (found_sub == 0) || (CurPos >= End) || (CurPos == prevPos))
 		{
 			break;
 		}
@@ -519,126 +738,62 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			}
 		}
 
-		if (thr_n % threads == 0)
+		rs.GetRGBImage(fn + DL + threads - 1);
+		rs.AddConvertImageTask(fn + DL + threads - 1);
+
+		bln = 1;
+		for (int i = 0; i < DL; i++)
 		{
-			thr_n = 0;
-			int _thr_n, _n_fs;
-			pos = PosForward[DL - 2];
-			for (_thr_n = 0, _n_fs = n_fs + DL - 1; (_thr_n < threads) && (pos < End); _thr_n++)
-			{
-				if (_n_fs >= (DL*threads))
-				{
-					thrPrevPos[_thr_n] = pV->OneStepWithTimeout();
-					pV->GetRGBImage(thrImRGB[_thr_n], xmin, xmax, ymin, ymax);
-				}
-				else
-				{
-					thrPrevPos[_thr_n] = mPrevPos[_n_fs];
-					memcpy(thrImRGB[_thr_n].m_pData, mImRGB[_n_fs].m_pData, BufferSize);
-				}
-
-				pos = thrPrevPos[_thr_n];
-
-				_n_fs++;
-
-				if ((_n_fs > (DL*threads)) || (_n_fs % DL != 0))
-				{
-					thrs[_thr_n] = TaskConvertImage(thrImRGB[_thr_n], Im[_thr_n], ImNE[_thr_n], ImY[_thr_n], w, h, W, H, thrs_res[_thr_n]);
-				}
-				else
-				{
-					int _thr_nT = (_n_fs / DL) - 1;
-					thrs_res[_thr_n] = thrs_resT[_thr_nT];
-					memcpy(Im[_thr_n].m_pData, ImT[_thr_nT].m_pData, BufferSize);
-					memcpy(ImNE[_thr_n].m_pData, ImNET[_thr_nT].m_pData, BufferSize);
-					memcpy(ImY[_thr_n].m_pData, ImYT[_thr_nT].m_pData, BufferSize);
-				}
-			}
+			bln = bln && rs.GetConvertImage(fn + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
 		}
 
-		pos = PosForward[DL - 2];
-
-		if (pos < End)
+		if (bln)
 		{
-			thrs[thr_n].wait();
-			thrs_resForward[DL - 1] = thrs_res[thr_n];
-			PosForward[DL - 1] = thrPrevPos[thr_n];
-			memcpy(ImRGBForward[DL - 1].m_pData, thrImRGB[thr_n].m_pData, BufferSize);
-			memcpy(ImForward[DL - 1].m_pData, Im[thr_n].m_pData, BufferSize);
-			memcpy(ImNEForward[DL - 1].m_pData, ImNE[thr_n].m_pData, BufferSize);
-			memcpy(ImYForward[DL - 1].m_pData, ImY[thr_n].m_pData, BufferSize);
-		}
-		else
-		{
-			thrs_resForward[DL - 1] = thrs_resForward[DL - 2];
-			PosForward[DL - 1] = PosForward[DL - 2];
-			memcpy(ImRGBForward[DL - 1].m_pData, ImRGBForward[DL - 2].m_pData, BufferSize);
-			memcpy(ImForward[DL - 1].m_pData, ImForward[DL - 2].m_pData, BufferSize);
-			memcpy(ImNEForward[DL - 1].m_pData, ImNEForward[DL - 2].m_pData, BufferSize);
-			memcpy(ImYForward[DL - 1].m_pData, ImYForward[DL - 2].m_pData, BufferSize);
-		}
-
-		concurrency::parallel_invoke(
-			[&ImInt, &ImForward, DL, BufferSize, w, h] {
-				memcpy(ImInt.m_pData, ImForward[0].m_pData, BufferSize);
-
-				for (int _thr_n = 1; _thr_n < DL; _thr_n++)
-				{
-					IntersectTwoImages(ImInt, ImForward[_thr_n], w, h);
-				}
-			},
-			[&ImYInt, &ImYForward, DL, BufferSize, w, h] {
-				if (g_use_ILA_images_for_search_subtitles)
-				{
-					memcpy(ImYInt.m_pData, ImYForward[0].m_pData, BufferSize);
-
-					for (int i = 0; i < w*h; i++)
-					{
-						ImYInt[i] += 255;
-					}
+			concurrency::parallel_invoke(
+				[&ImInt, &ImForward, DL, BufferSize, w, h] {
+					memcpy(ImInt.m_pData, ImForward[0]->m_pData, BufferSize);
 
 					for (int _thr_n = 1; _thr_n < DL; _thr_n++)
 					{
-						IntersectYImages(ImYInt, ImYForward[_thr_n], w, h, 255);
+
+						IntersectTwoImages(ImInt, *(ImForward[_thr_n]), w, h);
+					}
+				},
+					[&ImYInt, &ImYForward, DL, BufferSize, w, h] {
+					if (g_use_ILA_images_for_search_subtitles)
+					{
+						memcpy(ImYInt.m_pData, ImYForward[0]->m_pData, BufferSize);
+
+						for (int i = 0; i < w*h; i++)
+						{
+							ImYInt[i] += 255;
+						}
+
+						for (int _thr_n = 1; _thr_n < DL; _thr_n++)
+						{
+							IntersectYImages(ImYInt, *(ImYForward[_thr_n]), w, h, 255);
+						}
 					}
 				}
-			}
-		);
+			);
 
-		bln = AnalyseImage(ImInt, &ImYInt, w, h);
-		pImRGB = &(ImRGBForward[0]);		
-		pImNE = &(ImNEForward[0]);
-		pImY = &(ImYForward[0]);
-		pIm = &(ImForward[0]);
-		pImInt = &ImInt;
+			bln = AnalyseImage(ImInt, &ImYInt, w, h);
+		}		
 
-		if (n_fs == 0)
-		{
-			prevPos = prev_pos;
-		}
-		else
-		{
-			if (n_fs < DL*threads)
-			{
-				prevPos = mPrevPos[n_fs - 1];
-			}
-			else
-			{
-				prevPos = CurPos;
-			}
-		}
+		pImRGB = ImRGBForward[0];		
+		pImNE = ImNEForward[0];
+		pImY = ImYForward[0];
+		pIm = ImForward[0];
+		pImInt = &ImInt;		
 
-		CurPos = PosForward[0];
-
-		fn++;
-		n_fs++;
-		thr_n++;
+		prevPos = rs.GetPos(fn - 1);
+		CurPos = PosForward[0];		
 
 		if (debug)
 		{
 			SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles_ImCombined_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveBinaryImage(ImYInt, string("/TestImages/FastSearchSubtitles_ImYInt_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
-			SaveGreyscaleImage(ImForward[0], string("/TestImages/FastSearchSubtitles_ImForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+			SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles_ImForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles_ImNEForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles_ImRGBForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
@@ -801,8 +956,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						ef = bf;
 						bt = PosForward[offset];
 						
-						memcpy(ImNES.m_pData, ImNEForward[offset].m_pData, BufferSize);						
-						memcpy(ImFS.m_pData, ImRGBForward[offset].m_pData, BufferSize);
+						memcpy(ImNES.m_pData, ImNEForward[offset]->m_pData, BufferSize);						
+						memcpy(ImFS.m_pData, ImRGBForward[offset]->m_pData, BufferSize);
 
 						if (offset == 0)
 						{
@@ -811,8 +966,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 						else
 						{
-							memcpy(ImIntS.m_pData, ImForward[offset].m_pData, BufferSize);
-							memcpy(ImYS.m_pData, ImYForward[offset].m_pData, BufferSize);
+							memcpy(ImIntS.m_pData, ImForward[offset]->m_pData, BufferSize);
+							memcpy(ImYS.m_pData, ImYForward[offset]->m_pData, BufferSize);
 							for (int i = 0; i < w*h; i++)
 							{
 								ImYS[i] += 255;
@@ -892,11 +1047,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						custom_buffer<int> *pPrevImNE = &prevImNE;
 						custom_buffer<int> *pPrevIm = &prevIm;
 
-						if (AnalyseImage(ImForward[DL - 1], NULL, w, h) == 0)
+						if (AnalyseImage(*(ImForward[DL - 1]), NULL, w, h) == 0)
 						{
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, ImNEForward[offset], w, h, W, H, ymin);
+								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, ymin);
 
 								if (bln == 0)
 								{
@@ -905,7 +1060,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 								// note: don't intersect fist DL and last DL frames in ImIL
 
-								pPrevImNE = &(ImNEForward[offset]);
+								pPrevImNE = ImNEForward[offset];
 							}
 						}
 						else
@@ -914,7 +1069,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 							if (offset > 0)
 							{
-								pPrevImNE = &(ImNEForward[offset - 1]);
+								pPrevImNE = ImNEForward[offset - 1];
 							}
 						}						
 
@@ -977,17 +1132,10 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 				if (fn > ef)
 				{
-					if ((n_fs - n_fs_start) >= DL)
+					if ((fn - fn_start) >= DL)
 					{
-						if (thr_n == threads)
-						{
-							found_sub = 0;
-							prev_pos = prevPos;
-							prev_n_fs = n_fs - 1; // note: mPrevPos[nfs-1] == PosForward[0], prev_n_fs = n_fs-1 required for correct new images sequence timming: Next Image Pos should be != Previos Image Pos in sequence
-							forward_n = 0;
-							thr_n = 0;
-							ef = -2;
-						}
+						found_sub = 0;
+						rs.ShiftStartFrameNumberTo(fn);
 					}
 				}
 			}
@@ -999,25 +1147,12 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			memcpy(prevImNE.m_pData, pImNE->m_pData, BufferSize);
 			memcpy(prevIm.m_pData, pIm->m_pData, BufferSize);
 
-			{
-				int _thr_n;
-				for (_thr_n = 0; _thr_n < DL - 1; _thr_n++)
-				{
-					thrs_resForward[_thr_n] = thrs_resForward[_thr_n + 1];
-					PosForward[_thr_n] = PosForward[_thr_n + 1];
-					memcpy(ImRGBForward[_thr_n].m_pData, ImRGBForward[_thr_n + 1].m_pData, BufferSize);
-					memcpy(ImForward[_thr_n].m_pData, ImForward[_thr_n + 1].m_pData, BufferSize);
-					memcpy(ImNEForward[_thr_n].m_pData, ImNEForward[_thr_n + 1].m_pData, BufferSize);
-					memcpy(ImYForward[_thr_n].m_pData, ImYForward[_thr_n + 1].m_pData, BufferSize);
-				}
-				_thr_n = _thr_n;
-			}
+			fn++;
+			rs.ShiftStartFrameNumberTo(fn);
 		}
 	}
 
 	g_pV = NULL;
-
-	concurrency::when_all(begin(thrs), end(thrs)).wait();
 
 	if (g_RunSubSearch == 0)
 	{
