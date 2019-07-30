@@ -205,6 +205,7 @@ void *ThreadSearchSubtitles::Entry()
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitlesRun"))
 	{
+		int res = 1;
 	}
 
 	__try

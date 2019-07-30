@@ -111,11 +111,12 @@ inline void IntersectYImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2,
 	}
 }
 
-inline concurrency::task<void> TaskConvertImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int &w, int &h, int &W, int &H, int &res)
+inline concurrency::task<void> TaskConvertImage(concurrency::event &evt, custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int &w, int &h, int &W, int &H, int &res)
 {	
 	return concurrency::create_task([&]
 	{
 		custom_buffer<int> ImFF(w*h, 0), ImSF(w*h, 0);
+		evt.wait();
 		res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
 	});
 }
@@ -271,6 +272,7 @@ class RunSearch
 	int m_fn_start;
 	s64 m_prevPos;
 	custom_buffer<s64> m_Pos;
+	custom_buffer<s64*> m_pPos;
 	custom_buffer<custom_buffer<int>> m_ImRGB;
 	custom_buffer<custom_buffer<int>*> m_pImRGB;
 	custom_buffer<custom_buffer<int>> m_ImNE;
@@ -279,7 +281,10 @@ class RunSearch
 	custom_buffer<custom_buffer<int>*> m_pImY;
 	custom_buffer<custom_buffer<int>> m_Im;
 	custom_buffer<custom_buffer<int>*> m_pIm;
+	vector<concurrency::task<void>> m_thrs_rgb;
 	vector<concurrency::task<void>> m_thrs;
+	vector<concurrency::event> m_events_rgb;
+	vector<concurrency::event*> m_p_events_rgb;
 	custom_buffer<int> m_thrs_res;
 	custom_buffer<int*> m_pthrs_res;
 
@@ -303,6 +308,7 @@ public:
 
 		m_N = std::max<int>(g_DL + threads, (g_DL / 2) * threads);
 		m_Pos = custom_buffer<s64>(m_N, -1);
+		m_pPos = custom_buffer<s64*>(m_N, NULL);
 		m_ImRGB = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
 		m_pImRGB = custom_buffer<custom_buffer<int>*>(m_N);
 		m_ImNE = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
@@ -314,39 +320,82 @@ public:
 		m_thrs_res = custom_buffer<int>(m_N, -1);
 		m_pthrs_res = custom_buffer<int*>(m_N);
 
+		m_events_rgb = vector<concurrency::event>(m_N);
+		m_p_events_rgb = vector<concurrency::event*>(m_N);
+
 		for (int i = 0; i < m_N; i++)
 		{
+			m_pPos[i] = &(m_Pos[i]);
 			m_pImRGB[i] = &(m_ImRGB[i]);
 			m_pImNE[i] = &(m_ImNE[i]);
 			m_pImY[i] = &(m_ImY[i]);
 			m_pIm[i] = &(m_Im[i]);
 			m_pthrs_res[i] = &(m_thrs_res[i]);
+			m_p_events_rgb[i] = &(m_events_rgb[i]);
 		}
 
-		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));		
+		m_thrs_rgb = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
+		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));				
 	}
 
 	~RunSearch()
 	{
+		concurrency::when_all(begin(m_thrs_rgb), end(m_thrs_rgb)).wait();
 		concurrency::when_all(begin(m_thrs), end(m_thrs)).wait();
 	}
 
-	s64 GetRGBImage(int fn)
+	void AddGetRGBImagesTask(int fn, int num)
 	{
 		int fdn = fn - m_fn_start;
-		s64 pos = 0;
+		custom_buffer<custom_buffer<int>*> pImRGB(m_pImRGB);
+		custom_buffer<s64*> pPos(m_pPos);
+		custom_buffer<bool> need_to_get(m_N, false);
+		vector<concurrency::event*> p_events_rgb(m_p_events_rgb);
+		CVideo *pV = m_pV;
+		int xmin = m_xmin;
+		int xmax = m_xmax;
+		int ymin = m_ymin;
+		int ymax = m_ymax;
+		int num_to_get = 0;
 
-		if (m_Pos[fdn] == -1)
+		for (int i = 0; i < num; i++)
 		{
-			m_Pos[fdn] = pos = m_pV->OneStepWithTimeout();
-			m_pV->GetRGBImage(*(m_pImRGB[fdn]), m_xmin, m_xmax, m_ymin, m_ymax);
-		}
-		else
-		{
-			pos = m_Pos[fdn];
+			if (*(pPos[fdn + i]) == -1)
+			{
+				*(pPos[fdn + i]) = 0;
+				need_to_get[fdn + i] = true;
+				num_to_get++;
+			}
 		}
 
-		return pos;
+		if (num_to_get > 0)
+		{
+			concurrency::task<void> task = concurrency::create_task([fdn, num, pPos, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_rgb, need_to_get]() mutable
+			{
+				for (int i = 0; i < num; i++)
+				{
+					if (need_to_get[fdn + i])
+					{
+						if ((fdn + i) > 0)
+						{
+							p_events_rgb[fdn + i - 1]->wait();
+						}
+
+						*(pPos[fdn + i]) = pV->OneStepWithTimeout();
+						pV->GetRGBImage(*(pImRGB[fdn + i]), xmin, xmax, ymin, ymax);
+						p_events_rgb[fdn + i]->set();
+					}
+				}
+			});
+
+			for (int i = 0; i < num; i++)
+			{
+				if (need_to_get[fdn + i])
+				{
+					m_thrs_rgb[fdn + i] = task;
+				}
+			}
+		}
 	}
 
 	void AddConvertImageTask(int fn)
@@ -355,7 +404,7 @@ public:
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			*(m_pthrs_res[fdn]) = 0;
-			m_thrs[fdn] = TaskConvertImage(*(m_pImRGB[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
+			m_thrs[fdn] = TaskConvertImage(*(m_p_events_rgb[fdn]), *(m_pImRGB[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
 		}
 	}
 
@@ -403,7 +452,7 @@ public:
 		pIm = m_pIm[fdn];
 		pImNE = m_pImNE[fdn];
 		pImY = m_pImY[fdn];
-		pos = m_Pos[fdn];
+		pos = *(m_pPos[fdn]);
 
 		return *(m_pthrs_res[fdn]);
 	}
@@ -412,13 +461,14 @@ public:
 	{
 		int fdn = fn - m_fn_start;		
 
-		custom_assert(fdn >= -1, "fdn >= -1");
+		custom_assert(fdn >= -1, "fdn >= -1");		
 
 		int pos;
 
 		if (fdn >= 0)
 		{
-			pos = m_Pos[fdn];
+			m_p_events_rgb[fdn]->wait();
+			pos = *(m_pPos[fdn]);
 		}
 		else
 		{
@@ -428,7 +478,7 @@ public:
 		return pos;
 	}
 
-	custom_buffer<int>& GetImRGB(int fn)
+	/*custom_buffer<int>& GetImRGB(int fn)
 	{
 		int fdn = fn - m_fn_start;
 
@@ -478,7 +528,7 @@ public:
 		m_thrs[fdn].wait();
 
 		return *(m_pImY[fdn]);
-	}	
+	}	*/
 
 	void ShiftStartFrameNumberTo(int fn)
 	{
@@ -486,15 +536,19 @@ public:
 
 		if (fdn > 0)
 		{
+			m_p_events_rgb[fdn - 1]->wait();
+			concurrency::when_all(begin(m_thrs), next(begin(m_thrs),fdn)).wait();
+
 			custom_buffer<custom_buffer<int>*> pImRGB(m_pImRGB);
 			custom_buffer<custom_buffer<int>*> pImNE(m_pImNE);
 			custom_buffer<custom_buffer<int>*> pImY(m_pImY);
 			custom_buffer<custom_buffer<int>*> pIm(m_pIm);
-			custom_buffer<s64> Pos(m_Pos);
+			custom_buffer<s64*> pPos(m_pPos);
 			custom_buffer<int*> pthrs_res(m_pthrs_res);
+			vector<concurrency::event*> p_events_rgb(m_p_events_rgb);
 			int i, j;
 
-			m_prevPos = m_Pos[fdn - 1];
+			m_prevPos = *(m_pPos[fdn - 1]);
 
 			for (i = 0; i < (m_N - fdn); i++)
 			{
@@ -502,9 +556,11 @@ public:
 				m_pImNE[i] = pImNE[i + fdn];
 				m_pImY[i] = pImY[i + fdn];
 				m_pIm[i] = pIm[i + fdn];
-				m_Pos[i] = Pos[i + fdn];
+				m_pPos[i] = pPos[i + fdn];
 				m_thrs[i] = m_thrs[i + fdn];
 				m_pthrs_res[i] = pthrs_res[i + fdn];
+				m_p_events_rgb[i] = p_events_rgb[i + fdn];
+				m_thrs_rgb[i] = m_thrs_rgb[i + fdn];
 			}
 
 			for (i = m_N - fdn, j=0; i < m_N; i++, j++)
@@ -514,7 +570,10 @@ public:
 				m_pImY[i] = pImY[j];
 				m_pIm[i] = pIm[j];
 				m_pthrs_res[i] = pthrs_res[j];
-				m_Pos[i] = -1;
+				m_pPos[i] = pPos[j];
+				m_p_events_rgb[i] = p_events_rgb[j];
+				(m_p_events_rgb[i])->reset();
+				*(m_pPos[i]) = -1;
 				*(m_pthrs_res[i]) = -1;
 			}
 
@@ -614,8 +673,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	fn = 0;
 	
 	const int ddl = (DL / 2);
-	const int ddl1_ofset = (DL / 2) - 1;
-	const int ddl2_ofset = ((DL / 2) * 2) - 1;
+	const int ddl1_ofset = ddl - 1;
+	const int ddl2_ofset = (ddl * 2) - 1;
 
 	int fn_start;
 
@@ -632,12 +691,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		{
 			for (int thr_n = 0; thr_n < create_new_threads; thr_n++)
 			{
-				for (int i = 0; i < ddl; i++)
-				{
-					prevPos = CurPos;
-					CurPos = rs.GetRGBImage(fn);
-					fn++;
-				}
+				rs.AddGetRGBImagesTask(fn, ddl);
+				fn += ddl;
 				rs.AddConvertImageTask(fn - 1);
 			}
 
@@ -645,6 +700,9 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 			int bln1 = rs.GetConvertImageCopy(fn_start + ddl1_ofset);
 			int bln2 = rs.GetConvertImageCopy(fn_start + ddl2_ofset);
+
+			prevPos = CurPos;
+			CurPos = rs.GetPos(fn_start + ddl2_ofset);
 
 			if (bln1 &&
 				bln2)
@@ -702,23 +760,40 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			{
 				found_sub = true;
 				fn = fn_start;
+
+				rs.AddGetRGBImagesTask(fn, DL + threads - 1);
+
 				for (int i = 0; i < (DL + threads - 1); i++)
 				{
-					rs.GetRGBImage(fn + i);
 					rs.AddConvertImageTask(fn + i);
-				}				
+				}
+
+				//while (1)
+				//{
+				//	rs.AddGetRGBImagesTask(fn + DL + threads - 1, 1);
+				//	rs.AddConvertImageTask(fn + DL + threads - 1);
+				//	
+				//	bln = 1;
+				//	for (int i = 0; i < DL; i++)
+				//	{
+				//		bln = bln && rs.GetConvertImage(fn + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
+				//	}
+
+				//	fn++;
+				//	rs.ShiftStartFrameNumberTo(fn);
+				//}
 			}
 			else
 			{
 				if (bln2)
 				{
-					fn_start += (DL / 2);
+					fn_start += ddl;
 					rs.ShiftStartFrameNumberTo(fn_start);
 					create_new_threads = 1;
 				}
 				else
 				{
-					fn_start += ((DL / 2) * 2);
+					fn_start += (ddl * 2);
 					rs.ShiftStartFrameNumberTo(fn_start);
 					create_new_threads = 2;
 				}
@@ -738,7 +813,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			}
 		}
 
-		rs.GetRGBImage(fn + DL + threads - 1);
+		rs.AddGetRGBImagesTask(fn + DL + threads - 1, 1);
 		rs.AddConvertImageTask(fn + DL + threads - 1);
 
 		bln = 1;
@@ -1135,7 +1210,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					if ((fn - fn_start) >= DL)
 					{
 						found_sub = 0;
-						rs.ShiftStartFrameNumberTo(fn);
+						//rs.ShiftStartFrameNumberTo(fn);
 					}
 				}
 			}
