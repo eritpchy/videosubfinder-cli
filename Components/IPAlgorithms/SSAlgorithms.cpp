@@ -500,6 +500,15 @@ public:
 
 					bln = AnalyseImage(*pImInt, pImYInt, w, h);
 				}
+				else
+				{ 
+					memcpy(pImInt->m_pData, pIm[fdn]->m_pData, BufferSize);
+					memcpy(pImYInt->m_pData, pImY[fdn]->m_pData, BufferSize);
+					for (int i = 0; i < w*h; i++)
+					{
+						(*pImYInt)[i] += 255;
+					}
+				}
 
 				*pthrs_int_res = bln;
 			});
@@ -950,7 +959,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			SaveGreyscaleImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles_ImRGBForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 
-			if (CurPos >= 132480)
+			if (CurPos >= 37840)
 			{
 				CurPos = CurPos;
 			}
