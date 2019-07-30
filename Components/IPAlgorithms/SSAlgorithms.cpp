@@ -111,16 +111,6 @@ inline void IntersectYImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2,
 	}
 }
 
-inline concurrency::task<void> TaskConvertImage(concurrency::event &evt, custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int &w, int &h, int &W, int &H, int &res)
-{	
-	return concurrency::create_task([&]
-	{
-		custom_buffer<int> ImFF(w*h, 0), ImSF(w*h, 0);
-		evt.wait();
-		res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
-	});
-}
-
 int CompareTwoSubsByOffset(custom_buffer<custom_buffer<int>*> &ImForward, custom_buffer<custom_buffer<int>*> &ImYForward, custom_buffer<custom_buffer<int>*> &ImNEForward,
 			custom_buffer<int> &ImIntS, custom_buffer<int> &ImYS, custom_buffer<int> &ImNES, custom_buffer<int> &prevImNE,
 			int w, int h, int ymin, int W, int H, int offset )
@@ -264,6 +254,17 @@ int FindOffsetForNewSub(custom_buffer<custom_buffer<int>*> &ImForward, custom_bu
 	return offset;
 }
 
+inline concurrency::task<void> TaskConvertImage(concurrency::event &evt_rgb, concurrency::event &evt, custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int &w, int &h, int &W, int &H, int &res)
+{
+	return concurrency::create_task([&]
+	{
+		custom_buffer<int> ImFF(w*h, 0), ImSF(w*h, 0);
+		evt_rgb.wait();
+		res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
+		evt.set();
+	});
+}
+
 class RunSearch
 {
 	int m_threads;
@@ -281,12 +282,26 @@ class RunSearch
 	custom_buffer<custom_buffer<int>*> m_pImY;
 	custom_buffer<custom_buffer<int>> m_Im;
 	custom_buffer<custom_buffer<int>*> m_pIm;
+
+	custom_buffer<custom_buffer<int>> m_ImInt;
+	custom_buffer<custom_buffer<int>*> m_pImInt;
+	custom_buffer<custom_buffer<int>> m_ImYInt;
+	custom_buffer<custom_buffer<int>*> m_pImYInt;
+
 	vector<concurrency::task<void>> m_thrs_rgb;
 	vector<concurrency::task<void>> m_thrs;
+	vector<concurrency::task<void>> m_thrs_int;
+
 	vector<concurrency::event> m_events_rgb;
 	vector<concurrency::event*> m_p_events_rgb;
+	vector<concurrency::event> m_events;
+	vector<concurrency::event*> m_p_events;
+
 	custom_buffer<int> m_thrs_res;
 	custom_buffer<int*> m_pthrs_res;
+
+	custom_buffer<int> m_thrs_int_res;
+	custom_buffer<int*> m_pthrs_int_res;
 
 public:
 	RunSearch(int threads, CVideo *pV)
@@ -317,11 +332,20 @@ public:
 		m_pImY = custom_buffer<custom_buffer<int>*>(m_N);
 		m_Im = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
 		m_pIm = custom_buffer<custom_buffer<int>*>(m_N);
+
+		m_ImInt = custom_buffer<custom_buffer<int>>(m_threads, custom_buffer<int>(m_size, 0));
+		m_pImInt = custom_buffer<custom_buffer<int>*>(m_threads);
+		m_ImYInt = custom_buffer<custom_buffer<int>>(m_threads, custom_buffer<int>(m_size, 0));
+		m_pImYInt = custom_buffer<custom_buffer<int>*>(m_threads);
+
 		m_thrs_res = custom_buffer<int>(m_N, -1);
 		m_pthrs_res = custom_buffer<int*>(m_N);
 
 		m_events_rgb = vector<concurrency::event>(m_N);
 		m_p_events_rgb = vector<concurrency::event*>(m_N);
+
+		m_events = vector<concurrency::event>(m_N);
+		m_p_events = vector<concurrency::event*>(m_N);
 
 		for (int i = 0; i < m_N; i++)
 		{
@@ -332,16 +356,29 @@ public:
 			m_pIm[i] = &(m_Im[i]);
 			m_pthrs_res[i] = &(m_thrs_res[i]);
 			m_p_events_rgb[i] = &(m_events_rgb[i]);
+			m_p_events[i] = &(m_events[i]);
+		}
+
+		m_thrs_int_res = custom_buffer<int>(m_threads, -1);
+		m_pthrs_int_res = custom_buffer<int*>(m_threads);
+
+		for (int i = 0; i < m_threads; i++)
+		{
+			m_pImInt[i] = &(m_ImInt[i]);
+			m_pImYInt[i] = &(m_ImYInt[i]);
+			m_pthrs_int_res[i] = &(m_thrs_int_res[i]);
 		}
 
 		m_thrs_rgb = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
-		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));				
+		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
+		m_thrs_int = vector<concurrency::task<void>>(m_threads, concurrency::create_task([] {}));
 	}
 
 	~RunSearch()
 	{
 		concurrency::when_all(begin(m_thrs_rgb), end(m_thrs_rgb)).wait();
 		concurrency::when_all(begin(m_thrs), end(m_thrs)).wait();
+		concurrency::when_all(begin(m_thrs_int), end(m_thrs_int)).wait();
 	}
 
 	void AddGetRGBImagesTask(int fn, int num)
@@ -398,13 +435,100 @@ public:
 		}
 	}
 
+	void AddIntersectImagesTask(int fn)
+	{
+		int fdn = fn - m_fn_start;
+		int* pthrs_int_res = m_pthrs_int_res[fdn];
+
+		if (*pthrs_int_res == -1)
+		{
+			*pthrs_int_res = 0;
+
+			custom_buffer<custom_buffer<int>*> pIm(m_pIm);
+			custom_buffer<custom_buffer<int>*> pImY(m_pImY);
+			vector<concurrency::event*> p_events(m_p_events);
+			custom_buffer<int*> pthrs_res(m_pthrs_res);
+			custom_buffer<int>* pImInt = m_pImInt[fdn];
+			custom_buffer<int>* pImYInt = m_pImYInt[fdn];			
+			int threads = m_threads;
+			int BufferSize = m_BufferSize;
+			int w = m_w;
+			int h = m_h;
+			int DL = g_DL;
+
+			m_thrs_int[fdn] = concurrency::create_task([pthrs_int_res, fdn, pIm, pImY, p_events, pthrs_res, pImInt, pImYInt, threads, BufferSize, w, h, DL]() mutable
+			{
+				int bln = 1;
+				for (int i = 0; i < DL; i++)
+				{
+					p_events[fdn + i]->wait();
+					bln = bln & (*(pthrs_res[fdn + i]));
+					if (bln == 0)
+					{
+						break;
+					}
+				}
+
+				if (bln)
+				{
+					concurrency::parallel_invoke(
+						[&pImInt, &pIm, fdn, DL, BufferSize, w, h] {
+						memcpy(pImInt->m_pData, pIm[fdn]->m_pData, BufferSize);
+
+						for (int _thr_n = 1; _thr_n < DL; _thr_n++)
+						{
+							IntersectTwoImages(*(pImInt), *(pIm[fdn + _thr_n]), w, h);
+						}
+					},
+						[&pImYInt, &pImY, fdn, DL, BufferSize, w, h] {
+						if (g_use_ILA_images_for_search_subtitles)
+						{
+							memcpy(pImYInt->m_pData, pImY[fdn]->m_pData, BufferSize);
+
+							for (int i = 0; i < w*h; i++)
+							{
+								(*pImYInt)[i] += 255;
+							}
+
+							for (int _thr_n = 1; _thr_n < DL; _thr_n++)
+							{
+								IntersectYImages(*(pImYInt), *(pImY[fdn + _thr_n]), w, h, 255);
+							}
+						}
+					}
+					);
+
+					bln = AnalyseImage(*pImInt, pImYInt, w, h);
+				}
+
+				*pthrs_int_res = bln;
+			});
+		}
+	}
+
+	int GetIntersectImages(int fn, custom_buffer<int> *&pImInt, custom_buffer<int> *&pImYInt)
+	{
+		int fdn = fn - m_fn_start;
+
+		if (*(m_pthrs_int_res[fdn]) == -1)
+		{
+			custom_assert(false, "m_pthrs_int_res[fdn] == -1");
+		}
+		m_thrs_int[fdn].wait();
+
+		pImInt = m_pImInt[fdn];
+		pImYInt = m_pImYInt[fdn];
+
+		return *(m_pthrs_int_res[fdn]);
+	}
+
 	void AddConvertImageTask(int fn)
 	{
 		int fdn = fn - m_fn_start;
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			*(m_pthrs_res[fdn]) = 0;
-			m_thrs[fdn] = TaskConvertImage(*(m_p_events_rgb[fdn]), *(m_pImRGB[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
+			m_thrs[fdn] = TaskConvertImage(*(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImRGB[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
 		}
 	}
 
@@ -478,58 +602,6 @@ public:
 		return pos;
 	}
 
-	/*custom_buffer<int>& GetImRGB(int fn)
-	{
-		int fdn = fn - m_fn_start;
-
-		if (*(m_pthrs_res[fdn]) == -1)
-		{
-			custom_assert(false, "m_pthrs_res[fdn] == -1");
-		}
-		m_thrs[fdn].wait();
-
-		return *(m_pImRGB[fdn]);
-	}
-
-	custom_buffer<int>& GetIm(int fn)
-	{
-		int fdn = fn - m_fn_start;
-
-		if (*(m_pthrs_res[fdn]) == -1)
-		{
-			custom_assert(false, "m_pthrs_res[fdn] == -1");
-		}
-		m_thrs[fdn].wait();
-
-		return *(m_pIm[fdn]);
-	}
-
-	custom_buffer<int>& GetImNE(int fn)
-	{
-		int fdn = fn - m_fn_start;
-
-		if (*(m_pthrs_res[fdn]) == -1)
-		{
-			custom_assert(false, "m_pthrs_res[fdn] == -1");
-		}
-		m_thrs[fdn].wait();
-
-		return *(m_pImNE[fdn]);
-	}
-
-	custom_buffer<int>& GetImY(int fn)
-	{
-		int fdn = fn - m_fn_start;
-
-		if (*(m_pthrs_res[fdn]) == -1)
-		{
-			custom_assert(false, "m_pthrs_res[fdn] == -1");
-		}
-		m_thrs[fdn].wait();
-
-		return *(m_pImY[fdn]);
-	}	*/
-
 	void ShiftStartFrameNumberTo(int fn)
 	{
 		int fdn = fn - m_fn_start;
@@ -538,6 +610,7 @@ public:
 		{
 			m_p_events_rgb[fdn - 1]->wait();
 			concurrency::when_all(begin(m_thrs), next(begin(m_thrs),fdn)).wait();
+			concurrency::when_all(begin(m_thrs_int), next(begin(m_thrs_int), std::min<int>(fdn, m_threads))).wait();
 
 			custom_buffer<custom_buffer<int>*> pImRGB(m_pImRGB);
 			custom_buffer<custom_buffer<int>*> pImNE(m_pImNE);
@@ -546,6 +619,7 @@ public:
 			custom_buffer<s64*> pPos(m_pPos);
 			custom_buffer<int*> pthrs_res(m_pthrs_res);
 			vector<concurrency::event*> p_events_rgb(m_p_events_rgb);
+			vector<concurrency::event*> p_events(m_p_events);
 			int i, j;
 
 			m_prevPos = *(m_pPos[fdn - 1]);
@@ -560,8 +634,9 @@ public:
 				m_thrs[i] = m_thrs[i + fdn];
 				m_pthrs_res[i] = pthrs_res[i + fdn];
 				m_p_events_rgb[i] = p_events_rgb[i + fdn];
+				m_p_events[i] = p_events[i + fdn];
 				m_thrs_rgb[i] = m_thrs_rgb[i + fdn];
-			}
+			}			
 
 			for (i = m_N - fdn, j=0; i < m_N; i++, j++)
 			{
@@ -573,8 +648,33 @@ public:
 				m_pPos[i] = pPos[j];
 				m_p_events_rgb[i] = p_events_rgb[j];
 				(m_p_events_rgb[i])->reset();
+				m_p_events[i] = p_events[j];
+				(m_p_events[i])->reset();
 				*(m_pPos[i]) = -1;
 				*(m_pthrs_res[i]) = -1;
+			}
+
+			if (fdn < m_threads)
+			{
+				custom_buffer<custom_buffer<int>*> pImInt(m_pImInt);
+				custom_buffer<custom_buffer<int>*> pImYInt(m_pImYInt);
+				custom_buffer<int*> pthrs_int_res(m_pthrs_int_res);
+
+				for (i = 0; i < (m_threads - fdn); i++)
+				{
+					m_pImInt[i] = pImInt[i + fdn];
+					m_pImYInt[i] = pImYInt[i + fdn];
+					m_thrs_int[i] = m_thrs_int[i + fdn];
+					m_pthrs_int_res[i] = pthrs_int_res[i + fdn];
+				}
+
+				for (i = m_threads - fdn, j = 0; i < m_threads; i++, j++)
+				{
+					m_pImInt[i] = pImInt[j];
+					m_pImYInt[i] = pImYInt[j];
+					m_pthrs_int_res[i] = pthrs_int_res[j];
+					*(m_pthrs_int_res[i]) = -1;
+				}
 			}
 
 			m_fn_start = fn;
@@ -656,7 +756,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	custom_buffer<int> ImFSP(size, 0); //image for save prev
 	custom_buffer<int> ImNES(size, 0), ImNESP(size, 0);
 	custom_buffer<int> ImYS(size, 0), ImYSP(size, 0);
-	custom_buffer<int> *pImRGB, *pIm, *pImInt, *pImNE, *pImY;
+	custom_buffer<int> *pImRGB, *pIm, *pImInt, *pImYInt, *pImNE, *pImY;
 	custom_buffer<int> prevImRGB(size, 0), prevImNE(size, 0), prevIm(size, 0);
 
 	custom_buffer<custom_buffer<int>*> ImRGBForward(DL, NULL);
@@ -739,18 +839,22 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 				if (bln)
 				{
-					for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
-					{
-						IntersectTwoImages(ImInt, *(ImForward[i]), w, h);
-					}
-								
-					if (g_use_ILA_images_for_search_subtitles)
-					{
+					concurrency::parallel_invoke(
+					[&ImInt, &ImForward, ddl1_ofset, ddl2_ofset, w, h] {
 						for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
 						{
-							IntersectYImages(ImYInt, *(ImYForward[i]), w, h, 255);
+							IntersectTwoImages(ImInt, *(ImForward[i]), w, h);
 						}
-					}
+					},
+					[&ImYInt, &ImYForward, ddl1_ofset, ddl2_ofset, w, h] {
+						if (g_use_ILA_images_for_search_subtitles)
+						{
+							for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+							{
+								IntersectYImages(ImYInt, *(ImYForward[i]), w, h, 255);
+							}
+						}
+					});
 
 					bln = AnalyseImage(ImInt, &ImYInt, w, h);
 				}
@@ -765,7 +869,12 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 				for (int i = 0; i < (DL + threads - 1); i++)
 				{
-					rs.AddConvertImageTask(fn + i);
+					rs.AddConvertImageTask(fn + i);					
+				}
+
+				for (int i = 0; i < (threads - 1); i++)
+				{
+					rs.AddIntersectImagesTask(fn + i);
 				}
 
 				//while (1)
@@ -815,51 +924,19 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 		rs.AddGetRGBImagesTask(fn + DL + threads - 1, 1);
 		rs.AddConvertImageTask(fn + DL + threads - 1);
+		rs.AddIntersectImagesTask(fn + threads - 1);
 
-		bln = 1;
+		bln = rs.GetIntersectImages(fn, pImInt, pImYInt);
+
 		for (int i = 0; i < DL; i++)
 		{
-			bln = bln && rs.GetConvertImage(fn + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
+			rs.GetConvertImage(fn + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
 		}
-
-		if (bln)
-		{
-			concurrency::parallel_invoke(
-				[&ImInt, &ImForward, DL, BufferSize, w, h] {
-					memcpy(ImInt.m_pData, ImForward[0]->m_pData, BufferSize);
-
-					for (int _thr_n = 1; _thr_n < DL; _thr_n++)
-					{
-
-						IntersectTwoImages(ImInt, *(ImForward[_thr_n]), w, h);
-					}
-				},
-					[&ImYInt, &ImYForward, DL, BufferSize, w, h] {
-					if (g_use_ILA_images_for_search_subtitles)
-					{
-						memcpy(ImYInt.m_pData, ImYForward[0]->m_pData, BufferSize);
-
-						for (int i = 0; i < w*h; i++)
-						{
-							ImYInt[i] += 255;
-						}
-
-						for (int _thr_n = 1; _thr_n < DL; _thr_n++)
-						{
-							IntersectYImages(ImYInt, *(ImYForward[_thr_n]), w, h, 255);
-						}
-					}
-				}
-			);
-
-			bln = AnalyseImage(ImInt, &ImYInt, w, h);
-		}		
 
 		pImRGB = ImRGBForward[0];		
 		pImNE = ImNEForward[0];
 		pImY = ImYForward[0];
 		pIm = ImForward[0];
-		pImInt = &ImInt;		
 
 		prevPos = rs.GetPos(fn - 1);
 		CurPos = PosForward[0];		
@@ -867,7 +944,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		if (debug)
 		{
 			SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles_ImCombined_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
-			SaveBinaryImage(ImYInt, string("/TestImages/FastSearchSubtitles_ImYInt_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
+			SaveBinaryImage(*pImYInt, string("/TestImages/FastSearchSubtitles_ImYInt_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pIm, string("/TestImages/FastSearchSubtitles_ImForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles_ImNEForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*pImY, string("/TestImages/FastSearchSubtitles_ImYForwardBegin_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + g_im_save_format, w, h);
@@ -887,7 +964,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		if (fn == bf)
 		{
 			memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
-			memcpy(ImYS.m_pData, ImYInt.m_pData, BufferSize);
+			memcpy(ImYS.m_pData, pImYInt->m_pData, BufferSize);
 			
 			if (debug)
 			{
@@ -910,7 +987,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 					memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
 					memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
-					memcpy(ImYS.m_pData, ImYInt.m_pData, BufferSize);
+					memcpy(ImYS.m_pData, pImYInt->m_pData, BufferSize);
 					memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
 					
 					if (debug)
@@ -923,13 +1000,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				}
 				else
 				{
-					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, &ImYInt, *pImNE, w, h, W, H, ymin);
+					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, pImYInt, *pImNE, w, h, W, H, ymin);
 					
 					if ((bln > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL)))
 					{
 						memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
 						memcpy(ImNES.m_pData, pImNE->m_pData, BufferSize);
-						memcpy(ImYS.m_pData, ImYInt.m_pData, BufferSize);
+						memcpy(ImYS.m_pData, pImYInt->m_pData, BufferSize);
 						memcpy(ImFS.m_pData, pImRGB->m_pData, BufferSize);
 
 						if (debug)
@@ -948,7 +1025,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							SaveRGBImage(*pImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImRGB" + g_im_save_format, w, h);
 							SaveGreyscaleImage(*pImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNE" + g_im_save_format, w, h);
 							SaveGreyscaleImage(*pImInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImInt" + g_im_save_format, w, h);
-							SaveBinaryImage(ImYInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYInt" + g_im_save_format, w, h);
+							SaveBinaryImage(*pImYInt, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYInt" + g_im_save_format, w, h);
 
 							SaveRGBImage(prevImRGB, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImRGBprev" + g_im_save_format, w, h);
 							SaveGreyscaleImage(prevImNE, string("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNEprev" + g_im_save_format, w, h);
@@ -1037,7 +1114,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						if (offset == 0)
 						{
 							memcpy(ImIntS.m_pData, pImInt->m_pData, BufferSize);
-							memcpy(ImYS.m_pData, ImYInt.m_pData, BufferSize);
+							memcpy(ImYS.m_pData, pImYInt->m_pData, BufferSize);
 						}
 						else
 						{
