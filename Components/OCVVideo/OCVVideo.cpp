@@ -68,7 +68,7 @@ OCVVideo::~OCVVideo()
 
 void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 {
-	if (m_VC.isOpened() && m_show_video)
+	if ((!img.empty()) && m_VC.isOpened() && m_show_video)
 	{
 		int wnd_w, wnd_h, img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
 		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
@@ -255,8 +255,12 @@ void OCVVideo::OneStep()
 			}
 		} while ((m_cur_frame.empty()) && ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded) || (num_tries < 100)));
 
-		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
-		m_ImageGeted = true;
+		if (!m_cur_frame.empty())
+		{
+			if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
+			m_ImageGeted = true;
+		}
+			
 		ShowFrame(m_cur_frame);
 	}
 }
@@ -280,7 +284,7 @@ void OCVVideo::ErrorMessage(string str)
 
 s64 OCVVideo::GetPos()
 {
-	s64 pos = -1;
+	s64 pos = 0;
 	
 	if (m_VC.isOpened())
 	{
@@ -290,6 +294,8 @@ s64 OCVVideo::GetPos()
 		{
 			pos = m_Duration;
 		}
+
+		if (pos < 0) pos = 0;
 	}
 
     return pos;

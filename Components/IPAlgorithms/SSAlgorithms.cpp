@@ -293,9 +293,9 @@ class RunSearch
 	vector<concurrency::task<void>> m_thrs_int;
 
 	vector<concurrency::event> m_events_rgb;
-	vector<concurrency::event*> m_p_events_rgb;
+	custom_buffer<concurrency::event*> m_p_events_rgb;
 	vector<concurrency::event> m_events;
-	vector<concurrency::event*> m_p_events;
+	custom_buffer<concurrency::event*> m_p_events;
 
 	custom_buffer<int> m_thrs_res;
 	custom_buffer<int*> m_pthrs_res;
@@ -342,10 +342,10 @@ public:
 		m_pthrs_res = custom_buffer<int*>(m_N);
 
 		m_events_rgb = vector<concurrency::event>(m_N);
-		m_p_events_rgb = vector<concurrency::event*>(m_N);
+		m_p_events_rgb = custom_buffer<concurrency::event*>(m_N);
 
 		m_events = vector<concurrency::event>(m_N);
-		m_p_events = vector<concurrency::event*>(m_N);
+		m_p_events = custom_buffer<concurrency::event*>(m_N);
 
 		for (int i = 0; i < m_N; i++)
 		{
@@ -384,10 +384,15 @@ public:
 	void AddGetRGBImagesTask(int fn, int num)
 	{
 		int fdn = fn - m_fn_start;
+
+		custom_assert((fdn >= 0) && (fdn < m_N), "AddGetRGBImagesTask: (fdn >= 0) && (fdn < m_N)");
+		custom_assert((fdn + num - 1 < m_N), "AddGetRGBImagesTask: (fdn + num - 1 < m_N)");
+		custom_assert((num >= 1), "AddGetRGBImagesTask: (num >= 1)");
+
 		custom_buffer<custom_buffer<int>*> pImRGB(m_pImRGB);
 		custom_buffer<s64*> pPos(m_pPos);
 		custom_buffer<bool> need_to_get(m_N, false);
-		vector<concurrency::event*> p_events_rgb(m_p_events_rgb);
+		custom_buffer<concurrency::event*> p_events_rgb(m_p_events_rgb);
 		CVideo *pV = m_pV;
 		int xmin = m_xmin;
 		int xmax = m_xmax;
@@ -407,7 +412,17 @@ public:
 
 		if (num_to_get > 0)
 		{
-			concurrency::task<void> task = concurrency::create_task([fdn, num, pPos, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_rgb, need_to_get]() mutable
+			int j = fdn;
+			for (int i = 0; i < num; i++)
+			{
+				if (need_to_get[fdn + i])
+				{
+					j = fdn + i;
+					break;
+				}
+			}
+
+			m_thrs_rgb[j] = concurrency::create_task([fdn, num, pPos, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_rgb, need_to_get]() mutable
 			{
 				for (int i = 0; i < num; i++)
 				{
@@ -423,21 +438,16 @@ public:
 						p_events_rgb[fdn + i]->set();
 					}
 				}
-			});
-
-			for (int i = 0; i < num; i++)
-			{
-				if (need_to_get[fdn + i])
-				{
-					m_thrs_rgb[fdn + i] = task;
-				}
-			}
+			});			
 		}
 	}
 
 	void AddIntersectImagesTask(int fn)
 	{
 		int fdn = fn - m_fn_start;
+
+		custom_assert((fdn >= 0) && (fdn < m_threads), "AddIntersectImagesTask: (fdn >= 0) && (fdn < m_threads)");
+
 		int* pthrs_int_res = m_pthrs_int_res[fdn];
 
 		if (*pthrs_int_res == -1)
@@ -446,7 +456,7 @@ public:
 
 			custom_buffer<custom_buffer<int>*> pIm(m_pIm);
 			custom_buffer<custom_buffer<int>*> pImY(m_pImY);
-			vector<concurrency::event*> p_events(m_p_events);
+			custom_buffer<concurrency::event*> p_events(m_p_events);
 			custom_buffer<int*> pthrs_res(m_pthrs_res);
 			custom_buffer<int>* pImInt = m_pImInt[fdn];
 			custom_buffer<int>* pImYInt = m_pImYInt[fdn];			
@@ -519,6 +529,8 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 
+		custom_assert((fdn >= 0) && (fdn < m_threads), "GetIntersectImages: (fdn >= 0) && (fdn < m_threads)");
+
 		if (*(m_pthrs_int_res[fdn]) == -1)
 		{
 			custom_assert(false, "m_pthrs_int_res[fdn] == -1");
@@ -534,6 +546,9 @@ public:
 	void AddConvertImageTask(int fn)
 	{
 		int fdn = fn - m_fn_start;
+
+		custom_assert((fdn >= 0) && (fdn < m_N), "AddConvertImageTask: (fdn >= 0) && (fdn < m_N)");
+
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			*(m_pthrs_res[fdn]) = 0;
@@ -545,6 +560,8 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 		
+		custom_assert((fdn >= 0) && (fdn < m_N), "GetConvertImageCopy: (fdn >= 0) && (fdn < m_N)");
+
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			custom_assert(false, "m_pthrs_res[fdn] == -1");
@@ -575,6 +592,8 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 
+		custom_assert((fdn >= 0) && (fdn < m_N), "GetConvertImage: (fdn >= 0) && (fdn < m_N)");
+
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			custom_assert(false, "m_pthrs_res[fdn] == -1");
@@ -594,7 +613,7 @@ public:
 	{
 		int fdn = fn - m_fn_start;		
 
-		custom_assert(fdn >= -1, "fdn >= -1");		
+		custom_assert((fdn >= -1) && (fdn < m_N), "GetPos: (fdn >= -1) && (fdn < m_N)");
 
 		int pos;
 
@@ -615,9 +634,18 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 
+		custom_assert((fdn >= 0) && (fdn < m_N-1), "ShiftStartFrameNumberTo: (fdn >= 0) && (fdn < m_N-1)");
+
 		if (fdn > 0)
 		{
 			m_p_events_rgb[fdn - 1]->wait();
+
+			// there can be dependent thread with get rgb image(s) which wait for m_p_events_rgb[fdn - 1] finish
+			if (*(m_pPos[fdn]) == 0)
+			{
+				m_p_events_rgb[fdn]->wait();
+			}
+
 			concurrency::when_all(begin(m_thrs), next(begin(m_thrs),fdn)).wait();
 			concurrency::when_all(begin(m_thrs_int), next(begin(m_thrs_int), std::min<int>(fdn, m_threads))).wait();
 
@@ -627,8 +655,8 @@ public:
 			custom_buffer<custom_buffer<int>*> pIm(m_pIm);
 			custom_buffer<s64*> pPos(m_pPos);
 			custom_buffer<int*> pthrs_res(m_pthrs_res);
-			vector<concurrency::event*> p_events_rgb(m_p_events_rgb);
-			vector<concurrency::event*> p_events(m_p_events);
+			custom_buffer<concurrency::event*> p_events_rgb(m_p_events_rgb);
+			custom_buffer<concurrency::event*> p_events(m_p_events);
 			int i, j;
 
 			m_prevPos = *(m_pPos[fdn - 1]);
@@ -695,6 +723,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 {
 	cv::ocl::setUseOpenCL(g_use_ocl);
 
+	// Create a scheduler policy that allows up to 1000
+	// simultaneous tasks.
+	concurrency::SchedulerPolicy policy(2, concurrency::MaxConcurrency, 1000, concurrency::ContextPriority, THREAD_PRIORITY_HIGHEST);
+
+	// Attach the policy to the current scheduler.
+	concurrency::CurrentScheduler::Create(policy);
+
 	string Str;
 	s64 CurPos, prevPos;
 	int fn; //frame num
@@ -711,6 +746,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	int bln, finded_prev;
 
 	int debug = 0;
+	//g_disable_save_images = true;
 
 	g_RunSubSearch = 1;
 
@@ -1349,6 +1385,11 @@ int AnalyseImage(custom_buffer<int> &Im, custom_buffer<int> *pImILA, int w, int 
 	
 	n = h/segh;
 	da = w*segh;
+
+	if (n == 0)
+	{
+		return 0;
+	}
 	
 	custom_buffer<custom_buffer<int>> g_lb(n, custom_buffer<int>(w, 0)), g_le(n, custom_buffer<int>(w, 0));
 	custom_buffer<int> g_ln(n, 0);

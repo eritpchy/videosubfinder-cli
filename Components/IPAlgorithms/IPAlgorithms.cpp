@@ -155,6 +155,8 @@ int g_cpu_kmeans_loop_iterations = 10;
 
 double g_min_h = 12.0 / 720.0; // ~ min sub height in percents to image height
 
+bool g_disable_save_images = false;
+
 bool InitCUDADevice()
 {
 	bool res = false;
@@ -9453,6 +9455,8 @@ void LoadRGBImage(custom_buffer<int> &Im, string name, int w, int h)
 
 void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h)
 {
+	if (g_disable_save_images) return;
+
 	cv::Mat im(h, w, CV_8UC4);
 
 	memcpy(im.data, &Im[0], w*h * 4);
@@ -9483,6 +9487,8 @@ void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h)
 
 void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int add, double scale, int quality, int dpi)
 {
+	if (g_disable_save_images) return;
+
 	cv::Mat im(h, w, CV_8UC3);
 	u8 *color;
 
@@ -9532,6 +9538,8 @@ void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int a
 
 void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int quality, int dpi)
 {
+	if (g_disable_save_images) return;
+
 	cv::Mat im(h, w, CV_8UC3);
 	u8 color;
 
@@ -9574,6 +9582,8 @@ void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int qual
 
 void SaveImageWithLinesInfo(custom_buffer<int> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h)
 {
+	if (g_disable_save_images) return;
+
 	custom_buffer<int> ImTMP(w*h, 0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;
@@ -9632,6 +9642,8 @@ void SaveImageWithLinesInfo(custom_buffer<int> &Im, string name, int lb1, int le
 
 void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h)
 {
+	if (g_disable_save_images) return;
+
 	custom_buffer<int> ImTMP(w*h, 0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;

@@ -76,6 +76,8 @@ extern bool		g_use_gradient_images_for_clear_txt_images;
 extern bool		g_clear_txt_images_by_main_color;
 extern bool		g_use_ILA_images_for_clear_txt_images;
 
+extern bool		g_disable_save_images;
+
 void RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h);
 void YIQ_to_RGB(int Y, int I, int Q, int &R, int &G, int &B, int max_val);
 void RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h);
