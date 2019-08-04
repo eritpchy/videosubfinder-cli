@@ -2443,8 +2443,8 @@ int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffe
 
 inline void GetDDY(int &h, int &LH, int &LMAXY, int &ddy1, int &ddy2)
 {
-	ddy1 = std::max<int>(4, LMAXY - ((7 * LH) / 5));
-	ddy2 = std::min<int>((h - 1) - 4, LMAXY + ((2 * LH) / 5));
+	ddy1 = std::max<int>(4, LMAXY - ((8 * LH) / 5));
+	ddy2 = std::min<int>((h - 1) - 4, LMAXY + (LH / 2));
 
 	if (ddy1 > LMAXY - LH - 3)
 	{
@@ -6613,7 +6613,7 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 			(pFigure->m_maxY < LMAXY - LH) ||
 			//(pFigure->m_maxY >= LMAXY + (LH / 2)) ||
 			//(pFigure->m_maxY < LMAXY - (4 * LH) / 5) ||
-			(pFigure->m_maxY > LMAXY + (LH / 3)) ||
+			(pFigure->m_maxY > LMAXY + (LH / 2)) ||
 			//(pFigure->m_minY > LMAXY - LH / 5) ||
 			(pFigure->m_w >= max_len) //||
 			//(pFigure->m_Square >= (LH * LH)/2) //remove good symbols
@@ -6782,7 +6782,7 @@ int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 			((pFigure->m_w < 3) || (pFigure->m_h < 3)) ||
 			( ((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) <= (LH/8))  &&
 			  ((pFigure->m_maxY - LMAXY) >= (LH / 16)) ) ||
-			  (pFigure->m_maxY > LMAXY + (LH / 3)) //||
+			  (pFigure->m_maxY > LMAXY + (LH / 2)) //||
 			//(pFigure->m_maxY < LMAXY - (LH / 2)) || // only main characters are saved
 			//(pFigure->m_minY > LMAXY - LH / 5) ||
 			//(pFigure->m_Square >= (LH * LH) / 2) //|| remove good symbols
@@ -6889,7 +6889,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 			(pFigure->m_maxY > ddy2) ||
 			(pFigure->m_w >= LH * 2) ||
 			(pFigure->m_w >= h * 1.5) ||
-			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (6 * LH) / 5) ||
+			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (7 * LH) / 5) ||
 			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (1 * LH) / 5) ||
 			((pFigure->m_w < 3) || (pFigure->m_h < 3))
 			)
