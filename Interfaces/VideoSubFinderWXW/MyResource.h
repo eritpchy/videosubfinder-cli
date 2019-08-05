@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"4.10"
+#define VSF_VERSION	"4.20b"
 
 #define ID_APP_ABOUT                    1100
 
@@ -153,6 +153,7 @@
 #define ID_FILE_OPENPREVIOUSVIDEO       44
 #define ID_Menu                         45
 #define ID_FILE_OPEN_VIDEO_OPENCV       46
+#define ID_FILE_OPEN_VIDEO_FFMPEG       47
 #define ID_FILE_REOPENVIDEO             48
 #define ID_FILE_EXIT					49
 #define ID_Menu57808                    50

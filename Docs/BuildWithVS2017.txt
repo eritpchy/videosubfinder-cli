@@ -9,6 +9,8 @@ Build all projects in "(Debug/Release)/(x64/Win32)" mode.
 
 3) Install CUDA Toolkit 10.1
 https://developer.nvidia.com/cuda-downloads
+C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\lib\x64
+should exist
 
 4) OpenCV
 https://docs.opencv.org/4.0.1/d8/dfe/classcv_1_1VideoCapture.html#a85b55cf6a4a50451367ba96b65218ba1
@@ -51,3 +53,14 @@ Build in Debug and Release mode for Platform Win32
 Setup Env: WinSDKVersion=10.0.17134.0
 Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2017.
 Build solution in "Debug/x64" mode and in "Release/x64" mode.
+
+6)
+download and extract:
+https://ffmpeg.zeranoe.com/builds/
+ffmpeg-4.1.4-win32-dev.zip
+ffmpeg-4.1.4-win32-shared.zip
+ffmpeg-4.1.4-win64-dev.zip
+ffmpeg-4.1.4-win64-shared.zip
+Setup Env:
+FFMPEG_PATH_X64=C:\ffmpeg-4.1.4-win64-dev
+FFMPEG_PATH_X86=C:\ffmpeg-4.1.4-win32-dev

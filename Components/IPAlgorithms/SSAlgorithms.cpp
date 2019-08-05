@@ -268,7 +268,7 @@ inline concurrency::task<void> TaskConvertImage(concurrency::event &evt_rgb, con
 class RunSearch
 {
 	int m_threads;
-	int m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax, m_size, m_BufferSize, m_N;
+	int m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax, m_size, m_BufferSize;
 	CVideo *m_pV;
 	int m_fn_start;
 	s64 m_prevPos;
@@ -304,6 +304,8 @@ class RunSearch
 	custom_buffer<int*> m_pthrs_int_res;
 
 public:
+	int m_N;
+
 	RunSearch(int threads, CVideo *pV)
 	{
 		m_threads = threads;
@@ -814,14 +816,30 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	prevPos = -2;
 
-	RunSearch rs(threads, pV);
-	fn = 0;
+	RunSearch rs(threads, pV);	
 	
 	const int ddl = (DL / 2);
 	const int ddl1_ofset = ddl - 1;
 	const int ddl2_ofset = (ddl * 2) - 1;
 
 	int fn_start;
+
+	/*DWORD start_time = GetTickCount();
+	int num = 18000;
+	for (int i = 0; i < num; i++)
+	{
+		CurPos = pV->OneStepWithTimeout();
+		pV->GetRGBImage(ImInt, xmin, xmax, ymin, ymax);
+	}
+	DWORD dt = GetTickCount() - start_time;
+
+	char msg[500];
+	sprintf(msg, "dt: %d CurPos: %d", (int)dt, (int)CurPos);
+	wxMessageBox(msg);*/
+
+	fn_start = fn = 0;
+	rs.AddGetRGBImagesTask(fn, rs.m_N); // getting all
+	rs.GetPos(fn + rs.m_N - 1); // waiting for all images are obtained
 
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
@@ -834,9 +852,9 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 		while ((found_sub == 0) && (CurPos < End) && (CurPos != prevPos) && (g_RunSubSearch == 1))
 		{
+			rs.AddGetRGBImagesTask(fn, ddl * create_new_threads);
 			for (int thr_n = 0; thr_n < create_new_threads; thr_n++)
-			{
-				rs.AddGetRGBImagesTask(fn, ddl);
+			{				
 				fn += ddl;
 				rs.AddConvertImageTask(fn - 1);
 			}
@@ -910,8 +928,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				found_sub = true;
 				fn = fn_start;
 
-				rs.AddGetRGBImagesTask(fn, DL + threads - 1);
-
 				for (int i = 0; i < (DL + threads - 1); i++)
 				{
 					rs.AddConvertImageTask(fn + i);					
@@ -967,7 +983,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			}
 		}
 
-		rs.AddGetRGBImagesTask(fn + DL + threads - 1, 1);
+		if (((fn - fn_start + 1) % DL) == 0)
+		{
+			rs.AddGetRGBImagesTask(fn, rs.m_N);
+		}
+		
 		rs.AddConvertImageTask(fn + DL + threads - 1);
 		rs.AddIntersectImagesTask(fn + threads - 1);
 

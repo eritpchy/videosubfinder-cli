@@ -27,6 +27,7 @@
 #include "VideoBox.h"
 #include "ImageBox.h"
 #include "OCVVideoLoader.h"
+#include "FFMPEGVideoLoader.h"
 #include "SSAlgorithms.h"
 #include "IPAlgorithms.h"
 #include <time.h>
@@ -201,6 +202,7 @@ public:
 	void OnStop(wxCommandEvent& event);
 	void OnFileReOpenVideo(wxCommandEvent& event);
 	void OnFileOpenVideoOpenCV(wxCommandEvent& event);
+	void OnFileOpenVideoFFMPEG(wxCommandEvent& event);
 	void OnEditSetBeginTime(wxCommandEvent& event);
 	void OnEditSetEndTime(wxCommandEvent& event);
 	void OnFileSaveSettings(wxCommandEvent& event);

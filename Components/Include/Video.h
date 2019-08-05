@@ -47,6 +47,7 @@ public:
 	long		m_Height;
 
 	s64			m_Duration;
+	s64			m_Pos;
 
 	string		m_log;
 	string		m_Dir;

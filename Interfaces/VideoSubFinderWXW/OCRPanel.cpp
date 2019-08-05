@@ -1733,7 +1733,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 		
-	int pack_size = 1000;
+	int pack_size = 100;
 	int num_packs = FileNamesVector.size() / pack_size;
 	if ((FileNamesVector.size() % pack_size) > 0) {
 		num_packs++;

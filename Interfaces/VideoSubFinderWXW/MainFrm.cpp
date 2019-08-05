@@ -106,6 +106,7 @@ BEGIN_EVENT_TABLE(CMainFrame, wxMDIParentFrame)
 	EVT_MENU(ID_PLAY_STOP, CMainFrame::OnStop)
 	EVT_MENU(ID_FILE_REOPENVIDEO, CMainFrame::OnFileReOpenVideo)
 	EVT_MENU(ID_FILE_OPEN_VIDEO_OPENCV, CMainFrame::OnFileOpenVideoOpenCV)
+	EVT_MENU(ID_FILE_OPEN_VIDEO_FFMPEG, CMainFrame::OnFileOpenVideoFFMPEG)	
 	EVT_MENU(ID_EDIT_SETBEGINTIME, CMainFrame::OnEditSetBeginTime)
 	EVT_MENU(ID_EDIT_SETENDTIME, CMainFrame::OnEditSetEndTime)
 	EVT_MENU(ID_FILE_SAVESETTINGS, CMainFrame::OnFileSaveSettings)
@@ -198,6 +199,7 @@ void CMainFrame::Init()
 
 	wxMenu *pMenu1 = new wxMenu;	
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, _T("Open Video (OpenCV)"));
+	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, _T("Open Video (FFMPEG with GPU Acceleration)"));
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
 	pMenu1->AppendSeparator();
 	pMenu1->AppendSubMenu( pMenu5, _T("Set Priority"));
@@ -277,6 +279,11 @@ void CMainFrame::OnFileOpenVideoOpenCV(wxCommandEvent& event)
 	OnFileOpenVideo(0);
 }
 
+void CMainFrame::OnFileOpenVideoFFMPEG(wxCommandEvent& event)
+{
+	OnFileOpenVideo(1);
+}
+
 void CMainFrame::OnFileOpenVideo(int type)
 {
 	wxString csFileName;
@@ -294,6 +301,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	csFileName = m_FileName;
 
 	if (m_type == 0) m_pVideo = GetOCVVideoObject();
+	else if (m_type == 1) m_pVideo = GetFFMPEGVideoObject();
 	else
 	{
 		(void)wxMessageBox("ERROR: Unknown video type for OnFileOpenVideo");
@@ -326,6 +334,10 @@ void CMainFrame::OnFileOpenVideo(int type)
 	this->Disable();
 
 	if (m_type == 0)
+	{
+		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox->m_pVideoWnd, 0);
+	}
+	else
 	{
 		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox->m_pVideoWnd, 0);
 	}
