@@ -148,7 +148,7 @@ int FFMPEGVideo::decode_frame()
 	int size;
 	int ret = 0;	
 
-	sw_frame->format = AV_PIX_FMT_NV21;
+	//sw_frame->format = AV_PIX_FMT_NV21;
 
 	ret = avcodec_receive_frame(decoder_ctx, frame);
 	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {

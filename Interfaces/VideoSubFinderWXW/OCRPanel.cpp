@@ -1639,7 +1639,6 @@ FindTextLinesRes FindTextLines(wxString FileName)
 		res.m_SavedFiles.push_back(Str);
 
 		FindTextLinesWithExcFilter(&res);
-		//res.m_res = FindTextLines(res.m_ImRGB, res.m_ImClearedText, res.m_ImF[5], res.m_ImF[3], res.m_ImF[1], res.m_ImF[0], res.m_SavedFiles, w, h);
 	}
 	catch (const exception& e)
 	{
