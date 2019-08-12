@@ -271,6 +271,8 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_clear_txt_images);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, m_LBLFont, &g_clear_txt_images_by_main_color);
 
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, m_LBLFont, &g_remove_wide_symbols);
+
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, -1, 100);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1, m_LBLFont);		

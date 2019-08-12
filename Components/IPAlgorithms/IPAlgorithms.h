@@ -76,6 +76,9 @@ extern bool		g_use_gradient_images_for_clear_txt_images;
 extern bool		g_clear_txt_images_by_main_color;
 extern bool		g_use_ILA_images_for_clear_txt_images;
 
+// Settings for logical filtering
+extern bool g_remove_wide_symbols;
+
 extern bool		g_disable_save_images;
 
 void RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h);
@@ -97,6 +100,7 @@ void IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRE
 
 void FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h);
 void FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w, int h);
+void ApplyModerateThresholdBySplit(custom_buffer<int> &Im, double mthr, int w, int h, int W, int H);
 void ApplyModerateThreshold(custom_buffer<int> &Im, double mthr, int w, int h);
 
 void AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h);

@@ -638,6 +638,9 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_max_dl_down, "max_dl_down");
 	ReadProperty(fin, g_max_dl_up, "max_dl_up");
 
+	ReadProperty(fin, g_remove_wide_symbols, "remove_wide_symbols");
+	
+
 	fin.close();
 
 	fin.open((g_app_dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);
@@ -720,6 +723,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, "ssp_oim_property_use_gradient_images_for_clear_txt_images");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, "ssp_oim_property_clear_txt_images_by_main_color");
 	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
+
+	ReadProperty(fin, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
 
 	fin.close();
 }
@@ -807,6 +812,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
 	WriteProperty(fout, g_max_dl_down, "max_dl_down");
 	WriteProperty(fout, g_max_dl_up, "max_dl_up");
+
+	WriteProperty(fout, g_remove_wide_symbols, "remove_wide_symbols");
 
 	fout.close();
 }
