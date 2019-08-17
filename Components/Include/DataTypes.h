@@ -33,6 +33,7 @@ wxString get_add_info();
 #define custom_assert(cond, msg)
 
 #define cvMAT cv::UMat
+//#define cvMAT cv::Mat
 
 extern bool g_use_ocl;
 
