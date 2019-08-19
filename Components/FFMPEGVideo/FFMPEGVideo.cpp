@@ -64,6 +64,12 @@ FFMPEGVideo::~FFMPEGVideo()
 		delete m_pBmpScaled;
 		m_pBmpScaled = NULL;
 	}
+
+	if (cuda_memory_is_initialized)
+	{
+		release_cuda_memory();
+		cuda_memory_is_initialized = false;
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -148,7 +154,7 @@ int FFMPEGVideo::decode_frame()
 	int size;
 	int ret = 0;	
 
-	//sw_frame->format = AV_PIX_FMT_NV21;
+	sw_frame->format = AV_PIX_FMT_NV12;
 
 	ret = avcodec_receive_frame(decoder_ctx, frame);
 	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -192,48 +198,25 @@ int FFMPEGVideo::decode_frame()
 		m_Pos = m_Pos;
 	}
 
-	/*if ((tmp_frame->format == AV_PIX_FMT_NV21) && g_use_cuda_gpu)
+	if ((tmp_frame->format == AV_PIX_FMT_NV12) && g_use_cuda_gpu)
 	{
-		ret = -1;
+		if (!cuda_memory_is_initialized)
+		{
+			init_cuda_memory(m_Width, m_Height, m_origWidth, m_origHeight);
+			cuda_memory_is_initialized = true;
+		}
+
+		ret = 0;
 #ifdef WIN64
-		ret = NV21_to_BGRA(tmp_frame->data[0], tmp_frame->data[1], tmp_frame->linesize[0],
-			dst_data[0], tmp_frame->width, tmp_frame->height);
+		ret = NV12_to_BGRA(tmp_frame->data[0], tmp_frame->data[1], tmp_frame->linesize[0],
+			dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
 #endif
-		if (ret != 0)
+		if (ret == 0)
 		{
-			ret = sws_scale(sws_ctx, tmp_frame->data, tmp_frame->linesize, 0, tmp_frame->height, dst_data, dst_linesize);
-		}
-
-		cv::Mat in_mat_y(m_origHeight, m_origWidth, CV_8U);
-		cv::Mat in_mat_uv(m_origHeight/2, m_origWidth/2, CV_8UC2);
-		cv::Mat mat_res;
-
-		//custom_assert(m_origWidth == tmp_frame->linesize[0], "m_origWidth == tmp_frame->linesize[0]");
-		//custom_assert((m_origWidth / 2) * 2 == tmp_frame->linesize[1], "m_origWidth == tmp_frame->linesize[1]");
-		//custom_assert(m_Width * 4 == dst_linesize[0], "m_Width * 4 == dst_linesize[0]");
-
-		memcpy(in_mat_y.data, tmp_frame->data[0], m_origHeight * m_origWidth);
-		memcpy(in_mat_uv.data, tmp_frame->data[1], (m_origHeight/2) * (m_origWidth/2) * 2);
-
-		//cv::UMat in_umat_y;
-		//cv::UMat in_umat_uv;
-		//cv::UMat umat_res;
-
-		//in_mat_y.copyTo(in_umat_y);
-		//in_mat_uv.copyTo(in_umat_uv);
-
-		cv::cvtColorTwoPlane(in_mat_y, in_mat_uv, mat_res, cv::COLOR_YUV2BGRA_NV12);
-		
-		if ((m_origWidth != m_Width) || (m_origHeight != m_Height))
-		{
-			cv::resize(mat_res, mat_res, cv::Size(m_Width, m_Height));
-		}
-
-		//umat_res.copyTo(mat_res);
-
-		memcpy(dst_data[0], mat_res.data, m_Height*m_Width * 4);
+			wxMessageBox("ERROR: CUDA NV12_to_BGRA failed", "FFMPEGVideo::decode_frame");
+		}		
 	}
-	else*/
+	else
 	{
 		/* convert to destination format */
 		ret = sws_scale(sws_ctx, tmp_frame->data, tmp_frame->linesize, 0, tmp_frame->height, dst_data, dst_linesize);		
@@ -450,7 +433,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		double zoum = (double)1280 / (double)m_origWidth;
 		m_Width = 1280;
 		m_Height = (double)m_origHeight*zoum;
-	}
+	}		
 
 	/* buffer is going to be written to rawvideo file, no alignment */
 	if ((ret = av_image_alloc(dst_data, dst_linesize,

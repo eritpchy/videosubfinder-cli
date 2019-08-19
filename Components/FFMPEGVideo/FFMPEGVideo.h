@@ -91,6 +91,7 @@ public:
 	AVPacket packet;
 
 	bool need_to_read_packet = true;
+	bool cuda_memory_is_initialized = false;
 
 	AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
 	uint8_t *dst_data[4] = { NULL };

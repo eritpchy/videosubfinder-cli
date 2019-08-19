@@ -10050,3 +10050,36 @@ inline wxString get_add_info()
 
 	return msg;
 }
+
+
+void NV12ToBGRA()
+{
+	/*cv::Mat in_mat_y(m_origHeight, m_origWidth, CV_8U);
+	cv::Mat in_mat_uv(m_origHeight/2, m_origWidth/2, CV_8UC2);
+	cv::Mat mat_res;
+
+	//custom_assert(m_origWidth == tmp_frame->linesize[0], "m_origWidth == tmp_frame->linesize[0]");
+	//custom_assert((m_origWidth / 2) * 2 == tmp_frame->linesize[1], "m_origWidth == tmp_frame->linesize[1]");
+	//custom_assert(m_Width * 4 == dst_linesize[0], "m_Width * 4 == dst_linesize[0]");
+
+	memcpy(in_mat_y.data, tmp_frame->data[0], m_origHeight * m_origWidth);
+	memcpy(in_mat_uv.data, tmp_frame->data[1], (m_origHeight/2) * (m_origWidth/2) * 2);
+
+	//cv::UMat in_umat_y;
+	//cv::UMat in_umat_uv;
+	//cv::UMat umat_res;
+
+	//in_mat_y.copyTo(in_umat_y);
+	//in_mat_uv.copyTo(in_umat_uv);
+
+	cv::cvtColorTwoPlane(in_mat_y, in_mat_uv, mat_res, cv::COLOR_YUV2BGRA_NV12);
+
+	if ((m_origWidth != m_Width) || (m_origHeight != m_Height))
+	{
+		cv::resize(mat_res, mat_res, cv::Size(m_Width, m_Height));
+	}
+
+	//umat_res.copyTo(mat_res);
+
+	memcpy(dst_data[0], mat_res.data, m_Height*m_Width * 4);*/
+}
