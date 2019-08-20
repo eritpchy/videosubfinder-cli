@@ -51,6 +51,54 @@ public:
 	wxString *m_pstr;
 };
 
+class CGridCellChoiceEditor : public wxGridCellChoiceEditor
+{
+public:
+	CGridCellChoiceEditor(int row, int col, wxGrid* grid, wxString *pstr, wxArrayString vals) : wxGridCellChoiceEditor(vals)
+	{
+		m_row = row;
+		m_col = col;
+		m_grid = grid;
+		
+		m_pstr = pstr;
+
+		bool found = false;
+		for (auto && v : vals)
+		{
+			if (*m_pstr == v)
+			{				
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			*m_pstr = vals[0];
+		}
+		grid->SetCellValue(row, col, *m_pstr);
+	}
+
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
+	{
+		bool res;
+
+		res = wxGridCellChoiceEditor::EndEdit(row, col, grid, oldval, newval);
+
+		if (res == true)
+		{
+			*m_pstr = *newval;
+		}
+
+		return res;
+	}
+
+	int m_row;
+	int m_col;
+	wxGrid* m_grid;
+
+	wxString *m_pstr;
+};
+
 class CGridCellNumberEditor: public wxGridCellNumberEditor
 {
 public:
@@ -313,6 +361,29 @@ void CDataGrid::AddProperty( wxString label,
 	this->SetCellFont( index, 1, font2 );
 	this->SetCellBackgroundColour( index, 1, colour2 );
     this->SetCellEditor( index, 1, new CGridCellTextEditor(index, 1, this, pstr));
+}
+
+void CDataGrid::AddProperty(wxString label,
+							wxColour colour1, wxColour colour2,
+							wxFont font1, wxFont font2,
+							wxString *pstr, wxArrayString vals)
+{
+	int index;
+	wxString Str;
+	this->AppendRows(1);
+
+	index = this->GetNumberRows() - 1;
+
+	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);
+	this->SetCellValue(index, 0, label);
+	this->SetReadOnly(index, 0);
+	this->SetCellFont(index, 0, font1);
+	this->SetCellBackgroundColour(index, 0, colour1);
+
+	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_CENTRE);
+	this->SetCellFont(index, 1, font2);
+	this->SetCellBackgroundColour(index, 1, colour2);
+	this->SetCellEditor(index, 1, new CGridCellChoiceEditor(index, 1, this, pstr, vals));
 }
 
 void CDataGrid::AddProperty( wxString label, 

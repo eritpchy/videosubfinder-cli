@@ -639,7 +639,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, g_max_dl_up, "max_dl_up");
 
 	ReadProperty(fin, g_remove_wide_symbols, "remove_wide_symbols");
-	
+
+	ReadProperty(fin, g_hw_device, "hw_device");
 
 	fin.close();
 
@@ -653,7 +654,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
-	
+		
+	ReadProperty(fin, m_cfg.m_ssp_hw_device, "ssp_hw_device");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(fin, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
@@ -814,6 +816,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_max_dl_up, "max_dl_up");
 
 	WriteProperty(fout, g_remove_wide_symbols, "remove_wide_symbols");
+
+	WriteProperty(fout, g_hw_device, "hw_device");
 
 	fout.close();
 }

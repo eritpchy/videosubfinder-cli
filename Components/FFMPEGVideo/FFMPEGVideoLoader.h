@@ -17,5 +17,9 @@
 #pragma once
 
 #include "Video.h"
+#include <wx/wx.h>
 
+extern wxString g_hw_device;
+
+wxArrayString GetAvailableHWDeviceTypes();
 CVideo* GetFFMPEGVideoObject();

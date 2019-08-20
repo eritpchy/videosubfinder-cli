@@ -15,6 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 //#include "stdafx.h"
+#include "FFMPEGVideoLoader.h"
 #include "FFMPEGVideo.h"
 
 FFMPEGVideo g_FFMPEGVideo;

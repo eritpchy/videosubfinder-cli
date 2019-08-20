@@ -21,6 +21,24 @@
 #include "cuda_kernels.h"
 #endif
 
+wxString g_hw_device = "none";
+
+wxArrayString GetAvailableHWDeviceTypes()
+{
+	wxArrayString res;
+	enum AVHWDeviceType type;
+
+	type = AV_HWDEVICE_TYPE_NONE;
+	while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
+	{
+		res.Add(av_hwdevice_get_type_name(type));
+	}
+	if (res.size() == 0)
+	{
+		res.Add("none");
+	}
+	return res;
+}
 /////////////////////////////////////////////////////////////////////////////
 
 FFMPEGVideo::FFMPEGVideo()
@@ -33,8 +51,8 @@ FFMPEGVideo::FFMPEGVideo()
 
 	m_type = 1;
 
-	m_pBmp = NULL;
-	m_pBmpScaled = NULL;
+	/*m_pBmp = NULL;
+	m_pBmpScaled = NULL;*/
 
 	m_pVideoWindow = NULL;
 
@@ -46,14 +64,12 @@ FFMPEGVideo::FFMPEGVideo()
 /////////////////////////////////////////////////////////////////////////////
 
 FFMPEGVideo::~FFMPEGVideo()
-{
-	if (m_VC.isOpened() && m_play_video)
-	{
-		Pause();
-		m_VC.release();
+{	
+	if (input_ctx) {
+		CloseMovie();
 	}
 
-	if (m_pBmp != NULL)
+	/*if (m_pBmp != NULL)
 	{
 		delete m_pBmp;
 		m_pBmp = NULL;
@@ -63,13 +79,7 @@ FFMPEGVideo::~FFMPEGVideo()
 	{
 		delete m_pBmpScaled;
 		m_pBmpScaled = NULL;
-	}
-
-	if (cuda_memory_is_initialized)
-	{
-		release_cuda_memory();
-		cuda_memory_is_initialized = false;
-	}
+	}*/	
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -154,7 +164,7 @@ int FFMPEGVideo::decode_frame()
 	int size;
 	int ret = 0;	
 
-	sw_frame->format = AV_PIX_FMT_NV12;
+	//sw_frame->format = AV_PIX_FMT_NV12;
 
 	ret = avcodec_receive_frame(decoder_ctx, frame);
 	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
@@ -334,10 +344,15 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	if (input_ctx) {
 		CloseMovie();
-	}	
+	}
 
-	//type = av_hwdevice_find_type_by_name("dxva2");
-	type = av_hwdevice_find_type_by_name("cuda");
+	if (g_hw_device == "none")
+	{
+		wxMessageBox("No one FFMPEG HW Device found", "FFMPEGVideo::OpenMovie");
+		return false;
+	}
+
+	type = av_hwdevice_find_type_by_name(g_hw_device.ToUTF8());
 	if (type == AV_HWDEVICE_TYPE_NONE)
 	{
 		std::string msg;
@@ -466,7 +481,9 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	}
 	else {
 		CloseMovie();
-	}		
+	}
+
+	m_fps = video->avg_frame_rate.num / (double)video->avg_frame_rate.den;
 
 	return res;
 }
@@ -475,6 +492,11 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 bool FFMPEGVideo::CloseMovie()
 {
+	if (input_ctx && m_play_video)
+	{
+		Pause();
+	}
+
 	if (decoder_ctx) avcodec_free_context(&decoder_ctx);
 	if (input_ctx) avformat_close_input(&input_ctx);
 	if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
@@ -488,11 +510,17 @@ bool FFMPEGVideo::CloseMovie()
 	input_ctx = NULL;
 	hw_device_ctx = NULL;
 	dst_data[0] = NULL;
-	sws_ctx = NULL;	
+	sws_ctx = NULL;
 	frame = NULL;
 	sw_frame = NULL;
 
 	m_play_video = false;
+
+	if (cuda_memory_is_initialized)
+	{
+		release_cuda_memory();
+		cuda_memory_is_initialized = false;
+	}
 
 	return true;
 }
@@ -510,12 +538,16 @@ void FFMPEGVideo::SetPos(s64 Pos)
 
 		s64 tm = av_rescale(Pos, video->time_base.den, video->time_base.num * 1000);
 
-		s64 CurPos = m_Pos;
-		int num_tries = 0;
+		int num_tries = 0, res;
+		int64_t min_ts, ts, max_ts;
+		s64 dPos;
+		min_ts = std::max<int64_t>(0, tm - 100000);
+		ts = std::max<int64_t>(0, tm);
+		max_ts = std::max<int64_t>(0, tm);
 
 		do
 		{
-			avformat_seek_file(input_ctx, video_stream, INT64_MIN, tm, tm, AVSEEK_FLAG_FRAME);
+			res = avformat_seek_file(input_ctx, video_stream, min_ts, ts, max_ts, AVSEEK_FLAG_FRAME);
 			if (!need_to_read_packet)
 			{
 				av_packet_unref(&packet);
@@ -523,8 +555,17 @@ void FFMPEGVideo::SetPos(s64 Pos)
 			need_to_read_packet = true;
 			OneStep();
 			num_tries++;
+
+			dPos = std::abs(Pos - m_Pos);
 		}
-		while ((std::abs<s64>(CurPos - m_Pos) > 60000) && num_tries < 10);
+		while ((dPos > 5000) && (num_tries < 10));
+
+		num_tries = num_tries;
+
+		/*if (num_tries > 1)
+		{
+			wxMessageBox("num_tries: " + std::to_string(num_tries), "FFMPEGVideo::SetPos");
+		}*/
 	}
 }
 
@@ -620,14 +661,14 @@ void FFMPEGVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int
 
 void FFMPEGVideo::SetImageGeted(bool ImageGeted)
 {
-	m_ImageGeted = m_ImageGeted;
+	m_ImageGeted = ImageGeted;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void FFMPEGVideo::RunWithTimeout(s64 timeout)
 {
-	if (m_VC.isOpened())
+	if (input_ctx)
 	{
 		Run();
 		wxMilliSleep(timeout);
@@ -639,7 +680,7 @@ void FFMPEGVideo::RunWithTimeout(s64 timeout)
 
 void FFMPEGVideo::Run()
 {
-	if (m_VC.isOpened())
+	if (input_ctx)
 	{
 		if (m_play_video)
 		{
@@ -666,7 +707,7 @@ void FFMPEGVideo::Run()
 
 void FFMPEGVideo::Pause()
 {
-	if (m_VC.isOpened() && m_play_video)
+	if (input_ctx && m_play_video)
 	{
 		m_play_video = false;
 		while (!m_pThreadRunVideo->IsDetached()) { wxMilliSleep(30); }
@@ -712,12 +753,11 @@ void *FFMPEGThreadRunVideo::Entry()
 	while (m_pVideo->m_play_video)
 	{		
 		clock_t start_t = clock();
-		m_pVideo->m_VC >> m_pVideo->m_cur_frame;
-		if (m_pVideo->m_cur_frame.empty())
+		m_pVideo->OneStep();
+		if (!m_pVideo->m_ImageGeted)
 		{
 			break;
 		}
-		if ((m_pVideo->m_Width != m_pVideo->m_origWidth) || (m_pVideo->m_Height != m_pVideo->m_origHeight)) cv::resize(m_pVideo->m_cur_frame, m_pVideo->m_cur_frame, cv::Size(m_pVideo->m_Width, m_pVideo->m_Height), 0, 0, cv::INTER_LINEAR);
 		m_pVideo->ShowFrame();
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);
 		if (dt > 0) wxMilliSleep(dt);
