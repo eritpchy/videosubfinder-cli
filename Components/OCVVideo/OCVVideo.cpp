@@ -161,6 +161,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 bool OCVVideo::SetVideoWindowPlacement(void *pVideoWindow)
 {	
 	m_pVideoWindow = pVideoWindow;
+	m_show_video = true;
 	return true;
 }
 

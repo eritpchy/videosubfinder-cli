@@ -574,6 +574,7 @@ void FFMPEGVideo::SetPos(s64 Pos)
 bool FFMPEGVideo::SetVideoWindowPlacement(void *pVideoWindow)
 {
 	m_pVideoWindow = pVideoWindow;
+	m_show_video = true;
 	return true;
 }
 
