@@ -21,6 +21,7 @@
 #include <wx/mdi.h>
 #include <wx/timer.h>
 #include <wx/filename.h>
+#include <wx/cmdline.h>
 #include "DataTypes.h"
 #include "MyResource.h"
 #include "SSOWnd.h"
@@ -188,6 +189,8 @@ public:
 
 	Settings	m_cfg;
 
+	wxCmdLineParser m_parser;
+
 public:
 	void Init();
 
@@ -225,8 +228,23 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-s64 GetVideoTime(string time);
-s64 GetVideoTime(int minute, int sec, int mili_sec);
+class MyMessageBox : public wxDialog
+{
+public:
+	MyMessageBox(wxWindow *parent, const wxString& message, const wxString& caption,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize) : wxDialog(parent, -1, caption, pos, size)
+	{
+		dialogText = new wxTextCtrl(this, -1, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
+	}
+
+	~MyMessageBox()
+	{
+	}
+
+	wxTextCtrl * dialogText;
+};
+
 string ConvertVideoTime(s64 pos);
 string VideoTimeToStr2(s64 pos);
 string VideoTimeToStr3(s64 pos);

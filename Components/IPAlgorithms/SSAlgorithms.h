@@ -58,6 +58,8 @@ void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
 void ImToNativeSize(custom_buffer<int> &ImOrig, custom_buffer<int> &ImRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
-std::string VideoTimeToStr(s64 pos);
+string VideoTimeToStr(s64 pos);
+s64 GetVideoTime(string time);
+s64 GetVideoTime(int minute, int sec, int mili_sec);
 
 wxString GetFileName(wxString FilePath);

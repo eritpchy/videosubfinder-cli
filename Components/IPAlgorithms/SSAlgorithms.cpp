@@ -763,12 +763,12 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	ymin = g_pV->m_ymin;
 	ymax = g_pV->m_ymax;
 
-	/*if (debug)
-	{
-		ymin = g_pV->m_ymin = 380;
+	if (debug)
+	{		
+		/*ymin = g_pV->m_ymin = 380;
 		ymax = g_pV->m_ymax = 449;
-		h = g_pV->m_h = ymax - ymin + 1;
-	}*/
+		h = g_pV->m_h = ymax - ymin + 1;*/
+	}
 
 	size = w * h;
 	BufferSize = size * sizeof(int);
@@ -2159,7 +2159,7 @@ void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin
 	ImToNativeSize(ImTMP, Im, w, h, W, H, xmin, xmax, ymin, ymax);	
 }
 
-std::string VideoTimeToStr(s64 pos)
+string VideoTimeToStr(s64 pos)
 {
 	static char str[100];
 	int hour, min, sec, msec, val;
@@ -2175,6 +2175,22 @@ std::string VideoTimeToStr(s64 pos)
 	sprintf(str, "%d_%02d_%02d_%03d", hour, min, sec, msec);
 
 	return string(str);
+}
+
+s64 GetVideoTime(string time)
+{
+	s64 res;
+	int hour, min, sec, msec;
+	wxASSERT_MSG(sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) == 4, wxString::Format(wxT("Wrong video time format '%s'"), time.c_str()));
+	res = (s64)(((hour * 60 + min) * 60 + sec) * 1000 + msec);
+	return res;
+}
+
+s64 GetVideoTime(int minute, int sec, int mili_sec)
+{
+	s64 res;
+	res = (s64)((minute * 60 + sec) * 1000 + mili_sec);
+	return res;
 }
 
 wxString GetFileName(wxString FilePath)

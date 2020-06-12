@@ -17,7 +17,6 @@
 #pragma once
 
 #include "wx/wx.h"
-#include <wx/cmdline.h>
 #include "DataTypes.h"
 #include "MainFrm.h"
 
@@ -26,8 +25,7 @@ class CVideoSubFinderApp : public wxApp
 public:
 	~CVideoSubFinderApp();
 
-	CMainFrame* m_pMainWnd;
-	wxCmdLineParser m_parser;
+	CMainFrame* m_pMainWnd;	
 
 public:
 	virtual bool OnInit();

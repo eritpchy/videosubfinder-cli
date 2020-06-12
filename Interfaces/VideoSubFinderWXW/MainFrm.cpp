@@ -954,22 +954,6 @@ string VideoTimeToStr3(s64 pos)
 	return string(str);
 }
 
-s64 GetVideoTime(string time)
-{
-	s64 res;
-	int hour, min, sec, msec;
-	wxASSERT_MSG(sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) == 4, wxString::Format(wxT("Wrong video time format '%s'"), time.c_str()));
-	res = (s64)(((hour * 60 + min) * 60 + sec) * 1000 + msec);
-	return res;
-}
-
-s64 GetVideoTime(int minute, int sec, int mili_sec)
-{
-	s64 res;
-	res = (s64)((minute*60+sec)*1000+mili_sec);
-	return res;
-}
-
 string ConvertVideoTime(s64 pos)
 {
 	static char str[100];
@@ -1104,7 +1088,14 @@ void CMainFrame::ClearDir(wxString DirName)
 
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
-	(void)wxMessageBox("This program was written by Simeon Kosnitsky. \nPublished under public domain license.", "VideoSubFinder " VSF_VERSION " Version");
+	wxSize cl_size = this->GetClientSize();
+	wxSize msg_size(600, 600);
+	MyMessageBox msg_dlg(this,
+		"This program was written by Simeon Kosnitsky. \nPublished under public domain license.\n\nSupported command line options:\n" + m_parser.GetUsageString(),
+		"VideoSubFinder " VSF_VERSION " Version",
+		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
+		msg_size);
+	msg_dlg.ShowModal();
 }
 
 void CMainFrame::OnSetPriorityIdle(wxCommandEvent& event)

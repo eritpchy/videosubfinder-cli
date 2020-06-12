@@ -39,9 +39,11 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 
 bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 {
-	m_parser.SetDesc(cmdLineDesc);
-	m_parser.SetCmdLine(argc, argv);
-	m_parser.Parse();
+	m_pMainWnd = new CMainFrame("VideoSubFinder " VSF_VERSION " Version");
+
+	m_pMainWnd->m_parser.SetDesc(cmdLineDesc);
+	m_pMainWnd->m_parser.SetCmdLine(argc, argv);
+	m_pMainWnd->m_parser.Parse();
 
 	return wxApp::Initialize(argc, argv);
 }
@@ -49,16 +51,14 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 bool CVideoSubFinderApp::OnInit() 
 {
 	wxString wxStr;
-	bool blnNeedToExit = false;
-
-	m_pMainWnd = new CMainFrame("VideoSubFinder " VSF_VERSION " Version");
+	bool blnNeedToExit = false;	
 	
 	m_pMainWnd->Init();
 
-	//m_parser.Found("nthr", &g_threads);
+	//m_pMainWnd->m_parser.Found("nthr", &g_threads);
 
-	bool blnI = m_parser.Found("i", &(m_pMainWnd->m_FileName));
-	if (m_parser.Found("o", &wxStr))
+	bool blnI = m_pMainWnd->m_parser.Found("i", &(m_pMainWnd->m_FileName));
+	if (m_pMainWnd->m_parser.Found("o", &wxStr))
 	{
 		wxStr.Replace("\\", "/");
 		g_work_dir = wxStr;		
@@ -71,13 +71,13 @@ bool CVideoSubFinderApp::OnInit()
 	wxFileName::Mkdir(g_work_dir + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("c"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("c"))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CLEAR);
 		m_pMainWnd->m_pPanel->m_pSHPanel->OnBnClickedClear(bn_event);
-	}
+	}	
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("r"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("r"))
 	{
 		if (blnI)
 		{
@@ -88,19 +88,19 @@ bool CVideoSubFinderApp::OnInit()
 				m_pMainWnd->m_BegTime = 0;
 				m_pMainWnd->m_EndTime = m_pMainWnd->m_pVideo->m_Duration;
 
-				if (m_parser.Found("s", &wxStr))
+				if (m_pMainWnd->m_parser.Found("s", &wxStr))
 				{
 					m_pMainWnd->m_BegTime = GetVideoTime(wxStr.ToStdString());
 				}
 
-				if (m_parser.Found("e", &wxStr))
+				if (m_pMainWnd->m_parser.Found("e", &wxStr))
 				{
 					m_pMainWnd->m_EndTime = GetVideoTime(wxStr.ToStdString());
 				}
 
 				double double_val;				
 
-				if (m_parser.Found("be", &double_val))
+				if (m_pMainWnd->m_parser.Found("be", &double_val))
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
@@ -110,7 +110,7 @@ bool CVideoSubFinderApp::OnInit()
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL2->m_pos = 1 - double_val;
 				}
 
-				if (m_parser.Found("te", &double_val))
+				if (m_pMainWnd->m_parser.Found("te", &double_val))
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
@@ -121,7 +121,7 @@ bool CVideoSubFinderApp::OnInit()
 				}
 
 
-				if (m_parser.Found("le", &double_val))
+				if (m_pMainWnd->m_parser.Found("le", &double_val))
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
@@ -131,7 +131,7 @@ bool CVideoSubFinderApp::OnInit()
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL1->m_pos = double_val;
 				}
 
-				if (m_parser.Found("re", &double_val))
+				if (m_pMainWnd->m_parser.Found("re", &double_val))
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
@@ -156,7 +156,7 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("ccti"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("ccti"))
 	{		
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
 		m_pMainWnd->m_blnNoGUI = true;
@@ -165,7 +165,7 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("ces"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("ces"))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CES);
 		m_pMainWnd->m_blnNoGUI = true;
@@ -173,7 +173,7 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("cscti"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("cscti"))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CSCTI);
 		m_pMainWnd->m_blnNoGUI = true;
@@ -181,7 +181,7 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("cstxt"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("cstxt"))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CSTXT);
 		m_pMainWnd->m_blnNoGUI = true;
@@ -189,10 +189,11 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_parser.FoundSwitch("h"))
+	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("h"))
 	{		
-		cout << m_parser.GetUsageString();
-		m_parser.Usage();
+		cout << m_pMainWnd->m_parser.GetUsageString();
+		m_pMainWnd->OnAppAbout(wxCommandEvent());
+		//m_pMainWnd->m_parser.Usage();
 		blnNeedToExit = true;
 	}
 
