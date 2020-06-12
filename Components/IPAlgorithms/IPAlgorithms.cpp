@@ -53,6 +53,7 @@ void MergeWithClusterImage(custom_buffer<int> &ImInOut, custom_buffer<int> &ImCl
 void(*g_pViewRGBImage)(custom_buffer<int> &Im, int w, int h);
 void(*g_pViewImage[2])(custom_buffer<int> &Im, int w, int h);
 int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other = true);
+int ClearImageFromMainSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int white, std::string iter_det);
 int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det);
 int ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int real_im_x_center, int white);
 int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white);
@@ -5391,7 +5392,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 
 			if (val == 1)
 			{
-				if (g_show_results) SaveImageWithSubParams(ImThrRef, "/TestImages/FindTextLines_" + iter_det + "_12_" + std::to_string(i_im) + "_2_ImTHR" + std::to_string(i_im) + "_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+				if (g_show_results) SaveImageWithSubParams(ImThrRef, "/TestImages/FindTextLines_" + iter_det + "_12_" + std::to_string(i_im) + "_2_1_ImTHR" + std::to_string(i_im) + "_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
 			}
 
 			if ((val == 1) && (std::max<int>((LLE[k] - LLB[k] + 1) * g_scale, le - lb + 1) > 1.5*(double)LH))
@@ -5401,13 +5402,27 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 				custom_buffer<int> lw(h, 0);
 				int max_txt_w, max_txt_y, min_y1, max_y1, min_y2, max_y2, new_txt_y = 0, new_txt_w, max_txt2_w, max_txt2_y;
 
+				custom_buffer<int> ImTHRF(ImThrRef);
+				ClearImageFromMainSymbols(ImTHRF, w, h, W*g_scale, H*g_scale, LH, LMAXY, 255, iter_det);
+				if (g_show_results) SaveGreyscaleImage(ImTHRF, "/TestImages/FindTextLines_" + iter_det + "_12_" + std::to_string(i_im) + "_2_2_ImTHR" + std::to_string(i_im) + "FFromMainSymbols" + g_im_save_format, w, h);
+
 				for (y = yb; y <= ye; y++)
 				{
 					for (x = xb; x < xe; x++)
 					{
-						if (ImThrRef[y*w + x] != 0)
+						if ((y >= LMAXY - LH + 1) && (y <= LMAXY))
 						{
-							lw[y]++;
+							if (ImThrRef[y*w + x] != 0)
+							{
+								lw[y]++;
+							}
+						}
+						else
+						{
+							if (ImTHRF[y*w + x] != 0)
+							{
+								lw[y]++;
+							}
 						}
 					}
 				}
@@ -6722,6 +6737,54 @@ int ClearImageByMask(custom_buffer<int> &Im, custom_buffer<int> &ImMASK, int w, 
 	return N;
 }
 
+int ClearImageFromMainSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int white, std::string iter_det)
+{
+	CMyClosedFigure *pFigure;
+	int i, l, ii, N;
+	int val1, val2, ddy1, ddy2;
+	CMyPoint *PA;
+	clock_t t;
+
+	custom_buffer<CMyClosedFigure> pFigures;
+	t = SearchClosedFigures(Im, w, h, 255, pFigures);
+	N = pFigures.size();
+
+	if (N == 0)	return 0;
+
+	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	for (i = 0; i < N; i++)
+	{
+		ppFigures[i] = &(pFigures[i]);
+	}
+
+	i = 0;
+	while (i < N)
+	{
+		pFigure = ppFigures[i];
+
+		int val1 = (pFigure->m_maxY + pFigure->m_minY) - (LMAXY + LMAXY - LH + 1);
+		if (val1 < 0) val1 = -val1;
+		val1 = ((pFigure->m_maxY - pFigure->m_minY + 1) + LH - val1) / 2;
+
+		if ((val1 >= 0.25*(double)LH) // Im intersect with [LMAXY, LMAXY - LH + 1] more then on 25%
+			)
+		{
+			PA = pFigure->m_PointsArray;
+
+			for (l = 0; l < pFigure->m_Square; l++)
+			{
+				ii = PA[l].m_i;
+				Im[ii] = 0;
+			}
+
+			ppFigures[i] = ppFigures[N - 1];
+			N--;
+			continue;
+		}
+		i++;
+	}
+}
+
 int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det)
 {
 	CMyClosedFigure *pFigure;
@@ -7033,7 +7096,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 			(g_remove_wide_symbols && (pFigure->m_w >= LH * 3)) ||
 			(g_remove_wide_symbols && (pFigure->m_w >= h * 2)) ||
 			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (7 * LH) / 5) ||
-			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (2 * LH) / 5) || // final clear: Arabic symbols can have dots below line
+			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (3 * LH) / 5) || // final clear: Arabic symbols can have dots below line
 			((pFigure->m_w < 3) || (pFigure->m_h < 3))
 			)
 		{
