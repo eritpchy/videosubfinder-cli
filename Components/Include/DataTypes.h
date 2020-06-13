@@ -29,8 +29,10 @@ wxString get_add_info();
 
 // NOTE: slow down run
 //#define custom_assert(cond, msg)  if(!(cond)) { wxASSERT_MSG(cond, wxString(msg) + get_add_info()); }
-//#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
-#define custom_assert(cond, msg)
+#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
+//#define DEBUG
+
+//#define custom_assert(cond, msg)
 
 #define cvMAT cv::UMat
 //#define cvMAT cv::Mat

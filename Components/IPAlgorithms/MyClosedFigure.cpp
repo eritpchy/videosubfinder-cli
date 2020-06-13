@@ -707,9 +707,8 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 		}
 	}
 
-	/*int debug = 1;
-
-	if (debug)
+	/*
+#ifdef DEBUG
 	{
 		for (i = 0; i < N; i++)
 		{
@@ -721,7 +720,9 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 				custom_assert(PA[l].m_i >= 0, "PA[l].m_i < 0");
 			}
 		}
-	}*/
+	}
+#endif
+	*/
 
 	delete[] m;
 	delete[] key;
