@@ -203,8 +203,8 @@ void CSettingsPanel::Init()
 #ifdef WIN64
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, m_LBLFont, &g_use_cuda_gpu);
 #else
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (on x64 is supported only)", m_CLSP, m_CLSP, m_LBLFont, &g_use_cuda_gpu);
-	m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
+	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (only on x64 is supported)", m_CLSP, m_CLSP, m_LBLFont, &g_use_cuda_gpu);
+	//m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
 #endif
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, m_LBLFont, &g_use_ocl);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, m_LBLFont, &g_generate_cleared_text_images_on_test);

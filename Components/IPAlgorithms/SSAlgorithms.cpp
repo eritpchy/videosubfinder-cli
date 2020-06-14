@@ -752,7 +752,9 @@ public:
 
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 {
-	cv::ocl::setUseOpenCL(g_use_ocl);
+	//NOTE: FastSearchSubtitles doesn't use cv:: at all
+	// in case of x86 cv::ocl::setUseOpenCL(g_use_ocl) breack ffmpeg cuda usage
+	//cv::ocl::setUseOpenCL(g_use_ocl);
 
 	// Create a scheduler policy that allows up to 1000
 	// simultaneous tasks.

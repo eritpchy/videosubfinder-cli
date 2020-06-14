@@ -200,9 +200,11 @@ void OCVVideo::SetPos(s64 Pos)
 		{
 			Pause();
 		}
-		m_VC.set(cv::CAP_PROP_POS_MSEC, Pos);
-		if (Pos == 0) m_VC >> m_cur_frame;
-		else m_VC.retrieve(m_cur_frame);
+
+		double FN = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
+		m_VC.set(cv::CAP_PROP_POS_FRAMES, ((double)Pos*FN)/(double)m_Duration);			
+		OneStep();
+
 		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 		m_ImageGeted = true;
 		ShowFrame(m_cur_frame);

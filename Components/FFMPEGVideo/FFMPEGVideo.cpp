@@ -210,14 +210,15 @@ int FFMPEGVideo::decode_frame()
 
 	if ((tmp_frame->format == AV_PIX_FMT_NV12) && g_use_cuda_gpu)
 	{
+		ret = 0;
+
+#ifdef WIN64
 		if (!cuda_memory_is_initialized)
 		{
 			init_cuda_memory(m_Width, m_Height, m_origWidth, m_origHeight);
 			cuda_memory_is_initialized = true;
 		}
-
-		ret = 0;
-#ifdef WIN64
+	
 		ret = NV12_to_BGRA(tmp_frame->data[0], tmp_frame->data[1], tmp_frame->linesize[0],
 			dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
 #endif
@@ -286,6 +287,7 @@ void FFMPEGVideo::OneStep()
 					}
 
 					ret = avcodec_send_packet(decoder_ctx, &packet);
+					ret = ret;
 				}
 				
 				if (ret >= 0) 
@@ -516,11 +518,13 @@ bool FFMPEGVideo::CloseMovie()
 
 	m_play_video = false;
 
+#ifdef WIN64
 	if (cuda_memory_is_initialized)
 	{
 		release_cuda_memory();
 		cuda_memory_is_initialized = false;
 	}
+#endif
 
 	return true;
 }
