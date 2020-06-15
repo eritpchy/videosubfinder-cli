@@ -158,7 +158,7 @@ int FFMPEGVideo::hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType 
 	return err;
 }
 
-int FFMPEGVideo::decode_frame()
+int FFMPEGVideo::decode_frame(s64 &frame_pos)
 {
 	AVFrame *tmp_frame = NULL;
 	int size;
@@ -200,13 +200,9 @@ int FFMPEGVideo::decode_frame()
 			NULL,
 			NULL
 		);
-	}		
-
-	m_Pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
-	if (m_Pos <= 0)
-	{
-		m_Pos = m_Pos;
 	}
+
+	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
 
 	if ((tmp_frame->format == AV_PIX_FMT_NV12) && g_use_cuda_gpu)
 	{
@@ -249,7 +245,7 @@ void FFMPEGVideo::OneStep()
 {
 	m_ImageGeted = false;
 
-	DWORD start_time = GetTickCount();
+	//DWORD start_time = GetTickCount();
 
 	if (input_ctx)
 	{		
@@ -292,12 +288,11 @@ void FFMPEGVideo::OneStep()
 				
 				if (ret >= 0) 
 				{
-					ret = decode_frame();
+					ret = decode_frame(curPos);
 				}
 
 				if (ret == 1)
 				{
-					curPos = m_Pos;
 					break;
 				}
 				else
@@ -311,12 +306,17 @@ void FFMPEGVideo::OneStep()
 
 		if (ret == 1)
 		{
+			m_Pos = curPos;
 			m_ImageGeted = true;
 			ShowFrame();
 		}
+		else
+		{
+			m_Pos = m_Duration;
+		}
 	}
 
-	DWORD dt = GetTickCount() - start_time;
+	/*DWORD dt = GetTickCount() - start_time;
 
 	if (dt < min_dt)
 	{
@@ -326,7 +326,7 @@ void FFMPEGVideo::OneStep()
 	if (dt > max_dt)
 	{
 		max_dt = dt;
-	}
+	}*/
 }
 
 /////////////////////////////////////////////////////////////////////////////

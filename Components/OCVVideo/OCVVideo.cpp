@@ -204,10 +204,12 @@ void OCVVideo::SetPos(s64 Pos)
 		double FN = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
 		m_VC.set(cv::CAP_PROP_POS_FRAMES, ((double)Pos*FN)/(double)m_Duration);			
 		OneStep();
-
+		
+		/* // NOTE: OneStep() will already do it
+		m_Pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
 		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 		m_ImageGeted = true;
-		ShowFrame(m_cur_frame);
+		ShowFrame(m_cur_frame);*/
 	}
 }
 
@@ -253,15 +255,20 @@ void OCVVideo::OneStep()
 			{
 				num_tries = 0;
 			}
-		} while ((m_cur_frame.empty()) && ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded) || (num_tries < 100)));
+		} while ((m_cur_frame.empty()) && ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded) || (num_tries < 100)));				
+
+		m_Pos = curPos;
 
 		if (!m_cur_frame.empty())
 		{
 			if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 			m_ImageGeted = true;
+			ShowFrame(m_cur_frame);
 		}
-			
-		ShowFrame(m_cur_frame);
+		else
+		{
+			m_Pos = m_Duration;
+		}
 	}
 }
 
@@ -288,14 +295,7 @@ s64 OCVVideo::GetPos()
 	
 	if (m_VC.isOpened())
 	{
-		pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
-
-		if ((m_cur_frame.empty()) && (pos < m_Duration))
-		{
-			pos = m_Duration;
-		}
-
-		if (pos < 0) pos = 0;
+		pos = m_Pos;
 	}
 
     return pos;
@@ -438,6 +438,8 @@ void *ThreadRunVideo::Entry()
 		{
 			break;
 		}
+		m_pVideo->m_Pos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
+
 		if ((m_pVideo->m_Width != m_pVideo->m_origWidth) || (m_pVideo->m_Height != m_pVideo->m_origHeight)) cv::resize(m_pVideo->m_cur_frame, m_pVideo->m_cur_frame, cv::Size(m_pVideo->m_Width, m_pVideo->m_Height), 0, 0, cv::INTER_LINEAR);
 		m_pVideo->ShowFrame(m_pVideo->m_cur_frame);
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);

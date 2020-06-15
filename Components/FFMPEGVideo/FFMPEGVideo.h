@@ -95,8 +95,8 @@ public:
 	int dst_bufsize;
 	custom_buffer<int> tmp_buffer;
 
-	DWORD min_dt = 1000;
-	DWORD max_dt = 0;
+	//DWORD min_dt = 1000;
+	//DWORD max_dt = 0;
 
 public:
 	void ShowFrame(void *dc = NULL);
@@ -134,5 +134,5 @@ public:
 	void ErrorMessage(string str);
 
 	int hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType type);
-	int decode_frame();
+	int decode_frame(s64& frame_pos);
 };
