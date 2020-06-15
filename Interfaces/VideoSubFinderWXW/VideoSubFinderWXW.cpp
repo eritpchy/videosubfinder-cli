@@ -25,6 +25,9 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_SWITCH, "cscti", "create_sub_from_cleared_txt_images", "Create Sub From Cleared TXT Images" },
 	{ wxCMD_LINE_SWITCH, "cstxt", "create_sub_from_txt_results", "Create Sub From TXT Results" },
 	{ wxCMD_LINE_OPTION, "i", "input_video", "input video file" },
+	{ wxCMD_LINE_OPTION, "ovocv", "open_video_opencv", "open video by OpenCV (default)" },
+	{ wxCMD_LINE_OPTION, "ovffmpeg", "open_video_ffmpeg", "open video by FFMPEG with GPU Acceleration" },
+	{ wxCMD_LINE_OPTION, "uc", "use_cuda", "use cuda" },
 	{ wxCMD_LINE_OPTION, "s", "start_time", "start time, default = 0:00:00:000 (in format hour:min:sec:milisec)" },
 	{ wxCMD_LINE_OPTION, "e", "end_time", "end time, default = video length" },
 	{ wxCMD_LINE_OPTION, "be", "bottom_video_image_percent_end", "bottom video image percent end, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
@@ -61,6 +64,28 @@ bool CVideoSubFinderApp::OnInit()
 		g_threads = threads;
 	}
 
+	if (m_pMainWnd->m_parser.Found("ovocv"))
+	{
+		m_pMainWnd->m_type = 0;
+	}
+	else if (m_pMainWnd->m_parser.Found("ovffmpeg"))
+	{
+		m_pMainWnd->m_type = 1;
+	}
+
+	if (m_pMainWnd->m_parser.Found("uc"))
+	{
+		if (g_use_cuda_gpu == false)
+		{
+			g_use_cuda_gpu = true;
+
+			if (!InitCUDADevice())
+			{
+				g_use_cuda_gpu = false;
+			}
+		}
+	}
+
 	bool blnI = m_pMainWnd->m_parser.Found("i", &(m_pMainWnd->m_FileName));
 	if (m_pMainWnd->m_parser.Found("o", &wxStr))
 	{
@@ -86,7 +111,10 @@ bool CVideoSubFinderApp::OnInit()
 		if (blnI)
 		{
 			m_pMainWnd->m_blnNoGUI = true;
-			m_pMainWnd->m_pVideo = GetOCVVideoObject();
+
+			if (m_pMainWnd->m_type == 0) m_pMainWnd->m_pVideo = GetOCVVideoObject();
+			else if (m_pMainWnd->m_type == 1) m_pMainWnd->m_pVideo = GetFFMPEGVideoObject();
+
 			if (m_pMainWnd->m_pVideo->OpenMovie(m_pMainWnd->m_FileName, NULL, 0))
 			{
 				m_pMainWnd->m_BegTime = 0;
