@@ -277,7 +277,9 @@ class RunSearch
 	s64 m_prevPos;
 	custom_buffer<s64> m_Pos;
 	custom_buffer<s64*> m_pPos;
-	custom_buffer<custom_buffer<int>> m_ImRGB;
+	custom_buffer<custom_buffer<u8>> m_FrameData;
+	custom_buffer<custom_buffer<u8>*> m_pFrameData;
+	custom_buffer<custom_buffer<int>> m_ImRGB;	
 	custom_buffer<custom_buffer<int>*> m_pImRGB;
 	custom_buffer<custom_buffer<int>> m_ImNE;
 	custom_buffer<custom_buffer<int>*> m_pImNE;
@@ -291,13 +293,18 @@ class RunSearch
 	custom_buffer<custom_buffer<int>> m_ImYInt;
 	custom_buffer<custom_buffer<int>*> m_pImYInt;
 
+	vector<concurrency::task<void>> m_thrs_one_step;
 	vector<concurrency::task<void>> m_thrs_rgb;
 	vector<concurrency::task<void>> m_thrs;
 	vector<concurrency::task<void>> m_thrs_int;
 
-	vector<concurrency::event> m_events_rgb;
+	vector<concurrency::event> m_events_one_step; // events for one step done
+	custom_buffer<concurrency::event*> m_p_events_one_step;
+
+	vector<concurrency::event> m_events_rgb;// events for get rgb image done
 	custom_buffer<concurrency::event*> m_p_events_rgb;
-	vector<concurrency::event> m_events;
+
+	vector<concurrency::event> m_events; // events for convert image done
 	custom_buffer<concurrency::event*> m_p_events;
 
 	custom_buffer<int> m_thrs_res;
@@ -329,6 +336,8 @@ public:
 		m_N = std::max<int>(g_DL + threads, (g_DL / 2) * threads);
 		m_Pos = custom_buffer<s64>(m_N, -1);
 		m_pPos = custom_buffer<s64*>(m_N, NULL);
+		m_FrameData = custom_buffer<custom_buffer<u8>>(m_N, custom_buffer<u8>(pV->GetFrameDataSize(), 0));
+		m_pFrameData = custom_buffer<custom_buffer<u8>*>(m_N);
 		m_ImRGB = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
 		m_pImRGB = custom_buffer<custom_buffer<int>*>(m_N);
 		m_ImNE = custom_buffer<custom_buffer<int>>(m_N, custom_buffer<int>(m_size, 0));
@@ -346,6 +355,9 @@ public:
 		m_thrs_res = custom_buffer<int>(m_N, -1);
 		m_pthrs_res = custom_buffer<int*>(m_N);
 
+		m_events_one_step = vector<concurrency::event>(m_N);
+		m_p_events_one_step = custom_buffer<concurrency::event*>(m_N);
+
 		m_events_rgb = vector<concurrency::event>(m_N);
 		m_p_events_rgb = custom_buffer<concurrency::event*>(m_N);
 
@@ -355,11 +367,13 @@ public:
 		for (int i = 0; i < m_N; i++)
 		{
 			m_pPos[i] = &(m_Pos[i]);
+			m_pFrameData[i] = &(m_FrameData[i]);
 			m_pImRGB[i] = &(m_ImRGB[i]);
 			m_pImNE[i] = &(m_ImNE[i]);
 			m_pImY[i] = &(m_ImY[i]);
 			m_pIm[i] = &(m_Im[i]);
 			m_pthrs_res[i] = &(m_thrs_res[i]);
+			m_p_events_one_step[i] = &(m_events_one_step[i]);
 			m_p_events_rgb[i] = &(m_events_rgb[i]);
 			m_p_events[i] = &(m_events[i]);
 		}
@@ -374,13 +388,15 @@ public:
 			m_pthrs_int_res[i] = &(m_thrs_int_res[i]);
 		}
 
+		m_thrs_one_step = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
 		m_thrs_rgb = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
 		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
 		m_thrs_int = vector<concurrency::task<void>>(m_threads, concurrency::create_task([] {}));
 	}
 
 	~RunSearch()
-	{
+	{		
+		concurrency::when_all(begin(m_thrs_one_step), end(m_thrs_one_step)).wait();
 		concurrency::when_all(begin(m_thrs_rgb), end(m_thrs_rgb)).wait();
 		concurrency::when_all(begin(m_thrs), end(m_thrs)).wait();
 		concurrency::when_all(begin(m_thrs_int), end(m_thrs_int)).wait();
@@ -393,10 +409,12 @@ public:
 		custom_assert((fdn >= 0) && (fdn < m_N), "AddGetRGBImagesTask: (fdn >= 0) && (fdn < m_N)");
 		custom_assert((fdn + num - 1 < m_N), "AddGetRGBImagesTask: (fdn + num - 1 < m_N)");
 		custom_assert((num >= 1), "AddGetRGBImagesTask: (num >= 1)");
-
+		
+		custom_buffer<custom_buffer<u8>*> pFrameData(m_pFrameData);
 		custom_buffer<custom_buffer<int>*> pImRGB(m_pImRGB);
 		custom_buffer<s64*> pPos(m_pPos);
 		custom_buffer<bool> need_to_get(m_N, false);
+		custom_buffer<concurrency::event*> p_events_one_step(m_p_events_one_step);
 		custom_buffer<concurrency::event*> p_events_rgb(m_p_events_rgb);
 		CVideo *pV = m_pV;
 		int xmin = m_xmin;
@@ -427,7 +445,7 @@ public:
 				}
 			}
 
-			m_thrs_rgb[j] = concurrency::create_task([fn, fdn, num, pPos, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_rgb, need_to_get]() mutable
+			m_thrs_one_step[j] = concurrency::create_task([fn, fdn, num, pPos, pFrameData, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
 			{
 				for (int i = 0; i < num; i++)
 				{
@@ -435,15 +453,37 @@ public:
 					{
 						if ((fdn + i) > 0)
 						{
-							p_events_rgb[fdn + i - 1]->wait();
+							p_events_one_step[fdn + i - 1]->wait();
 						}
 
-						*(pPos[fdn + i]) = pV->OneStepWithTimeout();
-						pV->GetRGBImage(*(pImRGB[fdn + i]), xmin, xmax, ymin, ymax);
-						p_events_rgb[fdn + i]->set();
+						*(pPos[fdn + i]) = pV->OneStepWithTimeout();						
+
+						pV->GetFrameData(*(pFrameData[fdn + i]));
+
+						p_events_one_step[fdn + i]->set();
 					}
 				}
-			});			
+			});
+
+			m_thrs_rgb[j] = concurrency::create_task([fn, fdn, num, pPos, pFrameData, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
+				{
+					for (int i = 0; i < num; i++)
+					{
+						if (need_to_get[fdn + i])
+						{
+							if ((fdn + i) > 0)
+							{
+								p_events_rgb[fdn + i - 1]->wait();
+							}
+
+							p_events_one_step[fdn + i]->wait();
+
+							pV->ConvertToRGB(&((*(pFrameData[fdn + i]))[0]), *(pImRGB[fdn + i]), xmin, xmax, ymin, ymax);
+
+							p_events_rgb[fdn + i]->set();
+						}
+					}
+				});
 		}
 
 		return (fn + num - 1);
@@ -679,6 +719,7 @@ public:
 			custom_buffer<custom_buffer<int>*> pIm(m_pIm);
 			custom_buffer<s64*> pPos(m_pPos);
 			custom_buffer<int*> pthrs_res(m_pthrs_res);
+			custom_buffer<concurrency::event*> p_events_one_step(m_p_events_one_step);
 			custom_buffer<concurrency::event*> p_events_rgb(m_p_events_rgb);
 			custom_buffer<concurrency::event*> p_events(m_p_events);
 			int i, j;
@@ -694,8 +735,10 @@ public:
 				m_pPos[i] = pPos[i + fdn];
 				m_thrs[i] = m_thrs[i + fdn];
 				m_pthrs_res[i] = pthrs_res[i + fdn];
+				m_p_events_one_step[i] = p_events_one_step[i + fdn];
 				m_p_events_rgb[i] = p_events_rgb[i + fdn];
 				m_p_events[i] = p_events[i + fdn];
+				m_thrs_one_step[i] = m_thrs_one_step[i + fdn];				
 				m_thrs_rgb[i] = m_thrs_rgb[i + fdn];
 			}			
 
@@ -707,8 +750,13 @@ public:
 				m_pIm[i] = pIm[j];
 				m_pthrs_res[i] = pthrs_res[j];
 				m_pPos[i] = pPos[j];
+
+				m_p_events_one_step[i] = p_events_one_step[j];
+				(m_p_events_one_step[i])->reset();
+
 				m_p_events_rgb[i] = p_events_rgb[j];
 				(m_p_events_rgb[i])->reset();
+
 				m_p_events[i] = p_events[j];
 				(m_p_events[i])->reset();
 				*(m_pPos[i]) = -1;
@@ -777,7 +825,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	int found_sub;
 
-	int bln, finded_prev;
+	int bln = 0, bln1 = 0, bln2 = 0, finded_prev;
 
 	//g_disable_save_images = true;
 
@@ -868,6 +916,15 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	char msg[500];
 	sprintf(msg, "dt: %d CurPos: %d", (int)dt, (int)CurPos);
 	wxMessageBox(msg);*/
+	
+	
+	/*fn = 0;
+	while (CurPos < End)
+	{
+		CurPos = pV->OneStepWithTimeout();
+		pV->GetRGBImage(ImInt, xmin, xmax, ymin, ymax);		
+	}
+	return 0;*/
 
 	fn_start = fn = 0;
 	max_rgb_fn = rs.AddGetRGBImagesTask(fn, rs.m_N); // getting all
@@ -888,11 +945,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 			bln = 0;
 
-			int bln1 = rs.GetConvertImageCopy(fn_start + ddl1_ofset);
-			int bln2 = rs.GetConvertImageCopy(fn_start + ddl2_ofset);
+			bln1 = rs.GetConvertImageCopy(fn_start + ddl1_ofset);
+			bln2 = rs.GetConvertImageCopy(fn_start + ddl2_ofset);
 
 			prevPos = CurPos;
-			CurPos = rs.GetPos(fn_start + ddl2_ofset);
+			CurPos = rs.GetPos(fn_start + ddl2_ofset);			
 
 #ifdef DEBUG
 			if (CurPos >= 98000)
@@ -973,21 +1030,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				{
 					rs.AddIntersectImagesTask(fn + i);
 				}
-
-				//while (1)
-				//{
-				//	rs.AddGetRGBImagesTask(fn + DL + threads - 1, 1);
-				//	rs.AddConvertImageTask(fn + DL + threads - 1);
-				//	
-				//	bln = 1;
-				//	for (int i = 0; i < DL; i++)
-				//	{
-				//		bln = bln && rs.GetConvertImage(fn + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
-				//	}
-
-				//	fn++;
-				//	rs.ShiftStartFrameNumberTo(fn);
-				//}
 			}
 			else
 			{

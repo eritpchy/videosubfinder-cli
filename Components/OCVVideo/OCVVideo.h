@@ -62,7 +62,7 @@ public:
 	double m_fps;
 	cv::Mat m_cur_frame;
 	long		m_origWidth;
-	long		m_origHeight;
+	long		m_origHeight;	
 
 	ThreadRunVideo *m_pThreadRunVideo;
 
@@ -95,7 +95,12 @@ public:
     void OneStep();
 	s64  OneStepWithTimeout();
 	s64  GetPos();
-	void GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax);
+
+	void GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+
+	int GetFrameDataSize();
+	void GetFrameData(custom_buffer<u8>& FrameData);
 
 	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 

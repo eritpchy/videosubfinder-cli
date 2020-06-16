@@ -110,7 +110,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		m_origHeight = m_VC.get(cv::CAP_PROP_FRAME_HEIGHT);
 
 		m_Width = m_origWidth;
-		m_Height = m_origHeight;
+		m_Height = m_origHeight;		
 
 		if (m_origWidth > 1280)
 		{
@@ -122,8 +122,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		m_pVideoWindow = pVideoWindow;
 		m_pVideoWindow ? m_show_video = true : m_show_video = false;
 
-		m_VC >> m_cur_frame;
-		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
+		m_VC >> m_cur_frame;		
 
 		m_frameNumbers = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
 
@@ -141,8 +140,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 			m_frameNumbers = cur_pos;
 			m_VC.set(cv::CAP_PROP_POS_FRAMES, 0);
-			m_VC >> m_cur_frame;
-			if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
+			m_VC >> m_cur_frame;			
 		}
 
 		m_fps = m_VC.get(cv::CAP_PROP_FPS);
@@ -204,12 +202,6 @@ void OCVVideo::SetPos(s64 Pos)
 		double FN = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
 		m_VC.set(cv::CAP_PROP_POS_FRAMES, ((double)Pos*FN)/(double)m_Duration);			
 		OneStep();
-		
-		/* // NOTE: OneStep() will already do it
-		m_Pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
-		if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
-		m_ImageGeted = true;
-		ShowFrame(m_cur_frame);*/
 	}
 }
 
@@ -260,10 +252,13 @@ void OCVVideo::OneStep()
 		m_Pos = curPos;
 
 		if (!m_cur_frame.empty())
-		{
-			if ((m_Width != m_origWidth) || (m_Height != m_origHeight)) cv::resize(m_cur_frame, m_cur_frame, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
+		{	
 			m_ImageGeted = true;
-			ShowFrame(m_cur_frame);
+
+			if (m_show_video)
+			{				
+				ShowFrame(m_cur_frame);
+			}			
 		}
 		else
 		{
@@ -303,37 +298,66 @@ s64 OCVVideo::GetPos()
 
 /////////////////////////////////////////////////////////////////////////////
 // ImRGB in format b:g:r:0
-void OCVVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax)
+// converting BGR to BGRA
+void OCVVideo::ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
-	if (m_VC.isOpened() && (!m_cur_frame.empty()))
+	int w, h, x, y, i, j, di;
+	u8* data = frame_data;
+	cv::Mat Im;
+
+	if ((m_Width != m_origWidth) || (m_Height != m_origHeight))
 	{
-		int w, h, x, y, i, j, di;
-		u8 *color, *img_data = m_cur_frame.data;
+		Im = cv::Mat(m_origHeight, m_origWidth, CV_8UC3);
+		memcpy(Im.data, frame_data, m_origWidth * m_origHeight * 3);
+		cv::resize(Im, Im, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
+		data = Im.data;
+	}
 
-		w = xmax - xmin + 1;
-		h = ymax - ymin + 1;
+	w = xmax - xmin + 1;
+	h = ymax - ymin + 1;
 
-		di = m_Width - w;
+	di = m_Width - w;
 
-		i = ymin*m_Width + xmin;
-		j = 0;
+	i = ymin * m_Width + xmin;
+	j = 0;
 
-		for (y = 0; y < h; y++)
+	for (y = 0; y < h; y++)
+	{
+		for (x = 0; x < w; x++)
 		{
-			for (x = 0; x < w; x++)
-			{
-				color = (u8*)(ImRGB.m_pData+j);
-
-				color[3] = 0;
-				color[2] = img_data[i * 3 + 2]; //r
-				color[1] = img_data[i * 3 + 1]; //g
-				color[0] = img_data[i * 3]; //b
-
-				i++;
-				j++;
-			}
-			i += di;
+			memcpy(&ImRGB[j], data + i * 3, 3);
+			i++;
+			j++;
 		}
+		i += di;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// ImRGB in format b:g:r:0
+void OCVVideo::GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+{
+	if (!m_cur_frame.empty())
+	{		
+		ConvertToRGB(m_cur_frame.data, ImRGB, xmin, xmax, ymin, ymax);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+int OCVVideo::GetFrameDataSize()
+{
+	return (m_origWidth * m_origHeight * 3);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)
+{
+	if (!m_cur_frame.empty())
+	{
+		custom_assert(FrameData.size() >= m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() >= m_origWidth * m_origHeight * 3");
+		memcpy(&FrameData[0], m_cur_frame.data, m_origWidth * m_origHeight * 3);
 	}
 }
 
@@ -439,8 +463,7 @@ void *ThreadRunVideo::Entry()
 			break;
 		}
 		m_pVideo->m_Pos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
-
-		if ((m_pVideo->m_Width != m_pVideo->m_origWidth) || (m_pVideo->m_Height != m_pVideo->m_origHeight)) cv::resize(m_pVideo->m_cur_frame, m_pVideo->m_cur_frame, cv::Size(m_pVideo->m_Width, m_pVideo->m_Height), 0, 0, cv::INTER_LINEAR);
+		
 		m_pVideo->ShowFrame(m_pVideo->m_cur_frame);
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);
 		if (dt > 0) wxMilliSleep(dt);

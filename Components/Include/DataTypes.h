@@ -226,31 +226,21 @@ public:
 };
 
 template<>
-custom_buffer<int>::custom_buffer(int size, int val)
-{
-	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
-	m_pData = new int[size];
-	m_size = size;
-	m_need_to_release = true;
-
-	if (val == 0)
-	{
-		memset(m_pData, 0, m_size * sizeof(int));
-	}
-	else
-	{
-		for (int i = 0; i < m_size; i++)
-		{
-			m_pData[i] = val;
-		}
-	}
-}
-
-template<>
 custom_buffer<char>::custom_buffer(int size, char val)
 {
 	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
 	m_pData = new char[size];
+	m_size = size;
+	m_need_to_release = true;
+
+	memset(m_pData, val, m_size);
+}
+
+template<>
+custom_buffer<u8>::custom_buffer(int size, u8 val)
+{
+	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
+	m_pData = new u8[size];
 	m_size = size;
 	m_need_to_release = true;
 
@@ -268,6 +258,27 @@ custom_buffer<s64>::custom_buffer(int size, s64 val)
 	if (val == 0)
 	{
 		memset(m_pData, 0, m_size * sizeof(s64));
+	}
+	else
+	{
+		for (int i = 0; i < m_size; i++)
+		{
+			m_pData[i] = val;
+		}
+	}
+}
+
+template<>
+custom_buffer<int>::custom_buffer(int size, int val)
+{
+	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
+	m_pData = new int[size];
+	m_size = size;
+	m_need_to_release = true;
+
+	if (val == 0)
+	{
+		memset(m_pData, 0, m_size * sizeof(int));
 	}
 	else
 	{

@@ -88,6 +88,8 @@ void FFMPEGVideo::ShowFrame(void *dc)
 {
 	if (m_show_video)
 	{
+		convert_to_dst_format(m_frame_buffer.m_pData);
+
 		int wnd_w, wnd_h, img_w = m_Width, img_h = m_Height, num_pixels = img_w*img_h;
 		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
 
@@ -160,7 +162,7 @@ int FFMPEGVideo::hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType 
 
 int FFMPEGVideo::decode_frame(s64 &frame_pos)
 {
-	AVFrame *tmp_frame = NULL;
+	AVFrame* cur_frame = NULL;
 	int size;
 	int ret = 0;	
 
@@ -175,6 +177,8 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		return ret;
 	}
 
+	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
+
 	if (frame->format == hw_pix_fmt) {
 		/* retrieve data from GPU to CPU */			
 		if ((ret = av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
@@ -182,59 +186,28 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 			av_frame_unref(frame);
 			return ret;
 		}
-		tmp_frame = sw_frame;
+		cur_frame = sw_frame;		
+		av_frame_unref(frame);
 	}
 	else
-		tmp_frame = frame;
-
-	if (sws_ctx == NULL) {
-		sws_ctx = sws_getContext(
-			tmp_frame->width,
-			tmp_frame->height,
-			(AVPixelFormat)tmp_frame->format,
-			m_Width,
-			m_Height,
-			dest_fmt,
-			SWS_BILINEAR,
-			NULL,
-			NULL,
-			NULL
-		);
-	}
-
-	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
-
-	if ((tmp_frame->format == AV_PIX_FMT_NV12) && g_use_cuda_gpu)
-	{
-		ret = 0;
-
-#ifdef WIN64
-		if (!cuda_memory_is_initialized)
-		{
-			init_cuda_memory(m_Width, m_Height, m_origWidth, m_origHeight);
-			cuda_memory_is_initialized = true;
-		}
+		cur_frame = frame;	
 	
-		ret = NV12_to_BGRA(tmp_frame->data[0], tmp_frame->data[1], tmp_frame->linesize[0],
-			dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
-#endif
-		if (ret == 0)
-		{
-			wxMessageBox("ERROR: CUDA NV12_to_BGRA failed", "FFMPEGVideo::decode_frame");
-		}		
+	if (m_frame_buffer_size == -1)
+	{	
+		src_fmt = (AVPixelFormat)cur_frame->format;
+		m_frame_buffer_size = av_image_get_buffer_size(src_fmt, cur_frame->width, cur_frame->height, 1);
+		m_frame_buffer.set_size(m_frame_buffer_size);
 	}
-	else
-	{
-		/* convert to destination format */
-		ret = sws_scale(sws_ctx, tmp_frame->data, tmp_frame->linesize, 0, tmp_frame->height, dst_data, dst_linesize);		
-	}
+	
+	assert(m_origWidth == cur_frame->width, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origWidth == cur_frame->width");
+	assert(m_origHeight == cur_frame->height, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origHeight == cur_frame->height");
+	assert(src_fmt == (AVPixelFormat)cur_frame->format, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: src_fmt == (AVPixelFormat)cur_frame->format");
+
+	av_image_copy_to_buffer(&m_frame_buffer[0], m_frame_buffer_size, cur_frame->data, cur_frame->linesize, src_fmt, cur_frame->width, cur_frame->height, 1);
+	
 	ret = 1;
 	
-	if (frame->format == hw_pix_fmt)
-	{
-		av_frame_unref(sw_frame);
-	}
-	av_frame_unref(frame);
+	av_frame_unref(cur_frame);
 	
 	return ret;
 }
@@ -244,8 +217,6 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 void FFMPEGVideo::OneStep()
 {
 	m_ImageGeted = false;
-
-	//DWORD start_time = GetTickCount();
 
 	if (input_ctx)
 	{		
@@ -308,25 +279,17 @@ void FFMPEGVideo::OneStep()
 		{
 			m_Pos = curPos;
 			m_ImageGeted = true;
-			ShowFrame();
+
+			if (m_show_video)
+			{
+				ShowFrame();
+			}
 		}
 		else
 		{
 			m_Pos = m_Duration;
 		}
 	}
-
-	/*DWORD dt = GetTickCount() - start_time;
-
-	if (dt < min_dt)
-	{
-		min_dt = dt;
-	}
-
-	if (dt > max_dt)
-	{
-		max_dt = dt;
-	}*/
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -343,6 +306,8 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	int ret;
 	enum AVHWDeviceType type;
 	int i;
+
+	m_frame_buffer_size = -1;
 
 	if (input_ctx) {
 		CloseMovie();
@@ -474,8 +439,6 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	m_Pos = -2;
 
-	tmp_buffer.set_size(m_origWidth*m_origHeight);
-
 	OneStep();
 
 	if (m_ImageGeted) {
@@ -483,6 +446,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	}
 	else {
 		CloseMovie();
+		return false;
 	}
 
 	m_fps = video->avg_frame_rate.num / (double)video->avg_frame_rate.den;
@@ -630,36 +594,116 @@ s64 FFMPEGVideo::GetPos()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// ImRGB in format b:g:r:0
-void FFMPEGVideo::GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax)
+
+inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data)
 {
-	if (input_ctx)
+	int ret;
+
+	// Doesn't need memory free according av_image_fill_arrays and av_image_fill_pointers implementation
+	// it use pointers from src pointer (in our case from frame_data)
+	// https://ffmpeg.org/doxygen/trunk/imgutils_8c_source.html
+	ret = av_image_fill_arrays(src_data, src_linesize, frame_data, src_fmt, m_origWidth, m_origHeight, 1);
+
+	if (ret >= 0)
 	{
-		int w, h, x, y, i, j, di;
-		u8 *color;
-
-		w = xmax - xmin + 1;
-		h = ymax - ymin + 1;
-
-		di = m_Width - w;
-
-		i = ymin*m_Width + xmin;
-		j = 0;
-
-		if (w == m_Width)
+		if ((src_fmt == AV_PIX_FMT_NV12) && g_use_cuda_gpu)
 		{
-			memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * h * 4);
+			ret = 0;
+
+#ifdef WIN64
+			if (!cuda_memory_is_initialized)
+			{
+				init_cuda_memory(m_Width, m_Height, m_origWidth, m_origHeight);
+				cuda_memory_is_initialized = true;
+			}
+
+			ret = NV12_to_BGRA(src_data[0], src_data[1], src_linesize[0],
+				dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
+#endif
+			if (ret == 0)
+			{
+				wxMessageBox("ERROR: CUDA NV12_to_BGRA failed", "FFMPEGVideo::decode_frame");
+			}
 		}
 		else
 		{
-			for (y = 0; y < h; y++)
-			{
-				memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * 4);
-				j += w;
-				i += m_Width;
+			// convert to destination format
+
+			if (sws_ctx == NULL) {
+				sws_ctx = sws_getContext(
+					m_origWidth,
+					m_origHeight,
+					src_fmt,
+					m_Width,
+					m_Height,
+					dest_fmt,
+					SWS_BILINEAR,
+					NULL,
+					NULL,
+					NULL
+				);
 			}
+
+			ret = sws_scale(sws_ctx, src_data, src_linesize, 0, m_origHeight, dst_data, dst_linesize);
 		}
 	}
+
+	return ret;
+}
+
+void FFMPEGVideo::ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+{
+	int ret = convert_to_dst_format(frame_data);
+
+	int w, h, x, y, i, j, di;
+	u8* color;
+
+	w = xmax - xmin + 1;
+	h = ymax - ymin + 1;
+
+	di = m_Width - w;
+
+	i = ymin * m_Width + xmin;
+	j = 0;
+
+	if (w == m_Width)
+	{
+		memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * h * 4);
+	}
+	else
+	{
+		for (y = 0; y < h; y++)
+		{
+			memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * 4);
+			j += w;
+			i += m_Width;
+		}
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// ImRGB in format b:g:r:0
+void FFMPEGVideo::GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+{
+	if (input_ctx)
+	{
+		ConvertToRGB(m_frame_buffer.m_pData, ImRGB, xmin, xmax, ymin, ymax);
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+int FFMPEGVideo::GetFrameDataSize()
+{
+	return m_frame_buffer_size;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)
+{
+	custom_assert(FrameData.size() >= m_frame_buffer_size, "void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() >= m_frame_buffer_size");
+	memcpy(&FrameData[0], &m_frame_buffer[0], m_frame_buffer_size);
 }
 
 /////////////////////////////////////////////////////////////////////////////

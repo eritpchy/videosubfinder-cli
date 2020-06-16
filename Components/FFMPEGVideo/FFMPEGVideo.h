@@ -68,7 +68,6 @@ public:
 	bool	m_play_video;
 	double		m_frameNumbers;
 	double		m_fps;
-	cv::Mat		m_cur_frame;
 	long		m_origWidth;
 	long		m_origHeight;
 
@@ -84,16 +83,22 @@ public:
 	AVFrame *sw_frame = NULL;
 	int video_stream;
 
+	int m_frame_buffer_size = -1;
+	custom_buffer<u8> m_frame_buffer;
+
 	AVPacket packet;
 
 	bool need_to_read_packet = true;
 	bool cuda_memory_is_initialized = false;
 
+	AVPixelFormat src_fmt;
+	uint8_t* src_data[4] = { NULL };
+	int src_linesize[4];
+
 	AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
 	uint8_t *dst_data[4] = { NULL };
 	int dst_linesize[4];
-	int dst_bufsize;
-	custom_buffer<int> tmp_buffer;
+	int dst_bufsize;	
 
 	//DWORD min_dt = 1000;
 	//DWORD max_dt = 0;
@@ -128,6 +133,11 @@ public:
 	s64  OneStepWithTimeout();
 	s64  GetPos();
 	void GetRGBImage(custom_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	inline int convert_to_dst_format(u8* frame_data);
+
+	int GetFrameDataSize();
+	void GetFrameData(custom_buffer<u8>& FrameData);
 
 	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 
