@@ -215,18 +215,20 @@ float** cuda_kmeans(float **objects,      /* in: [numObjs][numCoords] */
                    int    loop_iterations)
 {
     int      i, j, index, loop=0;
-    int     *newClusterSize; /* [numClusters]: no. objects assigned in each
+    int     *newClusterSize = NULL; /* [numClusters]: no. objects assigned in each
                                 new cluster */
     float    delta;          /* % of objects change their clusters */
-    float  **dimObjects;
-    float  **clusters;       /* out: [numClusters][numCoords] */
-    float  **dimClusters;
-    float  **newClusters;    /* [numCoords][numClusters] */
+    float  **dimObjects = NULL;
+    float  **clusters = NULL;       /* out: [numClusters][numCoords] */
+    float  **dimClusters = NULL;
+    float  **newClusters = NULL;    /* [numCoords][numClusters] */
 
-    float *deviceObjects;
-    float *deviceClusters;
-    int *deviceMembership;
-    int *deviceIntermediates;
+    float *deviceObjects = NULL;
+    float *deviceClusters = NULL;
+    int *deviceMembership = NULL;
+    int *deviceIntermediates = NULL;
+
+    cudaError_t cudaStatus = cudaSuccess;
 
     //  Copy objects given in [numObjs][numCoords] layout to new
     //  [numCoords][numObjs] layout
@@ -285,63 +287,72 @@ float** cuda_kmeans(float **objects,      /* in: [numObjs][numCoords] */
     const unsigned int numReductionThreads =
         nextPowerOfTwo(numClusterBlocks);
     const unsigned int reductionBlockSharedDataSize =
-        numReductionThreads * sizeof(unsigned int);
+        numReductionThreads * sizeof(unsigned int);    
 
-    checkCuda(cudaMalloc(&deviceObjects, numObjs*numCoords*sizeof(float)));
-    checkCuda(cudaMalloc(&deviceClusters, numClusters*numCoords*sizeof(float)));
-    checkCuda(cudaMalloc(&deviceMembership, numObjs*sizeof(int)));
-    checkCuda(cudaMalloc(&deviceIntermediates, numReductionThreads*sizeof(unsigned int)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceObjects, numObjs*numCoords*sizeof(float)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceClusters, numClusters*numCoords*sizeof(float)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceMembership, numObjs*sizeof(int)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceIntermediates, numReductionThreads*sizeof(unsigned int)));
 
-    checkCuda(cudaMemcpy(deviceObjects, dimObjects[0],
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMemcpy(deviceObjects, dimObjects[0],
               numObjs*numCoords*sizeof(float), cudaMemcpyHostToDevice));
-    checkCuda(cudaMemcpy(deviceMembership, membership,
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMemcpy(deviceMembership, membership,
               numObjs*sizeof(int), cudaMemcpyHostToDevice));
 
-	while (loop < loop_iterations)
-	{
-        checkCuda(cudaMemcpy(deviceClusters, dimClusters[0],
-                  numClusters*numCoords*sizeof(float), cudaMemcpyHostToDevice));
+    if (cudaStatus == cudaSuccess)
+    {
+        while ( (loop < loop_iterations) && (cudaStatus == cudaSuccess) )
+        {
+            checkCuda(cudaStatus = cudaMemcpy(deviceClusters, dimClusters[0],
+                numClusters * numCoords * sizeof(float), cudaMemcpyHostToDevice));
 
-        find_nearest_cluster
-            <<< numClusterBlocks, numThreadsPerClusterBlock, clusterBlockSharedDataSize >>>
-            (numCoords, numObjs, numClusters,
-             deviceObjects, deviceClusters, deviceMembership, deviceIntermediates);
+            if (cudaStatus == cudaSuccess)
+            {
+                find_nearest_cluster
+                    << < numClusterBlocks, numThreadsPerClusterBlock, clusterBlockSharedDataSize >> >
+                    (numCoords, numObjs, numClusters,
+                        deviceObjects, deviceClusters, deviceMembership, deviceIntermediates);
 
-        cudaDeviceSynchronize(); checkLastCudaError();
+                cudaDeviceSynchronize(); checkLastCudaError();
 
-        checkCuda(cudaMemcpy(membership, deviceMembership,
-                  numObjs*sizeof(int), cudaMemcpyDeviceToHost));
+                checkCuda(cudaMemcpy(membership, deviceMembership,
+                    numObjs * sizeof(int), cudaMemcpyDeviceToHost));
 
-        for (i=0; i<numObjs; i++) {
-            /* find the array index of nestest cluster center */
-            index = membership[i];
+                for (i = 0; i < numObjs; i++) {
+                    /* find the array index of nestest cluster center */
+                    index = membership[i];
 
-            /* update new cluster centers : sum of objects located within */
-            newClusterSize[index]++;
-            for (j=0; j<numCoords; j++)
-                newClusters[j][index] += objects[i][j];
-        }
+                    /* update new cluster centers : sum of objects located within */
+                    newClusterSize[index]++;
+                    for (j = 0; j < numCoords; j++)
+                        newClusters[j][index] += objects[i][j];
+                }
 
-        //  TODO: Flip the nesting order
-        //  TODO: Change layout of newClusters to [numClusters][numCoords]
-        /* average the sum and replace old cluster centers with newClusters */
-        for (i=0; i<numClusters; i++) {
-            for (j=0; j<numCoords; j++) {
-                if (newClusterSize[i] > 0)
-                    dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
-                newClusters[j][i] = 0.0;   /* set back to 0 */
+                //  TODO: Flip the nesting order
+                //  TODO: Change layout of newClusters to [numClusters][numCoords]
+                /* average the sum and replace old cluster centers with newClusters */
+                for (i = 0; i < numClusters; i++) {
+                    for (j = 0; j < numCoords; j++) {
+                        if (newClusterSize[i] > 0)
+                            dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
+                        newClusters[j][i] = 0.0;   /* set back to 0 */
+                    }
+                    newClusterSize[i] = 0;   /* set back to 0 */
+                }
+                loop++;
             }
-            newClusterSize[i] = 0;   /* set back to 0 */
         }
-		loop++;
-    }
 
-    /* allocate a 2D space for returning variable clusters[] (coordinates
-       of cluster centers) */
-    malloc2D(clusters, numClusters, numCoords, float);
-    for (i = 0; i < numClusters; i++) {
-        for (j = 0; j < numCoords; j++) {
-            clusters[i][j] = dimClusters[j][i];
+        if (cudaStatus == cudaSuccess)
+        {
+            /* allocate a 2D space for returning variable clusters[] (coordinates
+               of cluster centers) */
+            malloc2D(clusters, numClusters, numCoords, float);
+            for (i = 0; i < numClusters; i++) {
+                for (j = 0; j < numCoords; j++) {
+                    clusters[i][j] = dimClusters[j][i];
+                }
+            }
         }
     }
 
@@ -365,19 +376,21 @@ float** cuda_kmeans(float **objects,      /* in: [numObjs][numCoords] */
 float** cuda_kmeans_img(unsigned char *imgData, int numObjs, int numClusters, float threshold, int *membership, int loop_iterations)
 {
 	int      i, j, index, loop = 0;
-	int     *newClusterSize; /* [numClusters]: no. objects assigned in each
+	int     *newClusterSize = NULL; /* [numClusters]: no. objects assigned in each
 								new cluster */
 	float    delta;          /* % of objects change their clusters */
-	float  **dimObjects;
-	float  **clusters;       /* out: [numClusters][numCoords] */
-	float  **dimClusters;
-	float  **newClusters;    /* [numCoords][numClusters] */
+	float  **dimObjects = NULL;
+	float  **clusters = NULL;       /* out: [numClusters][numCoords] */
+	float  **dimClusters = NULL;
+	float  **newClusters = NULL;    /* [numCoords][numClusters] */
 
-	float *deviceObjects;
-	float *deviceClusters;
-	int *deviceMembership;
-	int *deviceIntermediates;
+	float *deviceObjects = NULL;
+	float *deviceClusters = NULL;
+	int *deviceMembership = NULL;
+	int *deviceIntermediates = NULL;
 	int     numCoords = 3;
+
+    cudaError_t cudaStatus = cudaSuccess;
 
 	//  Copy objects given in [numObjs][numCoords] layout to new
 	//  [numCoords][numObjs] layout
@@ -438,94 +451,105 @@ float** cuda_kmeans_img(unsigned char *imgData, int numObjs, int numClusters, fl
 	const unsigned int reductionBlockSharedDataSize =
 		numReductionThreads * sizeof(unsigned int);
 
-	checkCuda(cudaMalloc(&deviceObjects, numObjs*numCoords * sizeof(float)));
-	checkCuda(cudaMalloc(&deviceClusters, numClusters*numCoords * sizeof(float)));
-	checkCuda(cudaMalloc(&deviceMembership, numObjs * sizeof(int)));
-	checkCuda(cudaMalloc(&deviceIntermediates, numReductionThreads * sizeof(unsigned int)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceObjects, numObjs*numCoords * sizeof(float)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceClusters, numClusters*numCoords * sizeof(float)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceMembership, numObjs * sizeof(int)));
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMalloc(&deviceIntermediates, numReductionThreads * sizeof(unsigned int)));
 
-	checkCuda(cudaMemcpy(deviceObjects, dimObjects[0],
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMemcpy(deviceObjects, dimObjects[0],
 		numObjs*numCoords * sizeof(float), cudaMemcpyHostToDevice));
-	checkCuda(cudaMemcpy(deviceMembership, membership,
+    if (cudaStatus == cudaSuccess) checkCuda(cudaStatus = cudaMemcpy(deviceMembership, membership,
 		numObjs * sizeof(int), cudaMemcpyHostToDevice));
 
+    if (cudaStatus == cudaSuccess)
+    {
+        // Adding initial clusters info (dimClusters) by using membership data
+        //------------------
+        for (i = 0; i < numObjs; i++) {
+            /* find the array index of nestest cluster center */
+            index = membership[i];
 
-	// Adding initial clusters info (dimClusters) by using membership data
-	//------------------
-	for (i = 0; i < numObjs; i++) {
-		/* find the array index of nestest cluster center */
-		index = membership[i];
+            if (index >= 0)
+            {
+                /* update new cluster centers : sum of objects located within */
+                newClusterSize[index]++;
+                for (j = 0; j < numCoords; j++)
+                    newClusters[j][index] += dimObjects[j][i];
+            }
+        }
 
-		if (index >= 0)
-		{
-			/* update new cluster centers : sum of objects located within */
-			newClusterSize[index]++;
-			for (j = 0; j < numCoords; j++)
-				newClusters[j][index] += dimObjects[j][i];
-		}
-	}
+        //  TODO: Flip the nesting order
+        //  TODO: Change layout of newClusters to [numClusters][numCoords]
+        /* average the sum and replace old cluster centers with newClusters */
+        for (i = 0; i < numClusters; i++) {
+            for (j = 0; j < numCoords; j++) {
+                if (newClusterSize[i] > 0)
+                {
+                    dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
+                }
+                newClusters[j][i] = 0.0;   /* set back to 0 */
+            }
+            newClusterSize[i] = 0;   /* set back to 0 */
+        }
+        //------------------
 
-	//  TODO: Flip the nesting order
-	//  TODO: Change layout of newClusters to [numClusters][numCoords]
-	/* average the sum and replace old cluster centers with newClusters */
-	for (i = 0; i < numClusters; i++) {
-		for (j = 0; j < numCoords; j++) {
-			if (newClusterSize[i] > 0)
-			{
-				dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
-			}
-			newClusters[j][i] = 0.0;   /* set back to 0 */
-		}
-		newClusterSize[i] = 0;   /* set back to 0 */
-	}
-	//------------------
+        while ((loop < loop_iterations) && (cudaStatus == cudaSuccess))
+        {
+            checkCuda(cudaStatus = cudaMemcpy(deviceClusters, dimClusters[0],
+                numClusters * numCoords * sizeof(float), cudaMemcpyHostToDevice));
 
-	while (loop < loop_iterations)
-	{
-		checkCuda(cudaMemcpy(deviceClusters, dimClusters[0],
-			numClusters*numCoords * sizeof(float), cudaMemcpyHostToDevice));
+            if (cudaStatus == cudaSuccess)
+            {
+                find_nearest_cluster
+                    << < numClusterBlocks, numThreadsPerClusterBlock, clusterBlockSharedDataSize >> >
+                    (numCoords, numObjs, numClusters,
+                        deviceObjects, deviceClusters, deviceMembership, deviceIntermediates);
 
-		find_nearest_cluster
-			<< < numClusterBlocks, numThreadsPerClusterBlock, clusterBlockSharedDataSize >> >
-			(numCoords, numObjs, numClusters,
-				deviceObjects, deviceClusters, deviceMembership, deviceIntermediates);
+                cudaDeviceSynchronize(); checkLastCudaError();
 
-		cudaDeviceSynchronize(); checkLastCudaError();
+                checkCuda(cudaStatus = cudaMemcpy(membership, deviceMembership,
+                    numObjs * sizeof(int), cudaMemcpyDeviceToHost));
 
-		checkCuda(cudaMemcpy(membership, deviceMembership,
-			numObjs * sizeof(int), cudaMemcpyDeviceToHost));
+                if (cudaStatus == cudaSuccess)
+                {
+                    for (i = 0; i < numObjs; i++) {
+                        /* find the array index of nestest cluster center */
+                        index = membership[i];
 
-		for (i = 0; i < numObjs; i++) {
-			/* find the array index of nestest cluster center */
-			index = membership[i];
+                        /* update new cluster centers : sum of objects located within */
+                        newClusterSize[index]++;
+                        for (j = 0; j < numCoords; j++)
+                            newClusters[j][index] += dimObjects[j][i];
+                    }
 
-			/* update new cluster centers : sum of objects located within */
-			newClusterSize[index]++;
-			for (j = 0; j < numCoords; j++)
-				newClusters[j][index] += dimObjects[j][i];
-		}
+                    //  TODO: Flip the nesting order
+                    //  TODO: Change layout of newClusters to [numClusters][numCoords]
+                    /* average the sum and replace old cluster centers with newClusters */
+                    for (i = 0; i < numClusters; i++) {
+                        for (j = 0; j < numCoords; j++) {
+                            if (newClusterSize[i] > 0)
+                                dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
+                            newClusters[j][i] = 0.0;   /* set back to 0 */
+                        }
+                        newClusterSize[i] = 0;   /* set back to 0 */
+                    }
+                    loop++;
+                }
+            }
+        }
 
-		//  TODO: Flip the nesting order
-		//  TODO: Change layout of newClusters to [numClusters][numCoords]
-		/* average the sum and replace old cluster centers with newClusters */
-		for (i = 0; i < numClusters; i++) {
-			for (j = 0; j < numCoords; j++) {
-				if (newClusterSize[i] > 0)
-					dimClusters[j][i] = newClusters[j][i] / newClusterSize[i];
-				newClusters[j][i] = 0.0;   /* set back to 0 */
-			}
-			newClusterSize[i] = 0;   /* set back to 0 */
-		}
-		loop++;
-	}
-
-	/* allocate a 2D space for returning variable clusters[] (coordinates
-	   of cluster centers) */
-	malloc2D(clusters, numClusters, numCoords, float);
-	for (i = 0; i < numClusters; i++) {
-		for (j = 0; j < numCoords; j++) {
-			clusters[i][j] = dimClusters[j][i];
-		}
-	}
+        if (cudaStatus == cudaSuccess)
+        {
+            /* allocate a 2D space for returning variable clusters[] (coordinates
+               of cluster centers) */
+            malloc2D(clusters, numClusters, numCoords, float);
+            for (i = 0; i < numClusters; i++) {
+                for (j = 0; j < numCoords; j++) {
+                    clusters[i][j] = dimClusters[j][i];
+                }
+            }
+        }
+    }
 
 	checkCuda(cudaFree(deviceObjects));
 	checkCuda(cudaFree(deviceClusters));

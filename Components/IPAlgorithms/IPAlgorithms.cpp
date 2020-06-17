@@ -2571,6 +2571,12 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 	if (numObjsFF > 0)
 	{
 		clusters = cuda_kmeans_img((unsigned char*)(ImRGBFF.m_pData), numObjsFF, numClusters, threshold, labelsFF.m_pData, initial_loop_iterations);
+		if (clusters == NULL)
+		{
+			wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+			return res;
+		}
+
 		free(clusters[0]);
 		free(clusters);
 	}
@@ -2582,7 +2588,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 		{
 			if (ImFF[i] != 0)
 			{
-				color_cluster_id[ImRGB[i] >> 8] = labelsFF[numObjsFF];
+				color_cluster_id[(unsigned int)ImRGB[i] >> 8] = labelsFF[numObjsFF];
 				numObjsFF++;
 			}
 		}
@@ -2596,7 +2602,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 			{
 				if (ImFF[i] != 0)
 				{
-					labels[i] = color_cluster_id[ImRGB[i] >> 8];
+					labels[i] = color_cluster_id[(unsigned int)ImRGB[i] >> 8];
 				}
 				else
 				{
@@ -2610,6 +2616,11 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 		max_y = h - 1;
 
 		clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
+		if (clusters == NULL)
+		{
+			wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+			return res;
+		}
 		free(clusters[0]);
 		free(clusters);
 	}
@@ -2623,6 +2634,11 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 			max_y = h - 1;
 
 			clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
+			if (clusters == NULL)
+			{
+				wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+				return res;
+			}
 			free(clusters[0]);
 			free(clusters);
 		}
@@ -2667,7 +2683,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 
 					if (ImFF[i] != 0)
 					{
-						labelsMASK[j] = color_cluster_id[ImRGBMASK[j] >> 8];
+						labelsMASK[j] = color_cluster_id[(unsigned int)ImRGBMASK[j] >> 8];
 					}
 					else
 					{
@@ -2677,17 +2693,22 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 			}
 
 			clusters = cuda_kmeans_img((unsigned char*)(ImRGBMASK.m_pData), numObjsMASK, numClusters, threshold, labelsMASK.m_pData, loop_iterations);
+			if (clusters == NULL)
+			{
+				wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+				return res;
+			}
 			free(clusters[0]);
 			free(clusters);
 
 			for (i = 0; i < ww*hh; i++)
 			{
-				color_cluster_id[ImRGBMASK[i] >> 8] = labelsMASK[i];
+				color_cluster_id[(unsigned int)ImRGBMASK[i] >> 8] = labelsMASK[i];
 			}
 			
 			for (int i = 0; i < w*h; i++)
 			{
-				labels[i] = color_cluster_id[ImRGB[i] >> 8];
+				labels[i] = color_cluster_id[(unsigned int)ImRGB[i] >> 8];
 			}
 		}
 	}
@@ -2751,7 +2772,7 @@ int opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_bu
 		{
 			if (ImFF[i] != 0)
 			{
-				color_cluster_id[ImRGB[i] >> 8] = cv_labelsFF.at<int>(j, 0);
+				color_cluster_id[(unsigned int)ImRGB[i] >> 8] = cv_labelsFF.at<int>(j, 0);
 				j++;
 			}
 		}
@@ -2776,7 +2797,7 @@ int opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_bu
 		{
 			for (i = 0; i < w*h; i++)
 			{
-				cv_labels.at<int>(i, 0) = color_cluster_id[ImRGB[i] >> 8];				
+				cv_labels.at<int>(i, 0) = color_cluster_id[(unsigned int)ImRGB[i] >> 8];
 			}
 		}
 		min_x = 0;
@@ -2860,7 +2881,7 @@ int opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_bu
 						cv_samplesMASK.at<float>(j, z) = pClr[z];
 					}
 
-					cv_labelsMASK.at<int>(j, 0) = color_cluster_id[ImRGB[i] >> 8];
+					cv_labelsMASK.at<int>(j, 0) = color_cluster_id[(unsigned int)ImRGB[i] >> 8];
 				}
 			}
 
@@ -2871,13 +2892,13 @@ int opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_bu
 			{
 				for (x = min_x, i = y * w + min_x; x <= max_x; x++, i++, j++)
 				{
-					color_cluster_id[ImRGB[i] >> 8] = cv_labelsMASK.at<int>(j, 0);
+					color_cluster_id[(unsigned int)ImRGB[i] >> 8] = cv_labelsMASK.at<int>(j, 0);
 				}
 			}
 
 			for (int i = 0; i < w*h; i++)
 			{
-				labels[i] = color_cluster_id[ImRGB[i] >> 8];
+				labels[i] = color_cluster_id[(unsigned int)ImRGB[i] >> 8];
 			}
 		}
 	}
