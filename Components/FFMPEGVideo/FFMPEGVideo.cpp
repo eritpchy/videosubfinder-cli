@@ -516,19 +516,36 @@ void FFMPEGVideo::SetPos(s64 Pos)
 		do
 		{
 			res = avformat_seek_file(input_ctx, video_stream, min_ts, ts, max_ts, AVSEEK_FLAG_FRAME);
+			
 			if (!need_to_read_packet)
 			{
 				av_packet_unref(&packet);
 			}
+
 			need_to_read_packet = true;
 			OneStep();
 			num_tries++;
 
+			min_ts = (tm + min_ts) / 2;
 			dPos = std::abs(Pos - m_Pos);
 		}
-		while ((dPos > 5000) && (num_tries < 10));
+		while ((dPos > 1000) && (num_tries < 10));
 
 		num_tries = num_tries;
+
+		/*if (dPos > 1000)
+		{
+			if (m_Pos < Pos - 100)
+
+			num_tries = 0;
+			{
+				OneStep();
+				num_tries++;
+			}
+			while ((m_Pos < Pos - 100) && (num_tries < 1000));
+		}
+
+		num_tries = num_tries;*/
 
 		/*if (num_tries > 1)
 		{
@@ -702,7 +719,7 @@ int FFMPEGVideo::GetFrameDataSize()
 
 void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)
 {
-	custom_assert(FrameData.size() >= m_frame_buffer_size, "void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() >= m_frame_buffer_size");
+	custom_assert(FrameData.size() == m_frame_buffer_size, "void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() == m_frame_buffer_size");
 	memcpy(&FrameData[0], &m_frame_buffer[0], m_frame_buffer_size);
 }
 

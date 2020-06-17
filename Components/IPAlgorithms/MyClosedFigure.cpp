@@ -708,7 +708,7 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 	}
 
 	/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 	{
 		for (i = 0; i < N; i++)
 		{

@@ -169,10 +169,6 @@ public:
 	{
 	}
 	
-	/*virtual void AddGetRGBImageTask(concurrency::event* p_event, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
-	{
-	}*/
-
 	virtual void SetVideoWindowPosition(int left, int top, int width, int height, void *dc)
 	{
 	}

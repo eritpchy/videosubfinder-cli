@@ -356,7 +356,7 @@ void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)
 {
 	if (!m_cur_frame.empty())
 	{
-		custom_assert(FrameData.size() >= m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() >= m_origWidth * m_origHeight * 3");
+		custom_assert(FrameData.size() == m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() == m_origWidth * m_origHeight * 3");
 		memcpy(&FrameData[0], m_cur_frame.data, m_origWidth * m_origHeight * 3);
 	}
 }

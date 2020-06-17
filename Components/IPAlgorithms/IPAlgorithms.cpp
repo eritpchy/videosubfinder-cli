@@ -1887,7 +1887,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 				bln = 0;
 
 				/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 				if (g_show_sf_results)
 				{
 					y = (ia / w);
@@ -6444,7 +6444,7 @@ void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures
 						))
 					{
 						/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 						if (iter_det == "l2_sl2")
 						{
 							iter_det = iter_det;
@@ -6508,7 +6508,7 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 	custom_buffer<CMyClosedFigure*> good_figures(N);
 	
 	/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 	if (iter_det == "l2_sl2")
 	{
 		iter_det = iter_det;
@@ -6838,7 +6838,7 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 			PA = pFigure->m_PointsArray;
 
 			/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 			if (iter_det == "l2_02_05_01_id4")
 			{
 				i = i;
@@ -7012,7 +7012,7 @@ int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 			PA = pFigure->m_PointsArray;
 
 			/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 			if ((pFigure->m_minX >= 1320) &&
 				(pFigure->m_minX <= 1350))
 			{
@@ -7118,7 +7118,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 			PA = pFigure->m_PointsArray;
 
 			/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 			if ((pFigure->m_minX >= 1320) &&
 				(pFigure->m_minX <= 1350))
 			{
@@ -7371,7 +7371,7 @@ int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int W, int 
 			PA = pFigure->m_PointsArray;
 
 			/*
-#ifdef DEBUG
+#ifdef CUSTOM_DEBUG
 			if ((pFigure->m_minX >= 1320) &&
 				(pFigure->m_minX <= 1350))
 			{
