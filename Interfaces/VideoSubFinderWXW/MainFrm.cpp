@@ -33,21 +33,21 @@ int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *de
 
 /////////////////////////////////////////////////////////////////////////////
 
-void  ViewImageInImageBox(custom_buffer<int> &Im, int w, int h)
+void  ViewImageInImageBox(simple_buffer<int> &Im, int w, int h)
 {
 	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewImage(Im, w, h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void  ViewImageInVideoBox(custom_buffer<int> &Im, int w, int h)
+void  ViewImageInVideoBox(simple_buffer<int> &Im, int w, int h)
 {
 	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pVideoBox->ViewImage(Im, w, h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void ViewRGBImage(custom_buffer<int> &Im, int w, int h)
+void ViewRGBImage(simple_buffer<int> &Im, int w, int h)
 {
 	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewRGBImage(Im, w, h);
 }
@@ -241,6 +241,7 @@ void CMainFrame::Init()
 	
 	m_pVideoBox = new CVideoBox(this);
 	m_pVideoBox->Init();
+	m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
 
 	this->SetSize(0, 0, w, h - 50);
 

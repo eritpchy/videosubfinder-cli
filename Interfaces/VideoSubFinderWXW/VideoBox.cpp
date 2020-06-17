@@ -442,7 +442,7 @@ void CVideoBox::OnMouseWheel(wxMouseEvent& event)
 	}
 }
 
-void CVideoBox::ViewImage(custom_buffer<int> &Im, int w, int h)
+void CVideoBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 {
 	int num_pixels = w*h;
 	u8 *color;

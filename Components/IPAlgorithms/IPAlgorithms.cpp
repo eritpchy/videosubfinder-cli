@@ -36,48 +36,48 @@
 #include <ppltasks.h>
 using namespace std;
 
-void ClearMainClusterImage(custom_buffer<int> &ImMainCluster, custom_buffer<int> ImMASK, custom_buffer<int> &ImIL, int w, int h, int W, int H, int LH, std::string iter_det);
-void GetBinaryImageFromImageByColor(custom_buffer<int> &ImRES, custom_buffer<int> &ImGR, int white, int w, int h);
-int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, custom_buffer<int> &ImFRes, int w, int h, int W, int H, int XB, int YB, std::string iter_det);
-void SaveImageWithLinesInfo(custom_buffer<int> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h);
-void ExtendByInsideFigures(custom_buffer<int> &ImRES, int w, int h, int white, bool simple = true);
-void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h);
-int ClearImageByTextDistance(custom_buffer<int> &Im, int w, int h, int W, int H, int real_im_x_center, int white, std::string iter_det);
-void ClearImageByBigLines(custom_buffer<int> &Im, int w, int h, int W, int H);
-int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, int white);
-void GetMainColorImage(custom_buffer<int> &ImRES, custom_buffer<int> *pImMainCluster, custom_buffer<int> &ImMASK, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h, std::string iter_det, int min_x, int max_x);
-void GreyscaleImageToBinary(custom_buffer<int> &ImRES, custom_buffer<int> &ImGR, int w, int h, int white);
-int GetImageWithOutsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white);
-void MergeImagesByIntersectedFigures(custom_buffer<int> &ImInOut, custom_buffer<int> &ImIn2, int w, int h, int white);
-void MergeWithClusterImage(custom_buffer<int> &ImInOut, custom_buffer<int> &ImCluser, int w, int h, int white);
-void(*g_pViewRGBImage)(custom_buffer<int> &Im, int w, int h);
-void(*g_pViewImage[2])(custom_buffer<int> &Im, int w, int h);
-int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other = true);
-int ClearImageFromMainSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int white, std::string iter_det);
-int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det);
-int ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int real_im_x_center, int white);
-int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white);
-int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int real_im_x_center, int white);
-int ClearImageByMask(custom_buffer<int> &Im, custom_buffer<int> &ImMASK, int w, int h, int white, double thr = 0.2);
-int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int white);
-void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, std::string iter_det);
-void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white, std::string iter_det);
-int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int white);
-int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H);
-//int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H);
-int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white, bool simple = false);
-void InvertBinaryImage(custom_buffer<int> &Im, int w, int h);
+void ClearMainClusterImage(simple_buffer<int> &ImMainCluster, simple_buffer<int> ImMASK, simple_buffer<int> &ImIL, int w, int h, int W, int H, int LH, std::string iter_det);
+void GetBinaryImageFromImageByColor(simple_buffer<int> &ImRES, simple_buffer<int> &ImGR, int white, int w, int h);
+int CheckOnSubPresence(simple_buffer<int> &ImMASK, simple_buffer<int> &ImNE, simple_buffer<int> &ImFRes, int w, int h, int W, int H, int XB, int YB, std::string iter_det);
+void SaveImageWithLinesInfo(simple_buffer<int> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h);
+void ExtendByInsideFigures(simple_buffer<int> &ImRES, int w, int h, int white, bool simple = true);
+void SaveImageWithSubParams(simple_buffer<int> &Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h);
+int ClearImageByTextDistance(simple_buffer<int> &Im, int w, int h, int W, int H, int real_im_x_center, int white, std::string iter_det);
+void ClearImageByBigLines(simple_buffer<int> &Im, int w, int h, int W, int H);
+int ClearImageOptimal2(simple_buffer<int> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, int white);
+void GetMainColorImage(simple_buffer<int> &ImRES, simple_buffer<int> *pImMainCluster, simple_buffer<int> &ImMASK, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h, std::string iter_det, int min_x, int max_x);
+void GreyscaleImageToBinary(simple_buffer<int> &ImRES, simple_buffer<int> &ImGR, int w, int h, int white);
+int GetImageWithOutsideFigures(simple_buffer<int> &Im, simple_buffer<int> &ImRes, int w, int h, int white);
+void MergeImagesByIntersectedFigures(simple_buffer<int> &ImInOut, simple_buffer<int> &ImIn2, int w, int h, int white);
+void MergeWithClusterImage(simple_buffer<int> &ImInOut, simple_buffer<int> &ImCluser, int w, int h, int white);
+void(*g_pViewRGBImage)(simple_buffer<int> &Im, int w, int h);
+void(*g_pViewImage[2])(simple_buffer<int> &Im, int w, int h);
+int GetSubParams(simple_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other = true);
+int ClearImageFromMainSymbols(simple_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int white, std::string iter_det);
+int ClearImageOpt2(simple_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det);
+int ClearImageOpt3(simple_buffer<int> &Im, int w, int h, int real_im_x_center, int white);
+int ClearImageOpt4(simple_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white);
+int ClearImageOpt5(simple_buffer<int> &Im, int w, int h, int LH, int LMAXY, int real_im_x_center, int white);
+int ClearImageByMask(simple_buffer<int> &Im, simple_buffer<int> &ImMASK, int w, int h, int white, double thr = 0.2);
+int ClearImageOptimal(simple_buffer<int> &Im, int w, int h, int white);
+void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, std::string iter_det);
+void ClearImageFromGarbageBetweenLines(simple_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white, std::string iter_det);
+int ClearImageFromSmallSymbols(simple_buffer<int> &Im, int w, int h, int W, int H, int white);
+int SecondFiltration(simple_buffer<int> &Im, simple_buffer<int> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H);
+//int ThirdFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int LN, int w, int h, int W, int H);
+int GetImageWithInsideFigures(simple_buffer<int> &Im, simple_buffer<int> &ImRes, int w, int h, int white, bool simple = false);
+void InvertBinaryImage(simple_buffer<int> &Im, int w, int h);
 
-void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::Mat &res);
-void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, custom_buffer<int> &res);
-void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::Mat &res);
-void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, int white);
-void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::UMat &res);
-void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, custom_buffer<int> &res);
-void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::UMat &res);
-void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, custom_buffer<int> &res, int white);
-void RGBMatToImage(cv::UMat &ImRGB, int w, int h, custom_buffer<int> &res);
-void RGBImageToMat(custom_buffer<int> &ImRGB, int w, int h, cv::UMat &res);
+void GreyscaleImageToMat(simple_buffer<int> &ImGR, int w, int h, cv::Mat &res);
+void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, simple_buffer<int> &res);
+void BinaryImageToMat(simple_buffer<int> &ImBinary, int w, int h, cv::Mat &res);
+void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, simple_buffer<int> &res, int white);
+void GreyscaleImageToMat(simple_buffer<int> &ImGR, int w, int h, cv::UMat &res);
+void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, simple_buffer<int> &res);
+void BinaryImageToMat(simple_buffer<int> &ImBinary, int w, int h, cv::UMat &res);
+void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, simple_buffer<int> &res, int white);
+void RGBMatToImage(cv::UMat &ImRGB, int w, int h, simple_buffer<int> &res);
+void RGBImageToMat(simple_buffer<int> &ImRGB, int w, int h, cv::UMat &res);
 void InvertBinaryMat(cv::UMat &ImBinary, int w, int h, cv::UMat &res);
 
 string  g_work_dir;
@@ -185,16 +185,16 @@ inline int GetClusterId(int clusterCount, int white)
 	return cluster_id;
 }
 
-void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)
+void ColorFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h)
 {	
 	const int scd = g_scd, segw = g_segw, msegc = g_msegc, mx = (w - 1) / g_segw;
 	__int64 t1, dt, num_calls;
 
-	custom_assert(Im.size() >= w*h, "ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)\nnot: Im.size() >= w*h");
-	custom_assert(LB.size() >= h, "ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)\nnot: LB.size() >= H");
-	custom_assert(LE.size() >= h, "ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int &N, int w, int h)\nnot: LE.size() >= H");
+	custom_assert(Im.size() >= w*h, "ColorFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(LB.size() >= h, "ColorFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h)\nnot: LB.size() >= H");
+	custom_assert(LE.size() >= h, "ColorFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h)\nnot: LE.size() >= H");
 
-	custom_buffer<int> line(h, 0);
+	simple_buffer<int> line(h, 0);
 	
 	concurrency::parallel_for(0, h, [&](int y)
 	{
@@ -248,7 +248,7 @@ void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buff
 		}
 	});
 
-	custom_buffer<int> lb(h, 0), le(h, 0);
+	simple_buffer<int> lb(h, 0), le(h, 0);
 	int n = 0;
 	int sbegin = 1; //searching begin
 	int y;
@@ -323,12 +323,12 @@ void ColorFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buff
 	N = k;
 }
 
-void RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)
+void RGB_to_YUV(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)
 {
-	custom_assert(ImIn.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImY.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImY.size() >= w*h");
-	custom_assert(ImU.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImU.size() >= w*h");
-	custom_assert(ImV.size() >= w*h, "RGB_to_YUV(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)\nnot: ImV.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "RGB_to_YUV(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "RGB_to_YUV(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)\nnot: ImY.size() >= w*h");
+	custom_assert(ImU.size() >= w*h, "RGB_to_YUV(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)\nnot: ImU.size() >= w*h");
+	custom_assert(ImV.size() >= w*h, "RGB_to_YUV(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)\nnot: ImV.size() >= w*h");
 
 	concurrency::parallel_for(0, h, [&](int y)
 	{
@@ -411,12 +411,12 @@ void YIQ_to_RGB(int Y, int I, int Q, int &R, int &G, int &B, int max_val)
 	}
 }
 
-void RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)
+void RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h)
 {
-	custom_assert(ImIn.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImY.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImY.size() >= w*h");
-	custom_assert(ImI.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImI.size() >= w*h");
-	custom_assert(ImQ.size() >= w*h, "RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h)\nnot: ImQ.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h)\nnot: ImY.size() >= w*h");
+	custom_assert(ImI.size() >= w*h, "RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h)\nnot: ImI.size() >= w*h");
+	custom_assert(ImQ.size() >= w*h, "RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h)\nnot: ImQ.size() >= w*h");
 
 	concurrency::parallel_for(0, h, [&](int y)
 	{
@@ -466,13 +466,13 @@ void RGB_to_YIQ(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, custom_buffer
 	});
 }
 
-void GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w, int h)
+void GetGrayscaleImage(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, int w, int h)
 {
 	u8 *color;
 	int i, r, g, b, wh;
 
-	custom_assert(ImIn.size() >= w*h, "GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImY.size() >= w*h, "GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w, int h)\nnot: ImY.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "GetGrayscaleImage(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImY.size() >= w*h, "GetGrayscaleImage(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, int w, int h)\nnot: ImY.size() >= w*h");
 
 	wh = w*h;
 
@@ -488,12 +488,12 @@ void GetGrayscaleImage(custom_buffer<int> &ImIn, custom_buffer<int> &ImY, int w,
 	}
 }
 
-void SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)
+void SobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)
 {
 	int i, x, y, mx, my, val, val1, val2, val3, val4, max;
 
-	custom_assert(ImIn.size() >= w*h, "SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImMOE.size() >= w*h, "SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImMOE.size() >= w*h, "SobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -534,14 +534,14 @@ void SobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int 
 	}
 }
 
-void ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)
+void ImprovedSobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)
 {
 	const int mx = w - 1;
 	const int my = h - 1;
 	__int64 t1, dt, num_calls;
 
-	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
 
 	concurrency::parallel_for(1, my, [&](int y)
 	{
@@ -584,12 +584,12 @@ void ImprovedSobelMEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImMOE, int
 	});
 }
 
-void SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)
+void SobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)
 {
 	int i, ii, x, y, mx, my, val;
 
-	custom_assert(ImIn.size() >= w*h, "SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImHOE.size() >= w*h, "SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImHOE.size() >= w*h, "SobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -611,12 +611,12 @@ void SobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int 
 	}
 }
 
-void FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)
+void FastSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h)
 {
 	int i, ii, x, y, mx, my, val;
 
-	custom_assert(ImIn.size() >= w*h, "FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImVOE.size() >= w*h, "FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImVOE.size() >= w*h, "FastSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -638,12 +638,12 @@ void FastSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, 
 	}
 }
 
-void FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)
+void FastImprovedSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h)
 {
 	int x, y, mx, my, val, val1, val2, val3;
 
-	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImVOE.size() >= w*h, "FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImVOE.size() >= w*h, "FastImprovedSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h)\nnot: ImVOE.size() >= w*h");
 
 	int* pIm = &ImIn[0];
 	int* pImVOE = &ImVOE[0];
@@ -673,15 +673,15 @@ void FastImprovedSobelVEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImVOE,
 	}
 }
 
-void SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)
+void SobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)
 {
 	int i, j, k;
 	int	mx, val;
 	int lt,mt,rt, lm,mm,rm, lb,mb,rb;
 	int blt,bmt,brt, blm,bmm,brm, blb,bmb,brb;
 
-	custom_assert(ImIn.size() >= w*h, "SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImNOE.size() >= w*h, "SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImNOE.size() >= w*h, "SobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
 
 	mx = 0;
 
@@ -732,10 +732,10 @@ void SobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int 
 	}
 }
 
-void FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)
+void FastImprovedSobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)
 {
-	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImNOE.size() >= w*h, "FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImNOE.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
 
 	__int64 t1, dt, num_calls;
 
@@ -765,10 +765,10 @@ void FastImprovedSobelNEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImNOE,
 	});
 }
 
-void FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)
+void FastImprovedSobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)
 {	
-	custom_assert(ImIn.size() >= w * h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImHOE.size() >= w * h, "FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w * h, "FastImprovedSobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImHOE.size() >= w * h, "FastImprovedSobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
 
 	const int mx = w - 1;
 	const int my = h - 1;
@@ -794,15 +794,15 @@ void FastImprovedSobelHEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImHOE,
 	});
 }
 
-void SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h)
+void SobelSEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImSOE, int w, int h)
 {
 	int i, j, k;
 	int	mx, val;
 	int lt,mt,rt, lm,mm,rm, lb,mb,rb;
 	int blt,bmt,brt, blm,bmm,brm, blb,bmb,brb;
 
-	custom_assert(ImIn.size() >= w*h, "SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImSOE.size() >= w*h, "SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int h)\nnot: ImSOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "SobelSEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImSOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImSOE.size() >= w*h, "SobelSEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImSOE, int w, int h)\nnot: ImSOE.size() >= w*h");
 
 	mx = 0;
 
@@ -853,12 +853,12 @@ void SobelSEdge(custom_buffer<int> &ImIn, custom_buffer<int> &ImSOE, int w, int 
 	}
 }
 
-void IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, int w, int h)
+void IncreaseContrastOperator(simple_buffer<int> &ImIn, simple_buffer<int> &ImRES, int w, int h)
 {
 	int i, ii, x, y, mx, my, val;
 
-	custom_assert(ImIn.size() >= w*h, "IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImRES.size() >= w*h, "IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRES, int w, int h)\nnot: ImRES.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "IncreaseContrastOperator(simple_buffer<int> &ImIn, simple_buffer<int> &ImRES, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImRES.size() >= w*h, "IncreaseContrastOperator(simple_buffer<int> &ImIn, simple_buffer<int> &ImRES, int w, int h)\nnot: ImRES.size() >= w*h");
 
 	mx = w-1;
 	my = h-1;
@@ -883,13 +883,13 @@ void IncreaseContrastOperator(custom_buffer<int> &ImIn, custom_buffer<int> &ImRE
 	}
 }
 
-void FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h)
+void FindAndApplyGlobalThreshold(simple_buffer<int> &Im, int w, int h)
 {
 	int i, imx, mx, start=3, dx=5;
 	int beg, end, val, MX, thr;
-	custom_buffer<int> edgeStr(MAX_EDGE_STR, 0);
+	simple_buffer<int> edgeStr(MAX_EDGE_STR, 0);
 
-	custom_assert(Im.size() >= w*h, "FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "FindAndApplyGlobalThreshold(simple_buffer<int> &Im, int w, int h)\nnot: Im.size() >= w*h");
 
 	MX = 0;
 
@@ -941,13 +941,13 @@ void FindAndApplyGlobalThreshold(custom_buffer<int> &Im, int w, int h)
 	memset(&edgeStr[0], 0, (MX+1)*sizeof(int));
 }
 
-void FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w, int h)
+void FindAndApplyLocalThresholding(simple_buffer<int> &Im, int dw, int dh, int w, int h)
 {
 	int i, di, ia, da, x, y, nx, ny, mx, my, MX;
 	int val, min, max, mid, lmax, rmax, li, ri, thr;
-	custom_buffer<int> edgeStr(MAX_EDGE_STR, 0);
+	simple_buffer<int> edgeStr(MAX_EDGE_STR, 0);
 	
-	custom_assert(Im.size() >= w*h, "FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "FindAndApplyLocalThresholding(simple_buffer<int> &Im, int dw, int dh, int w, int h)\nnot: Im.size() >= w*h");
 
 	MX = 0;
 
@@ -1115,7 +1115,7 @@ void FindAndApplyLocalThresholding(custom_buffer<int> &Im, int dw, int dh, int w
 	}
 }
 
-void ApplyModerateThresholdBySplit(custom_buffer<int> &Im, double mthr, int w, int h, int W, int H)
+void ApplyModerateThresholdBySplit(simple_buffer<int> &Im, double mthr, int w, int h, int W, int H)
 {	
 	int nx = 12; // std::max<int>(1, std::round((double)w / 64.0));
 	int ny = 12; // std::max<int>(1, std::round((double)h / ((double)H / 12.0)));
@@ -1166,14 +1166,14 @@ void ApplyModerateThresholdBySplit(custom_buffer<int> &Im, double mthr, int w, i
 	}
 }
 
-void ApplyModerateThreshold(custom_buffer<int> &Im, double mthr, int w, int h)
+void ApplyModerateThreshold(simple_buffer<int> &Im, double mthr, int w, int h)
 {
 	int thr;
 	int mx = 0;
 	int *pIm = &Im[0];
 	int *pImMAX = pIm + w*h;
 	
-	custom_assert(Im.size() >= w*h, "ApplyModerateThreshold(custom_buffer<int> &Im, double mthr, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "ApplyModerateThreshold(simple_buffer<int> &Im, double mthr, int w, int h)\nnot: Im.size() >= w*h");
 
 	for(; pIm < pImMAX; pIm++)
 	{
@@ -1189,12 +1189,12 @@ void ApplyModerateThreshold(custom_buffer<int> &Im, double mthr, int w, int h)
 	}
 }
 
-void AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
+void AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
 {
 	__int64 t1, dt, num_calls;
 
-	custom_assert(ImIn.size() >= w * h, "AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImOut.size() >= w * h, "AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
+	custom_assert(ImIn.size() >= w * h, "AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImOut.size() >= w * h, "AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	const int mx = w - 2;
 	const int my = h - 2;
@@ -1217,10 +1217,10 @@ void AplyESS(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
 	});
 }
 
-void AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
+void AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
 {	
-	custom_assert(ImIn.size() >= w*h, "AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImOut.size() >= w*h, "AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImOut.size() >= w*h, "AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	__int64 t1, dt, num_calls;
 
@@ -1266,11 +1266,11 @@ void AplyECP(custom_buffer<int> &ImIn, custom_buffer<int> &ImOut, int w, int h)
 	});
 }
 
-void BorderClear(custom_buffer<int> &Im, int dd, int w, int h)
+void BorderClear(simple_buffer<int> &Im, int dd, int w, int h)
 {
 	int i, di, x, y;
 
-	custom_assert(Im.size() >= w*h, "BorderClear(custom_buffer<int> &Im, int dd, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "BorderClear(simple_buffer<int> &Im, int dd, int w, int h)\nnot: Im.size() >= w*h");
 
 	memset(&Im[0], 0, w*dd*sizeof(int));
 	memset(&Im[w*(h-dd)], 0, w*dd*sizeof(int));
@@ -1291,11 +1291,11 @@ void BorderClear(custom_buffer<int> &Im, int dd, int w, int h)
 	}
 }
 
-void EasyBorderClear(custom_buffer<int> &Im, int w, int h)
+void EasyBorderClear(simple_buffer<int> &Im, int w, int h)
 {
 	int i, y;
 
-	custom_assert(Im.size() >= w*h, "BorderClear(custom_buffer<int> &Im, int dd, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "BorderClear(simple_buffer<int> &Im, int dd, int w, int h)\nnot: Im.size() >= w*h");
 
 	memset(&Im[0], 0, w*sizeof(int));
 	memset(&Im[w*(h-1)], 0, w*sizeof(int));
@@ -1313,7 +1313,7 @@ void EasyBorderClear(custom_buffer<int> &Im, int w, int h)
 	}
 }
 
-inline void CombineTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h, int white = 255)
+inline void CombineTwoImages(simple_buffer<int> &ImRes, simple_buffer<int> &Im2, int w, int h, int white = 255)
 {
 	int i, size;
 
@@ -1330,7 +1330,7 @@ inline void CombineTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2,
 	}
 }
 
-inline void IntersectTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im2, int w, int h)
+inline void IntersectTwoImages(simple_buffer<int> &ImRes, simple_buffer<int> &Im2, int w, int h)
 {
 	int i, size;
 
@@ -1344,7 +1344,7 @@ inline void IntersectTwoImages(custom_buffer<int> &ImRes, custom_buffer<int> &Im
 	}
 }
 
-void CombineStrengthOfTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int w, int h)
+void CombineStrengthOfTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int w, int h)
 {
 	int i, size;
 
@@ -1358,9 +1358,9 @@ void CombineStrengthOfTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2
 	}
 }
 
-void GetImCMOEWithThr1(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, custom_buffer<int> &ImUMOE, custom_buffer<int> &ImVMOE, int w, int h, int W, int H, custom_buffer<int> &offsets, custom_buffer<int> &dhs, int N, double mthr)
+void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, simple_buffer<int> &ImUMOE, simple_buffer<int> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
 {
-	custom_buffer<int> ImRES2(w*h, 0), ImRES3(w*h, 0);
+	simple_buffer<int> ImRES2(w*h, 0), ImRES3(w*h, 0);
 	int mx, my, i, k, y, x;
 	mx = w - 1;
 	my = h - 1;
@@ -1403,9 +1403,9 @@ void GetImCMOEWithThr1(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, c
 }
 
 
-void GetImCMOEWithThr2(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, custom_buffer<int> &ImUMOE, custom_buffer<int> &ImVMOE, int w, int h, int W, int H, custom_buffer<int> &offsets, custom_buffer<int> &dhs, int N, double mthr)
+void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, simple_buffer<int> &ImUMOE, simple_buffer<int> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
 {
-	custom_buffer<int> ImRES5(w*h, 0), ImRES6(w*h, 0);
+	simple_buffer<int> ImRES5(w*h, 0), ImRES6(w*h, 0);
 	int mx, my, i, k, y, x;
 	mx = w - 1;
 	my = h - 1;
@@ -1449,9 +1449,9 @@ void GetImCMOEWithThr2(custom_buffer<int> &ImCMOE, custom_buffer<int> &ImYMOE, c
 	}
 }
 
-void GetImFF(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImRGB, custom_buffer<int> &ImYFull, custom_buffer<int> &ImUFull, custom_buffer<int> &ImVFull, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w,int h, int W, int H, double mthr)
+void GetImFF(simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImRGB, simple_buffer<int> &ImYFull, simple_buffer<int> &ImUFull, simple_buffer<int> &ImVFull, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w,int h, int W, int H, double mthr)
 {	
-	custom_buffer<int> offsets(N, 0), cnts(N, 0), dhs(N, 0);
+	simple_buffer<int> offsets(N, 0), cnts(N, 0), dhs(N, 0);
 	int i, k, cnt, val;
 	int x, y, segh;
 	int ww, hh;
@@ -1469,8 +1469,8 @@ void GetImFF(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<i
 		hh += dhs[k];
 	}
 
-	custom_buffer<int> ImY(ww*hh, 0), ImU(ww*hh, 0), ImV(ww*hh, 0), ImYMOE(ww*hh, 0), ImUMOE(ww*hh, 0), ImVMOE(ww*hh, 0);
-	custom_buffer<int> ImRES1(ww*hh, 0), ImRES4(ww*hh, 0);
+	simple_buffer<int> ImY(ww*hh, 0), ImU(ww*hh, 0), ImV(ww*hh, 0), ImYMOE(ww*hh, 0), ImUMOE(ww*hh, 0), ImVMOE(ww*hh, 0);
+	simple_buffer<int> ImRES1(ww*hh, 0), ImRES4(ww*hh, 0);
 	
 	for(k=0; k<N; k++)
 	{
@@ -1527,10 +1527,10 @@ void GetImFF(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<i
 	}
 }
 
-void GetImNE(custom_buffer<int> &ImNE, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)
+void GetImNE(simple_buffer<int> &ImNE, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)
 {
-	custom_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
-	custom_buffer<int> ImRES1(w*h, 0);
+	simple_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
+	simple_buffer<int> ImRES1(w*h, 0);
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
@@ -1575,10 +1575,10 @@ void GetImNE(custom_buffer<int> &ImNE, custom_buffer<int> &ImY, custom_buffer<in
 	CombineTwoImages(ImNE, ImRES1, w, h);
 }
 
-void GetImHE(custom_buffer<int> &ImHE, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h)
+void GetImHE(simple_buffer<int> &ImHE, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)
 {
-	custom_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
-	custom_buffer<int> ImRES1(w*h, 0);
+	simple_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
+	simple_buffer<int> ImRES1(w*h, 0);
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
@@ -1623,9 +1623,9 @@ void GetImHE(custom_buffer<int> &ImHE, custom_buffer<int> &ImY, custom_buffer<in
 	CombineTwoImages(ImHE, ImRES1, w, h);
 }
 
-void ClearImagesFromTooBigElements(custom_buffer<int> &ImSF, custom_buffer<int> &ImNE, int w, int h, int W, int H, int white)
+void ClearImagesFromTooBigElements(simple_buffer<int> &ImSF, simple_buffer<int> &ImNE, int w, int h, int W, int H, int white)
 {
-	custom_buffer<int> Im(w*h, 0);
+	simple_buffer<int> Im(w*h, 0);
 
 	memcpy(&Im[0], &ImNE[0], w*h * sizeof(int));
 	IntersectTwoImages(Im, ImSF, w, h);
@@ -1641,7 +1641,7 @@ void ClearImagesFromTooBigElements(custom_buffer<int> &ImSF, custom_buffer<int> 
 
 	if (N == 0)	return;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -1679,9 +1679,9 @@ void ClearImagesFromTooBigElements(custom_buffer<int> &ImSF, custom_buffer<int> 
 	if (g_show_results) SaveGreyscaleImage(ImNE, "/TestImages/ClearImagesFromTooBigElements_02_ImNE" + g_im_save_format, w, h);
 }
 
-int FilterTransformedImage(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H, std::string iter_det = "main")
+int FilterTransformedImage(simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImTF, simple_buffer<int> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, std::string iter_det = "main")
 {
-	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0);
+	simple_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0);
 	int res = 0;
 
 	if (g_show_results) SaveGreyscaleImage(ImSF, "/TestImages/FilterTransformedImage_" + iter_det + "_01_01_ImSF" + g_im_save_format, w, h);
@@ -1742,9 +1742,9 @@ int FilterTransformedImage(custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, c
 
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImSF, custom_buffer<int> &ImTF, custom_buffer<int> &ImNE, custom_buffer<int> &ImY, int w, int h, int W, int H)
+int GetTransformedImage(simple_buffer<int> &ImRGB, simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImTF, simple_buffer<int> &ImNE, simple_buffer<int> &ImY, int w, int h, int W, int H)
 {
-	custom_buffer<int> LB(h, 0), LE(h, 0), ImU(w*h, 0), ImV(w*h, 0), ImHE(w*h, 0);	
+	simple_buffer<int> LB(h, 0), LE(h, 0), ImU(w*h, 0), ImV(w*h, 0), ImHE(w*h, 0);	
 	int N;
 	int res = 0;
 	__int64 t1, dt, num_calls = 100;
@@ -1794,10 +1794,10 @@ int GetTransformedImage(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, cus
 	return res;
 }
 
-int FilterImage(custom_buffer<int> &ImF, custom_buffer<int> &ImNE, int w, int h, int W, int H, custom_buffer<int> &LB, custom_buffer<int> &LE, int N)
+int FilterImage(simple_buffer<int> &ImF, simple_buffer<int> &ImNE, int w, int h, int W, int H, simple_buffer<int> &LB, simple_buffer<int> &LE, int N)
 {
 	int res;
-	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0);
+	simple_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0);
 	int diff_found = 1;
 	int iter = 0;
 
@@ -1842,7 +1842,7 @@ inline bool IsTooRight(int lb, int le, const int dw2, int real_im_x_center)
 ///////////////////////////////////////////////////////////////////////////////
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_buffer<int> &LB, custom_buffer<int> &LE, int N, int w, int h, int W, int H)
+int SecondFiltration(simple_buffer<int> &Im, simple_buffer<int> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H)
 {		
 	std::string now;
 	if (g_show_sf_results) now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
@@ -1871,7 +1871,7 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 		//{
 		for (int ia = LB[k] * w; ia < ie; ia += da)
 		{
-			custom_buffer<int> lb(w, 0), le(w, 0);
+			simple_buffer<int> lb(w, 0), le(w, 0);
 			int ln, ln_orig;
 			int x, y, ib, i, l, ll, val, val1, val2, offset;
 			int bln;
@@ -2291,10 +2291,10 @@ int SecondFiltration(custom_buffer<int> &Im, custom_buffer<int> &ImNE, custom_bu
 /*
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int ThirdFiltration(custom_buffer<int> &Im, custom_buffer<int> &LB, custom_buffer<int> &LE, int LN, int w, int h, int W, int H)
+int ThirdFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int LN, int w, int h, int W, int H)
 {
-	custom_buffer<int> LL(h, 0), LR(h, 0), LLB(h, 0), LLE(h, 0), LW(h, 0), NN(h, 0);
-	custom_buffer<custom_buffer<int>> LLLB(h, custom_buffer<int>(3, 0)), LLLE(h, custom_buffer<int>(3, 0));
+	simple_buffer<int> LL(h, 0), LR(h, 0), LLB(h, 0), LLE(h, 0), LW(h, 0), NN(h, 0);
+	custom_buffer<simple_buffer<int>> LLLB(h, simple_buffer<int>(3, 0)), LLLE(h, simple_buffer<int>(3, 0));
 
 	int wmin, wmax, nmin, bln, res, x, y, k, l, r, val, val1, val2;
 	int i, j, ib, segh, N;
@@ -2543,14 +2543,14 @@ inline void GetDDY(int &h, int &LH, int &LMAXY, int &ddy1, int &ddy2)
 	}
 }
 
-int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, bool mask_only = false, float threshold = 0.001)
+int cuda_kmeans(simple_buffer<int> &ImRGB, simple_buffer<int> &ImFF, simple_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, bool mask_only = false, float threshold = 0.001)
 {	
 	int res = 0;
 #ifdef WIN64	
 	int numObjs = w * h, numObjsFF;
 	float **clusters;
-	custom_buffer<int> ImRGBFF(numObjs, 0), labelsFF(numObjs, 0);
-	custom_buffer<char> color_cluster_id(1 << 24, -1);
+	simple_buffer<int> ImRGBFF(numObjs, 0), labelsFF(numObjs, 0);
+	simple_buffer<char> color_cluster_id(1 << 24, -1);
 
 	numObjsFF = 0;
 	for (int i = 0; i < w*h; i++)
@@ -2573,7 +2573,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 		clusters = cuda_kmeans_img((unsigned char*)(ImRGBFF.m_pData), numObjsFF, numClusters, threshold, labelsFF.m_pData, initial_loop_iterations);
 		if (clusters == NULL)
 		{
-			wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+			custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
 			return res;
 		}
 
@@ -2618,7 +2618,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 		clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
 		if (clusters == NULL)
 		{
-			wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+			custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
 			return res;
 		}
 		free(clusters[0]);
@@ -2636,7 +2636,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 			clusters = cuda_kmeans_img((unsigned char*)(ImRGB.m_pData), numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
 			if (clusters == NULL)
 			{
-				wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+				custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
 				return res;
 			}
 			free(clusters[0]);
@@ -2672,7 +2672,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 			ww = max_x - min_x + 1;
 			hh = max_y - min_y + 1;
 
-			custom_buffer<int> ImRGBMASK(ww*hh, 0), labelsMASK(ww*hh, 0);
+			simple_buffer<int> ImRGBMASK(ww*hh, 0), labelsMASK(ww*hh, 0);
 			int numObjsMASK = ww*hh;
 
 			for (y = min_y, j = 0; y <= max_y; y++)
@@ -2695,7 +2695,7 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 			clusters = cuda_kmeans_img((unsigned char*)(ImRGBMASK.m_pData), numObjsMASK, numClusters, threshold, labelsMASK.m_pData, loop_iterations);
 			if (clusters == NULL)
 			{
-				wxASSERT_MSG(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+				custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
 				return res;
 			}
 			free(clusters[0]);
@@ -2718,10 +2718,10 @@ int cuda_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buff
 	return res;
 }
 
-int opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, bool mask_only = false)
+int opencv_kmeans(simple_buffer<int> &ImRGB, simple_buffer<int> &ImFF, simple_buffer<int> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, bool mask_only = false)
 {
-	//custom_buffer<int> ImRGBFF(numObjs, 0), labelsFF(numObjs, 0);
-	custom_buffer<char> color_cluster_id(1 << 24, 0);
+	//simple_buffer<int> ImRGBFF(numObjs, 0), labelsFF(numObjs, 0);
+	simple_buffer<char> color_cluster_id(1 << 24, 0);
 	int numObjsFF;
 	int i, j, color, res = 0;
 	u8 *pClr;
@@ -2907,7 +2907,7 @@ int opencv_kmeans(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_bu
 	return res;
 }
 
-void GetClustersImage(custom_buffer<int> &ImRES, custom_buffer<int> &labels, int clusterCount, int w, int h)
+void GetClustersImage(simple_buffer<int> &ImRES, simple_buffer<int> &labels, int clusterCount, int w, int h)
 {
 	for (int i = 0; i < w*h; i++)
 	{
@@ -2924,7 +2924,7 @@ void GetClustersImage(custom_buffer<int> &ImRES, custom_buffer<int> &labels, int
 	}
 }
 
-void SortClustersData(custom_buffer<int> &cluster_id, custom_buffer<int> &cluster_cnt, int clusterCount)
+void SortClustersData(simple_buffer<int> &cluster_id, simple_buffer<int> &cluster_cnt, int clusterCount)
 {
 	int i, j, val;
 
@@ -2951,7 +2951,7 @@ void SortClustersData(custom_buffer<int> &cluster_id, custom_buffer<int> &cluste
 	}
 }
 
-void SortClusters(custom_buffer<int> &labels, custom_buffer<int> &cluster_id, custom_buffer<int> &cluster_cnt, custom_buffer<int> &ImMASK, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y)
+void SortClusters(simple_buffer<int> &labels, simple_buffer<int> &cluster_id, simple_buffer<int> &cluster_cnt, simple_buffer<int> &ImMASK, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y)
 {
 	int x, y, i, j, val;	
 
@@ -2979,13 +2979,13 @@ void SortClusters(custom_buffer<int> &labels, custom_buffer<int> &cluster_id, cu
 	SortClustersData(cluster_id, cluster_cnt, clusterCount);	
 }
 
-void GetInfoByLocation(custom_buffer<int> &Im, int &len, int &ww, int &max_section, int &cnts, int w, int h, int max_x, int white, std::string iter_det)
+void GetInfoByLocation(simple_buffer<int> &Im, int &len, int &ww, int &max_section, int &cnts, int w, int h, int max_x, int white, std::string iter_det)
 {
 	custom_buffer<CMyClosedFigure> pFigures;
 	SearchClosedFigures(Im, w, h, white, pFigures);
 	int N = pFigures.size(), i, x, y, cnt;
 	CMyClosedFigure *pFigure;
-	custom_buffer<int> x_range(w, 0);
+	simple_buffer<int> x_range(w, 0);
 
 	int _min_x = w - 1;
 	int _max_x = -1;
@@ -3031,9 +3031,9 @@ void GetInfoByLocation(custom_buffer<int> &Im, int &len, int &ww, int &max_secti
 	}
 }
 
-void GetClustersInfoByLocation(custom_buffer<int> &ImMASKClusters, custom_buffer<int> &len, custom_buffer<int> &ww, custom_buffer<int> &max_section, custom_buffer<int> &cnts, int clusterCount, int w, int h, int max_x, std::string iter_det)
+void GetClustersInfoByLocation(simple_buffer<int> &ImMASKClusters, simple_buffer<int> &len, simple_buffer<int> &ww, simple_buffer<int> &max_section, simple_buffer<int> &cnts, int clusterCount, int w, int h, int max_x, std::string iter_det)
 {
-	//custom_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0);
+	//simple_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0);
 
 	concurrency::parallel_for(0, clusterCount, [&ImMASKClusters, &len, &ww, &max_section, &cnts, clusterCount, w, h, max_x, iter_det](int cluster_id)
 	{
@@ -3042,7 +3042,7 @@ void GetClustersInfoByLocation(custom_buffer<int> &ImMASKClusters, custom_buffer
 	});
 }
 
-void GetClustersInfoByPlacement(custom_buffer<int> &cluster_cnt, custom_buffer<int> &ImMASKClusters, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y, std::string iter_det)
+void GetClustersInfoByPlacement(simple_buffer<int> &cluster_cnt, simple_buffer<int> &ImMASKClusters, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y, std::string iter_det)
 {
 	int x, y, i, j, val;	
 
@@ -3058,7 +3058,7 @@ void GetClustersInfoByPlacement(custom_buffer<int> &cluster_cnt, custom_buffer<i
 	concurrency::parallel_for(0, clusterCount, [&ImMASKClusters, &cluster_cnt, clusterCount, w, h, min_x, max_x, min_y, max_y, iter_det](int cluster_id)
 	{		
 		int i, j, l, ii, x, y, N, fmin_x, fmax_x, fmin_y, fmax_y;
-		custom_buffer<int> ImCluster(w*h, 0), ImTMP(w*h, 0);
+		simple_buffer<int> ImCluster(w*h, 0), ImTMP(w*h, 0);
 		int white = GetClusterColor(clusterCount, cluster_id);
 
 		for (i = 0; i < w*h; i++)
@@ -3109,7 +3109,7 @@ void GetClustersInfoByPlacement(custom_buffer<int> &cluster_cnt, custom_buffer<i
 	});	
 }
 
-void GetBinaryImageByClusterId(custom_buffer<int> &ImRES, custom_buffer<int> &labels, int req_cluster_id, int w, int h)
+void GetBinaryImageByClusterId(simple_buffer<int> &ImRES, simple_buffer<int> &labels, int req_cluster_id, int w, int h)
 {
 	for (int i = 0; i < w*h; i++)
 	{
@@ -3126,7 +3126,7 @@ void GetBinaryImageByClusterId(custom_buffer<int> &ImRES, custom_buffer<int> &la
 	}
 }
 
-void GetBinaryImageFromClustersImageByClusterId(custom_buffer<int> &ImRES, custom_buffer<int> &ImClusters, int cluster_id, int clusterCount, int w, int h)
+void GetBinaryImageFromClustersImageByClusterId(simple_buffer<int> &ImRES, simple_buffer<int> &ImClusters, int cluster_id, int clusterCount, int w, int h)
 {
 	int white = GetClusterColor(clusterCount, cluster_id);
 
@@ -3143,7 +3143,7 @@ void GetBinaryImageFromClustersImageByClusterId(custom_buffer<int> &ImRES, custo
 	}
 }
 
-void GetBinaryImageFromImageByColor(custom_buffer<int> &ImRES, custom_buffer<int> &ImGR, int white, int w, int h)
+void GetBinaryImageFromImageByColor(simple_buffer<int> &ImRES, simple_buffer<int> &ImGR, int white, int w, int h)
 {
 	for (int i = 0; i < w*h; i++)
 	{
@@ -3158,12 +3158,12 @@ void GetBinaryImageFromImageByColor(custom_buffer<int> &ImRES, custom_buffer<int
 	}
 }
 
-void RestoreImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, int clusterCount, int w, int h, std::string iter_det)
+void RestoreImMask(simple_buffer<int> &ImClusters, simple_buffer<int> &ImMASKF, int clusterCount, int w, int h, std::string iter_det)
 {	
 	concurrency::parallel_for(0, clusterCount, [&ImClusters, &ImMASKF, clusterCount, w, h](int cluster_id)
 	{
-		custom_buffer<int> ImCluster(w*h, 0);
-		custom_buffer<int> ImTMP(ImMASKF);
+		simple_buffer<int> ImCluster(w*h, 0);
+		simple_buffer<int> ImTMP(ImMASKF);
 
 		GetBinaryImageFromClustersImageByClusterId(ImCluster, ImClusters, cluster_id, clusterCount, w, h);
 		IntersectTwoImages(ImTMP, ImCluster, w, h);
@@ -3172,9 +3172,9 @@ void RestoreImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, 
 	});
 }
 
-int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, custom_buffer<int> &labels, int clusterCount, int w, int h, int max_x, int &deleted_by_location, std::string iter_det)
+int FilterImMask(simple_buffer<int> &ImClusters, simple_buffer<int> &ImMASKF, simple_buffer<int> &labels, int clusterCount, int w, int h, int max_x, int &deleted_by_location, std::string iter_det)
 {
-	custom_buffer<int> ImRES4(w*h, 0);
+	simple_buffer<int> ImRES4(w*h, 0);
 	int val, i, j;
 	double ww_thr = 0.5;
 	double ww_in_thr = 0.7;
@@ -3183,8 +3183,8 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	//double len_thr = 0.0;
 	//double placement_cnt_thr = 0.2;
 	int num_main_clusters;
-	custom_buffer<int> ImInside(w*h, 0), ImInsideClose(w*h, 0), ImInside2(w*h, 0);
-	custom_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0), cluster_ids(clusterCount, 0), cnts(clusterCount, 0), placement_cnts(clusterCount, 0);
+	simple_buffer<int> ImInside(w*h, 0), ImInsideClose(w*h, 0), ImInside2(w*h, 0);
+	simple_buffer<int> len(clusterCount, 0), ww(clusterCount, 0), max_section(clusterCount, 0), cluster_ids(clusterCount, 0), cnts(clusterCount, 0), placement_cnts(clusterCount, 0);
 	int max_ww, max_max_section, max_len, max_cnt;
 
 	cv::ocl::setUseOpenCL(g_use_ocl);
@@ -3225,7 +3225,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 
 		if (GetImageWithInsideFigures(ImRES4, ImInside, w, h, white, false) > 0)
 		{
-			custom_buffer<int> ImCluster(w*h, 0);
+			simple_buffer<int> ImCluster(w*h, 0);
 			GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_id, clusterCount, w, h);
 
 			if (g_show_results)
@@ -3287,8 +3287,8 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 
 				if ((cnt2 > cnt1*0.5) && (cnt2 > cnt3*0.5))
 				{
-					custom_buffer<int> cluster_ids_rem(clusterCount, 0);
-					custom_buffer<int> cluster_cnt(clusterCount, 0);
+					simple_buffer<int> cluster_ids_rem(clusterCount, 0);
+					simple_buffer<int> cluster_cnt(clusterCount, 0);
 					SortClusters(labels, cluster_ids_rem, cluster_cnt, ImInside, clusterCount, w, h, 0, max_x, 0, h - 1);
 
 					rem_i = num_main_clusters;
@@ -3351,7 +3351,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 		{
 			if (g_show_results)
 			{
-				custom_buffer<int> ImCluster(w*h, 0);
+				simple_buffer<int> ImCluster(w*h, 0);
 				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
 				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_03_id" + std::to_string(cluster_ids[i]) + "_01_RemovingCluster" + g_im_save_format, w, h);
 			}
@@ -3381,7 +3381,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 		{
 			if (g_show_results)
 			{
-				custom_buffer<int> ImCluster(w*h, 0);
+				simple_buffer<int> ImCluster(w*h, 0);
 				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
 				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_04_id" + std::to_string(cluster_ids[i]) + "_01_RemovingCluster" + g_im_save_format, w, h);
 			}
@@ -3432,7 +3432,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 		{
 			if (g_show_results)
 			{
-				custom_buffer<int> ImCluster(w*h, 0);
+				simple_buffer<int> ImCluster(w*h, 0);
 				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
 				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_05_id" + std::to_string(cluster_ids[i]) + "_01_RemovingCluster" + g_im_save_format, w, h);
 			}
@@ -3461,7 +3461,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 		{
 			if (g_show_results)
 			{
-				custom_buffer<int> ImCluster(w*h, 0);
+				simple_buffer<int> ImCluster(w*h, 0);
 				GetBinaryImageFromClustersImageByClusterId(ImCluster, ImRES4, cluster_ids[i], clusterCount, w, h);
 				if (g_show_results) SaveGreyscaleImage(ImCluster, "/TestImages/FilterImMask_" + iter_det + "_05_id" + std::to_string(cluster_ids[i]) + "_02_RemovingCluster" + g_im_save_format, w, h);
 			}
@@ -3557,7 +3557,7 @@ int FilterImMask(custom_buffer<int> &ImClusters, custom_buffer<int> &ImMASKF, cu
 	return num_main_clusters;
 }
 
-void DistanceTransformImage(custom_buffer<int> &ImGR, custom_buffer<int> &ImRES, int w, int h)
+void DistanceTransformImage(simple_buffer<int> &ImGR, simple_buffer<int> &ImRES, int w, int h)
 {
 	cv::ocl::setUseOpenCL(g_use_ocl);
 
@@ -3577,7 +3577,7 @@ void DistanceTransformImage(custom_buffer<int> &ImGR, custom_buffer<int> &ImRES,
 	IntersectTwoImages(ImRES, ImGR, w, h);
 }
 
-int GetFirstFilteredClusters(custom_buffer<int> &ImRGB, custom_buffer<int> &ImMASK, custom_buffer<int> &ImMASK2, custom_buffer<int> &ImMaskWithBorder, custom_buffer<int> &ImMaskWithBorderF, custom_buffer<int> &ImClusters2, custom_buffer<int> &labels2, int clusterCount2, int w, int h, std::string iter_det)
+int GetFirstFilteredClusters(simple_buffer<int> &ImRGB, simple_buffer<int> &ImMASK, simple_buffer<int> &ImMASK2, simple_buffer<int> &ImMaskWithBorder, simple_buffer<int> &ImMaskWithBorderF, simple_buffer<int> &ImClusters2, simple_buffer<int> &labels2, int clusterCount2, int w, int h, std::string iter_det)
 {
 	int min_x, max_x, min_y, max_y;
 	int res = 0;
@@ -3626,7 +3626,7 @@ int GetFirstFilteredClusters(custom_buffer<int> &ImRGB, custom_buffer<int> &ImMA
 	return res;
 }
 
-void ClearMainClusterImage(custom_buffer<int> &ImMainCluster, custom_buffer<int> ImMASK, custom_buffer<int> &ImIL, int w, int h, int W, int H, int LH, std::string iter_det)
+void ClearMainClusterImage(simple_buffer<int> &ImMainCluster, simple_buffer<int> ImMASK, simple_buffer<int> &ImIL, int w, int h, int W, int H, int LH, std::string iter_det)
 {
 	cv::ocl::setUseOpenCL(g_use_ocl);
 
@@ -3640,7 +3640,7 @@ void ClearMainClusterImage(custom_buffer<int> &ImMainCluster, custom_buffer<int>
 	{
 		
 		{
-			custom_buffer<int> ImTMP(w*h, 0);
+			simple_buffer<int> ImTMP(w*h, 0);
 			cvMAT cv_im_gr;
 			if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/ClearMainClusterImage_" + iter_det + "_02_01_ImMASK" + g_im_save_format, w, h);
 			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/ClearMainClusterImage_" + iter_det + "_02_02_ImMainCluster" + g_im_save_format, w, h);
@@ -3654,7 +3654,7 @@ void ClearMainClusterImage(custom_buffer<int> &ImMainCluster, custom_buffer<int>
 
 		if ((g_use_ILA_images_for_clear_txt_images) && (ImIL[0] != -1))
 		{
-			custom_buffer<int> ImTMP(w*h, 0);
+			simple_buffer<int> ImTMP(w*h, 0);
 			cvMAT cv_im_gr;
 			if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ClearMainClusterImage_" + iter_det + "_03_01_ImIL" + g_im_save_format, w, h);
 			BinaryImageToMat(ImIL, w, h, cv_im_gr);
@@ -3686,16 +3686,16 @@ void ClearMainClusterImage(custom_buffer<int> &ImMainCluster, custom_buffer<int>
 	}
 }
 
-int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, custom_buffer<int> ImMASK2, custom_buffer<int> &ImIL, custom_buffer<int> &ImRES, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, custom_buffer<int> &ImMaskWithBorder, custom_buffer<int> &ImMaskWithBorderF, custom_buffer<int> &ImClusters2, custom_buffer<int> &labels2, int w, int h, int W, int H, std::string iter_det, int real_im_x_center, int min_h)
+int GetMainClusterImage(simple_buffer<int> &ImRGB, simple_buffer<int> ImMASK, simple_buffer<int> ImMASK2, simple_buffer<int> &ImIL, simple_buffer<int> &ImRES, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, simple_buffer<int> &ImMaskWithBorder, simple_buffer<int> &ImMaskWithBorderF, simple_buffer<int> &ImClusters2, simple_buffer<int> &labels2, int w, int h, int W, int H, std::string iter_det, int real_im_x_center, int min_h)
 {
-	custom_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0), ImRES3(w*h, 0), ImRES4(w*h, 0), ImMainCluster(w*h, 0), ImMainCluster2(w*h, 0);
+	simple_buffer<int> ImRES1(w*h, 0), ImRES2(w*h, 0), ImRES3(w*h, 0), ImRES4(w*h, 0), ImMainCluster(w*h, 0), ImMainCluster2(w*h, 0);
 	int x, y, i, j, j2, val1, val2;
 	int clusterCount2 = 6;
-	custom_buffer<int> cluster_cnt2(clusterCount2, 0);
-	custom_buffer<int> cluster_id2(clusterCount2, 0);
+	simple_buffer<int> cluster_cnt2(clusterCount2, 0);
+	simple_buffer<int> cluster_id2(clusterCount2, 0);
 	int clusterCount3 = 4;
-	custom_buffer<int> cluster_cnt3(clusterCount3, 0);
-	custom_buffer<int> cluster_id3(clusterCount3, 0);
+	simple_buffer<int> cluster_cnt3(clusterCount3, 0);
+	simple_buffer<int> cluster_id3(clusterCount3, 0);
 	DWORD  start_time;
 	int ddy1 = 1, ddy2 = h - 2;
 	int LH, LMAXY, lb, le, val, res = 0;
@@ -3717,7 +3717,7 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 		//for (int cluster_idx=0; cluster_idx<clusterCount2; cluster_idx++)
 		{
 			int i, val, LH, LMAXY, lb, le, white = GetClusterColor(clusterCount2, cluster_idx);
-			custom_buffer<int> ImTMP(ImMASK);
+			simple_buffer<int> ImTMP(ImMASK);
 
 			for (i=0; i<w*h; i++)
 			{
@@ -3769,7 +3769,7 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 	
 	int num_main_clusters = 0;
 	int id_last_main_cluster = 0;
-	custom_buffer<int> cnts(clusterCount2, 0);
+	simple_buffer<int> cnts(clusterCount2, 0);
 
 	for (i = 0; i < w*h; i++)
 	{
@@ -3800,9 +3800,9 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 	// for save punctuation marks and on top symbols we need to get image with decreased number of clusters
 	{
 		if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_01_ImMASK" + g_im_save_format, w, h);
-		custom_buffer<int> labels3(w*h, 0);
-		custom_buffer<int> ImClusters3(w*h, 0);
-		custom_buffer<int> ImMASKR(w*h, 0), ImMASKR2(w*h, 0);
+		simple_buffer<int> labels3(w*h, 0);
+		simple_buffer<int> ImClusters3(w*h, 0);
+		simple_buffer<int> ImMASKR(w*h, 0), ImMASKR2(w*h, 0);
 		int min_x, max_x, min_y, max_y;
 
 		if (g_use_cuda_gpu)
@@ -3827,14 +3827,14 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 			int white = GetClusterColor(clusterCount3, cluster_idx);
 			if (g_show_results)
 			{
-				custom_buffer<int> ImTMP(w*h, 0);
+				simple_buffer<int> ImTMP(w*h, 0);
 				GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 				SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_03_id" + std::to_string(cluster_idx) + "_01_ImCluster" + g_im_save_format, w, h);
 			}
 			ClearImageOptimal2(ImClusters3, w, h, min_x, max_x, min_y, max_y, white);
 			if (g_show_results)
 			{
-				custom_buffer<int> ImTMP(w*h, 0);
+				simple_buffer<int> ImTMP(w*h, 0);
 				GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 				SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_03_id" + std::to_string(cluster_idx) + "_02_ImClusterFOptimal2" + g_im_save_format, w, h);
 			}
@@ -3897,7 +3897,7 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 		//RestoreImMask(ImClusters3, ImMASK, clusterCount3, w, h, iter_det + "_call2");
 		//if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_08_ImMASKRestore" + g_im_save_format, w, h);
 
-		custom_buffer<int> ImClusters3FR(ImClusters3);
+		simple_buffer<int> ImClusters3FR(ImClusters3);
 
 		/*concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h](int cluster_idx)
 		{
@@ -3931,14 +3931,14 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 						int white = GetClusterColor(clusterCount3, cluster_idx);
 						if (g_show_results)
 						{
-							custom_buffer<int> ImTMP(w*h, 0);
+							simple_buffer<int> ImTMP(w*h, 0);
 							GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 							SaveImageWithSubParams(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_01_ImCluster" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
 						}
 						ClearImageOpt4(ImClusters3, w, h, W, H, LH, LMAXY, real_im_x_center, white);
 						if (g_show_results)
 						{
-							custom_buffer<int> ImTMP(w*h, 0);
+							simple_buffer<int> ImTMP(w*h, 0);
 							GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 							SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_02_ImClusterFOptimal4" + g_im_save_format, w, h);
 						}
@@ -3950,7 +3950,7 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 						{
 							if (g_show_results)
 							{
-								custom_buffer<int> ImTMP(w*h, 0);
+								simple_buffer<int> ImTMP(w*h, 0);
 								GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 								SaveImageWithSubParams(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_03_ImCluster_WSP" + g_im_save_format, lb2, le2, LH2, LMAXY2, real_im_x_center, w, h);
 							}
@@ -3958,7 +3958,7 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 							ClearImageOpt4(ImClusters3, w, h, W, H, LH2, LMAXY2, real_im_x_center, white);
 							if (g_show_results)
 							{
-								custom_buffer<int> ImTMP(w*h, 0);
+								simple_buffer<int> ImTMP(w*h, 0);
 								GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 								SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_04_ImClusterFOptimal4Second" + g_im_save_format, w, h);
 							}
@@ -3968,7 +3968,7 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 							// remove entire cluster
 							if (g_show_results)
 							{
-								custom_buffer<int> ImTMP(w*h, 0);
+								simple_buffer<int> ImTMP(w*h, 0);
 								GetBinaryImageFromClustersImageByClusterId(ImTMP, ImClusters3, cluster_idx, clusterCount3, w, h);
 								SaveGreyscaleImage(ImTMP, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_03_id" + std::to_string(cluster_idx) + "_05_ImClusterRemove" + g_im_save_format, w, h);
 							}
@@ -4347,9 +4347,9 @@ int GetMainClusterImage(custom_buffer<int> &ImRGB, custom_buffer<int> ImMASK, cu
 	return res;
 }
 
-void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &ImFF, custom_buffer<int> &ImRES, custom_buffer<int> &ImMaskWithBorder, int w, int h, int LH, int LMAXY, std::string iter_det, int white)
+void GetMainClusterImageBySplit(simple_buffer<int> &ImRGB, simple_buffer<int> &ImFF, simple_buffer<int> &ImRES, simple_buffer<int> &ImMaskWithBorder, int w, int h, int LH, int LMAXY, std::string iter_det, int white)
 {	
-	custom_buffer<int> TL(w, 0), TR(w, 0);
+	simple_buffer<int> TL(w, 0), TR(w, 0);
 	int TN, bln1, bln2, x, y, i, j, ddy1, ddy2;
 	int color, rc, gc;
 	u8 *pClr;
@@ -4454,7 +4454,7 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 
 	if (g_show_results)
 	{
-		custom_buffer<int> ImRES1(w*h, 0);
+		simple_buffer<int> ImRES1(w*h, 0);
 		memcpy(&ImRES1[0], &ImRGB[0], (w*h) * sizeof(int));
 
 		for (i = 0; i < TN; i++)
@@ -4472,7 +4472,7 @@ void GetMainClusterImageBySplit(custom_buffer<int> &ImRGB, custom_buffer<int> &I
 	concurrency::parallel_for(0, TN, [&TR, &TL, &ImRGB, &ImFF, &ImMaskWithBorder, &ImRES, &h, &w, &LH, &LMAXY, &iter_det, &white](int ti)
 	{
 		int y, i, j, tw = TR[ti] - TL[ti] + 1;
-		custom_buffer<int> ImRES1(tw*h, 0), ImRES2(tw*h, 0), ImRES3(tw*h, 0), ImRES5(tw*h, 0);
+		simple_buffer<int> ImRES1(tw*h, 0), ImRES2(tw*h, 0), ImRES3(tw*h, 0), ImRES5(tw*h, 0);
 
 		// ImRES1 - RGB image with size tw:h (segment of original image)
 		// ImRES2 - ImFF image with size tw:h (segment of original image)
@@ -4557,10 +4557,10 @@ public:
 	int m_mY;
 	int m_mI;
 	int m_mQ;
-	custom_buffer<int> m_LL;
-	custom_buffer<int> m_LR;
-	custom_buffer<int> m_LLB;
-	custom_buffer<int> m_LLE;
+	simple_buffer<int> m_LL;
+	simple_buffer<int> m_LR;
+	simple_buffer<int> m_LLB;
+	simple_buffer<int> m_LLE;
 	int m_N;
 	int m_k;
 	string m_iter_det;
@@ -4571,10 +4571,10 @@ public:
 	}
 };
 
-void GetMainColorImage(custom_buffer<int> &ImRES, custom_buffer<int> *pImMainCluster, custom_buffer<int> &ImMASK, custom_buffer<int> &ImY, custom_buffer<int> &ImU, custom_buffer<int> &ImV, int w, int h, std::string iter_det, int min_x, int max_x)
+void GetMainColorImage(simple_buffer<int> &ImRES, simple_buffer<int> *pImMainCluster, simple_buffer<int> &ImMASK, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h, std::string iter_det, int min_x, int max_x)
 {
-	custom_buffer<int> ImRES1(w*h, 0);
-	custom_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
+	simple_buffer<int> ImRES1(w*h, 0);
+	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	int delta, val1, val2, val3, val4, NN, ys1;
 	int i, j, j1, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, j5_min, j5_max;
 	int xb, xe, yb, ye, x, y;
@@ -4728,7 +4728,7 @@ void GetMainColorImage(custom_buffer<int> &ImRES, custom_buffer<int> *pImMainClu
 
 	if (pImMainCluster != NULL)
 	{
-		custom_buffer<int> &ImMainCluster = *pImMainCluster;
+		simple_buffer<int> &ImMainCluster = *pImMainCluster;
 
 		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_01_MainTXTCluster" + g_im_save_format, w, h);
 
@@ -4752,9 +4752,9 @@ void GetMainColorImage(custom_buffer<int> &ImRES, custom_buffer<int> *pImMainClu
 	}
 }
 
-void ExtendByInsideFigures(custom_buffer<int> &ImRES, int w, int h, int white, bool simple)
+void ExtendByInsideFigures(simple_buffer<int> &ImRES, int w, int h, int white, bool simple)
 {
-	custom_buffer<int> ImTMP(w * h, 0);
+	simple_buffer<int> ImTMP(w * h, 0);
 	int val, val1, val2;
 
 	// Extend ImSNF with Internal Figures
@@ -4765,9 +4765,9 @@ void ExtendByInsideFigures(custom_buffer<int> &ImRES, int w, int h, int white, b
 	}
 }
 
-int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, custom_buffer<int> &ImFRes, int w, int h, int W, int H, int XB, int YB, std::string iter_det)
+int CheckOnSubPresence(simple_buffer<int> &ImMASK, simple_buffer<int> &ImNE, simple_buffer<int> &ImFRes, int w, int h, int W, int H, int XB, int YB, std::string iter_det)
 {
-	custom_buffer<int> ImTMP(w*h, 0);
+	simple_buffer<int> ImTMP(w*h, 0);
 	int i, j, x, y, ww, hh, res = 0;
 
 	cv::ocl::setUseOpenCL(g_use_ocl);
@@ -4788,7 +4788,7 @@ int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, cus
 		if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/CheckOnSubPresence_" + iter_det + "_01_02_ImFFDilate" + g_im_save_format, ww, hh);
 	}
 
-	custom_buffer<int> ImFFD(W*hh, 0), ImSF(W*hh, 0), ImTF(W*hh, 0);
+	simple_buffer<int> ImFFD(W*hh, 0), ImSF(W*hh, 0), ImTF(W*hh, 0);
 
 	for (y = 0, i = XB, j = 0; y < hh; y++, i += W, j += ww)
 	{
@@ -4799,7 +4799,7 @@ int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, cus
 
 	memcpy(&ImSF[0], &ImFFD[0], W*hh * sizeof(int));
 
-	custom_buffer<int> LB(1, 0), LE(1, 0);
+	simple_buffer<int> LB(1, 0), LE(1, 0);
 	LB[0] = 0;
 	LE[0] = hh - 1;
 	res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(YB*W), LB, LE, 1, W, hh, W, H, iter_det);
@@ -4836,7 +4836,7 @@ int CheckOnSubPresence(custom_buffer<int> &ImMASK, custom_buffer<int> &ImNE, cus
 	return res;
 }
 
-FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, custom_buffer<int> &FullImIL, custom_buffer<int> &FullImY, string SaveName, std::string iter_det, int N, const int k, custom_buffer<int> LL, custom_buffer<int> LR, custom_buffer<int> LLB, custom_buffer<int> LLE, int W, int H)
+FindTextRes FindText(simple_buffer<int> &ImRGB, simple_buffer<int> &ImF, simple_buffer<int> &ImNF, simple_buffer<int> &ImNE, simple_buffer<int> &FullImIL, simple_buffer<int> &FullImY, string SaveName, std::string iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, int W, int H)
 {
 	int i, j, l, r, x, y, ib, bln, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, w_orig, h_orig, ww, hh, cnt;
 	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
@@ -4845,7 +4845,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	int j1, j2, j3, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, j5_min, j5_max;
 	int mY, mI, mQ;
 	int LH, LMAXY;
-	custom_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
+	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	FindTextRes res;
 	int color, rc, gc, bc, yc, cc, wc, min_h;
 	u8 *pClr;
@@ -5042,15 +5042,15 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	w_orig = w;
 	h_orig = h;
 
-	custom_buffer<int> ImRGBOrig(w*h, 0), ImRGBScaled((int)(w*g_scale)*(int)(h*g_scale), 0), ImSNFOrig((int)(w*g_scale)*(int)(h*g_scale), 0), ImSNF((int)(w*g_scale)*(int)(h*g_scale), 0), ImFF((int)(w*g_scale)*(int)(h*g_scale), 0);
-	custom_buffer<int> ImY((int)(w*g_scale)*(int)(h*g_scale), 0), ImU((int)(w*g_scale)*(int)(h*g_scale), 0), ImV((int)(w*g_scale)*(int)(h*g_scale), 0);
-	custom_buffer<int> ImL((int)(w*g_scale)*(int)(h*g_scale), 0), ImA((int)(w*g_scale)*(int)(h*g_scale), 0), ImB((int)(w*g_scale)*(int)(h*g_scale), 0);
-	custom_buffer<int> ImIL((int)(w*g_scale)*(int)(h*g_scale), 0);
-	custom_buffer<int> ImTHR((int)(w*g_scale)*(int)(h*g_scale), 0), ImTHRInside((w*g_scale)*(int)(h*g_scale), 0), ImTHRMerge((w*g_scale)*(int)(h*g_scale), 0);
+	simple_buffer<int> ImRGBOrig(w*h, 0), ImRGBScaled((int)(w*g_scale)*(int)(h*g_scale), 0), ImSNFOrig((int)(w*g_scale)*(int)(h*g_scale), 0), ImSNF((int)(w*g_scale)*(int)(h*g_scale), 0), ImFF((int)(w*g_scale)*(int)(h*g_scale), 0);
+	simple_buffer<int> ImY((int)(w*g_scale)*(int)(h*g_scale), 0), ImU((int)(w*g_scale)*(int)(h*g_scale), 0), ImV((int)(w*g_scale)*(int)(h*g_scale), 0);
+	simple_buffer<int> ImL((int)(w*g_scale)*(int)(h*g_scale), 0), ImA((int)(w*g_scale)*(int)(h*g_scale), 0), ImB((int)(w*g_scale)*(int)(h*g_scale), 0);
+	simple_buffer<int> ImIL((int)(w*g_scale)*(int)(h*g_scale), 0);
+	simple_buffer<int> ImTHR((int)(w*g_scale)*(int)(h*g_scale), 0), ImTHRInside((w*g_scale)*(int)(h*g_scale), 0), ImTHRMerge((w*g_scale)*(int)(h*g_scale), 0);
 
 	if (g_show_results)
 	{
-		custom_buffer<int> ImTMP(W * H, 0);
+		simple_buffer<int> ImTMP(W * H, 0);
 		memcpy(&ImTMP[0], &ImRGB[0], W * H * sizeof(int));
 
 		for (i = 0; i < N; i++)
@@ -5093,7 +5093,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			if (g_show_results) SaveRGBImage(ImRGBScaled, "/TestImages/FindTextLines_" + iter_det + "_03_2_2_Im_RGBScaled4x4" + g_im_save_format, w * g_scale, h * g_scale);
 		},
 			[&ImNF, &ImSNFOrig, YB, YE, XB, W, w, h, iter_det] {
-			custom_buffer<int> ImTMP(w * h, 0);
+			simple_buffer<int> ImTMP(w * h, 0);
 			int y, i, j;
 
 			for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
@@ -5110,7 +5110,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			[&FullImIL, &ImIL, YB, YE, XB, W, w, h, iter_det] {
 			if (FullImIL[0] != -1)
 			{
-				custom_buffer<int> ImTMP(w * h, 0);
+				simple_buffer<int> ImTMP(w * h, 0);
 				int y, i, j;
 
 				for (y = YB, i = YB * W + XB, j = 0; y <= YE; y++, i += W, j += w)
@@ -5164,8 +5164,8 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	int real_im_x_center = ((W / 2) - XB) * g_scale;
 
 	{
-		custom_buffer<int> ImTMP(w*h, 0);
-		custom_buffer<int> LB(1, 0), LE(1, 0);
+		simple_buffer<int> ImTMP(w*h, 0);
+		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = h - 1;
 		GetImFF(ImSNF, ImTMP, ImRGBScaled, ImY, ImU, ImV, LB, LE, 1, w, h, (W*g_scale), (H*g_scale), g_smthr);
@@ -5177,7 +5177,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 
 	// note: ImSNF can be too broken due to color filtration, don't merge it with ImSNF before extending internal figures
 
-	custom_buffer<int> ImSNFS(ImSNF);
+	simple_buffer<int> ImSNFS(ImSNF);
 
 	concurrency::parallel_invoke(
 		[&ImSNF, w, h, iter_det] {
@@ -5259,7 +5259,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			[&ImTHR, &ImSNF, &cv_bw, &kernel_open, w, h, iter_det] {
 				cv::ocl::setUseOpenCL(g_use_ocl);
 
-				custom_buffer<int> ImTMP(ImTHR);
+				simple_buffer<int> ImTMP(ImTHR);
 				cvMAT cv_opening;
 
 				if (g_show_results) SaveGreyscaleImage(ImTHR, "/TestImages/FindTextLines_" + iter_det + "_09_1_ImTHR" + g_im_save_format, w, h);
@@ -5279,7 +5279,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			[&ImTHRInside, &ImSNF, &kernel_open, w, h, iter_det] {
 				cv::ocl::setUseOpenCL(g_use_ocl);
 
-				custom_buffer<int> ImTMP(ImTHRInside);
+				simple_buffer<int> ImTMP(ImTHRInside);
 				cvMAT cv_inside;
 
 				if (g_show_results) SaveGreyscaleImage(ImTHRInside, "/TestImages/FindTextLines_" + iter_det + "_10_1_ImTHRInsideFigures" + g_im_save_format, w, h);
@@ -5309,16 +5309,16 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	ClearImageByTextDistance(ImTHRMerge, w, h, (W*g_scale), (H*g_scale), real_im_x_center, 255, iter_det);
 	if (g_show_results) if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindTextLines_" + iter_det + "_10_08_ImTHRMergeFByTextDistance" + g_im_save_format, w, h);
 
-	custom_buffer<int> ImMaskWithBorder(w*h, 0), ImMaskWithBorderF(w*h, 0);
-	custom_buffer<int> ImClusters2(w*h, 0), labels2(w*h, 0);	
+	simple_buffer<int> ImMaskWithBorder(w*h, 0), ImMaskWithBorderF(w*h, 0);
+	simple_buffer<int> ImClusters2(w*h, 0), labels2(w*h, 0);	
 
 	{
-		custom_buffer<int> Im1(w * h, 0), ImTHRMergeF(ImTHRMerge), ImTHRMergeF2(w * h, 0);
+		simple_buffer<int> Im1(w * h, 0), ImTHRMergeF(ImTHRMerge), ImTHRMergeF2(w * h, 0);
 
-		vector<custom_buffer<int>*> ImagesForCheck;				
+		vector<simple_buffer<int>*> ImagesForCheck;				
 		int clusterCount2 = 6;
-		custom_buffer<int> cluster_id2(clusterCount2, 0);
-		custom_buffer<int> cluster_cnt2(clusterCount2, 0);				
+		simple_buffer<int> cluster_id2(clusterCount2, 0);
+		simple_buffer<int> cluster_cnt2(clusterCount2, 0);				
 
 		val = GetFirstFilteredClusters(ImRGBScaled, ImTHRMerge, ImSNF, ImMaskWithBorder, ImMaskWithBorderF, ImClusters2, labels2, clusterCount2, w, h, iter_det + "_call1");
 
@@ -5351,7 +5351,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		
 		SortClusters(labels2, cluster_id2, cluster_cnt2, ImTHRMergeF, clusterCount2, w, h, 0, std::min<int>(w, real_im_x_center) - 1, 0, h - 1);
 		GetBinaryImageByClusterId(Im1, labels2, cluster_id2[0], w, h);		
-		custom_buffer<int> Im2(Im1);		
+		simple_buffer<int> Im2(Im1);		
 
 		concurrency::parallel_invoke(
 			[&Im1, &ImTHRMerge, w, h, W, H, real_im_x_center, iter_det] {
@@ -5401,7 +5401,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 
 		for (int i_im = 0; i_im < ImagesForCheck.size(); i_im++)
 		{
-			custom_buffer<int> &ImThrRef = *(ImagesForCheck[i_im]);
+			simple_buffer<int> &ImThrRef = *(ImagesForCheck[i_im]);
 
 			if (g_show_results) SaveGreyscaleImage(ImThrRef, "/TestImages/FindTextLines_" + iter_det + "_12_" + std::to_string(i_im) + "_1_ImTHR" + std::to_string(i_im) + g_im_save_format, w, h);
 
@@ -5423,10 +5423,10 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			{
 				bln = 0;
 
-				custom_buffer<int> lw(h, 0);
+				simple_buffer<int> lw(h, 0);
 				int max_txt_w, max_txt_y, min_y1, max_y1, min_y2, max_y2, new_txt_y = 0, new_txt_w, max_txt2_w, max_txt2_y;
 
-				custom_buffer<int> ImTHRF(ImThrRef);
+				simple_buffer<int> ImTHRF(ImThrRef);
 				ClearImageFromMainSymbols(ImTHRF, w, h, W*g_scale, H*g_scale, LH, LMAXY, 255, iter_det);
 				if (g_show_results) SaveGreyscaleImage(ImTHRF, "/TestImages/FindTextLines_" + iter_det + "_12_" + std::to_string(i_im) + "_2_2_ImTHR" + std::to_string(i_im) + "FFromMainSymbols" + g_im_save_format, w, h);
 
@@ -5653,7 +5653,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	}
 
 	{
-		custom_buffer<int> ImMainMASK(w*h, 0);
+		simple_buffer<int> ImMainMASK(w*h, 0);
 		
 		yb = (LLB[k] - YB) * g_scale;
 		ye = (LLE[k] - YB) * g_scale;
@@ -5661,7 +5661,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		xe = (LR[k] - XB) * g_scale;
 
 		{
-			custom_buffer<int> ImMainMASKF(w*h, 0), ImMainCluster(w*h, 0), ImMainClusterF(w*h, 0);					
+			simple_buffer<int> ImMainMASKF(w*h, 0), ImMainCluster(w*h, 0), ImMainClusterF(w*h, 0);					
 
 			val = GetMainClusterImage(ImRGBScaled, ImTHRMerge, ImSNFS, ImIL, ImMainCluster, ImL, ImA, ImB, ImMaskWithBorder, ImMaskWithBorderF, ImClusters2, labels2, w, h, W * g_scale, H * g_scale, iter_det, ((W / 2) - XB) * g_scale, min_h * g_scale);
 			if (val == 0)
@@ -5714,7 +5714,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	ww = W * g_scale;
 	hh = h;
 
-	custom_buffer<int> ImSubForSave(ww*hh, 0);
+	simple_buffer<int> ImSubForSave(ww*hh, 0);
 	for (i = 0; i < ww*hh; i++) ImSubForSave[i] = wc;
 
 	cnt = 0;
@@ -5735,7 +5735,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		res.m_YB = YB;
 		res.m_im_h = h / g_scale;
 
-		custom_buffer<int> ImFFD(W*res.m_im_h, 0), ImSF(W*res.m_im_h, 0), ImTF(W*res.m_im_h, 0);
+		simple_buffer<int> ImFFD(W*res.m_im_h, 0), ImSF(W*res.m_im_h, 0), ImTF(W*res.m_im_h, 0);
 
 		{
 			cv::Mat cv_ImRGBOrig(hh, ww, CV_8UC4), cv_ImDilate(res.m_im_h, W, CV_8UC1);
@@ -5755,7 +5755,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 			}
 			cv::dilate(cv_ImDilate, cv_ImDilate, cv::Mat(), cv::Point(-1, -1), 2);
 
-			ImFFD = custom_buffer<int>(W*res.m_im_h, 0);
+			ImFFD = simple_buffer<int>(W*res.m_im_h, 0);
 			for (i = 0; i < res.m_im_h*W; i++)
 			{
 				if (cv_ImDilate.data[i] != 0)
@@ -5769,7 +5769,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 		
 		memcpy(&ImSF[0], &ImFFD[0], W*res.m_im_h * sizeof(int));
 
-		custom_buffer<int> LB(1, 0), LE(1, 0);
+		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = res.m_im_h - 1;
 		res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(res.m_YB*W), LB, LE, 1, W, res.m_im_h, W, H, iter_det);
@@ -5809,7 +5809,7 @@ FindTextRes FindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_
 	return res;
 }
 
-inline concurrency::task<FindTextRes> TaskFindText(custom_buffer<int> &ImRGB, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, custom_buffer<int> &ImIL, custom_buffer<int> &FullImY, string &SaveName, std::string &iter_det, int N, int k, custom_buffer<int> &LL, custom_buffer<int> &LR, custom_buffer<int> &LLB, custom_buffer<int> &LLE, int W, int H)
+inline concurrency::task<FindTextRes> TaskFindText(simple_buffer<int> &ImRGB, simple_buffer<int> &ImF, simple_buffer<int> &ImNF, simple_buffer<int> &ImNE, simple_buffer<int> &ImIL, simple_buffer<int> &FullImY, string &SaveName, std::string &iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int W, int H)
 {	
 	return concurrency::create_task([&ImRGB, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, W, H]	{
 			return FindText(ImRGB, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, W, H);
@@ -5817,11 +5817,11 @@ inline concurrency::task<FindTextRes> TaskFindText(custom_buffer<int> &ImRGB, cu
 	);
 }
 
-int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, custom_buffer<int> &ImF, custom_buffer<int> &ImNF, custom_buffer<int> &ImNE, custom_buffer<int> &ImIL, vector<wxString> &SavedFiles, int W, int H)
+int FindTextLines(simple_buffer<int> &ImRGB, simple_buffer<int> &ImClearedText, simple_buffer<int> &ImF, simple_buffer<int> &ImNF, simple_buffer<int> &ImNE, simple_buffer<int> &ImIL, vector<wxString> &SavedFiles, int W, int H)
 {
-	custom_buffer<int> LL(H, 0), LR(H, 0), LLB(H, 0), LLE(H, 0), LW(H, 0);
-	custom_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
-	custom_buffer<int> FullImY(W*H, 0);
+	simple_buffer<int> LL(H, 0), LR(H, 0), LLB(H, 0), LLE(H, 0), LW(H, 0);
+	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
+	simple_buffer<int> FullImY(W*H, 0);
 
 	int i, j, k, l, r, x, y, ib, bln, N, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
 	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
@@ -6048,11 +6048,11 @@ int FindTextLines(custom_buffer<int> &ImRGB, custom_buffer<int> &ImClearedText, 
 
 //Extending ImF with data from ImNF
 //adding all figures from ImNF which intersect with minY-maxY figures position in ImF
-void ExtendImFWithDataFromImNF(custom_buffer<int> &ImF, custom_buffer<int> &ImNF, int w, int h)
+void ExtendImFWithDataFromImNF(simple_buffer<int> &ImF, simple_buffer<int> &ImNF, int w, int h)
 {
 	// Getting info about text position in ImF
 	int x, y, i, ib, k, bln, l, r, N;
-	custom_buffer<int> LL(h, 0), LR(h, 0), LLB(h, 0), LLE(h, 0);
+	simple_buffer<int> LL(h, 0), LR(h, 0), LLB(h, 0), LLE(h, 0);
 
 	// Getting info about text lines position in ImF
 	// -----------------------------------------------------
@@ -6149,7 +6149,7 @@ void ExtendImFWithDataFromImNF(custom_buffer<int> &ImF, custom_buffer<int> &ImNF
 	}
 }
 
-void ClearImageByBigLines(custom_buffer<int> &Im, int w, int h, int W, int H)
+void ClearImageByBigLines(simple_buffer<int> &Im, int w, int h, int W, int H)
 {
 	// Removing all big lines on image Im
 	int i, x, y, lb, le, max_line_len = std::min<int>(0.25*W, h * 1.5);
@@ -6185,7 +6185,7 @@ void ClearImageByBigLines(custom_buffer<int> &Im, int w, int h, int W, int H)
 	}
 }
 
-void ClearImage4x4(custom_buffer<int> &Im, int w, int h, int white)
+void ClearImage4x4(simple_buffer<int> &Im, int w, int h, int white)
 {
 	int i, j, l, ib, x, y;
 
@@ -6250,7 +6250,7 @@ void ClearImage4x4(custom_buffer<int> &Im, int w, int h, int white)
 	}
 }
 
-int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int ddy1, int ddy2, int white)
+int ClearImageFromBorders(simple_buffer<int> &Im, int w, int h, int ddy1, int ddy2, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -6263,7 +6263,7 @@ int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int ddy1, int dd
 
 	if (N == 0) return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6300,7 +6300,7 @@ int ClearImageFromBorders(custom_buffer<int> &Im, int w, int h, int ddy1, int dd
 	return N;
 }
 
-int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int white)
+int ClearImageOptimal(simple_buffer<int> &Im, int w, int h, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
@@ -6314,7 +6314,7 @@ int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int white)
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for(i=0; i<N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6357,7 +6357,7 @@ int ClearImageOptimal(custom_buffer<int> &Im, int w, int h, int white)
 	return 1;
 }
 
-int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, int white)
+int ClearImageOptimal2(simple_buffer<int> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
@@ -6371,7 +6371,7 @@ int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int min_x, int max_
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6423,7 +6423,7 @@ int ClearImageOptimal2(custom_buffer<int> &Im, int w, int h, int min_x, int max_
 	return 1;
 }
 
-void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, std::string iter_det)
+void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, std::string iter_det)
 {
 	int i, j, k;
 	CMyClosedFigure *pFigureI, *pFigureJ;
@@ -6495,12 +6495,12 @@ void CombineFiguresRelatedToEachOther(custom_buffer<CMyClosedFigure*> &ppFigures
 	}
 }
 
-int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other)
+int GetSubParams(simple_buffer<int> &Im, int w, int h, int white, int &LH, int &LMAXY, int &lb, int &le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, val, N, minN, H, delta, NNN, jY, jI, jQ;
-	custom_buffer<int> GRStr(256 * 2, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
-	custom_buffer<int> ImRR(w*h, 0);
+	simple_buffer<int> GRStr(256 * 2, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
+	simple_buffer<int> ImRR(w*h, 0);
 	int val1, val2, val3;
 	int NNY;
 	CMyPoint *PA;
@@ -6519,14 +6519,14 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
 	}
 
-	custom_buffer<int> NN(N, 0), NY(N, 0), NL(N, 0), NR(N, 0);
-	custom_buffer<CMyClosedFigure*> good_figures(N);
+	simple_buffer<int> NN(N, 0), NY(N, 0), NL(N, 0), NR(N, 0);
+	simple_buffer<CMyClosedFigure*> good_figures(N);
 	
 	/*
 #ifdef CUSTOM_DEBUG
@@ -6653,7 +6653,7 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 	}
 	LMAXY = NY[j];
 
-	custom_buffer<int> arMinY(N, 0);
+	simple_buffer<int> arMinY(N, 0);
 
 	for (i = 0, k = 0; i < NNY; i++)
 	{
@@ -6707,7 +6707,7 @@ int GetSubParams(custom_buffer<int> &Im, int w, int h, int white, int &LH, int &
 	return 1;
 }
 
-int ClearImageByMask(custom_buffer<int> &Im, custom_buffer<int> &ImMASK, int w, int h, int white, double thr)
+int ClearImageByMask(simple_buffer<int> &Im, simple_buffer<int> &ImMASK, int w, int h, int white, double thr)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -6721,7 +6721,7 @@ int ClearImageByMask(custom_buffer<int> &Im, custom_buffer<int> &ImMASK, int w, 
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6767,7 +6767,7 @@ int ClearImageByMask(custom_buffer<int> &Im, custom_buffer<int> &ImMASK, int w, 
 	return N;
 }
 
-int ClearImageFromMainSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int white, std::string iter_det)
+int ClearImageFromMainSymbols(simple_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int white, std::string iter_det)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -6781,7 +6781,7 @@ int ClearImageFromMainSymbols(custom_buffer<int> &Im, int w, int h, int W, int H
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6815,7 +6815,7 @@ int ClearImageFromMainSymbols(custom_buffer<int> &Im, int w, int h, int W, int H
 	}
 }
 
-int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det)
+int ClearImageOpt2(simple_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white, std::string iter_det)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -6830,7 +6830,7 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6923,7 +6923,7 @@ int ClearImageOpt2(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 	return N;
 }
 
-int ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int real_im_x_center, int white)
+int ClearImageOpt3(simple_buffer<int> &Im, int w, int h, int real_im_x_center, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -6937,7 +6937,7 @@ int ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int real_im_x_center, i
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -6984,7 +6984,7 @@ int ClearImageOpt3(custom_buffer<int> &Im, int w, int h, int real_im_x_center, i
 	return N;
 }
 
-int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white)
+int ClearImageOpt4(simple_buffer<int> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -6999,7 +6999,7 @@ int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -7098,7 +7098,7 @@ int ClearImageOpt4(custom_buffer<int> &Im, int w, int h, int W, int H, int LH, i
 	return N;
 }
 
-int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int real_im_x_center, int white)
+int ClearImageOpt5(simple_buffer<int> &Im, int w, int h, int LH, int LMAXY, int real_im_x_center, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -7112,7 +7112,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -7204,7 +7204,7 @@ int ClearImageOpt5(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int 
 	return N;
 }
 
-void CombineFiguresRelatedToEachOther2(custom_buffer<CMyClosedFigure*> &ppFigures, int &N)
+void CombineFiguresRelatedToEachOther2(simple_buffer<CMyClosedFigure*> &ppFigures, int &N)
 {
 	int i, j, k;
 	CMyClosedFigure *pFigureI, *pFigureJ;
@@ -7257,7 +7257,7 @@ void CombineFiguresRelatedToEachOther2(custom_buffer<CMyClosedFigure*> &ppFigure
 	}
 }
 
-int ClearImageByTextDistance(custom_buffer<int> &Im, int w, int h, int W, int H, int real_im_x_center, int white, std::string iter_det)
+int ClearImageByTextDistance(simple_buffer<int> &Im, int w, int h, int W, int H, int real_im_x_center, int white, std::string iter_det)
 {
 	const int dw = (int)(g_btd*(double)W);
 	const int dw2 = (int)(g_tco*(double)W*2.0);
@@ -7273,7 +7273,7 @@ int ClearImageByTextDistance(custom_buffer<int> &Im, int w, int h, int W, int H,
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -7292,7 +7292,7 @@ int ClearImageByTextDistance(custom_buffer<int> &Im, int w, int h, int W, int H,
 		}
 	}
 
-	custom_buffer<int> max_x(N, 0);
+	simple_buffer<int> max_x(N, 0);
 	for (j = 0, val1 = ppFigures[0]->m_maxX; j < N; j++)
 	{
 		if (ppFigures[j]->m_maxX > val1)
@@ -7357,7 +7357,7 @@ int ClearImageByTextDistance(custom_buffer<int> &Im, int w, int h, int W, int H,
 	}
 }
 
-int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int W, int H, int white)
+int ClearImageFromSmallSymbols(simple_buffer<int> &Im, int w, int h, int W, int H, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N, res = 0, x, y, y2;
@@ -7370,7 +7370,7 @@ int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int W, int 
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -7424,12 +7424,12 @@ int ClearImageFromSmallSymbols(custom_buffer<int> &Im, int w, int h, int W, int 
 	return res;
 }
 
-void RestoreStillExistLines(custom_buffer<int> &Im, custom_buffer<int> &ImOrig, int w, int h)
+void RestoreStillExistLines(simple_buffer<int> &Im, simple_buffer<int> &ImOrig, int w, int h)
 {
 	int i, x, y, y2;
 	
 	int dy = 2 * g_segh;
-	custom_buffer<int> lines_info(h, 0);
+	simple_buffer<int> lines_info(h, 0);
 
 	for (y = 0; y < h; y++)
 	{
@@ -7464,7 +7464,7 @@ void RestoreStillExistLines(custom_buffer<int> &Im, custom_buffer<int> &ImOrig, 
 	if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/RestoreStillExistLines_01" + g_im_save_format, w, h);
 }
 
-int GetAllInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, custom_buffer<CMyClosedFigure> &pFigures, custom_buffer<CMyClosedFigure*> &ppFigures, int &N, int w, int h, int white)
+int GetAllInsideFigures(simple_buffer<int> &Im, simple_buffer<int> &ImRes, custom_buffer<CMyClosedFigure> &pFigures, simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int w, int h, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, l, x, y, ii, cnt;
@@ -7473,7 +7473,7 @@ int GetAllInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, custo
 	memset(&ImRes[0], 0, w*h * sizeof(int));
 
 	{
-		custom_buffer<int> ImTMP(w * h, 0);
+		simple_buffer<int> ImTMP(w * h, 0);
 
 		for (i = 0; i < w*h; i++)
 		{
@@ -7527,7 +7527,7 @@ int GetAllInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, custo
 	return N;
 }
 
-void ConvertCMyClosedFigureToSubImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImRes, int w, int h, int ww, int hh, int min_x, int min_y, int white)
+void ConvertCMyClosedFigureToSubImage(CMyClosedFigure *pFigure, simple_buffer<int> &ImRes, int w, int h, int ww, int hh, int min_x, int min_y, int white)
 {
 	int ii, l, x, y;
 	CMyPoint *PA = pFigure->m_PointsArray;
@@ -7542,7 +7542,7 @@ void ConvertCMyClosedFigureToSubImage(CMyClosedFigure *pFigure, custom_buffer<in
 	}
 }
 
-void AddSubImageToImage(custom_buffer<int> &ImRes, custom_buffer<int> &ImSub, int w, int h, int ww, int hh, int min_x, int min_y, int white)
+void AddSubImageToImage(simple_buffer<int> &ImRes, simple_buffer<int> &ImSub, int w, int h, int ww, int hh, int min_x, int min_y, int white)
 {
 	int i, ii, x, y;
 
@@ -7559,14 +7559,14 @@ void AddSubImageToImage(custom_buffer<int> &ImRes, custom_buffer<int> &ImSub, in
 	}
 }
 
-int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white, bool simple)
+int GetImageWithInsideFigures(simple_buffer<int> &Im, simple_buffer<int> &ImRes, int w, int h, int white, bool simple)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, l, x, y, ii, cnt, N;
 	CMyPoint *PA;
 	custom_buffer<CMyClosedFigure> pFigures;
-	custom_buffer<CMyClosedFigure*> ppFigures;
-	custom_buffer<int> ImIntRes(w * h, 0);
+	simple_buffer<CMyClosedFigure*> ppFigures;
+	simple_buffer<int> ImIntRes(w * h, 0);
 
 	GetAllInsideFigures(Im, ImRes, pFigures, ppFigures, N, w, h, white);		
 
@@ -7600,9 +7600,9 @@ int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes,
 		if (found)
 		{
 			int N1, ww = ppFigures[i]->m_w, hh = ppFigures[i]->m_h, x, y, min_x = ppFigures[i]->m_minX, min_y = ppFigures[i]->m_minY;
-			custom_buffer<int> Im1(ww * hh, 0), ImInt1(ww * hh, 0);
+			simple_buffer<int> Im1(ww * hh, 0), ImInt1(ww * hh, 0);
 			custom_buffer<CMyClosedFigure> pFigures1;
-			custom_buffer<CMyClosedFigure*> ppFigures1;
+			simple_buffer<CMyClosedFigure*> ppFigures1;
 
 			ConvertCMyClosedFigureToSubImage(ppFigures[i], Im1, w, h, ww, hh, min_x, min_y, white);
 			if (GetAllInsideFigures(Im1, ImInt1, pFigures1, ppFigures1, N1, ww, hh, white) > 0)
@@ -7614,7 +7614,7 @@ int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes,
 
 	/*if (g_show_results)
 	{
-		custom_buffer<int> ImTMP(w * h, 0);
+		simple_buffer<int> ImTMP(w * h, 0);
 		GetBinaryImageFromImageByColor(ImTMP, Im, white, w, h);
 		SaveGreyscaleImage(ImTMP, "/TestImages/GetImageWithInsideFigures_01_Im" + g_im_save_format, w, h);
 		SaveGreyscaleImage(ImRes, "/TestImages/GetImageWithInsideFigures_02_ImInsideFigures" + g_im_save_format, w, h);
@@ -7636,7 +7636,7 @@ int GetImageWithInsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes,
 	return N;
 }
 
-void InvertBinaryImage(custom_buffer<int> &Im, int w, int h)
+void InvertBinaryImage(simple_buffer<int> &Im, int w, int h)
 {
 	for (int i = 0; i < w*h; i++)
 	{
@@ -7651,7 +7651,7 @@ void InvertBinaryImage(custom_buffer<int> &Im, int w, int h)
 	}
 }
 
-int GetImageWithOutsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes, int w, int h, int white)
+int GetImageWithOutsideFigures(simple_buffer<int> &Im, simple_buffer<int> &ImRes, int w, int h, int white)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, x, y, ii, cnt, N;
@@ -7665,7 +7665,7 @@ int GetImageWithOutsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes
 
 	if (N == 0)	return 0;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for (i = 0; i < N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -7702,7 +7702,7 @@ int GetImageWithOutsideFigures(custom_buffer<int> &Im, custom_buffer<int> &ImRes
 	return N;
 }
 
-void ClearImageSpecific1(custom_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white)
+void ClearImageSpecific1(simple_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white)
 {
 	CMyClosedFigure *pFigure;
 	CMyPoint *PA;
@@ -7748,7 +7748,7 @@ void ClearImageSpecific1(custom_buffer<int> &Im, int w, int h, int yb, int ye, i
 	}
 }
 
-void MergeWithClusterImage(custom_buffer<int> &ImInOut, custom_buffer<int> &ImCluser, int w, int h, int white)
+void MergeWithClusterImage(simple_buffer<int> &ImInOut, simple_buffer<int> &ImCluser, int w, int h, int white)
 {
 	CMyClosedFigure *pFigure1, *pFigure2;
 	int i, j, k, l, ii, N1, N2;
@@ -7789,9 +7789,9 @@ void MergeWithClusterImage(custom_buffer<int> &ImInOut, custom_buffer<int> &ImCl
 }
 
 // note: both images should be binary type of images (not greyscale) (should have 0 or white values of pixels)
-void MergeImagesByIntersectedFigures(custom_buffer<int> &ImInOut, custom_buffer<int> &ImIn2, int w, int h, int white)
+void MergeImagesByIntersectedFigures(simple_buffer<int> &ImInOut, simple_buffer<int> &ImIn2, int w, int h, int white)
 {
-	custom_buffer<int> Im2(ImIn2);
+	simple_buffer<int> Im2(ImIn2);
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii;
 	CMyPoint *PA;
@@ -7856,7 +7856,7 @@ void MergeImagesByIntersectedFigures(custom_buffer<int> &ImInOut, custom_buffer<
 	CombineTwoImages(ImInOut, Im2, w, h, white);
 }
 
-void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white, std::string iter_det)
+void ClearImageFromGarbageBetweenLines(simple_buffer<int> &Im, int w, int h, int yb, int ye, int min_h, int white, std::string iter_det)
 {
 	CMyClosedFigure *pFigureI, *pFigureJ, *pFigureK;
 	int i, j, k, l, N;
@@ -7869,7 +7869,7 @@ void ClearImageFromGarbageBetweenLines(custom_buffer<int> &Im, int w, int h, int
 
 	if (N == 0) return;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for(i=0; i<N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -8051,7 +8051,7 @@ void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, i
 	fout.close();
 }
 
-void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ)
+void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ)
 {
 	CMyPoint *PA;
 	int i, ii, j, w, h, x, y, xx, yy, val;
@@ -8064,7 +8064,7 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom
 
 	int SIZE = w * h;
 
-	custom_buffer<int> pImage(SIZE, 0), pImageY(SIZE, 0), pImageI(SIZE, 0), pImageQ(SIZE, 0);
+	simple_buffer<int> pImage(SIZE, 0), pImageY(SIZE, 0), pImageI(SIZE, 0), pImageQ(SIZE, 0);
 
 	PA = pFigure->m_PointsArray;
 
@@ -8209,7 +8209,7 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, custom_buffer<int> &ImY, custom
 	pFigure->m_Weight = weight;
 }
 
-void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, custom_buffer<int> &ImI, custom_buffer<int> &ImQ, int w, int h, int &LH, int &LMAXY, int &XB, int &XE, int &YB, int &YE, int &mY, int &mI, int &mQ, int white)
+void GetTextLineParameters(simple_buffer<int> &Im, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h, int &LH, int &LMAXY, int &XB, int &XE, int &YB, int &YE, int &mY, int &mI, int &mQ, int white)
 {
 	CMyClosedFigure *pFigure = NULL;
 	CMyPoint *PA = NULL;
@@ -8235,7 +8235,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 
 	if (N == 0) return;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
 	for(i=0; i<N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -8295,7 +8295,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 
 	// определяем размеры символов и расположение текста по высоте
 
-	custom_buffer<int> maxY(N, 0), NN(N, 0), NY(N, 0);
+	simple_buffer<int> maxY(N, 0), NN(N, 0), NY(N, 0);
 
 	for(i=0, j=0; i < N; i++)
 	{
@@ -8478,7 +8478,7 @@ void GetTextLineParameters(custom_buffer<int> &Im, custom_buffer<int> &ImY, cust
 
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center)
+int ClearImageLogical(simple_buffer<int> &Im, int w, int h, int LH, int LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center)
 {
 	CMyClosedFigure *pFigure = NULL, *pFigure2 = NULL;
 	int i, ib, i1, i2, i3, j, k, l, x, y, val, val1, N, bln, bln1, bln2, bln3, LMINY, LM1, LM2;
@@ -8587,8 +8587,8 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, i
 
 	if (N == 0)	return res;
 
-	custom_buffer<CMyClosedFigure*> ppFigures(N);
-	custom_buffer<CMyClosedFigure*> ppFgs(N);
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
+	simple_buffer<CMyClosedFigure*> ppFgs(N);
 	for(i=0; i<N; i++)
 	{
 		ppFigures[i] = &(pFigures[i]);
@@ -8969,7 +8969,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, i
 	if (g_show_results) SaveRGBImage(Im, "/TestImages/ClearImageLogical_05_Im" + g_im_save_format, w, h);
 
 	//--определяем минимальную высоту нормальных символов--//
-	custom_buffer<int> NH(N, 0);
+	simple_buffer<int> NH(N, 0);
 
 	k = 0;
 	for(i=0; i<N; i++)
@@ -9296,7 +9296,7 @@ int ClearImageLogical(custom_buffer<int> &Im, int w, int h, int LH, int LMAXY, i
 	return res;
 }
 
-void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset)
+void StrAnalyseImage(simple_buffer<int> &Im, simple_buffer<int> &ImGR, simple_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset)
 {
 	int i, ib, ie, x, y, val;
 
@@ -9327,7 +9327,7 @@ void StrAnalyseImage(custom_buffer<int> &Im, custom_buffer<int> &ImGR, custom_bu
 	}
 }
 
-void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_buffer<int> &GRStr, int offset)
+void StrAnalyseImage(CMyClosedFigure *pFigure, simple_buffer<int> &ImGR, simple_buffer<int> &GRStr, int offset)
 {
 	int l, val;
 	CMyPoint *PA;
@@ -9343,7 +9343,7 @@ void StrAnalyseImage(CMyClosedFigure *pFigure, custom_buffer<int> &ImGR, custom_
 	}
 }
 
-void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &N, int offset)
+void FindMaxStrDistribution(simple_buffer<int> &GRStr, int delta, simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &N, int offset)
 {
 	int i, imax, ys, ys1, ys2, val, NN;
 
@@ -9447,7 +9447,7 @@ void FindMaxStrDistribution(custom_buffer<int> &GRStr, int delta, custom_buffer<
 	N = NN;
 }
 
-void FindMaxStr(custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &max_i, int &max_val, int N)
+void FindMaxStr(simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &max_i, int &max_val, int N)
 {
 	int i, j, ys;
 
@@ -9466,9 +9466,9 @@ void FindMaxStr(custom_buffer<int> &smax, custom_buffer<int> &smaxi, int &max_i,
 	max_val = ys;
 }
 
-void ResizeImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h)
+void ResizeImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h)
 {
-	custom_buffer<int> ImRES2(w*h*16, 0);
+	simple_buffer<int> ImRES2(w*h*16, 0);
 	int i, j, x, y;
 	int r0, g0, b0, r1, g1, b1;
 	u8 *color, *clr;
@@ -9582,7 +9582,7 @@ void ResizeImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int
 	}
 }
 
-void SimpleResizeImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h)
+void SimpleResizeImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h)
 {
 	int i, j, x, y, xx, yy, clr;
 
@@ -9600,9 +9600,9 @@ void SimpleResizeImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int 
 	}
 }
 
-void ResizeGrayscaleImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h)
+void ResizeGrayscaleImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h)
 {
-	custom_buffer<int> ImRES2(w*h*16, 0);
+	simple_buffer<int> ImRES2(w*h*16, 0);
 	int i, j, x, y;
 	int val0, val1;
 
@@ -9671,7 +9671,7 @@ void ResizeGrayscaleImage4x(custom_buffer<int> &Im, custom_buffer<int> &ImRES, i
 	}
 }
 
-int CompareTXTImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int w1, int h1, int w2, int h2, int YB1, int YB2)
+int CompareTXTImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int w1, int h1, int w2, int h2, int YB1, int YB2)
 {
 	return 0;
 }
@@ -9684,7 +9684,7 @@ void GetImageSize(string name, int &w, int &h)
 }
 
 // Im (ImRGB) in format b:g:r:0
-void LoadRGBImage(custom_buffer<int> &Im, string name, int w, int h)
+void LoadRGBImage(simple_buffer<int> &Im, string name, int w, int h)
 {
 	cv::Mat im = cv::imread(name, cv::IMREAD_COLOR); // load in BGR format
 	u8 *color;
@@ -9701,7 +9701,7 @@ void LoadRGBImage(custom_buffer<int> &Im, string name, int w, int h)
 	}
 }
 
-void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h)
+void SaveRGBImage(simple_buffer<int> &Im, string name, int w, int h)
 {
 	if (g_disable_save_images) return;
 
@@ -9733,7 +9733,7 @@ void SaveRGBImage(custom_buffer<int> &Im, string name, int w, int h)
 	}
 }
 
-void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int add, double scale, int quality, int dpi)
+void SaveGreyscaleImage(simple_buffer<int> &Im, string name, int w, int h, int add, double scale, int quality, int dpi)
 {
 	if (g_disable_save_images) return;
 
@@ -9784,7 +9784,7 @@ void SaveGreyscaleImage(custom_buffer<int> &Im, string name, int w, int h, int a
 	}
 }
 
-void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int quality, int dpi)
+void SaveBinaryImage(simple_buffer<int> &Im, string name, int w, int h, int quality, int dpi)
 {
 	if (g_disable_save_images) return;
 
@@ -9828,11 +9828,11 @@ void SaveBinaryImage(custom_buffer<int> &Im, string name, int w, int h, int qual
 	}
 }
 
-void SaveImageWithLinesInfo(custom_buffer<int> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h)
+void SaveImageWithLinesInfo(simple_buffer<int> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h)
 {
 	if (g_disable_save_images) return;
 
-	custom_buffer<int> ImTMP(w*h, 0);
+	simple_buffer<int> ImTMP(w*h, 0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;
 	u8 *pClr;
@@ -9888,11 +9888,11 @@ void SaveImageWithLinesInfo(custom_buffer<int> &Im, string name, int lb1, int le
 	SaveRGBImage(ImTMP, name, w, h);
 }
 
-void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h)
+void SaveImageWithSubParams(simple_buffer<int> &Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h)
 {
 	if (g_disable_save_images) return;
 
-	custom_buffer<int> ImTMP(w*h, 0);
+	simple_buffer<int> ImTMP(w*h, 0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;
 	u8 *pClr;
@@ -9956,7 +9956,7 @@ void SaveImageWithSubParams(custom_buffer<int> &Im, string name, int lb, int le,
 	SaveRGBImage(ImTMP, name, w, h);
 }
 
-void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h)
+void LoadGreyscaleImage(simple_buffer<int> &Im, string name, int &w, int &h)
 {
 	cv::Mat im = cv::imread(name, cv::IMREAD_COLOR); // load in BGR format
 	w = im.cols;
@@ -9977,7 +9977,7 @@ void LoadGreyscaleImage(custom_buffer<int> &Im, string name, int &w, int &h)
 	}	
 }
 
-void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::Mat &res)
+void GreyscaleImageToMat(simple_buffer<int> &ImGR, int w, int h, cv::Mat &res)
 {
 	res = cv::Mat(h, w, CV_8UC1);
 
@@ -9987,7 +9987,7 @@ void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::Mat &res)
 	}
 }
 
-void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::UMat &res)
+void GreyscaleImageToMat(simple_buffer<int> &ImGR, int w, int h, cv::UMat &res)
 {
 	cv::Mat im(h, w, CV_8UC1);
 
@@ -10000,7 +10000,7 @@ void GreyscaleImageToMat(custom_buffer<int> &ImGR, int w, int h, cv::UMat &res)
 }
 
 
-void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, custom_buffer<int> &res)
+void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, simple_buffer<int> &res)
 {
 	for (int i = 0; i < w*h; i++)
 	{
@@ -10008,7 +10008,7 @@ void GreyscaleMatToImage(cv::Mat &ImGR, int w, int h, custom_buffer<int> &res)
 	}
 }
 
-void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, custom_buffer<int> &res)
+void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, simple_buffer<int> &res)
 {
 	cv::Mat im;
 	ImGR.copyTo(im);
@@ -10020,7 +10020,7 @@ void GreyscaleMatToImage(cv::UMat &ImGR, int w, int h, custom_buffer<int> &res)
 }
 
 // ImBinary - 0 or some_color!=0 (like 0 and 1) 
-void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::Mat &res)
+void BinaryImageToMat(simple_buffer<int> &ImBinary, int w, int h, cv::Mat &res)
 {
 	res = cv::Mat(h, w, CV_8UC1);
 
@@ -10038,7 +10038,7 @@ void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::Mat &res)
 }
 
 // ImBinary - 0 or some_color!=0 (like 0 and 1) 
-void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::UMat &res)
+void BinaryImageToMat(simple_buffer<int> &ImBinary, int w, int h, cv::UMat &res)
 {
 	cv::Mat im(h, w, CV_8UC1);
 
@@ -10058,7 +10058,7 @@ void BinaryImageToMat(custom_buffer<int> &ImBinary, int w, int h, cv::UMat &res)
 }
 
 // ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255) 
-void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, int white)
+void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, simple_buffer<int> &res, int white)
 {
 	for (int i = 0; i < w*h; i++)
 	{
@@ -10074,7 +10074,7 @@ void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, custom_buffer<int> &res, 
 }
 
 // ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255) 
-void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, custom_buffer<int> &res, int white)
+void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, simple_buffer<int> &res, int white)
 {
 	cv::Mat im;
 	ImBinary.copyTo(im);
@@ -10092,14 +10092,14 @@ void BinaryMatToImage(cv::UMat &ImBinary, int w, int h, custom_buffer<int> &res,
 	}
 }
 
-void RGBMatToImage(cv::UMat &ImRGB, int w, int h, custom_buffer<int> &res)
+void RGBMatToImage(cv::UMat &ImRGB, int w, int h, simple_buffer<int> &res)
 {
 	cv::Mat im;
 	ImRGB.copyTo(im);
 	memcpy(&res[0], im.data, w*h * sizeof(int));
 }
 
-void RGBImageToMat(custom_buffer<int> &ImRGB, int w, int h, cv::UMat &res)
+void RGBImageToMat(simple_buffer<int> &ImRGB, int w, int h, cv::UMat &res)
 {
 	cv::Mat cv_ImRGB(h, w, CV_8UC4);	
 	memcpy(cv_ImRGB.data, &ImRGB[0], w*h * sizeof(int));
@@ -10126,7 +10126,7 @@ void InvertBinaryMat(cv::UMat &ImBinary, int w, int h, cv::UMat &res)
 	im.copyTo(res);
 }
 
-void GreyscaleImageToBinary(custom_buffer<int> &ImRES, custom_buffer<int> &ImGR, int w, int h, int white)
+void GreyscaleImageToBinary(simple_buffer<int> &ImRES, simple_buffer<int> &ImGR, int w, int h, int white)
 {
 	for (int i = 0; i < w*h; i++)
 	{

@@ -98,7 +98,7 @@ public:
 
 public:
 	void Init();
-	void ViewImage(custom_buffer<int> &Im, int w, int h);
+	void ViewImage(simple_buffer<int> &Im, int w, int h);
 
 public:
 	void OnSize(wxSizeEvent& event);	

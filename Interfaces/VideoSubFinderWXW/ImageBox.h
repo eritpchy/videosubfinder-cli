@@ -63,9 +63,9 @@ public:
 	void Init();
 	void ResizeControls();
 
-	void ViewRGBImage(custom_buffer<int> &Im, int w, int h);
-	void ViewGrayscaleImage(custom_buffer<int> &Im, int w, int h);
-	void ViewImage(custom_buffer<int> &Im, int w, int h);
+	void ViewRGBImage(simple_buffer<int> &Im, int w, int h);
+	void ViewGrayscaleImage(simple_buffer<int> &Im, int w, int h);
+	void ViewImage(simple_buffer<int> &Im, int w, int h);
 	void ClearScreen();
 
 public:

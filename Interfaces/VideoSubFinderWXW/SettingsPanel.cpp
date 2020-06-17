@@ -299,7 +299,7 @@ void CSettingsPanel::Init()
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 {
-	custom_buffer<int> ImRGB;
+	simple_buffer<int> ImRGB;
 	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
 	char str[30];
 	clock_t t;
@@ -321,7 +321,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		ymin = m_pMF->m_pVideo->m_ymin;
 		ymax = m_pMF->m_pVideo->m_ymax;
 
-		ImRGB = custom_buffer<int>(W*H, 0);
+		ImRGB = simple_buffer<int>(W*H, 0);
 
 		m_pMF->m_pVideo->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
 
@@ -348,7 +348,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			ymin = 0;
 			ymax = h - 1;
 
-			ImRGB = custom_buffer<int>(W*H, 0);
+			ImRGB = simple_buffer<int>(W*H, 0);
 			LoadRGBImage(ImRGB, filepath, w, h);
 
 			g_pViewImage[0](ImRGB, W, H);
@@ -364,7 +364,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	m_pMF->m_pPanel->Disable();	
 
-	m_ImF = custom_buffer<custom_buffer<int>> (m_n, custom_buffer<int>(W*H, 0));
+	m_ImF = custom_buffer<simple_buffer<int>> (m_n, simple_buffer<int>(W*H, 0));
 	
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
@@ -374,7 +374,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	{
 		vector<wxString> SavedFiles;
 		SavedFiles.push_back(ImgName);
-		custom_buffer<int> ImIL(w*h, 0);
+		simple_buffer<int> ImIL(w*h, 0);
 		ImIL[0] = -1;
 		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
 	}

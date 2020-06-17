@@ -143,7 +143,7 @@ void CImageBox::ClearScreen()
 	}
 }
 
-void CImageBox::ViewRGBImage(custom_buffer<int> &Im, int w, int h)
+void CImageBox::ViewRGBImage(simple_buffer<int> &Im, int w, int h)
 {
 	int num_pixels = w*h;
 	u8 *color;
@@ -165,7 +165,7 @@ void CImageBox::ViewRGBImage(custom_buffer<int> &Im, int w, int h)
 	m_pIW->Update();
 }
 
-void CImageBox::ViewGrayscaleImage(custom_buffer<int> &Im, int w, int h)
+void CImageBox::ViewGrayscaleImage(simple_buffer<int> &Im, int w, int h)
 {
 	int num_pixels = w*h;
 
@@ -185,7 +185,7 @@ void CImageBox::ViewGrayscaleImage(custom_buffer<int> &Im, int w, int h)
 	m_pIW->Update();
 }
 
-void CImageBox::ViewImage(custom_buffer<int> &Im, int w, int h)
+void CImageBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 {
 	int num_pixels = w*h;
 	u8 *color;

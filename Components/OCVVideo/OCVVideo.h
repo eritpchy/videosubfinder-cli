@@ -96,11 +96,11 @@ public:
 	s64  OneStepWithTimeout();
 	s64  GetPos();
 
-	void GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
-	void ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
 
 	int GetFrameDataSize();
-	void GetFrameData(custom_buffer<u8>& FrameData);
+	void GetFrameData(simple_buffer<u8>& FrameData);
 
 	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 

@@ -390,7 +390,7 @@ void CMyClosedFigure::AlignPoints()
 }
 */
 
-inline void GetInfoAboutNearestPoints(custom_buffer<int> &Im, int &x, int &y, int &i, int &w, bool &bln, bool &bln2, int &i1, int &i2, int &white)
+inline void GetInfoAboutNearestPoints(simple_buffer<int> &Im, int &x, int &y, int &i, int &w, bool &bln, bool &bln2, int &i1, int &i2, int &white)
 {
 	//Проверяем есть ли с лева точка фигуры
 	if ((x > 0) && (Im[i - 1] == white))//[x-1][y]
@@ -496,7 +496,7 @@ inline void GetInfoAboutNearestPoints(custom_buffer<int> &Im, int &x, int &y, in
 
 /////////////////////////////////////////////////////////////////////////////
 
-clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, custom_buffer<CMyClosedFigure> &FiguresArray)
+clock_t SearchClosedFigures(simple_buffer<int> &Im, int w, int h, int white, custom_buffer<CMyClosedFigure> &FiguresArray)
 {
 	int *m, *key, *key2, *max_index_in_split;
 	const int n_splits = 1;
@@ -738,7 +738,7 @@ clock_t SearchClosedFigures(custom_buffer<int> &Im, int w, int h, int white, cus
 	return (clock() - start);
 }
 
-clock_t CreateIndexedImage(custom_buffer<int> &Im, custom_buffer<int> &ImRES, int w, int h, int white, int &Number)
+clock_t CreateIndexedImage(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h, int white, int &Number)
 {
 	int N;
 	int *m, *key, *key2;

@@ -40,23 +40,23 @@ extern int g_max_dl_up;
 
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
-int AnalyseImage(custom_buffer<int> &Im, custom_buffer<int> *pImILA, int w, int h);
+int AnalyseImage(simple_buffer<int> &Im, simple_buffer<int> *pImILA, int w, int h);
 
-int CompareTwoSubs(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImVE11, custom_buffer<int> &ImVE12, custom_buffer<int> &Im2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
-int DifficultCompareTwoSubs2(custom_buffer<int> &ImF1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImNE11, custom_buffer<int> &ImNE12, custom_buffer<int> &ImF2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin);
-int CompareTwoSubsOptimal(custom_buffer<int> &Im1, custom_buffer<int> *pImILA1, custom_buffer<int> &ImVE11, custom_buffer<int> &ImVE12, custom_buffer<int> &Im2, custom_buffer<int> *pImILA2, custom_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
+int CompareTwoSubs(simple_buffer<int> &Im1, simple_buffer<int> *pImILA1, simple_buffer<int> &ImVE11, simple_buffer<int> &ImVE12, simple_buffer<int> &Im2, simple_buffer<int> *pImILA2, simple_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
+int DifficultCompareTwoSubs2(simple_buffer<int> &ImF1, simple_buffer<int> *pImILA1, simple_buffer<int> &ImNE11, simple_buffer<int> &ImNE12, simple_buffer<int> &ImF2, simple_buffer<int> *pImILA2, simple_buffer<int> &ImNE2, int w, int h, int W, int H, int ymin);
+int CompareTwoSubsOptimal(simple_buffer<int> &Im1, simple_buffer<int> *pImILA1, simple_buffer<int> &ImVE11, simple_buffer<int> &ImVE12, simple_buffer<int> &Im2, simple_buffer<int> *pImILA2, simple_buffer<int> &ImVE2, int w, int h, int W, int H, int ymin);
 
-//int DifficultCompareTwoSubs(custom_buffer<int> &ImRGB1, custom_buffer<int> &ImF1, custom_buffer<int> &ImRGB2, custom_buffer<int> &ImF2, int w, int h, int W, int H, int ymin);
+//int DifficultCompareTwoSubs(simple_buffer<int> &ImRGB1, simple_buffer<int> &ImF1, simple_buffer<int> &ImRGB2, simple_buffer<int> &ImF2, int w, int h, int W, int H, int ymin);
 
-int SimpleCombineTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
+int SimpleCombineTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size);
 
-int GetCombinedSquare(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
+int GetCombinedSquare(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size);
 
-void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, custom_buffer<int> &ImRES, int size);
-void AddTwoImages(custom_buffer<int> &Im1, custom_buffer<int> &Im2, int size);
+void AddTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, simple_buffer<int> &ImRES, int size);
+void AddTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size);
 
-void ImToNativeSize(custom_buffer<int> &ImOrig, custom_buffer<int> &ImRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
-void ImToNativeSize(custom_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+void ImToNativeSize(simple_buffer<int> &ImOrig, simple_buffer<int> &ImRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+void ImToNativeSize(simple_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
 string VideoTimeToStr(s64 pos);
 s64 GetVideoTime(string time);

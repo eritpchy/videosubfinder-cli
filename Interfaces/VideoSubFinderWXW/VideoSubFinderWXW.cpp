@@ -36,6 +36,7 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_OPTION, "re", "right_video_image_percent_end", "right video image percent end, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "o", "output_dir",  "output dir (root directory where results will be stored)" },
 	{ wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
+	{ wxCMD_LINE_OPTION, "nocrthr", "num_ocr_threads", "number of threads used for Create Cleared TXT Images", wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -cscti -i \"C:\\test_video.mp4\" -o \"C:\\ResultsDir\" -be 0.1 -te 0.5 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
 	{ wxCMD_LINE_NONE }
 };
@@ -63,6 +64,12 @@ bool CVideoSubFinderApp::OnInit()
 	{
 		g_threads = threads;
 	}
+
+	long ocr_threads;
+	if (m_pMainWnd->m_parser.Found("nocrthr", &ocr_threads))
+	{
+		g_ocr_threads = ocr_threads;
+	}	
 
 	if (m_pMainWnd->m_parser.FoundSwitch("ovocv"))
 	{

@@ -151,12 +151,12 @@ public:
 	}
 
 	// ImRGB should be in format b:g:r:0
-	virtual void GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+	virtual void GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 	{
 	}
 
 	// ImRGB should be in format b:g:r:0
-	virtual void ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+	virtual void ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 	{
 	}
 
@@ -165,7 +165,7 @@ public:
 		return 0;
 	}
 
-	virtual void GetFrameData(custom_buffer<u8>& FrameData)
+	virtual void GetFrameData(simple_buffer<u8>& FrameData)
 	{
 	}
 	

@@ -32,14 +32,15 @@ wxString get_add_info();
 //#define CUSTOM_DEBUG
 //#define CUSTOM_DEBUG2
 //#define custom_assert(cond, msg)  if(!(cond)) { wxASSERT_MSG(cond, wxString(msg) + get_add_info()); }
-#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
-#define my_event custom_event
-#define custom_set_started(pevent) (pevent)->set_started()
+//#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
+//#define my_event custom_event
+//#define custom_set_started(pevent) (pevent)->set_started()
+
 
 // for final release build
-//#define custom_assert(cond, msg)
-//#define my_event concurrency::event
-//#define custom_set_started(pevent)
+#define custom_assert(cond, msg)
+#define my_event concurrency::event
+#define custom_set_started(pevent)
 
 #define cvMAT cv::UMat
 //#define cvMAT cv::Mat
@@ -75,12 +76,6 @@ public:
 		m_finished = false;
 		concurrency::event::reset();
 	}
-
-	/*size_t wait(unsigned int _Timeout = Concurrency::COOPERATIVE_TIMEOUT_INFINITE)
-	{
-		custom_assert(m_started == true, "class custom_event:wait\nnot: m_started == true");
-		return concurrency::event::wait(_Timeout);
-	}*/
 };
 
 template <typename T>
@@ -162,29 +157,6 @@ public:
 	{
 		if (m_need_to_release)
 		{
-			delete[] m_pData;
-		}
-
-		m_size = obj.m_size;
-		m_need_to_release = obj.m_need_to_release;
-
-		if (m_need_to_release)
-		{
-			m_pData = new T[m_size];
-			for (int i = 0; i < m_size; i++)
-			{
-				m_pData[i] = obj.m_pData[i];
-			}
-		}
-		else
-		{
-			m_pData = obj.m_pData;
-		}
-
-		return *this;
-
-		/*if (m_need_to_release)
-		{
 			if (obj.m_need_to_release)
 			{
 				if (m_size != obj.m_size)
@@ -221,7 +193,7 @@ public:
 			m_pData = obj.m_pData;
 		}
 
-		return *this;*/
+		return *this;
 	}
 
 	custom_buffer<T> get_sub_buffer(int offset)
@@ -238,8 +210,8 @@ public:
 
 	inline void set_size(int size)
 	{
-		//if ((!m_need_to_release) || (m_size != size))
-		//{
+		if ((!m_need_to_release) || (m_size != size))
+		{
 			if (m_need_to_release)
 			{
 				delete[] m_pData;
@@ -259,7 +231,7 @@ public:
 				m_size = size;
 				m_need_to_release = true;
 			}
-		//}
+		}
 	}
 
 	inline T& operator[](int idx)
@@ -311,152 +283,26 @@ public:
 	}
 };
 
-template<>
-custom_buffer<char>::custom_buffer(int size, char val)
-{
-	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
-	m_pData = new char[size];
-	m_size = size;
-	m_need_to_release = true;
-
-	memset(m_pData, val, m_size);
-}
-
-template<>
-custom_buffer<u8>::custom_buffer(int size, u8 val)
-{
-	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
-	m_pData = new u8[size];
-	m_size = size;
-	m_need_to_release = true;
-
-	memset(m_pData, val, m_size);
-}
-
-template<>
-custom_buffer<s64>::custom_buffer(int size, s64 val)
-{
-	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
-	m_pData = new s64[size];
-	m_size = size;
-	m_need_to_release = true;
-
-	if (val == 0)
-	{
-		memset(m_pData, 0, m_size * sizeof(s64));
-	}
-	else
-	{
-		for (int i = 0; i < m_size; i++)
-		{
-			m_pData[i] = val;
-		}
-	}
-}
-
-template<>
-custom_buffer<int>::custom_buffer(int size, int val)
-{
-	custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
-	m_pData = new int[size];
-	m_size = size;
-	m_need_to_release = true;
-
-	if (val == 0)
-	{
-		memset(m_pData, 0, m_size * sizeof(int));
-	}
-	else
-	{
-		for (int i = 0; i < m_size; i++)
-		{
-			m_pData[i] = val;
-		}
-	}
-}
-
-/*
-template<>
-custom_buffer<u8>& custom_buffer<u8>::operator= (const custom_buffer<u8>& obj)
-{
-	if (m_need_to_release)
-	{
-		delete[] m_pData;
-	}
-
-	m_size = obj.m_size;
-	m_need_to_release = obj.m_need_to_release;
-
-	if (m_need_to_release)
-	{
-		m_pData = new u8[m_size];
-		memcpy(m_pData, obj.m_pData, m_size * sizeof(u8));
-	}
-	else
-	{
-		m_pData = obj.m_pData;
-	}
-
-	return *this;
-}*/
-
-template<>
-custom_buffer<int>& custom_buffer<int>::operator= (const custom_buffer<int> &obj)
-{
-	if (m_need_to_release)
-	{
-		delete[] m_pData;
-	}
-
-	m_size = obj.m_size;
-	m_need_to_release = obj.m_need_to_release;
-
-	if (m_need_to_release)
-	{
-		m_pData = new int[m_size];
-		memcpy(m_pData, obj.m_pData, m_size * sizeof(int));
-	}
-	else
-	{
-		m_pData = obj.m_pData;
-	}
-
-	return *this;
-}
-
-template<>
-custom_buffer<s64>& custom_buffer<s64>::operator= (const custom_buffer<s64> &obj)
-{
-	if (m_need_to_release)
-	{
-		delete[] m_pData;
-	}
-
-	m_size = obj.m_size;
-	m_need_to_release = obj.m_need_to_release;
-
-	if (m_need_to_release)
-	{
-		m_pData = new s64[m_size];
-		memcpy(m_pData, obj.m_pData, m_size * sizeof(s64));
-	}
-	else
-	{
-		m_pData = obj.m_pData;
-	}
-
-	return *this;
-}
-
-
 template <typename T>
 class simple_buffer : public custom_buffer<T>
 {
 public:
 
+	simple_buffer() : custom_buffer()
+	{
+	}
+
+	simple_buffer(T* pData, int size) : custom_buffer(pData, size)
+	{
+	}
+
+	simple_buffer(int size) : custom_buffer(size)
+	{
+	}
+
 	simple_buffer(int size, T val)
 	{
-		custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
+		custom_assert(size > 0, "simple_buffer<T>::custom_buffer(int size, T val): not: size > 0");
 		m_pData = new T[size];
 		m_size = size;
 		m_need_to_release = true;
@@ -472,7 +318,7 @@ public:
 				m_pData[i] = val;
 			}
 		}
-	}
+	}	
 
 	simple_buffer(const simple_buffer<T>& obj)
 	{
@@ -528,6 +374,13 @@ public:
 		}
 
 		return *this;		
+	}
+
+	simple_buffer<T> get_sub_buffer(int offset)
+	{
+		custom_assert(offset < m_size, "simple_buffer<T>::get_sub_buffer(int offset): not: offset < m_size");
+
+		return simple_buffer<T>(m_pData + offset, m_size - offset);
 	}
 };
 

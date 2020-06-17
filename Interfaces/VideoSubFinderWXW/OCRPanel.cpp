@@ -1544,9 +1544,9 @@ public:
 	int m_w;
 	int m_h;
 	vector<wxString> m_SavedFiles;
-	custom_buffer<int> m_ImRGB;
-	custom_buffer<int> m_ImClearedText;
-	custom_buffer<custom_buffer<int>> m_ImF;
+	simple_buffer<int> m_ImRGB;
+	simple_buffer<int> m_ImClearedText;
+	custom_buffer<simple_buffer<int>> m_ImF;
 
 	FindTextLinesRes()
 	{
@@ -1578,9 +1578,9 @@ FindTextLinesRes FindTextLines(wxString FileName)
 		GetImageSize(string(FileName), w, h);
 		res.m_w = w;
 		res.m_h = h;
-		res.m_ImRGB = custom_buffer<int>(w*h, 0);
-		res.m_ImClearedText = custom_buffer<int>(w*h, 0);
-		res.m_ImF = custom_buffer<custom_buffer<int>>(6, custom_buffer<int>(w*h, 0));
+		res.m_ImRGB = simple_buffer<int>(w*h, 0);
+		res.m_ImClearedText = simple_buffer<int>(w*h, 0);
+		res.m_ImF = custom_buffer<simple_buffer<int>>(6, simple_buffer<int>(w*h, 0));
 
 		LoadRGBImage(res.m_ImRGB, string(FileName), w, h);
 
@@ -1783,7 +1783,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				pClr[2] = 255;
 				wc = color;
 
-				custom_buffer<int> ImRES1((int)(task_res.m_w * g_scale)*(int)(task_res.m_h / g_scale), wc);
+				simple_buffer<int> ImRES1((int)(task_res.m_w * g_scale)*(int)(task_res.m_h / g_scale), wc);
 				SaveGreyscaleImage(ImRES1, string(Str), task_res.m_w*g_scale, task_res.m_h / g_scale);
 			}
 			/*
@@ -1830,8 +1830,8 @@ void *ThreadCreateClearedTextImages::Entry()
 					bln = 1;
 					for (i=0; i<(int)task_res.m_SavedFiles.size(); i++)
 					{
-						custom_buffer<int> ImRES1(task_res.m_w*task_res.m_h, 0);
-						custom_buffer<int> ImRES2(task_res.m_w*task_res.m_h, 0);
+						simple_buffer<int> ImRES1(task_res.m_w*task_res.m_h, 0);
+						simple_buffer<int> ImRES2(task_res.m_w*task_res.m_h, 0);
 
 						LoadGreyscaleImage(ImRES1, prevSavedFiles[i], w1, h1);
 						LoadGreyscaleImage(ImRES2, task_res.m_SavedFiles[i], w2, h2);

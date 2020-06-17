@@ -299,7 +299,7 @@ s64 OCVVideo::GetPos()
 /////////////////////////////////////////////////////////////////////////////
 // ImRGB in format b:g:r:0
 // converting BGR to BGRA
-void OCVVideo::ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+void OCVVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	int w, h, x, y, i, j, di;
 	u8* data = frame_data;
@@ -335,7 +335,7 @@ void OCVVideo::ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin,
 
 /////////////////////////////////////////////////////////////////////////////
 // ImRGB in format b:g:r:0
-void OCVVideo::GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+void OCVVideo::GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	if (!m_cur_frame.empty())
 	{		
@@ -352,11 +352,11 @@ int OCVVideo::GetFrameDataSize()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)
+void OCVVideo::GetFrameData(simple_buffer<u8>& FrameData)
 {
 	if (!m_cur_frame.empty())
 	{
-		custom_assert(FrameData.size() == m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() == m_origWidth * m_origHeight * 3");
+		custom_assert(FrameData.size() == m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(simple_buffer<u8>& FrameData)\nnot: FrameData.size() == m_origWidth * m_origHeight * 3");
 		memcpy(&FrameData[0], m_cur_frame.data, m_origWidth * m_origHeight * 3);
 	}
 }

@@ -668,7 +668,7 @@ inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data)
 	return ret;
 }
 
-void FFMPEGVideo::ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+void FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	int ret = convert_to_dst_format(frame_data);
 
@@ -700,7 +700,7 @@ void FFMPEGVideo::ConvertToRGB(u8* frame_data, custom_buffer<int>& ImRGB, int xm
 
 /////////////////////////////////////////////////////////////////////////////
 // ImRGB in format b:g:r:0
-void FFMPEGVideo::GetRGBImage(custom_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+void FFMPEGVideo::GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	if (input_ctx)
 	{
@@ -717,9 +717,9 @@ int FFMPEGVideo::GetFrameDataSize()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)
+void FFMPEGVideo::GetFrameData(simple_buffer<u8>& FrameData)
 {
-	custom_assert(FrameData.size() == m_frame_buffer_size, "void FFMPEGVideo::GetFrameData(custom_buffer<u8>& FrameData)\nnot: FrameData.size() == m_frame_buffer_size");
+	custom_assert(FrameData.size() == m_frame_buffer_size, "void FFMPEGVideo::GetFrameData(simple_buffer<u8>& FrameData)\nnot: FrameData.size() == m_frame_buffer_size");
 	memcpy(&FrameData[0], &m_frame_buffer[0], m_frame_buffer_size);
 }
 
