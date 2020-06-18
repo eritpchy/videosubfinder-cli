@@ -20,18 +20,17 @@ should exist
 4) OpenCV
 Download from
 https://sourceforge.net/projects/opencvlibrary/files/4.3.0/
-OpenCV 4.3.0.zip + opencv-4.3.0-dldt-2020.2-vc16-avx2.zip
+OpenCV 4.3.0.zip ( opencv-4.3.0-dldt-2020.2-vc16-avx2.zip unfortunately working only on avx2 cpu)
 Extract OpenCV 4.3.0.zip to C:\OpenCV 4.3.0
-Extract opencv-4.3.0-dldt-2020.2-vc16-avx2.zip to C:\OpenCV 4.3.0\opencv-4.3.0-dldt-2020.2-vc16-avx2
 Docs:
 https://docs.opencv.org/4.3.0/d8/dfe/classcv_1_1VideoCapture.html#a85b55cf6a4a50451367ba96b65218ba1
 https://github.com/opencv/opencv/wiki/OE-25.-Fast-VideoIO
 
 Setup Env: 
-OPENCV_PATH_X64=C:\OpenCV 4.3.0\opencv-4.3.0-dldt-2020.2-vc16-avx2
+OPENCV_PATH_X64=C:\OpenCV 4.3.0\opencv-opencv-207f357
 OPENCV_PATH_X86=C:\OpenCV 4.3.0\opencv-opencv-207f357
-should exist:
-%OPENCV_DIR%\opencv\build\include
+after build should exist:
+%OPENCV_PATH_X64%\builds\Win64\install\include
 %OPENCV_DIR%\opencv\build\lib
 opencv_core430.lib
 opencv_videoio430.lib
@@ -59,7 +58,8 @@ finish
 Press again Configure
 Press generate
 Press open project
-Build in Debug and Release mode for Platform Win32
+Build in Debug and Release mode for Platform Win32 and Win64
++ Build INSTALL project in CMakeTargets folder for Win64
 
 5)
 download and extract:
@@ -73,6 +73,6 @@ FFMPEG_PATH_X64=C:\ffmpeg-4.2.3-win64-dev
 FFMPEG_PATH_X86=C:\ffmpeg-4.2.3-win32-dev
 
 6)
-Setup Env: WinSDKVersion=10.0.18362.0
+#old: Setup Env: WinSDKVersion=10.0.18362.0
 Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2019.
 Build solution in "Debug/x64" mode and in "Release/x64" mode.
