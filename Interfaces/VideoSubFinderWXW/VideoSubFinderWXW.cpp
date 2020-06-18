@@ -47,7 +47,11 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 
 	m_pMainWnd->m_parser.SetDesc(cmdLineDesc);
 	m_pMainWnd->m_parser.SetCmdLine(argc, argv);
-	m_pMainWnd->m_parser.Parse();
+	
+	if (m_pMainWnd->m_parser.Parse() != 0)
+	{
+		return false;
+	}
 
 	return wxApp::Initialize(argc, argv);
 }

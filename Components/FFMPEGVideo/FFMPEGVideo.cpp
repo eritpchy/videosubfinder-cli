@@ -88,32 +88,51 @@ void FFMPEGVideo::ShowFrame(void *dc)
 {
 	if (m_show_video)
 	{
-		convert_to_dst_format(m_frame_buffer.m_pData);
+		int ret;
+		AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
+		uint8_t* dst_data[4] = { NULL };
+		int dst_linesize[4];
 
-		int wnd_w, wnd_h, img_w = m_Width, img_h = m_Height, num_pixels = img_w*img_h;
-		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
+		/* buffer is going to be written to rawvideo file, no alignment */
+		if ((ret = av_image_alloc(dst_data, dst_linesize,
+			m_Width, m_Height, dest_fmt, 1)) < 0) {
+			custom_assert(ret > 0, "FFMPEGVideo::ConvertToRGB\nCould not allocate memory for destination image.");
+		}
 
-		if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
+		if (ret > 0)
 		{
-			unsigned char *img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
+			ret = convert_to_dst_format(m_frame_buffer.m_pData, dst_data, dst_linesize, dest_fmt);
+		}
 
-			for (int i = 0; i < num_pixels; i++)
-			{
-				img_data[i * 3] = dst_data[0][i * 4 + 2]; //R
-				img_data[i * 3 + 1] = dst_data[0][i * 4 + 1]; //G
-				img_data[i * 3 + 2] = dst_data[0][i * 4]; //B
-			}
+		if (ret > 0)
+		{
+			int wnd_w, wnd_h, img_w = m_Width, img_h = m_Height, num_pixels = img_w * img_h;
+			((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
 
-			if (dc != NULL)
+			if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
 			{
-				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
-			}
-			else
-			{
-				wxClientDC cdc((wxWindow*)m_pVideoWindow);
-				cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+				unsigned char* img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
+
+				for (int i = 0; i < num_pixels; i++)
+				{
+					img_data[i * 3] = dst_data[0][i * 4 + 2]; //R
+					img_data[i * 3 + 1] = dst_data[0][i * 4 + 1]; //G
+					img_data[i * 3 + 2] = dst_data[0][i * 4]; //B
+				}
+
+				if (dc != NULL)
+				{
+					((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+				}
+				else
+				{
+					wxClientDC cdc((wxWindow*)m_pVideoWindow);
+					cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+				}
 			}
 		}
+
+		if (dst_data[0]) av_freep(&dst_data[0]);
 	}
 }
 
@@ -415,16 +434,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		double zoum = (double)1280 / (double)m_origWidth;
 		m_Width = 1280;
 		m_Height = (double)m_origHeight*zoum;
-	}		
-
-	/* buffer is going to be written to rawvideo file, no alignment */
-	if ((ret = av_image_alloc(dst_data, dst_linesize,
-		m_Width, m_Height, dest_fmt, 1)) < 0) {
-		wxMessageBox("Could not allocate memory for destination image.", "FFMPEGVideo::OpenMovie");
-		CloseMovie();
-		return false;
-	}
-	dst_bufsize = ret;
+	}	
 
 	m_Duration = input_ctx->duration / (AV_TIME_BASE / 1000);
 
@@ -465,9 +475,7 @@ bool FFMPEGVideo::CloseMovie()
 
 	if (decoder_ctx) avcodec_free_context(&decoder_ctx);
 	if (input_ctx) avformat_close_input(&input_ctx);
-	if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
-	if (dst_data[0]) av_freep(&dst_data[0]);
-	if (sws_ctx) sws_freeContext(sws_ctx);
+	if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);	
 	if (frame) av_frame_free(&frame);
 	if (sw_frame) av_frame_free(&sw_frame);
 	av_packet_unref(&packet);
@@ -475,20 +483,10 @@ bool FFMPEGVideo::CloseMovie()
 	decoder_ctx = NULL;
 	input_ctx = NULL;
 	hw_device_ctx = NULL;
-	dst_data[0] = NULL;
-	sws_ctx = NULL;
 	frame = NULL;
 	sw_frame = NULL;
 
 	m_play_video = false;
-
-#ifdef WIN64
-	if (cuda_memory_is_initialized)
-	{
-		release_cuda_memory();
-		cuda_memory_is_initialized = false;
-	}
-#endif
 
 	return true;
 }
@@ -612,9 +610,11 @@ s64 FFMPEGVideo::GetPos()
 
 /////////////////////////////////////////////////////////////////////////////
 
-inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data)
+inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data, uint8_t* const dst_data[], const int dst_linesize[], AVPixelFormat dest_fmt)
 {
 	int ret;
+	uint8_t* src_data[4] = { NULL };
+	int src_linesize[4];
 
 	// Doesn't need memory free according av_image_fill_arrays and av_image_fill_pointers implementation
 	// it use pointers from src pointer (in our case from frame_data)
@@ -628,74 +628,95 @@ inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data)
 			ret = 0;
 
 #ifdef WIN64
-			if (!cuda_memory_is_initialized)
-			{
-				init_cuda_memory(m_Width, m_Height, m_origWidth, m_origHeight);
-				cuda_memory_is_initialized = true;
-			}
-
 			ret = NV12_to_BGRA(src_data[0], src_data[1], src_linesize[0],
 				dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
-#endif
+
 			if (ret == 0)
 			{
-				wxMessageBox("ERROR: CUDA NV12_to_BGRA failed", "FFMPEGVideo::decode_frame");
+				wxMessageBox("ERROR: CUDA NV12_to_BGRA failed", "FFMPEGVideo::convert_to_dst_format");
 			}
+#else
+			wxMessageBox("ERROR: CUDA NV12_to_BGRA conversion is not supported on x86", "FFMPEGVideo::convert_to_dst_format");
+#endif
 		}
 		else
 		{
 			// convert to destination format
 
-			if (sws_ctx == NULL) {
-				sws_ctx = sws_getContext(
-					m_origWidth,
-					m_origHeight,
-					src_fmt,
-					m_Width,
-					m_Height,
-					dest_fmt,
-					SWS_BILINEAR,
-					NULL,
-					NULL,
-					NULL
-				);
-			}
+			SwsContext* sws_ctx = sws_getContext(
+				m_origWidth,
+				m_origHeight,
+				src_fmt,
+				m_Width,
+				m_Height,
+				dest_fmt,
+				SWS_BILINEAR,
+				NULL,
+				NULL,
+				NULL
+			);			
 
-			ret = sws_scale(sws_ctx, src_data, src_linesize, 0, m_origHeight, dst_data, dst_linesize);
+
+			if (sws_ctx)
+			{
+				ret = sws_scale(sws_ctx, src_data, src_linesize, 0, m_origHeight, dst_data, dst_linesize);
+				sws_freeContext(sws_ctx);
+			}
 		}
 	}
 
 	return ret;
 }
 
-void FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
-	int ret = convert_to_dst_format(frame_data);
+	int ret;
+	AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
+	uint8_t* dst_data[4] = { NULL };
+	int dst_linesize[4];
 
-	int w, h, x, y, i, j, di;
-	u8* color;
-
-	w = xmax - xmin + 1;
-	h = ymax - ymin + 1;
-
-	di = m_Width - w;
-
-	i = ymin * m_Width + xmin;
-	j = 0;
-
-	if (w == m_Width)
-	{
-		memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * h * 4);
+	/* buffer is going to be written to rawvideo file, no alignment */
+	if ((ret = av_image_alloc(dst_data, dst_linesize,
+		m_Width, m_Height, dest_fmt, 1)) < 0) {
+		custom_assert(ret > 0, "FFMPEGVideo::ConvertToRGB\nCould not allocate memory for destination image.");
 	}
-	else
+
+	if (ret > 0)
 	{
-		for (y = 0; y < h; y++)
+		ret = convert_to_dst_format(frame_data, dst_data, dst_linesize, dest_fmt);
+	}
+
+	if (ret > 0)
+	{
+		int w, h, x, y, i, j, di;
+		u8* color;
+
+		w = xmax - xmin + 1;
+		h = ymax - ymin + 1;
+
+		di = m_Width - w;
+
+		i = ymin * m_Width + xmin;
+		j = 0;
+
+		if (w == m_Width)
 		{
-			memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * 4);
-			j += w;
-			i += m_Width;
+			memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * h * 4);
+		}
+		else
+		{
+			for (y = 0; y < h; y++)
+			{
+				memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * 4);
+				j += w;
+				i += m_Width;
+			}
 		}
 	}
+
+	if (dst_data[0]) av_freep(&dst_data[0]);
+
+	return ret;
 }
 
 /////////////////////////////////////////////////////////////////////////////

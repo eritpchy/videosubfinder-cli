@@ -156,8 +156,9 @@ public:
 	}
 
 	// ImRGB should be in format b:g:r:0
-	virtual void ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+	virtual int ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 	{
+		return -1;
 	}
 
 	virtual int GetFrameDataSize()

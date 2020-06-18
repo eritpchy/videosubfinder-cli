@@ -36,7 +36,6 @@ wxString get_add_info();
 //#define my_event custom_event
 //#define custom_set_started(pevent) (pevent)->set_started()
 
-
 // for final release build
 #define custom_assert(cond, msg)
 #define my_event concurrency::event

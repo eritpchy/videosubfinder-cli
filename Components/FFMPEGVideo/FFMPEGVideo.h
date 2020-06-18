@@ -75,8 +75,7 @@ public:
 
 	AVFormatContext *input_ctx = NULL;
 	AVBufferRef *hw_device_ctx = NULL;		
-	AVCodecContext *decoder_ctx = NULL;	
-	SwsContext *sws_ctx = NULL;
+	AVCodecContext *decoder_ctx = NULL;		
 	AVStream *video = NULL;
 	AVCodec *decoder = NULL;
 	AVFrame *frame = NULL;
@@ -92,13 +91,6 @@ public:
 	bool cuda_memory_is_initialized = false;
 
 	AVPixelFormat src_fmt;
-	uint8_t* src_data[4] = { NULL };
-	int src_linesize[4];
-
-	AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
-	uint8_t *dst_data[4] = { NULL };
-	int dst_linesize[4];
-	int dst_bufsize;	
 
 	//DWORD min_dt = 1000;
 	//DWORD max_dt = 0;
@@ -133,8 +125,8 @@ public:
 	s64  OneStepWithTimeout();
 	s64  GetPos();
 	void GetRGBImage(simple_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax);
-	void ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
-	inline int convert_to_dst_format(u8* frame_data);
+	int ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	inline int convert_to_dst_format(u8* frame_data, uint8_t* const dst_data[], const int dst_linesize[], AVPixelFormat dest_fmt);
 
 	int GetFrameDataSize();
 	void GetFrameData(simple_buffer<u8>& FrameData);

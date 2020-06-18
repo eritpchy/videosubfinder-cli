@@ -299,7 +299,7 @@ s64 OCVVideo::GetPos()
 /////////////////////////////////////////////////////////////////////////////
 // ImRGB in format b:g:r:0
 // converting BGR to BGRA
-void OCVVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+int OCVVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	int w, h, x, y, i, j, di;
 	u8* data = frame_data;
@@ -331,6 +331,8 @@ void OCVVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin,
 		}
 		i += di;
 	}
+
+	return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////

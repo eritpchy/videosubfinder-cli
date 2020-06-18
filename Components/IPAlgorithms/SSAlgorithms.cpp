@@ -446,7 +446,7 @@ public:
 				}
 			}
 
-			m_thrs_one_step[j] = concurrency::create_task([fn, fdn, num, pPos, pFrameData, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
+			m_thrs_one_step[j] = concurrency::create_task([fn, fdn, num, pPos, pFrameData, pV, p_events_one_step, need_to_get]() mutable
 			{
 				for (int i = 0; i < num; i++)
 				{
@@ -468,17 +468,12 @@ public:
 				}
 			});
 
-			m_thrs_rgb[j] = concurrency::create_task([fn, fdn, num, pPos, pFrameData, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
+			m_thrs_rgb[j] = concurrency::create_task([fn, fdn, num, pFrameData, pImRGB, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
 				{
 					for (int i = 0; i < num; i++)
 					{
 						if (need_to_get[fdn + i])
 						{
-							if ((fdn + i) > 0)
-							{
-								p_events_rgb[fdn + i - 1]->wait();
-							}
-
 							p_events_one_step[fdn + i]->wait();
 
 							custom_set_started(p_events_rgb[fdn + i]);
@@ -711,12 +706,18 @@ public:
 
 		if (fdn > 0)
 		{
-			m_p_events_rgb[fdn - 1]->wait();
-
-			// there can be dependent thread with get rgb image(s) which wait for m_p_events_rgb[fdn - 1] finish
+			// NOTE: there can be dependent thread from AddGetRGBImagesTask which wait for m_p_events_one_step[fdn - 1] finish
+			// if we will reset/change m_p_events_one_step[fdn - 1] states, m_p_events_one_step[fdn] will can wait wrong event
+			// so waiting for m_p_events_one_step[fdn] will finish
+			// in case of threads == 2 it can be not scheduled for do one step on fdn
 			if (*(m_pPos[fdn]) == 0)
 			{
-				m_p_events_rgb[fdn]->wait();
+				m_p_events_one_step[fdn]->wait();
+			}
+
+			for (int i = 0; i < fdn; i++)
+			{
+				m_p_events_rgb[i]->wait();
 			}
 
 			concurrency::when_all(begin(m_thrs), next(begin(m_thrs),fdn)).wait();
@@ -939,18 +940,20 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	return 0;*/
 
 	fn_start = fn = 0;
-	max_rgb_fn = rs.AddGetRGBImagesTask(fn, rs.m_N); // getting all
-	rs.GetPos(fn + rs.m_N - 1); // waiting for all images are obtained
+	max_rgb_fn = -1;
 
 	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
 		int create_new_threads = threads;		
 
 		while ((found_sub == 0) && (CurPos < End) && (CurPos != prevPos) && (g_RunSubSearch == 1))
-		{
-			max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn, ddl * create_new_threads));
+		{			
 			for (int thr_n = 0; thr_n < create_new_threads; thr_n++)
-			{				
+			{
+				if (max_rgb_fn < fn + ddl - 1)
+				{
+					max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn, ddl));
+				}
 				fn += ddl;
 				rs.AddConvertImageTask(fn - 1);
 			}
@@ -1029,13 +1032,15 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			if (bln)
 			{
 				found_sub = 1;
-				fn = fn_start;
-
-				max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn, rs.m_N));
+				fn = fn_start;				
 
 				for (int i = 0; i < (DL + threads - 1); i++)
 				{
-					rs.AddConvertImageTask(fn + i);					
+					if (max_rgb_fn < fn + i)
+					{
+						max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn + i, 1));
+					}
+					rs.AddConvertImageTask(fn + i);
 				}
 
 				for (int i = 0; i < (threads - 1); i++)
@@ -1073,12 +1078,12 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			}
 		}
 #endif		
-		
-		if (fn + DL + threads - 1 > max_rgb_fn - threads/2)
+
+		if (max_rgb_fn < fn + DL + threads - 1)
 		{
-			max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn, rs.m_N));
+			max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn + DL + threads - 1, 1));
 		}
-		
+
 		rs.AddConvertImageTask(fn + DL + threads - 1);
 		rs.AddIntersectImagesTask(fn + threads - 1);
 

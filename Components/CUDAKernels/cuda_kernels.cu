@@ -17,19 +17,22 @@ int GetCUDADeviceCount()
 	}
 }
 
-Npp8u * device_nv12[2] = { NULL, NULL };
-Npp8u * device_yuv420[3] = { NULL, NULL, NULL };
-Npp8u * device_data = NULL;
-Npp8u * device_data_resized = NULL;
-
-void init_cuda_memory(int w, int h, int W, int H)
+int NV12_to_BGRA(unsigned char *src_y, unsigned char *src_uv, int src_linesize, unsigned char *dst_data, int w, int h, int W, int H)
 {
+	NppStatus err;	
+	int nSrcPitchCUDA, res = 0;
+
+	Npp8u* device_nv12[2] = { NULL, NULL };
+	Npp8u* device_yuv420[3] = { NULL, NULL, NULL };
+	Npp8u* device_data = NULL;
+	Npp8u* device_data_resized = NULL;
+
 	checkCuda(cudaMalloc(&device_nv12[0], W * H * sizeof(Npp8u)));
 	checkCuda(cudaMalloc(&device_nv12[1], ((W * H) / 2) * sizeof(Npp8u)));
 
 	checkCuda(cudaMalloc(&device_yuv420[0], (W * H) * sizeof(Npp8u)));
-	checkCuda(cudaMalloc(&device_yuv420[1], ((W * H)/4) * sizeof(Npp8u)));
-	checkCuda(cudaMalloc(&device_yuv420[2], ((W * H)/4) * sizeof(Npp8u)));
+	checkCuda(cudaMalloc(&device_yuv420[1], ((W * H) / 4) * sizeof(Npp8u)));
+	checkCuda(cudaMalloc(&device_yuv420[2], ((W * H) / 4) * sizeof(Npp8u)));
 
 	checkCuda(cudaMalloc(&device_data, ((W * H) * 4) * sizeof(Npp8u)));
 
@@ -41,29 +44,6 @@ void init_cuda_memory(int w, int h, int W, int H)
 	{
 		device_data_resized = NULL;
 	}
-}
-
-void release_cuda_memory()
-{
-	checkCuda(cudaFree(device_nv12[0]));
-	checkCuda(cudaFree(device_nv12[1]));
-	
-	checkCuda(cudaFree(device_yuv420[0]));
-	checkCuda(cudaFree(device_yuv420[1]));
-	checkCuda(cudaFree(device_yuv420[2]));
-
-	checkCuda(cudaFree(device_data));
-
-	if (device_data_resized != NULL)
-	{
-		checkCuda(cudaFree(device_data_resized));
-	}
-}
-
-int NV12_to_BGRA(unsigned char *src_y, unsigned char *src_uv, int src_linesize, unsigned char *dst_data, int w, int h, int W, int H)
-{
-	NppStatus err;	
-	int nSrcPitchCUDA, res = 0;
 
 	checkCuda(cudaMemcpy(device_nv12[0], src_y,
 		W * H * sizeof(Npp8u), cudaMemcpyHostToDevice));
@@ -95,7 +75,21 @@ int NV12_to_BGRA(unsigned char *src_y, unsigned char *src_uv, int src_linesize, 
 		}
 
 		res = 1;
-	}	
+	}
+
+	checkCuda(cudaFree(device_nv12[0]));
+	checkCuda(cudaFree(device_nv12[1]));
+
+	checkCuda(cudaFree(device_yuv420[0]));
+	checkCuda(cudaFree(device_yuv420[1]));
+	checkCuda(cudaFree(device_yuv420[2]));
+
+	checkCuda(cudaFree(device_data));
+
+	if (device_data_resized != NULL)
+	{
+		checkCuda(cudaFree(device_data_resized));
+	}
 	
 	return res;
 }
