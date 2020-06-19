@@ -33,12 +33,15 @@ wxString get_add_info();
 //#define CUSTOM_DEBUG2
 //#define custom_assert(cond, msg)  if(!(cond)) { wxASSERT_MSG(cond, wxString(msg) + get_add_info()); }
 //#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
-//#define my_event custom_event
+
+//#define CUSTOM_TA
+
+#define my_event custom_event
 //#define custom_set_started(pevent) (pevent)->set_started()
 
 // for final release build
 #define custom_assert(cond, msg)
-#define my_event concurrency::event
+//#define my_event concurrency::event
 #define custom_set_started(pevent)
 
 #define cvMAT cv::UMat
@@ -52,6 +55,7 @@ class custom_event : public concurrency::event
 public:
 	bool m_started = false;
 	bool m_finished = false;
+	bool m_need_to_skip = false;
 
 	void set_started()
 	{
@@ -73,6 +77,7 @@ public:
 		custom_assert(m_started == m_finished, "class custom_event:reset\nnot: m_started == m_finished");
 		m_started = false;
 		m_finished = false;
+		m_need_to_skip = false;
 		concurrency::event::reset();
 	}
 };

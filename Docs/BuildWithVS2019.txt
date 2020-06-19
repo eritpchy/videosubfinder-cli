@@ -76,3 +76,10 @@ FFMPEG_PATH_X86=C:\ffmpeg-4.2.3-win32-dev
 #old: Setup Env: WinSDKVersion=10.0.18362.0
 Open "Interfaces\VideoSubFinderWXW\VideoSubFinderWXW.sln" in VS 2019.
 Build solution in "Debug/x64" mode and in "Release/x64" mode.
+
+7)
+Intel Parallel Studio XE 2020 Cluster Edition Update 1
+for "Task Analysis"
+https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/top/analyze-performance/code-profiling-scenarios/task-analysis.html
+https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/top/api-support/instrumentation-and-tracing-technology-apis/instrumentation-and-tracing-technology-api-reference/task-api.html
+

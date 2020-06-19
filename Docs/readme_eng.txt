@@ -1,7 +1,12 @@
 What allows at the moment:
 automatically create timings to the video and some of the above described chips :).
 
-How to use:
+How to use without deep details:
+1) File->Open Video (any variant)
+1) Just press "Run Search" in first panel (if you need to get only timing and original images with potential subs go after this step to last panel and press "Create Empty Sub")
+2) And press "Create Cleared TXT Images" on last panel (for get Text Mining, if you plan to OCR text after in other software)
+
+How to use in details:
 1) Run VideoSubFinder.exe
 
 2) In the menu select File-> Open Video, select the video file in which

@@ -22,6 +22,16 @@
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
 
+#ifdef CUSTOM_TA 
+#include "ittnotify.h"
+
+__itt_domain* domain = __itt_domain_create(L"MyTraces.MyDomain");
+
+__itt_string_handle* shOneStep = __itt_string_handle_create(L"OneStep");
+__itt_string_handle* shConvertToRGB = __itt_string_handle_create(L"ConvertToRGB");
+__itt_string_handle* shGetTransformedImage = __itt_string_handle_create(L"GetTransformedImage");
+#endif
+
 int		g_RunSubSearch = 0;
 
 int    g_threads = -1;
@@ -263,8 +273,25 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 	{
 		simple_buffer<int> ImFF(w*h, 0), ImSF(w*h, 0);
 		evt_rgb.wait();
+
 		custom_set_started(&evt);
-		res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
+
+		if (!evt_rgb.m_need_to_skip)
+		{
+#ifdef CUSTOM_TA
+			__itt_task_begin(domain, __itt_null, __itt_null, __itt_string_handle_create((std::wstring(L"GetTransformedImage_") + std::to_wstring(fn)).c_str()));
+#endif
+			res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
+#ifdef CUSTOM_TA 
+			__itt_task_end(domain);
+#endif
+		}
+		else
+		{
+			evt.m_need_to_skip = true;
+			res = 0;
+		}
+
 		evt.set();
 	});
 }
@@ -428,6 +455,7 @@ public:
 		{
 			if (*(pPos[fdn + i]) == -1)
 			{
+				custom_assert(!m_p_events_rgb[fdn + i]->m_need_to_skip, "AddGetRGBImagesTask: not: !m_p_events_rgb[fdn + i]->m_need_to_skip");
 				*(pPos[fdn + i]) = 0;
 				need_to_get[fdn + i] = true;
 				num_to_get++;
@@ -457,13 +485,18 @@ public:
 							p_events_one_step[fdn + i - 1]->wait();
 						}
 
+#ifdef CUSTOM_TA 
+						__itt_task_begin(domain, __itt_null, __itt_null, shOneStep);
+#endif
 						custom_set_started(p_events_one_step[fdn + i]);
-
 						*(pPos[fdn + i]) = pV->OneStepWithTimeout();						
-
 						pV->GetFrameData(*(pFrameData[fdn + i]));
+#ifdef CUSTOM_TA
+						__itt_task_end(domain);
+#endif
 
 						p_events_one_step[fdn + i]->set();
+
 					}
 				}
 			});
@@ -474,13 +507,37 @@ public:
 					{
 						if (need_to_get[fdn + i])
 						{
-							p_events_one_step[fdn + i]->wait();
-
 							custom_set_started(p_events_rgb[fdn + i]);
 
-							pV->ConvertToRGB(&((*(pFrameData[fdn + i]))[0]), *(pImRGB[fdn + i]), xmin, xmax, ymin, ymax);
+							if (!p_events_rgb[fdn + i]->m_need_to_skip)
+							{
+								p_events_one_step[fdn + i]->wait();
 
+								if (!p_events_rgb[fdn + i]->m_need_to_skip)
+								{									
+#ifdef CUSTOM_TA
+									__itt_id task_id = { (unsigned long long)fn + i, 0, 0 };
+									__itt_task_begin(domain, __itt_null, __itt_null, shConvertToRGB);
+#endif
+
+									pV->ConvertToRGB(&((*(pFrameData[fdn + i]))[0]), *(pImRGB[fdn + i]), xmin, xmax, ymin, ymax);
+#ifdef CUSTOM_TA 
+									__itt_task_end(domain);
+#endif
+								}
 #ifdef CUSTOM_DEBUG2
+								else
+								{
+									p_events_rgb[fdn + i]->m_need_to_skip = p_events_rgb[fdn + i]->m_need_to_skip;
+								}
+#endif
+							}
+#ifdef CUSTOM_DEBUG2
+							else
+							{
+								p_events_rgb[fdn + i]->m_need_to_skip = p_events_rgb[fdn + i]->m_need_to_skip;
+							}
+
 							//SaveRGBImage(*(pImRGB[fdn + i]), string("/TestImages/AddGetRGBImagesTask_ImRGB") + "_fn" + std::to_string(fn + i) + g_im_save_format, xmax - xmin + 1, ymax - ymin + 1);
 #endif							
 
@@ -499,6 +556,7 @@ public:
 		int fn_start = m_fn_start;
 
 		custom_assert((fdn >= 0) && (fdn < m_threads), "AddIntersectImagesTask: (fdn >= 0) && (fdn < m_threads)");
+		custom_assert(!m_p_events_rgb[fdn]->m_need_to_skip, "AddIntersectImagesTask: not: !m_p_events_rgb[fdn]->m_need_to_skip");
 
 		int* pthrs_int_res = m_pthrs_int_res[fdn];
 
@@ -521,10 +579,22 @@ public:
 			m_thrs_int[fdn] = concurrency::create_task([pthrs_int_res, fn, fn_start, fdn, pIm, pImY, p_events, pthrs_res, pImInt, pImYInt, threads, BufferSize, w, h, DL]() mutable
 			{
 				int bln = 1;
+				bool need_to_skip = false;
+
 				for (int i = 0; i < DL; i++)
 				{
 					p_events[fdn + i]->wait();
-					bln = bln & (*(pthrs_res[fdn + i]));
+					if (!p_events[fdn + i]->m_need_to_skip)
+					{
+						bln = bln & (*(pthrs_res[fdn + i]));						
+					}
+					else
+					{
+						//need to skip
+						bln = 0;
+						need_to_skip = true;
+					}
+
 					if (bln == 0)
 					{
 						break;
@@ -580,8 +650,8 @@ public:
 
 					bln = AnalyseImage(*pImInt, pImYInt, w, h);					
 				}
-				else
-				{ 
+				else if (!need_to_skip)
+				{
 					memcpy(pImInt->m_pData, pIm[fdn]->m_pData, BufferSize);
 					memcpy(pImYInt->m_pData, pImY[fdn]->m_pData, BufferSize);
 					for (int i = 0; i < w*h; i++)
@@ -599,9 +669,9 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 
-		custom_assert((fdn >= 0) && (fdn < m_threads), "GetIntersectImages: (fdn >= 0) && (fdn < m_threads)");
-		
-		custom_assert(*(m_pthrs_int_res[fdn]) != -1, "GetIntersectImages: *(m_pthrs_int_res[fdn]) != -1");
+		custom_assert((fdn >= 0) && (fdn < m_threads), "GetIntersectImages: not: (fdn >= 0) && (fdn < m_threads)");		
+		custom_assert(*(m_pthrs_int_res[fdn]) != -1, "GetIntersectImages: not: *(m_pthrs_int_res[fdn]) != -1");
+		custom_assert(!m_p_events_rgb[fdn]->m_need_to_skip, "GetIntersectImages: not: !m_p_events_rgb[fdn]->m_need_to_skip");
 
 		m_thrs_int[fdn].wait();
 
@@ -616,6 +686,7 @@ public:
 		int fdn = fn - m_fn_start;
 
 		custom_assert((fdn >= 0) && (fdn < m_N), "AddConvertImageTask: (fdn >= 0) && (fdn < m_N)");
+		custom_assert(!m_p_events_rgb[fdn]->m_need_to_skip, "AddConvertImageTask: not: !m_p_events_rgb[fdn]->m_need_to_skip");
 
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
@@ -628,12 +699,10 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 		
-		custom_assert((fdn >= 0) && (fdn < m_N), "GetConvertImageCopy: (fdn >= 0) && (fdn < m_N)");
+		custom_assert((fdn >= 0) && (fdn < m_N), "GetConvertImageCopy: not: (fdn >= 0) && (fdn < m_N)");
+		custom_assert(*(m_pthrs_res[fdn]) != -1, "GetConvertImageCopy: not: *(m_pthrs_res[fdn]) != -1");
+		custom_assert(!m_p_events_rgb[fdn]->m_need_to_skip, "GetConvertImageCopy: not: !m_p_events_rgb[fdn]->m_need_to_skip");
 
-		if (*(m_pthrs_res[fdn]) == -1)
-		{
-			custom_assert(false, "m_pthrs_res[fdn] == -1");
-		}		
 		m_thrs[fdn].wait();
 		
 		if (pImRGB != NULL)
@@ -660,12 +729,10 @@ public:
 	{
 		int fdn = fn - m_fn_start;
 
-		custom_assert((fdn >= 0) && (fdn < m_N), "GetConvertImage: (fdn >= 0) && (fdn < m_N)");
+		custom_assert((fdn >= 0) && (fdn < m_N), "GetConvertImage: not: (fdn >= 0) && (fdn < m_N)");
+		custom_assert(*(m_pthrs_res[fdn]) != -1, "GetConvertImage: not: m_pthrs_res[fdn] != -1");
+		custom_assert(!m_p_events_rgb[fdn]->m_need_to_skip, "GetConvertImage: not: !m_p_events_rgb[fdn]->m_need_to_skip");
 
-		if (*(m_pthrs_res[fdn]) == -1)
-		{
-			custom_assert(false, "m_pthrs_res[fdn] == -1");
-		}
 		m_thrs[fdn].wait();
 
 		pImRGB = m_pImRGB[fdn];
@@ -706,6 +773,11 @@ public:
 
 		if (fdn > 0)
 		{
+			for (int i = fdn - 1; i >= 0; i--)
+			{
+				m_p_events_rgb[i]->m_need_to_skip = true;
+			}			
+			
 			// NOTE: there can be dependent thread from AddGetRGBImagesTask which wait for m_p_events_one_step[fdn - 1] finish
 			// if we will reset/change m_p_events_one_step[fdn - 1] states, m_p_events_one_step[fdn] will can wait wrong event
 			// so waiting for m_p_events_one_step[fdn] will finish
@@ -947,122 +1019,148 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		int create_new_threads = threads;		
 
 		while ((found_sub == 0) && (CurPos < End) && (CurPos != prevPos) && (g_RunSubSearch == 1))
-		{			
+		{
+			prevPos = CurPos;
+
+#ifdef CUSTOM_TA
+			if (fn_start >= 12)
+			{
+				CurPos = End;
+				break;
+			}
+#endif
+
 			for (int thr_n = 0; thr_n < create_new_threads; thr_n++)
 			{
 				if (max_rgb_fn < fn + ddl - 1)
 				{
-					max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn, ddl));
+					max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn, ddl - 1));
+					max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn + ddl - 1, 1));
 				}
+				rs.AddConvertImageTask(fn + ddl - 1);
 				fn += ddl;
-				rs.AddConvertImageTask(fn - 1);
 			}
 
 			bln = 0;
 
-			bln1 = rs.GetConvertImageCopy(fn_start + ddl1_ofset);
-			bln2 = rs.GetConvertImageCopy(fn_start + ddl2_ofset);
+			bln1 = rs.GetConvertImageCopy(fn_start + ddl1_ofset);			
+			CurPos = rs.GetPos(fn_start + ddl1_ofset);
 
-			prevPos = CurPos;
-			CurPos = rs.GetPos(fn_start + ddl2_ofset);			
+			if (bln1)
+			{
+				bln2 = rs.GetConvertImageCopy(fn_start + ddl2_ofset);
+				CurPos = rs.GetPos(fn_start + ddl2_ofset);
 
 #ifdef CUSTOM_DEBUG
-			if (CurPos >= 98000)
-			{
-				CurPos = CurPos;
-			}
+				if (CurPos >= 98000)
+				{
+					CurPos = CurPos;
+				}
 #endif
+				
+				if (bln2)
+				{					
+					rs.GetConvertImage(fn_start + ddl2_ofset, ImRGBForward[1], ImForward[1], ImNEForward[1], ImYForward[1], PosForward[1]);
 
-			if (bln1 &&
-				bln2)
-			{
-				rs.GetConvertImageCopy(fn_start + ddl1_ofset, NULL, &ImInt, NULL, &ImYInt);
-				rs.GetConvertImage(fn_start + ddl2_ofset, ImRGBForward[1], ImForward[1], ImNEForward[1], ImYForward[1], PosForward[1]);
-
-				IntersectTwoImages(ImInt, *(ImForward[1]), w, h);
-			
-				if (g_use_ILA_images_for_search_subtitles)
-				{
-					for (int i = 0; i < w*h; i++)
-					{
-						ImYInt[i] += 255;
-					}
-					IntersectYImages(ImYInt, *(ImYForward[1]), w, h, 255);
-				}
-
-				bln = AnalyseImage(ImInt, &ImYInt, w, h);
-			}
-			
-			if (bln)
-			{
-				for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
-				{
-					rs.AddConvertImageTask(fn_start + i);
-				}
-
-				bln = 1;
-				for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
-				{
-					bln = bln && rs.GetConvertImage(fn_start + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
-				}
-
-				if (bln)
-				{
 					concurrency::parallel_invoke(
-					[&ImInt, &ImForward, ddl1_ofset, ddl2_ofset, w, h] {
-						for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
-						{
-							IntersectTwoImages(ImInt, *(ImForward[i]), w, h);
-						}
-					},
-					[&ImYInt, &ImYForward, ddl1_ofset, ddl2_ofset, w, h] {
-						if (g_use_ILA_images_for_search_subtitles)
-						{
-							for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+						[&rs , &ImInt, &ImForward, fn_start, ddl1_ofset, w, h] {
+							rs.GetConvertImageCopy(fn_start + ddl1_ofset, NULL, &ImInt, NULL, NULL);
+							IntersectTwoImages(ImInt, *(ImForward[1]), w, h);
+						},
+						[&rs, &ImYInt, &ImYForward, fn_start, ddl1_ofset, w, h] {
+							rs.GetConvertImageCopy(fn_start + ddl1_ofset, NULL, NULL, NULL, &ImYInt);
+							if (g_use_ILA_images_for_search_subtitles)
 							{
-								IntersectYImages(ImYInt, *(ImYForward[i]), w, h, 255);
+								for (int i = 0; i < w * h; i++)
+								{
+									ImYInt[i] += 255;
+								}
+								IntersectYImages(ImYInt, *(ImYForward[1]), w, h, 255);
 							}
 						}
-					});
+					);
 
 					bln = AnalyseImage(ImInt, &ImYInt, w, h);
-				}
-			}
 
-			if (bln)
-			{
-				found_sub = 1;
-				fn = fn_start;				
-
-				for (int i = 0; i < (DL + threads - 1); i++)
-				{
-					if (max_rgb_fn < fn + i)
+					if (bln)
 					{
-						max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn + i, 1));
-					}
-					rs.AddConvertImageTask(fn + i);
-				}
+						for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+						{
+							rs.AddConvertImageTask(fn_start + i);
+						}
 
-				for (int i = 0; i < (threads - 1); i++)
+						bln = 1;
+						for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+						{
+							bln = bln && rs.GetConvertImage(fn_start + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
+						}
+
+						if (bln)
+						{
+							concurrency::parallel_invoke(
+								[&ImInt, &ImForward, ddl1_ofset, ddl2_ofset, w, h] {
+									for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+									{
+										IntersectTwoImages(ImInt, *(ImForward[i]), w, h);
+									}
+								},
+								[&ImYInt, &ImYForward, ddl1_ofset, ddl2_ofset, w, h] {
+									if (g_use_ILA_images_for_search_subtitles)
+									{
+										for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
+										{
+											IntersectYImages(ImYInt, *(ImYForward[i]), w, h, 255);
+										}
+									}
+								});
+
+							bln = AnalyseImage(ImInt, &ImYInt, w, h);
+						}
+					}
+				}
+								
+				if (bln)
 				{
-					rs.AddIntersectImagesTask(fn + i);
+					found_sub = 1;
+					fn = fn_start;
+
+					for (int i = 0; i < (DL + threads - 1); i++)
+					{
+						if (max_rgb_fn < fn + i)
+						{
+							max_rgb_fn = max<int>(max_rgb_fn, rs.AddGetRGBImagesTask(fn + i, 1));
+						}
+						rs.AddConvertImageTask(fn + i);
+					}
+
+					for (int i = 0; i < (threads - 1); i++)
+					{
+						rs.AddIntersectImagesTask(fn + i);
+					}
+				}
+				else
+				{
+					if (bln2)
+					{
+						fn_start += ddl;
+						rs.ShiftStartFrameNumberTo(fn_start);
+						create_new_threads = 1;
+					}
+					else
+					{
+						fn_start += (ddl * 2);
+						rs.ShiftStartFrameNumberTo(fn_start);
+						create_new_threads = 2;
+					}
 				}
 			}
 			else
 			{
-				if (bln2)
-				{
-					fn_start += ddl;
-					rs.ShiftStartFrameNumberTo(fn_start);
-					create_new_threads = 1;
-				}
-				else
-				{
-					fn_start += (ddl * 2);
-					rs.ShiftStartFrameNumberTo(fn_start);
-					create_new_threads = 2;
-				}
-			}
+
+				fn_start += ddl;
+				rs.ShiftStartFrameNumberTo(fn_start);
+				create_new_threads = 1;
+			}			
 		}		
 
 		if ((g_RunSubSearch == 0) || (found_sub == 0) || (CurPos >= End) || (CurPos == prevPos))
