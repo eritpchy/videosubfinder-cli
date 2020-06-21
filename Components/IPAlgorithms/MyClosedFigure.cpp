@@ -501,16 +501,14 @@ clock_t SearchClosedFigures(simple_buffer<int> &Im, int w, int h, int white, cus
 	int *m, *key, *key2, *max_index_in_split;
 	const int n_splits = 1;
 	const int size = w*h;
-	clock_t start;
+	//clock_t start;
 
-	start = clock();
+	//start = clock();
 
 	m = new int[size];
 	key = new int[size];
 	key2 = new int[size];
 	max_index_in_split = new int[n_splits];
-
-	memset(m, 0, size * sizeof(int));
 
 	//Finding all closed figures on image
 
@@ -735,7 +733,7 @@ clock_t SearchClosedFigures(simple_buffer<int> &Im, int w, int h, int white, cus
 	delete[] maxY;
 	delete[] max_index_in_split;
 
-	return (clock() - start);
+	return 1/*(clock() - start)*/;
 }
 
 clock_t CreateIndexedImage(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h, int white, int &Number)
@@ -745,9 +743,9 @@ clock_t CreateIndexedImage(simple_buffer<int> &Im, simple_buffer<int> &ImRES, in
 	int i, j, i1, i2, jj, kk, index;
 	int x, y, size;
 	bool bln, bln2;
-	clock_t start;
+	//clock_t start;
 		
-	start = clock();
+	//start = clock();
 	size = w*h;
 
 	m = &ImRES[0];
@@ -922,5 +920,5 @@ clock_t CreateIndexedImage(simple_buffer<int> &Im, simple_buffer<int> &ImRES, in
 	delete[] key;
 	delete[] key2;
 	
-	return (clock()-start);
+	return 1/*(clock()-start)*/;
 }

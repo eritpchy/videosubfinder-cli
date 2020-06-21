@@ -30,6 +30,12 @@ __itt_domain* domain = __itt_domain_create(L"MyTraces.MyDomain");
 __itt_string_handle* shOneStep = __itt_string_handle_create(L"OneStep");
 __itt_string_handle* shConvertToRGB = __itt_string_handle_create(L"ConvertToRGB");
 __itt_string_handle* shGetTransformedImage = __itt_string_handle_create(L"GetTransformedImage");
+__itt_string_handle* shFirstCheck = __itt_string_handle_create(L"FirstCheck");
+__itt_string_handle* shSecondCheckPart1 = __itt_string_handle_create(L"SecondCheckPart1");
+__itt_string_handle* shSecondCheckPart2 = __itt_string_handle_create(L"SecondCheckPart2");
+__itt_string_handle* shAddIntersectImagesTaskV1 = __itt_string_handle_create(L"AddIntersectImagesTaskV1");
+__itt_string_handle* shAddIntersectImagesTaskV2 = __itt_string_handle_create(L"AddIntersectImagesTaskV2");
+__itt_string_handle* shSubFound = __itt_string_handle_create(L"SubFound");
 #endif
 
 int		g_RunSubSearch = 0;
@@ -110,7 +116,7 @@ inline void IntersectYImages(simple_buffer<int> &ImRes, simple_buffer<int> &Im2,
 	size = w * h;
 	for (i = 0; i < size; i++)
 	{
-		if (ImRes[i] > 0)
+		if (ImRes[i])
 		{
 			if (Im2[i] + offset_for_im2 < ImRes[i] - g_max_dl_down)
 			{
@@ -123,6 +129,28 @@ inline void IntersectYImages(simple_buffer<int> &ImRes, simple_buffer<int> &Im2,
 		}
 	}
 }
+
+inline void IntersectYImages(simple_buffer<int>& ImRes, simple_buffer<simple_buffer<int>*>& ImIn, int min_id_im_in, int max_id_im_in, int w, int h, int offset_for_im2)
+{
+	int i, size, im_id;
+
+	size = w * h;
+	for (i = 0; i < size; i++)
+	{	
+		for (im_id = min_id_im_in; (im_id <= max_id_im_in) && ImRes[i]; im_id++)
+		{
+			if ((*(ImIn[im_id]))[i] + offset_for_im2 < ImRes[i] - g_max_dl_down)
+			{
+				ImRes[i] = 0;
+			}
+			else if ((*(ImIn[im_id]))[i] + offset_for_im2 > ImRes[i] + g_max_dl_up)
+			{
+				ImRes[i] = 0;
+			}
+		}
+	}
+}
+
 
 int CompareTwoSubsByOffset(simple_buffer<simple_buffer<int>*> &ImForward, simple_buffer<simple_buffer<int>*> &ImYForward, simple_buffer<simple_buffer<int>*> &ImNEForward,
 			simple_buffer<int> &ImIntS, simple_buffer<int> &ImYS, simple_buffer<int> &ImNES, simple_buffer<int> &prevImNE,
@@ -140,10 +168,7 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<int>*> &ImForward, simple
 			[&ImInt2, &ImForward, DL, BufferSize, offset, w, h] {
 				memcpy(ImInt2.m_pData, ImForward[offset]->m_pData, BufferSize);
 
-				for (int _thr_n = offset + 1; _thr_n < DL - 1; _thr_n++)
-				{
-					IntersectTwoImages(ImInt2, *(ImForward[_thr_n]), w, h);
-				}
+				IntersectImages(ImInt2, ImForward, offset + 1, DL - 2, w, h);
 			},
 				[&ImYInt2, &ImYForward, DL, BufferSize, offset, w, h] {
 				if (g_use_ILA_images_for_search_subtitles)
@@ -155,10 +180,7 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<int>*> &ImForward, simple
 						ImYInt2[i] += 255;
 					}
 
-					for (int _thr_n = offset + 1; _thr_n < DL - 1; _thr_n++)
-					{
-						IntersectYImages(ImYInt2, *(ImYForward[_thr_n]), w, h, 255);
-					}
+					IntersectYImages(ImYInt2, ImYForward, offset + 1, DL - 2, w, h, 255);
 				}
 			}
 		);
@@ -279,7 +301,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 		if (!evt_rgb.m_need_to_skip)
 		{
 #ifdef CUSTOM_TA
-			__itt_task_begin(domain, __itt_null, __itt_null, __itt_string_handle_create((std::wstring(L"GetTransformedImage_") + std::to_wstring(fn)).c_str()));
+			__itt_task_begin(domain, __itt_null, __itt_null, shGetTransformedImage);
 #endif
 			res = GetTransformedImage(ImRGB, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
 #ifdef CUSTOM_TA 
@@ -603,31 +625,28 @@ public:
 
 				if (bln)
 				{
+#ifdef CUSTOM_TA
+					__itt_task_begin(domain, __itt_null, __itt_null, shAddIntersectImagesTaskV1);
+#endif
 					concurrency::parallel_invoke(
-						[&pImInt, &pIm, fdn, DL, BufferSize, w, h] {
-						memcpy(pImInt->m_pData, pIm[fdn]->m_pData, BufferSize);
+							[&pImInt, &pIm, fdn, DL, BufferSize, w, h] {
+							memcpy(pImInt->m_pData, pIm[fdn]->m_pData, BufferSize);
 
-						for (int _thr_n = 1; _thr_n < DL; _thr_n++)
-						{
-							IntersectTwoImages(*(pImInt), *(pIm[fdn + _thr_n]), w, h);
-						}
-					},
-						[&pImYInt, &pImY, fdn, DL, BufferSize, w, h] {
-						if (g_use_ILA_images_for_search_subtitles)
-						{
-							memcpy(pImYInt->m_pData, pImY[fdn]->m_pData, BufferSize);
-
-							for (int i = 0; i < w*h; i++)
+							IntersectImages(*(pImInt), pIm, fdn + 1, fdn + DL - 1, w, h);
+						},
+							[&pImYInt, &pImY, fdn, DL, BufferSize, w, h] {
+							if (g_use_ILA_images_for_search_subtitles)
 							{
-								(*pImYInt)[i] += 255;
-							}
+								memcpy(pImYInt->m_pData, pImY[fdn]->m_pData, BufferSize);
 
-							for (int _thr_n = 1; _thr_n < DL; _thr_n++)
-							{
-								IntersectYImages(*(pImYInt), *(pImY[fdn + _thr_n]), w, h, 255);
+								for (int i = 0; i < w*h; i++)
+								{
+									(*pImYInt)[i] += 255;
+								}
+
+								IntersectYImages(*(pImYInt), pImY, fdn + 1, fdn + DL - 1, w, h, 255);
 							}
 						}
-					}
 					);
 
 #ifdef CUSTOM_DEBUG
@@ -648,16 +667,25 @@ public:
 					}
 #endif
 
-					bln = AnalyseImage(*pImInt, pImYInt, w, h);					
+					bln = AnalyseImage(*pImInt, pImYInt, w, h);
+#ifdef CUSTOM_TA 
+					__itt_task_end(domain);
+#endif
 				}
 				else if (!need_to_skip)
 				{
+#ifdef CUSTOM_TA
+					__itt_task_begin(domain, __itt_null, __itt_null, shAddIntersectImagesTaskV2);
+#endif
 					memcpy(pImInt->m_pData, pIm[fdn]->m_pData, BufferSize);
 					memcpy(pImYInt->m_pData, pImY[fdn]->m_pData, BufferSize);
 					for (int i = 0; i < w*h; i++)
 					{
 						(*pImYInt)[i] += 255;
 					}
+#ifdef CUSTOM_TA
+					__itt_task_end(domain);
+#endif
 				}
 
 				*pthrs_int_res = bln;
@@ -1018,12 +1046,20 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	{
 		int create_new_threads = threads;		
 
+#ifdef CUSTOM_TA
+		if (fn >= 1000)
+		{
+			CurPos = End;
+			break;
+		}
+#endif
+
 		while ((found_sub == 0) && (CurPos < End) && (CurPos != prevPos) && (g_RunSubSearch == 1))
 		{
 			prevPos = CurPos;
 
 #ifdef CUSTOM_TA
-			if (fn_start >= 12)
+			if (fn >= 1000)
 			{
 				CurPos = End;
 				break;
@@ -1060,6 +1096,9 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				
 				if (bln2)
 				{					
+#ifdef CUSTOM_TA
+					__itt_task_begin(domain, __itt_null, __itt_null, shFirstCheck);
+#endif
 					rs.GetConvertImage(fn_start + ddl2_ofset, ImRGBForward[1], ImForward[1], ImNEForward[1], ImYForward[1], PosForward[1]);
 
 					concurrency::parallel_invoke(
@@ -1081,9 +1120,15 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					);
 
 					bln = AnalyseImage(ImInt, &ImYInt, w, h);
+#ifdef CUSTOM_TA 
+					__itt_task_end(domain);
+#endif
 
 					if (bln)
 					{
+#ifdef CUSTOM_TA
+						__itt_task_begin(domain, __itt_null, __itt_null, shSecondCheckPart1);
+#endif
 						for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
 						{
 							rs.AddConvertImageTask(fn_start + i);
@@ -1094,27 +1139,29 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						{
 							bln = bln && rs.GetConvertImage(fn_start + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
 						}
-
+#ifdef CUSTOM_TA 
+						__itt_task_end(domain);
+#endif
 						if (bln)
 						{
+#ifdef CUSTOM_TA
+							__itt_task_begin(domain, __itt_null, __itt_null, shSecondCheckPart2);
+#endif
 							concurrency::parallel_invoke(
 								[&ImInt, &ImForward, ddl1_ofset, ddl2_ofset, w, h] {
-									for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
-									{
-										IntersectTwoImages(ImInt, *(ImForward[i]), w, h);
-									}
+									IntersectImages(ImInt, ImForward, ddl1_ofset + 1, ddl2_ofset - 1, w, h);
 								},
 								[&ImYInt, &ImYForward, ddl1_ofset, ddl2_ofset, w, h] {
 									if (g_use_ILA_images_for_search_subtitles)
 									{
-										for (int i = ddl1_ofset + 1; i <= ddl2_ofset - 1; i++)
-										{
-											IntersectYImages(ImYInt, *(ImYForward[i]), w, h, 255);
-										}
+										IntersectYImages(ImYInt, ImYForward, ddl1_ofset + 1, ddl2_ofset - 1, w, h, 255);
 									}
 								});
 
 							bln = AnalyseImage(ImInt, &ImYInt, w, h);
+#ifdef CUSTOM_TA 
+							__itt_task_end(domain);
+#endif
 						}
 					}
 				}
@@ -1191,6 +1238,10 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		{
 			rs.GetConvertImage(fn + i, ImRGBForward[i], ImForward[i], ImNEForward[i], ImYForward[i], PosForward[i]);
 		}
+
+#ifdef CUSTOM_TA
+		__itt_task_begin(domain, __itt_null, __itt_null, shSubFound);
+#endif
 
 		pImRGB = ImRGBForward[0];		
 		pImNE = ImNEForward[0];
@@ -1578,6 +1629,10 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			fn++;
 			rs.ShiftStartFrameNumberTo(fn);
 		}
+
+#ifdef CUSTOM_TA 
+		__itt_task_end(domain);
+#endif
 	}
 
 	g_pV = NULL;

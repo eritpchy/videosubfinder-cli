@@ -56,6 +56,8 @@ public:
 	wxString	m_ocr_label_msd_text;
 	wxString	m_ocr_label_jsact_text;
 	wxString	m_ocr_label_clear_txt_folders;
+	wxString	m_ocr_label_save_each_substring_separately;
+	wxString	m_ocr_label_save_scaled_images;
 	wxString	m_ocr_button_ces_text;
 	wxString	m_ocr_button_ccti_text;
 	wxString	m_ocr_button_csftr_text;

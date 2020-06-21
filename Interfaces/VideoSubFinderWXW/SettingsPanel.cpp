@@ -370,7 +370,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 	S = GetTransformedImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H);
 	
-	if (g_generate_cleared_text_images_on_test)
+	if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
 	{
 		vector<wxString> SavedFiles;
 		SavedFiles.push_back(ImgName);

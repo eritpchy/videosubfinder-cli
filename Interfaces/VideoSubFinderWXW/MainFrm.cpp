@@ -643,6 +643,9 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(fin, g_hw_device, "hw_device");
 
+	ReadProperty(fin, g_save_each_substring_separately, "save_each_substring_separately");
+	ReadProperty(fin, g_save_scaled_images, "save_scaled_images");
+
 	fin.close();
 
 	fin.open((g_app_dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);
@@ -650,6 +653,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(fin, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
 	ReadProperty(fin, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
 	ReadProperty(fin, m_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
+	ReadProperty(fin, m_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
+	ReadProperty(fin, m_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
 	ReadProperty(fin, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
 	ReadProperty(fin, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
@@ -736,9 +741,6 @@ void CMainFrame::SaveSettings()
 {
 	ofstream fout;
 
-	g_clear_txt_folders = m_pPanel->m_pOCRPanel->m_pcbCTXTF->GetValue();
-	g_join_subs_and_correct_time = m_pPanel->m_pOCRPanel->m_pcbJSACT->GetValue();
-
 	m_pPanel->m_pSSPanel->m_pOI->SaveEditControlValue();
 	m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
 
@@ -819,6 +821,9 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_remove_wide_symbols, "remove_wide_symbols");
 
 	WriteProperty(fout, g_hw_device, "hw_device");
+
+	WriteProperty(fout, g_save_each_substring_separately, "save_each_substring_separately");
+	WriteProperty(fout, g_save_scaled_images, "save_scaled_images");
 
 	fout.close();
 }

@@ -160,6 +160,10 @@ bool g_remove_wide_symbols = true;
 
 bool g_disable_save_images = false;
 
+bool g_save_each_substring_separately = true;
+bool g_save_scaled_images = true;
+
+
 bool InitCUDADevice()
 {
 	bool res = false;
@@ -1197,7 +1201,7 @@ void AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
 	custom_assert(ImOut.size() >= w * h, "AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	const int mx = w - 2;
-	const int my = h - 2;
+	const int my = h - 2;	
 
 	concurrency::parallel_for(2, my, [&](int y)
 	{
@@ -1344,6 +1348,23 @@ inline void IntersectTwoImages(simple_buffer<int> &ImRes, simple_buffer<int> &Im
 	}
 }
 
+void IntersectImages(simple_buffer<int>& ImRes, simple_buffer<simple_buffer<int>*>& ImIn, int min_id_im_in, int max_id_im_in, int w, int h)
+{
+	int i, size, im_id;
+
+	size = w * h;
+	for (i = 0; i < size; i++)
+	{
+		for (im_id = min_id_im_in; (im_id <= max_id_im_in) && ImRes[i]; im_id++)
+		{
+			if ((*(ImIn[im_id]))[i] == 0)
+			{
+				ImRes[i] = 0;
+			}
+		}
+	}
+}
+
 void CombineStrengthOfTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int w, int h)
 {
 	int i, size;
@@ -1360,7 +1381,7 @@ void CombineStrengthOfTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2
 
 void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, simple_buffer<int> &ImUMOE, simple_buffer<int> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
 {
-	simple_buffer<int> ImRES2(w*h, 0), ImRES3(w*h, 0);
+	simple_buffer<int> ImRES2(w*h), ImRES3(w*h);
 	int mx, my, i, k, y, x;
 	mx = w - 1;
 	my = h - 1;
@@ -1377,9 +1398,11 @@ void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	}
 
 	//FindAndApplyGlobalThreshold(ImCMOE, w, h);
-	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);
+	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);	
 
 	AplyESS(ImCMOE, ImRES2, w, h);
+
+	BorderClear(ImRES2, 2, w, h);
 	AplyECP(ImRES2, ImRES3, w, h);	
 
 	BorderClear(ImCMOE, 2, w, h);
@@ -1405,7 +1428,7 @@ void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 
 void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, simple_buffer<int> &ImUMOE, simple_buffer<int> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
 {
-	simple_buffer<int> ImRES5(w*h, 0), ImRES6(w*h, 0);
+	simple_buffer<int> ImRES5(w*h), ImRES6(w*h);
 	int mx, my, i, k, y, x;
 	mx = w - 1;
 	my = h - 1;
@@ -1428,6 +1451,8 @@ void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);
 
 	AplyESS(ImCMOE, ImRES5, w, h);
+
+	BorderClear(ImRES5, 2, w, h);
 	AplyECP(ImRES5, ImRES6, w, h);
 
 	BorderClear(ImCMOE, 2, w, h);
@@ -1436,12 +1461,13 @@ void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	my = h - 2;
 	i = ((w + 1) << 1);
 	for (y = 2; y < my; y++, i += 4)
+	{
 		for (x = 2; x < mx; x++, i++)
 		{
 			ImCMOE[i] = (ImRES5[i] + ImRES6[i]) / 2;
 		}
+	}
 
-	i = 0;
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
@@ -1451,7 +1477,7 @@ void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 
 void GetImFF(simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImRGB, simple_buffer<int> &ImYFull, simple_buffer<int> &ImUFull, simple_buffer<int> &ImVFull, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w,int h, int W, int H, double mthr)
 {	
-	simple_buffer<int> offsets(N, 0), cnts(N, 0), dhs(N, 0);
+	simple_buffer<int> offsets(N), cnts(N), dhs(N);
 	int i, k, cnt, val;
 	int x, y, segh;
 	int ww, hh;
@@ -1469,14 +1495,13 @@ void GetImFF(simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<i
 		hh += dhs[k];
 	}
 
-	simple_buffer<int> ImY(ww*hh, 0), ImU(ww*hh, 0), ImV(ww*hh, 0), ImYMOE(ww*hh, 0), ImUMOE(ww*hh, 0), ImVMOE(ww*hh, 0);
-	simple_buffer<int> ImRES1(ww*hh, 0), ImRES4(ww*hh, 0);
+	simple_buffer<int> ImY(ww*hh), ImU(ww*hh), ImV(ww*hh), ImYMOE(ww*hh), ImUMOE(ww*hh), ImVMOE(ww*hh);
+	simple_buffer<int> ImRES1(ww*hh), ImRES4(ww*hh);
 	
 	for(k=0; k<N; k++)
 	{
 		i = offsets[k];
 		cnt = cnts[k];				
-		memcpy(&ImRES1[i], &ImRGB[w*LB[k]], cnt * sizeof(int));
 		memcpy(&ImY[i], &ImYFull[w*LB[k]], cnt * sizeof(int));
 		memcpy(&ImU[i], &ImUFull[w*LB[k]], cnt * sizeof(int));
 		memcpy(&ImV[i], &ImVFull[w*LB[k]], cnt * sizeof(int));
@@ -1529,14 +1554,15 @@ void GetImFF(simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<i
 
 void GetImNE(simple_buffer<int> &ImNE, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)
 {
-	simple_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
-	simple_buffer<int> ImRES1(w*h, 0);
+	simple_buffer<int> ImYMOE(w*h), ImUMOE(w*h), ImVMOE(w*h);
+	simple_buffer<int> ImRES1(w*h);
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
 	__int64 t1, dt, num_calls;
 
 	EasyBorderClear(ImNE, w, h);
+	EasyBorderClear(ImRES1, w, h);
 
 	concurrency::parallel_invoke(
 		[&] { FastImprovedSobelNEdge(ImY, ImYMOE, w, h); },
@@ -1577,14 +1603,15 @@ void GetImNE(simple_buffer<int> &ImNE, simple_buffer<int> &ImY, simple_buffer<in
 
 void GetImHE(simple_buffer<int> &ImHE, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h)
 {
-	simple_buffer<int> ImYMOE(w*h, 0), ImUMOE(w*h, 0), ImVMOE(w*h, 0);
-	simple_buffer<int> ImRES1(w*h, 0);
+	simple_buffer<int> ImYMOE(w*h), ImUMOE(w*h), ImVMOE(w*h);
+	simple_buffer<int> ImRES1(w*h);
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
 	__int64 t1, dt, num_calls;
 
 	EasyBorderClear(ImHE, w, h);
+	EasyBorderClear(ImRES1, w, h);
 
 	concurrency::parallel_invoke(
 		[&] { FastImprovedSobelHEdge(ImY, ImYMOE, w, h); },
@@ -4544,7 +4571,8 @@ class FindTextRes
 {
 public:
 	int m_res;
-	cv::Mat m_cv_ImRGB;
+	cv::Mat m_cv_ImClearedText;
+	cv::Mat m_cv_ImClearedTextScaled;
 	int m_im_h;
 	string m_ImageName;
 	int m_YB;
@@ -5738,13 +5766,14 @@ FindTextRes FindText(simple_buffer<int> &ImRGB, simple_buffer<int> &ImF, simple_
 		simple_buffer<int> ImFFD(W*res.m_im_h, 0), ImSF(W*res.m_im_h, 0), ImTF(W*res.m_im_h, 0);
 
 		{
-			cv::Mat cv_ImRGBOrig(hh, ww, CV_8UC4), cv_ImDilate(res.m_im_h, W, CV_8UC1);
-			memcpy(cv_ImRGBOrig.data, &ImSubForSave[0], hh*ww * sizeof(int));
-			cv::resize(cv_ImRGBOrig, res.m_cv_ImRGB, cv::Size(0, 0), 1.0/g_scale, 1.0/g_scale);
+			cv::Mat cv_ImDilate(res.m_im_h, W, CV_8UC1);			
+			res.m_cv_ImClearedTextScaled = cv::Mat(hh, ww, CV_8UC4);
+			memcpy(res.m_cv_ImClearedTextScaled.data, &ImSubForSave[0], hh* ww * sizeof(int));
+			cv::resize(res.m_cv_ImClearedTextScaled, res.m_cv_ImClearedText, cv::Size(0, 0), 1.0/g_scale, 1.0/g_scale);
 
 			for (i = 0; i < res.m_im_h*W; i++)
 			{
-				if (((int*)(res.m_cv_ImRGB.data))[i] == 0)
+				if (((int*)(res.m_cv_ImClearedText.data))[i] == 0)
 				{
 					cv_ImDilate.data[i] = 255;
 				}
@@ -5802,7 +5831,18 @@ FindTextRes FindText(simple_buffer<int> &ImRGB, simple_buffer<int> &ImF, simple_
 
 			res.m_ImageName = FullName;
 
-			SaveRGBImage(ImSubForSave, FullName, ww, hh);
+			if (g_save_each_substring_separately)
+			{				
+				if (g_save_scaled_images)
+				{
+					SaveRGBImage(ImSubForSave, FullName, ww, hh);
+				}
+				else
+				{
+					memcpy(&ImSubForSave[0], res.m_cv_ImClearedText.data, res.m_im_h * W * sizeof(int));
+					SaveRGBImage(ImSubForSave, FullName, W, res.m_im_h);
+				}
+			}
 		}
 	}
 
@@ -5822,6 +5862,7 @@ int FindTextLines(simple_buffer<int> &ImRGB, simple_buffer<int> &ImClearedText, 
 	simple_buffer<int> LL(H, 0), LR(H, 0), LLB(H, 0), LLE(H, 0), LW(H, 0);
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	simple_buffer<int> FullImY(W*H, 0);
+	simple_buffer<int> ImClearedTextScaled;
 
 	int i, j, k, l, r, x, y, ib, bln, N, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
 	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
@@ -5882,7 +5923,13 @@ int FindTextLines(simple_buffer<int> &ImRGB, simple_buffer<int> &ImClearedText, 
 	pClr[2] = 255;
 	wc = color;
 
-	for (i = 0; i < W*H; i++) ImClearedText[i] = wc;
+	ImClearedText.set_values(wc);
+
+	if ((!g_save_each_substring_separately) && g_save_scaled_images)
+	{
+		ImClearedTextScaled.set_size(W * g_scale * H * g_scale);
+		ImClearedTextScaled.set_values(wc);
+	}	
 
 	//g_pViewImage[0](ImRGB, W, H);	
 
@@ -6027,20 +6074,51 @@ int FindTextLines(simple_buffer<int> &ImRGB, simple_buffer<int> &ImClearedText, 
 				{
 					for (x = 0; x < W; x++, i++)
 					{
-						if (((int*)(ft_res.m_cv_ImRGB.data))[i] == 0)
+						if (((int*)(ft_res.m_cv_ImClearedText.data))[i] == 0)
 						{
-							ImClearedText[ft_res.m_YB*W + i] = 0;
+							ImClearedText[(ft_res.m_YB * W) + i] = 0;
 						}
 					}
 				}
 
-				//g_pViewRGBImage(ImClearedText, W, H);
+				if ((!g_save_each_substring_separately) && g_save_scaled_images)
+				{
+					for (y = 0, i = 0; y < ft_res.m_im_h*g_scale; y++)
+					{
+						for (x = 0; x < W * g_scale; x++, i++)
+						{
+							if (((int*)(ft_res.m_cv_ImClearedTextScaled.data))[i] == 0)
+							{
+								ImClearedTextScaled[(ft_res.m_YB * g_scale * W * g_scale) + i] = 0;
+							}
+						}
+					}
+				}
 
 				res = 1;
 			}
 		}
 
 		k++;
+	}
+
+	if (res == 1)
+	{
+		FullName = string("/TXTImages/");
+		FullName += SaveName;
+		FullName += g_im_save_format;
+
+		if (!g_save_each_substring_separately)
+		{
+			if (g_save_scaled_images)
+			{
+				SaveRGBImage(ImClearedTextScaled, FullName, W * g_scale, H * g_scale);
+			}
+			else
+			{
+				SaveRGBImage(ImClearedText, FullName, W, H);
+			}
+		}
 	}
 
 	return res;

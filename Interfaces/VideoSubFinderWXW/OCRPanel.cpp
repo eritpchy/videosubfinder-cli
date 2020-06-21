@@ -23,6 +23,7 @@
 #include <streambuf>
 #include <ppl.h>
 #include <ppltasks.h>
+#include <concurrent_queue.h>
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
@@ -205,7 +206,7 @@ void COCRPanel::Init()
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 
-	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rcTEST, rcCSCTI, rcCSTXT;
+	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT;
 	int w, w2, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 
 	wxClientDC dc(this);
@@ -243,25 +244,37 @@ void COCRPanel::Init()
 	rcTEST.width = 100;
 	rcTEST.height = h;
 
-	rlMSD.x = 20;
+	rlMSD.x = 10;
 	rlMSD.y = 20;
 	rlMSD.width = rcCCTI.GetLeft() - rlMSD.x*2;
 	rlMSD.height = 18;
 
+	int cb_dist = 6;
+
 	reMSD.x = rlMSD.x;
-	reMSD.y = rlMSD.GetBottom() + 10;
+	reMSD.y = rlMSD.GetBottom() + cb_dist;
 	reMSD.width = rlMSD.width;
 	reMSD.height = 18;
 
 	rlJSACT.x = reMSD.x;
-	rlJSACT.y = reMSD.GetBottom() + 10;
+	rlJSACT.y = reMSD.GetBottom() + cb_dist;
 	rlJSACT.width = reMSD.width;
 	rlJSACT.height = 18;
 
 	rlCTXTF.x = rlJSACT.x;
-	rlCTXTF.y = rlJSACT.GetBottom() + 10;
+	rlCTXTF.y = rlJSACT.GetBottom() + cb_dist;
 	rlCTXTF.width = rlJSACT.width;
 	rlCTXTF.height = 18;
+
+	rlSESS.x = rlCTXTF.x;
+	rlSESS.y = rlCTXTF.GetBottom() + cb_dist;
+	rlSESS.width = rlCTXTF.width;
+	rlSESS.height = 18;
+	
+	rlSSI.x = rlSESS.x;
+	rlSSI.y = rlSESS.GetBottom() + cb_dist;
+	rlSSI.width = rlSESS.width;
+	rlSSI.height = 18;
 
 	rcP3 = this->GetRect();
 
@@ -293,17 +306,25 @@ void COCRPanel::Init()
 		wxString::Format(wxT("%f"), m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_LBLFont);
 
-	m_pcbJSACT = new wxCheckBox(m_pP3, wxID_ANY,
+	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
 		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbJSACT->SetFont(m_LBLFont);
 	m_pcbJSACT->SetBackgroundColour(m_CL1);
-	m_pcbJSACT->SetValue(g_join_subs_and_correct_time);
 
-	m_pcbCTXTF = new wxCheckBox(m_pP3, wxID_ANY,
+	m_pcbCTXTF = new CCheckBox(m_pP3, wxID_ANY, &g_clear_txt_folders,
 		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbCTXTF->SetFont(m_LBLFont);
 	m_pcbCTXTF->SetBackgroundColour(m_CL1);
-	m_pcbCTXTF->SetValue(g_clear_txt_folders);
+
+	m_pcbSESS = new CCheckBox(m_pP3, wxID_ANY, &g_save_each_substring_separately,
+		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_pcbSESS->SetFont(m_LBLFont);
+	m_pcbSESS->SetBackgroundColour(m_CL1);
+
+	m_pcbSSI = new CCheckBox(m_pP3, wxID_ANY, &g_save_scaled_images,
+		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_pcbSSI->SetFont(m_LBLFont);
+	m_pcbSSI->SetBackgroundColour(m_CL1);
 
 	m_pCES = new wxButton( m_pP3, ID_BTN_CES,
 		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
@@ -345,8 +366,6 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 	vector<u64> BT, ET;
 	wxString filename;
 	bool res;
-
-	g_join_subs_and_correct_time = m_pcbJSACT->GetValue();
 
 	res = dir.GetFirst(&filename);
     while ( res )
@@ -498,8 +517,6 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 	vector<u64> BT, ET;
 	wxString filename;
 	bool res;
-
-	g_join_subs_and_correct_time = m_pcbJSACT->GetValue();
 
 	res = dir.GetFirst(&filename);
     while ( res )
@@ -683,8 +700,6 @@ void COCRPanel::CreateSubFromTXTResults()
 	wxDir dir(dir_path);
 	wxString filename;
 	bool res;
-
-	g_join_subs_and_correct_time = m_pcbJSACT->GetValue();
 
 	res = dir.GetFirst(&filename, "*.txt");
     while ( res )
@@ -1566,10 +1581,8 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res)
 	}
 }
 
-FindTextLinesRes FindTextLines(wxString FileName)
+void FindTextLines(wxString FileName, FindTextLinesRes &res)
 {
-	FindTextLinesRes res;
-
 	try
 	{
 		wxString Str;
@@ -1590,10 +1603,10 @@ FindTextLinesRes FindTextLines(wxString FileName)
 		{
 			Str = FileName;
 			Str = GetFileName(Str);
-			Str = g_work_dir + "/TXTImages/" + Str + g_im_save_format;
+			Str = "/TXTImages/" + Str + g_im_save_format;
 			SaveGreyscaleImage(res.m_ImF[5], string(Str), w, h);
 			res.m_ImClearedText = res.m_ImF[5];
-			return res;
+			return;
 		}
 
 		if (g_use_ISA_images_for_get_txt_area)
@@ -1644,26 +1657,48 @@ FindTextLinesRes FindTextLines(wxString FileName)
 	{
 		g_pMF->SaveError(string("Got C++ Exception: got error in FindTextLines: ") + e.what());
 	}
-
-	return res;
 }
 
-concurrency::task<FindTextLinesRes> TaskFindTextLines(vector<wxString> &FileNamesVector, int k)
+struct find_text_queue_data
 {
-	return concurrency::create_task([&FileNamesVector, k] {
-		FindTextLinesRes res;
+	wxString m_file_name;
+	FindTextLinesRes* m_p_res;
+	my_event* m_p_event;
+	bool m_is_end = false;
+};
 
-		if (g_RunCreateClearedTextImages == 0)
-		{
-			return res;
-		}		
+concurrency::task<void> TaskFindTextLines(concurrency::concurrent_queue<find_text_queue_data> &task_queue)
+{
+	return concurrency::create_task([&task_queue] {
+			find_text_queue_data text_queue_data;
 
-		res = FindTextLines(g_work_dir + "/RGBImages/" + FileNamesVector[k]);
-		
-		res.m_ImF.set_size(0);
+			while (1)
+			{			
+				if (task_queue.try_pop(text_queue_data))
+				{
+					if (text_queue_data.m_is_end)
+					{
+						break;
+					}
+					else
+					{
+						custom_set_started(text_queue_data.m_p_event);
 
-		return res;
-	}
+						if (g_RunCreateClearedTextImages == 0)
+						{
+							text_queue_data.m_p_event->m_need_to_skip = true;
+						}
+						else
+						{
+							FindTextLines(g_work_dir + "/RGBImages/" + text_queue_data.m_file_name, *text_queue_data.m_p_res);
+							text_queue_data.m_p_res->m_ImF.set_size(0);							
+						}
+
+						text_queue_data.m_p_event->set();
+					}
+				}
+			}
+		}
 	);
 }
 
@@ -1682,8 +1717,6 @@ void *ThreadCreateClearedTextImages::Entry()
 	u64 bt1, et1, bt2, et2;
 
 	int res;	
-
-	g_clear_txt_folders = m_pMF->m_pPanel->m_pOCRPanel->m_pcbCTXTF->GetValue();
 
 	if (g_clear_txt_folders)
 	{
@@ -1728,38 +1761,43 @@ void *ThreadCreateClearedTextImages::Entry()
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 		
 	int NImages = FileNamesVector.size();
-	vector<concurrency::task<FindTextLinesRes>> tasks(g_ocr_threads, concurrency::create_task([] {FindTextLinesRes res; return res;}));
 
-	for (k = 0; (k < g_ocr_threads) && (k < NImages); k++)
+	concurrency::concurrent_queue<find_text_queue_data> task_queue;
+	simple_buffer<FindTextLinesRes*> task_results(NImages);
+	simple_buffer<my_event*> task_events(NImages);
+	vector<concurrency::task<void>> tasks(g_ocr_threads, concurrency::create_task([] {}));
+
+	for (k = 0; k < NImages; k++)
 	{
-		tasks[k] = TaskFindTextLines(FileNamesVector, k);
+		task_results[k] = new FindTextLinesRes();
+		task_events[k] = new my_event();
+		task_queue.push({ FileNamesVector[k], task_results[k], task_events[k] });
+	}
+
+	for (k = 0; k < g_ocr_threads; k++)
+	{
+		task_queue.push({ "", NULL, NULL, true });
+		tasks[k] = TaskFindTextLines(task_queue);
 	}
 
 	for (k = 0; k < NImages; k++)
 	{
 		try
 		{
-			FindTextLinesRes task_res = tasks[0].get();
+			task_events[k]->wait();			
 
-			for (int i = 0; i < (g_ocr_threads - 1); i++)
+			if (task_events[k]->m_need_to_skip)
 			{
-				tasks[i] = tasks[i + 1];
+				delete(task_events[k]);
+				delete(task_results[k]);
+				continue;
 			}
 
-			if (k + g_ocr_threads < NImages)
-			{
-				tasks[g_ocr_threads - 1] = TaskFindTextLines(FileNamesVector, k + g_ocr_threads);
-			}
+			FindTextLinesRes *p_task_res = task_results[k];
 
-			res = task_res.m_res;
-			g_pViewImage[0](task_res.m_ImRGB, task_res.m_w, task_res.m_h);
-			g_pViewRGBImage(task_res.m_ImClearedText, task_res.m_w, task_res.m_h);
-
-			if (g_RunCreateClearedTextImages == 0)
-			{
-				concurrency::when_all(begin(tasks), end(tasks)).wait();
-				break;
-			}
+			res = p_task_res->m_res;
+			g_pViewImage[0](p_task_res->m_ImRGB, p_task_res->m_w, p_task_res->m_h);
+			g_pViewRGBImage(p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);			
 
 			Str = FileNamesVector[k];
 			Str = GetFileName(Str);
@@ -1783,8 +1821,8 @@ void *ThreadCreateClearedTextImages::Entry()
 				pClr[2] = 255;
 				wc = color;
 
-				simple_buffer<int> ImRES1((int)(task_res.m_w * g_scale)*(int)(task_res.m_h / g_scale), wc);
-				SaveGreyscaleImage(ImRES1, string(Str), task_res.m_w*g_scale, task_res.m_h / g_scale);
+				simple_buffer<int> ImRES1((int)(p_task_res->m_w * g_scale)*(int)(p_task_res->m_h / g_scale), wc);
+				SaveGreyscaleImage(ImRES1, string(Str), p_task_res->m_w*g_scale, p_task_res->m_h / g_scale);
 			}
 			/*
 			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == task_res.m_SavedFiles.size()) )
@@ -1875,13 +1913,19 @@ void *ThreadCreateClearedTextImages::Entry()
 				}
 			}
 			*/
-			prevSavedFiles = task_res.m_SavedFiles;
+
+			delete(task_events[k]);
+			delete(task_results[k]);
+
+			prevSavedFiles = p_task_res->m_SavedFiles;
 		}
 		catch (const exception& e)
 		{
 			g_pMF->SaveError(string("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + e.what());
 		}
 	}
+
+	concurrency::when_all(begin(tasks), end(tasks)).wait();
 
 	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));
 

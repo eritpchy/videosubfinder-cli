@@ -313,7 +313,7 @@ public:
 
 		if ( (val == 0) || (sizeof(T) == 1) )
 		{
-			memset(m_pData, 0, m_size * sizeof(T));
+			memset(m_pData, (int)val, m_size * sizeof(T));
 		}
 		else
 		{
@@ -322,7 +322,7 @@ public:
 				m_pData[i] = val;
 			}
 		}
-	}	
+	}
 
 	simple_buffer(const simple_buffer<T>& obj)
 	{
@@ -385,6 +385,21 @@ public:
 		custom_assert(offset < m_size, "simple_buffer<T>::get_sub_buffer(int offset): not: offset < m_size");
 
 		return simple_buffer<T>(m_pData + offset, m_size - offset);
+	}
+
+	inline void set_values(T val)
+	{
+		if ((val == 0) || (sizeof(T) == 1))
+		{
+			memset(m_pData, (int)val, m_size * sizeof(T));
+		}
+		else
+		{
+			for (int i = 0; i < m_size; i++)
+			{
+				m_pData[i] = val;
+			}
+		}
 	}
 };
 

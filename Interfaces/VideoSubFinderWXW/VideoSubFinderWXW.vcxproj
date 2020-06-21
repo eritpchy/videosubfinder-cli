@@ -344,6 +344,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CheckBox.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
     <ClCompile Include="DataGrid.cpp" />
     <ClCompile Include="ImageBox.cpp" />
@@ -359,6 +360,7 @@
     <ClCompile Include="VideoSubFinderWXW.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CheckBox.h" />
     <ClInclude Include="CommonFunctions.h" />
     <ClInclude Include="DataGrid.h" />
     <ClInclude Include="..\..\Components\Include\DataTypes.h" />

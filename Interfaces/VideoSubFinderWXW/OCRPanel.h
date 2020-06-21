@@ -18,6 +18,7 @@
 #include "SSOWnd.h"
 #include "DataTypes.h"
 #include "MyResource.h"
+#include "CheckBox.h"
 #include <wx/panel.h>
 #include <wx/textctrl.h>
 #include <vector>
@@ -143,8 +144,10 @@ public:
 	wxFont    m_LBLFont;
 
 	wxStaticText *m_plblMSD;
-	wxCheckBox   *m_pcbJSACT;
-	wxCheckBox   *m_pcbCTXTF;
+	CCheckBox    *m_pcbJSACT;
+	CCheckBox    *m_pcbCTXTF;
+	CCheckBox    *m_pcbSESS;
+	CCheckBox    *m_pcbSSI;
 	wxTextCtrl	 *m_pMSD;
 	wxButton	 *m_pCCTI;
 	wxButton	 *m_pCES;
