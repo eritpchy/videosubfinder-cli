@@ -106,6 +106,7 @@ public:
 		custom_assert(size > 0, "custom_buffer(int size): not: size > 0");
 
 		m_pData = new T[size];
+		custom_assert(m_pData != NULL, "custom_buffer<T>::custom_buffer(int size): not: m_pData != NULL");
 		m_size = size;
 		m_need_to_release = true;
 	}
@@ -115,6 +116,7 @@ public:
 		custom_assert(size > 0, "custom_buffer(int size, T val): not: size > 0");
 
 		m_pData = new T[size];
+		custom_assert(m_pData != NULL, "custom_buffer<T>::custom_buffer(int size, T val): not: m_pData != NULL");
 		m_size = size;
 		m_need_to_release = true;
 
@@ -146,6 +148,7 @@ public:
 		if (m_need_to_release)
 		{
 			m_pData = new T[m_size];
+			custom_assert(m_pData != NULL, "custom_buffer<T>::custom_buffer(const custom_buffer<T> &obj): not: m_pData != NULL");
 			for (int i = 0; i < m_size; i++)
 			{
 				m_pData[i] = obj.m_pData[i];
@@ -167,6 +170,7 @@ public:
 				{
 					delete[] m_pData;
 					m_pData = new T[obj.m_size];
+					custom_assert(m_pData != NULL, "custom_buffer<T>::operator= (const custom_buffer<T> &obj): not: m_pData != NULL");
 				}
 			}
 			else
@@ -179,6 +183,7 @@ public:
 			if (obj.m_need_to_release)
 			{
 				m_pData = new T[obj.m_size];
+				custom_assert(m_pData != NULL, "custom_buffer<T>::operator= (const custom_buffer<T> &obj): not: m_pData != NULL");
 			}
 		}
 
@@ -232,6 +237,7 @@ public:
 			else
 			{
 				m_pData = new T[size];
+				custom_assert(m_pData != NULL, "custom_buffer<T>::operator= (const custom_buffer<T> &obj): not: m_pData != NULL");
 				m_size = size;
 				m_need_to_release = true;
 			}
@@ -306,8 +312,10 @@ public:
 
 	simple_buffer(int size, T val)
 	{
-		custom_assert(size > 0, "simple_buffer<T>::custom_buffer(int size, T val): not: size > 0");
+		custom_assert(size > 0, "simple_buffer<T>::simple_buffer(int size, T val): not: size > 0");
+
 		m_pData = new T[size];
+		custom_assert(m_pData != NULL, "simple_buffer<T>::simple_buffer(int size, T val): not: m_pData != NULL");
 		m_size = size;
 		m_need_to_release = true;
 
@@ -332,6 +340,7 @@ public:
 		if (m_need_to_release)
 		{
 			m_pData = new T[m_size];
+			custom_assert(m_pData != NULL, "simple_buffer<T>::simple_buffer(const simple_buffer<T>& obj): not: m_pData != NULL");
 			memcpy(m_pData, obj.m_pData, m_size * sizeof(T));
 		}
 		else
@@ -350,6 +359,7 @@ public:
 				{
 					delete[] m_pData;
 					m_pData = new T[obj.m_size];
+					custom_assert(m_pData != NULL, "simple_buffer<T>::operator= (const simple_buffer<T>& obj): not: m_pData != NULL");
 				}
 			}
 			else
@@ -362,6 +372,7 @@ public:
 			if (obj.m_need_to_release)
 			{
 				m_pData = new T[obj.m_size];
+				custom_assert(m_pData != NULL, "simple_buffer<T>::operator= (const simple_buffer<T>& obj): not: m_pData != NULL");
 			}
 		}
 

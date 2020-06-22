@@ -6046,6 +6046,7 @@ int FindTextLines(simple_buffer<int> &ImRGB, simple_buffer<int> &ImClearedText, 
 	//wxMessageBox("dt0: " + std::to_string(GetTickCount() - start_time));
 	//start_time = GetTickCount();
 
+#ifdef WIN64
 	vector<concurrency::task<FindTextRes>> FindTextTasks;
 	
 	for (k = 0; k < N; k++)
@@ -6101,6 +6102,67 @@ int FindTextLines(simple_buffer<int> &ImRGB, simple_buffer<int> &ImClearedText, 
 
 		k++;
 	}
+#else
+	vector<FindTextRes*> FindTextTasks(N);
+
+	for (k = 0; k < N; k++)
+	{
+		FindTextTasks[k] = new FindTextRes();
+		*(FindTextTasks[k]) = FindText(ImRGB, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, W, H);
+	}
+
+	k = 0;
+	while (k < FindTextTasks.size())
+	{
+		FindTextRes *p_ft_res = FindTextTasks[k];
+
+		if (p_ft_res->m_LL.m_size > 0) // ned to split text on 2 parts
+		{
+			FindTextTasks.push_back(new FindTextRes());
+			*(FindTextTasks[FindTextTasks.size() - 1]) = FindText(ImRGB, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, W, H);
+			FindTextTasks.push_back(new FindTextRes());
+			*(FindTextTasks[FindTextTasks.size() - 1]) = FindText(ImRGB, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, W, H);			
+		}
+		else
+		{
+			if (p_ft_res->m_res == 1)
+			{
+				SavedFiles.push_back(p_ft_res->m_ImageName);
+				//SaveTextLineParameters(p_ft_res->m_ImageName, p_ft_res->m_YB, p_ft_res->m_LH, p_ft_res->m_LY, p_ft_res->m_LXB, p_ft_res->m_LXE, p_ft_res->m_LYB, p_ft_res->m_LYE, p_ft_res->m_mY, p_ft_res->m_mI, p_ft_res->m_mQ, W, H);
+
+				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
+				{
+					for (x = 0; x < W; x++, i++)
+					{
+						if (((int*)(p_ft_res->m_cv_ImClearedText.data))[i] == 0)
+						{
+							ImClearedText[(p_ft_res->m_YB * W) + i] = 0;
+						}
+					}
+				}
+
+				if ((!g_save_each_substring_separately) && g_save_scaled_images)
+				{
+					for (y = 0, i = 0; y < p_ft_res->m_im_h * g_scale; y++)
+					{
+						for (x = 0; x < W * g_scale; x++, i++)
+						{
+							if (((int*)(p_ft_res->m_cv_ImClearedTextScaled.data))[i] == 0)
+							{
+								ImClearedTextScaled[(p_ft_res->m_YB * g_scale * W * g_scale) + i] = 0;
+							}
+						}
+					}
+				}
+
+				res = 1;
+			}
+		}
+
+		delete p_ft_res;
+		k++;
+	}
+#endif
 
 	if (res == 1)
 	{

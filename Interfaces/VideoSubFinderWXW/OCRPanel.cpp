@@ -1788,8 +1788,8 @@ void *ThreadCreateClearedTextImages::Entry()
 
 			if (task_events[k]->m_need_to_skip)
 			{
-				delete(task_events[k]);
-				delete(task_results[k]);
+				delete task_events[k];
+				delete task_results[k];
 				continue;
 			}
 
@@ -1914,8 +1914,8 @@ void *ThreadCreateClearedTextImages::Entry()
 			}
 			*/
 
-			delete(task_events[k]);
-			delete(task_results[k]);
+			delete task_events[k];
+			delete task_results[k];
 
 			prevSavedFiles = p_task_res->m_SavedFiles;
 		}
