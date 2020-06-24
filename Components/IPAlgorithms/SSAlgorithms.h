@@ -64,3 +64,4 @@ s64 GetVideoTime(string time);
 s64 GetVideoTime(int minute, int sec, int mili_sec);
 
 wxString GetFileName(wxString FilePath);
+wxString GetFileExtension(wxString FilePath);

@@ -2473,3 +2473,16 @@ wxString GetFileName(wxString FilePath)
 
 	return res;
 }
+
+wxString GetFileExtension(wxString FilePath)
+{
+	wxString res;
+
+	wxRegEx re = "[^\\\\\\/]+\\.([^\\\\\\/\\.]+)$";
+	if (re.Matches(FilePath))
+	{
+		res = re.GetMatch(FilePath, 1);
+	}
+
+	return res;
+}

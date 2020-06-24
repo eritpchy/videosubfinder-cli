@@ -24,6 +24,8 @@
 #include <ppl.h>
 #include <ppltasks.h>
 #include <concurrent_queue.h>
+#include <wx/wfstream.h>
+#include <wx/txtstrm.h>
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
@@ -357,7 +359,6 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 {
 	wxString Str, SubStr, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 	int i, j, k, sec, msec;
-	fstream fout;
 	u64 bt, et, dt, mdt;
 	char str[30];
 
@@ -426,9 +427,9 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 				}
 			}
 		}
-	}
+	}	
 
-	fout.open(string(g_work_dir + string("/sub.srt")).c_str(), ios::out);
+	wxString srt_sub;
 	for(k=0; k<(int)FileNamesVector.size(); k++)
 	{
 		bt = BT[k];
@@ -460,12 +461,11 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		fout << (k+1) << "\n" << Str << "\n" << SubStr << "\n\n";
+		srt_sub << (k+1) << "\n" << Str << "\n" << SubStr << "\n\n";
 	}
-	fout.close();
 
-	fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);
-	fout << AssSubHead;
+	wxString ass_sub;
+	ass_sub << AssSubHead;
 	for (k = 0; k < (int)FileNamesVector.size(); k++)
 	{
 		bt = BT[k];
@@ -493,9 +493,10 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		fout << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + "\n";
+		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + "\n";
 	}
-	fout.close();
+	
+	SaveSub(srt_sub, ass_sub);
 }
 
 void COCRPanel::OnBnClickedCreateSubFromTXTResults(wxCommandEvent& event)
@@ -507,7 +508,6 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 {
 	wxString Str, SubStr, Name, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 	int i, j, k, kb, sec, msec;
-	fstream fout;
 	char str[30];
 	u64 bt, et, dt, mdt;
 
@@ -597,7 +597,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		}
 	}
 
-	fout.open(string(g_work_dir + "/sub.srt").c_str(), ios::out);
+	wxString srt_sub;
 	for(k=0; k<(int)BT.size(); k++)
 	{
 		bt = BT[k];
@@ -629,12 +629,11 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		fout << (k+1) << "\n" << Str << "\n" << SubStr << "\n\n";
+		srt_sub << (k+1) << "\n" << Str << "\n" << SubStr << "\n\n";
 	}
-	fout.close();
 
-	fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);
-	fout << AssSubHead;
+	wxString ass_sub;
+	ass_sub << AssSubHead;
 	for (k = 0; k < (int)BT.size(); k++)
 	{
 		bt = BT[k];
@@ -662,9 +661,40 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		fout << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + "\n";
+		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + "\n";
 	}
-	fout.close();
+
+	SaveSub(srt_sub, ass_sub);
+}
+
+void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
+{
+	wxFileDialog fd(m_pMF, wxT("Save subtitle as..."),
+		g_work_dir, "sub", wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass"), wxFD_SAVE);	
+	int res = fd.ShowModal();
+
+	if (res == wxID_OK)
+	{
+		wxString path = fd.GetPath();
+		wxString ext = GetFileExtension(path);
+
+		if (ext == wxString("srt"))
+		{
+			wxFFileOutputStream fout(path);
+			wxTextOutputStream tout(fout);
+			tout << srt_sub;
+			tout.Flush();
+			fout.Close();
+		}
+		else if (ext == wxString("ass"))
+		{
+			wxFFileOutputStream fout(path);
+			wxTextOutputStream tout(fout);
+			tout << ass_sub;
+			tout.Flush();
+			fout.Close();
+		}
+	}
 }
 
 void COCRPanel::CreateSubFromTXTResults()
@@ -673,7 +703,6 @@ void COCRPanel::CreateSubFromTXTResults()
 	int i, j, k, kb, sec, msec, max_mY_dif, max_mI_dif, max_mQ_dif, max_posY_dif;
 	int val1, val2, val3, val4, val5, val6, val7, val8;
 	string fname, image_name;
-	fstream fout/*, txt_info*/;
 	u64 bt, et, dt, mdt;
 	double max_LH_dif;
 	int bln;
@@ -930,8 +959,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		}
 	}
 
-	fout.open(string(g_work_dir + "/sub.srt").c_str(), ios::out);
-
+	wxString srt_sub;
 	for(k=0; k<(int)TXTVector.size(); k++)
 	{
 		bt = BT[k];
@@ -941,13 +969,11 @@ void COCRPanel::CreateSubFromTXTResults()
 			  " --> "+
 			  VideoTimeToStr2(et);
 
-		fout << (k+1) << "\n" << Str << "\n" << TXTVector[k] << "\n\n";
+		srt_sub << (k+1) << "\n" << Str << "\n" << TXTVector[k] << "\n\n";
 	}
 
-	fout.close();
-
-	fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);	
-	fout << AssSubHead;
+	wxString ass_sub;
+	ass_sub << AssSubHead;
 	for (k = 0; k < (int)TXTVector.size(); k++)
 	{
 		bt = BT[k];
@@ -961,541 +987,10 @@ void COCRPanel::CreateSubFromTXTResults()
 		std::string res;
 		txt = std::regex_replace(txt, re, "\\N");
 
-		fout << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + txt + "\n";
+		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + txt + "\n";
 	}
-	fout.close();
 
-	//// סמחהאול ass subtitle
-
-	//for(i=0; i < NT; i++)
-	//{
-	//	if (AssTXTVector[i].m_TXTStr != string(""))
-	//	{
-	//		if (AssTXTVector[i].m_LYE - AssTXTVector[i].m_LY <= g_dmaxy/4)
-	//		{
-	//			AssTXTVector[i].m_LYE = max(AssTXTVector[i].m_LYE, AssTXTVector[i].m_LY + (AssTXTVector[i].m_LH*7)/22);
-	//		}
-	//	}
-	//}
-
-	//for(i=0; i < NT-1; i++)
-	//{
-	//	if (AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT)
-	//	{
-	//		val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2 - H/2;
-	//		val2 = AssTXTVector[i+1].m_LY - AssTXTVector[i+1].m_LH/2 - H/2;
-
-	//		if ( (val1 >= AssTXTVector[i].m_LH/2) &&
-	//			 (val2 >= AssTXTVector[i+1].m_LH/2) )
-	//		{
-	//			AssLine = AssTXTVector[i+1];
-	//			AssTXTVector[i+1] = AssTXTVector[i];
-	//			AssTXTVector[i] = AssLine;
-	//		}
-	//	}
-	//}
-
-	//k = 0;
-	//while(k < NT)
-	//{
-	//	if (AssTXTVector[k].m_TXTStr == string(""))
-	//	{
-	//		if (g_DontDeleteUnrecognizedImages2 == false)
-	//		{
-	//			for(i=k; i<NT-1; i++)
-	//			{
-	//				AssTXTVector[i] = AssTXTVector[i+1];
-	//			}
-	//			NT--;
-
-	//			continue;
-	//		}
-	//		else
-	//		{
-	//			AssTXTVector[k].m_TXTStr = string("#unrecognized text#");
-	//			AssTXTVector[k].m_LH = 14;
-	//			AssTXTVector[k].m_mY = 0;
-	//			AssTXTVector[k].m_mI = 0;
-	//			AssTXTVector[k].m_mQ = 0;
-	//			/*AssTXTVector[k].m_LXB = AssTXTVector[k].m_LXE = W/2;
-	//			AssTXTVector[k].m_LY = AssTXTVector[k].m_LYE = H - 20;				
-	//			AssTXTVector[k].m_LYB = AssTXTVector[k].m_LYE - AssTXTVector[k].m_LH + 1;
-	//			*/
-	//		}
-	//	}
-
-	//	j = k+1;
-
-	//	while ( (j < NT) &&
-	//		    (AssTXTVector[j].m_BT-AssTXTVector[k].m_ET <= 333) )
-	//	{
-	//		if ( (AssTXTVector[j].m_TXTStr == AssTXTVector[k].m_TXTStr) &&				
-	//			 (abs(AssTXTVector[j].m_LY - AssTXTVector[k].m_LY) <= max_posY_dif) &&
-	//			 (abs(AssTXTVector[j].m_mY - AssTXTVector[k].m_mY) <= max_mY_dif) &&
-	//			 (abs(AssTXTVector[j].m_mI - AssTXTVector[k].m_mI) <= max_mI_dif) &&
-	//			 (abs(AssTXTVector[j].m_mQ - AssTXTVector[k].m_mQ) <= max_mQ_dif) &&
-	//			 ((double)abs(AssTXTVector[j].m_LH - AssTXTVector[k].m_LH)/(double)AssTXTVector[k].m_LH <= max_LH_dif) )
-	//		{
-	//			AssTXTVector[k].m_ET = AssTXTVector[j].m_ET;
-
-	//			for(i=j; i<NT-1; i++)
-	//			{
-	//				AssTXTVector[i] = AssTXTVector[i+1];
-	//			}
-	//			NT--;
-
-	//			continue;
-	//		}
-	//		else
-	//		{
-	//			j++;
-	//		}
-	//	}
-
-	//	k++;
-	//}
-
-	//for(k=0; k<NT; k++)
-	//{
-	//	if (AssTXTVector[k].m_ET-AssTXTVector[k].m_BT < (s64)mdt)
-	//	{
-	//		AssTXTVector[k].m_ET = AssTXTVector[k].m_BT + mdt;
-	//	}
-	//}
-
-	//for(i=0; i<NT; i++)
-	//{
-	//	bln = 0;
-
-	//	for(j=0; j<NS; j++)
-	//	{
-	//		val1 = AssTXTStyleVector[j].m_minY;
-	//		val2 = AssTXTStyleVector[j].m_maxY;
-
-	//		if (AssTXTVector[i].m_mY < val1) val1 = AssTXTVector[i].m_mY;
-	//		if (AssTXTVector[i].m_mY > val2) val2 = AssTXTVector[i].m_mY;
-
-	//		val3 = AssTXTStyleVector[j].m_minI;
-	//		val4 = AssTXTStyleVector[j].m_maxI;
-
-	//		if (AssTXTVector[i].m_mI < val3) val3 = AssTXTVector[i].m_mI;
-	//		if (AssTXTVector[i].m_mI > val4) val4 = AssTXTVector[i].m_mI;
-
-	//		val5 = AssTXTStyleVector[j].m_minQ;
-	//		val6 = AssTXTStyleVector[j].m_maxQ;
-
-	//		if (AssTXTVector[i].m_mQ < val5) val5 = AssTXTVector[i].m_mQ;
-	//		if (AssTXTVector[i].m_mQ > val6) val6 = AssTXTVector[i].m_mQ;
-
-	//		val7 = AssTXTStyleVector[j].m_minLH;
-	//		val8 = AssTXTStyleVector[j].m_maxLH;
-
-	//		if (AssTXTVector[i].m_LH < val7) val7 = AssTXTVector[i].m_LH;
-	//		if (AssTXTVector[i].m_LH > val8) val8 = AssTXTVector[i].m_LH;
-
-	//		if ( ((val2 - val1) <= max_mY_dif) &&
-	//		     ((val4 - val3) <= max_mI_dif) &&
-	//		     ((val6 - val5) <= max_mQ_dif) &&
-	//		     ((double)(val8 - val7)/(double)val7 <= max_LH_dif) )
-	//		{
-	//			bln = 1;
-
-	//			AssTXTStyleVector[j].m_minY = val1;
-	//			AssTXTStyleVector[j].m_maxY = val2;
-
-	//			AssTXTStyleVector[j].m_minI = val3;
-	//			AssTXTStyleVector[j].m_maxI = val4;
-
-	//			AssTXTStyleVector[j].m_minQ = val5;
-	//			AssTXTStyleVector[j].m_maxQ = val6;
-
-	//			AssTXTStyleVector[j].m_minLH = val7;
-	//			AssTXTStyleVector[j].m_maxLH = val8;
-
-	//			AssStyleDatum.m_mY = AssTXTVector[i].m_mY;
-	//			AssStyleDatum.m_mI = AssTXTVector[i].m_mI;
-	//			AssStyleDatum.m_mQ = AssTXTVector[i].m_mQ;
-	//			AssStyleDatum.m_LH = AssTXTVector[i].m_LH;
-
-	//			AssTXTStyleVector[j].m_data.push_back(AssStyleDatum);
-
-	//			AssTXTVector[i].m_AssStyleIndex = j;
-	//			//AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[j]);
-	//		}
-
-	//		if (bln == 1)
-	//		{
-	//			break;
-	//		}
-	//	}
-
-	//	if (bln == 0)
-	//	{
-	//		AssStyleDatum.m_mY = AssTXTVector[i].m_mY;
-	//		AssStyleDatum.m_mI = AssTXTVector[i].m_mI;
-	//		AssStyleDatum.m_mQ = AssTXTVector[i].m_mQ;
-	//		AssStyleDatum.m_LH = AssTXTVector[i].m_LH;
-
-	//		AssStyle.m_data.clear();
-	//		AssStyle.m_data.push_back(AssStyleDatum);
-
-	//		AssStyle.m_minY = AssStyleDatum.m_mY;
-	//		AssStyle.m_maxY = AssStyleDatum.m_mY;
-
-	//		AssStyle.m_minI = AssStyleDatum.m_mI;
-	//		AssStyle.m_maxI = AssStyleDatum.m_mI;
-
-	//		AssStyle.m_minQ = AssStyleDatum.m_mQ;
-	//		AssStyle.m_maxQ = AssStyleDatum.m_mQ;
-
-	//		AssStyle.m_minLH = AssStyleDatum.m_LH;
-	//		AssStyle.m_maxLH = AssStyleDatum.m_LH;
-
-	//		val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-	//		val2 = val1 - W/2;
-
-	//		AssStyle.m_Alignment = 2;
-
-	//		if ((double)abs(val2)/(W/2) < 0.3)
-	//		{
-	//			AssStyle.m_MarginL = -1;
-	//			AssStyle.m_MarginR = -1;
-	//		}
-	//		else
-	//		{
-	//			if (val2 < 0)
-	//			{
-	//				val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
-	//				if (val3 < 0) val3 = 0;
-	//				
-	//				AssStyle.m_MarginL = val3;
-	//				AssStyle.m_MarginR = val3;
-	//			}
-	//			else
-	//			{
-	//				val3 = W-(AssTXTVector[i].m_LXE + AssTXTVector[i].m_LH/10);
-	//				if (val3 < 0) val3 = 0;
-
-	//				AssStyle.m_MarginL = val3;
-	//				AssStyle.m_MarginR = val3;
-	//			}
-	//		}
-
-	//		val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-	//		val2 = val1 - H/2;
-
-	//		if (abs(val2) < AssTXTVector[i].m_LH/2)
-	//		{
-	//			AssStyle.m_Alignment += 3;
-
-	//			AssStyle.m_MarginV = 0;
-	//		}
-	//		else
-	//		{
-	//			if (val2 < 0)
-	//			{
-	//				AssStyle.m_Alignment += 6;
-
-	//				val3 = AssTXTVector[i].m_LYB;
-
-	//				if (val3 > 0)
-	//				{
-	//					AssStyle.m_MarginV = val3;
-	//				}
-	//				else
-	//				{
-	//					AssStyle.m_MarginV = 0;
-	//				}
-	//			}
-	//			else
-	//			{
-	//				val3 = H - AssTXTVector[i].m_LYE;
-
-	//				if (val3 > 0)
-	//				{
-	//					AssStyle.m_MarginV = val3;
-	//				}
-	//				else
-	//				{
-	//					AssStyle.m_MarginV = 0;
-	//				}
-	//			}
-	//		}
-
-	//		sprintf(str, "%.2d", NS+1);
-	//		AssStyle.m_Name = BaseStyleName + string(str);
-
-	//		AssTXTStyleVector[NS] = AssStyle;
-	//		NS++;
-
-	//		AssTXTVector[i].m_AssStyleIndex = NS-1;
-	//		//AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[AssTXTVector[i].m_AssStyleIndex]);
-	//	}
-	//}
-	//
-	//for(i=0; i<NS; i++)
-	//{
-	//	AssTXTStyleVector[i].Compute(W, H);
-	//}
-
-	//for(i=0; i<NT; i++)
-	//{
-	//	AssTXTVector[i].m_pAssStyle = &(AssTXTStyleVector[AssTXTVector[i].m_AssStyleIndex]);
-	//}
-
-	//for(i=0; i<NT; i++)
-	//{
-	//	AssTXTVector[i].m_dX = -1;
-	//	AssTXTVector[i].m_dY = -1;
-	//	AssTXTVector[i].m_Alignment = -1;
-
-	//	int ho = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)%3 + 1;
-	//	int vo = (AssTXTVector[i].m_pAssStyle->m_Alignment - 1)/3 + 1;
-
-	//	val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-	//	val2 = val1 - W/2;
-
-	//	val3 = AssTXTVector[i].m_LXB - AssTXTVector[i].m_LH/10;
-	//	if (val3 < 0) val3 = 0;
-
-	//	if (abs(val2) >= AssTXTVector[i].m_LH*2)
-	//	{
-	//		if (AssTXTVector[i].m_pAssStyle->m_MarginL == -1)
-	//		{
-	//			AssTXTVector[i].m_pAssStyle->m_MarginL = val3;
-	//			AssTXTVector[i].m_pAssStyle->m_MarginR = val3;				
-	//		}
-	//		
-	//		if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginL - val3) < AssTXTVector[i].m_LH/2 )
-	//		{
-	//			if (val2 < 0)
-	//			{
-	//				AssTXTVector[i].m_Alignment = 1;
-	//			}
-	//			else
-	//			{
-	//				AssTXTVector[i].m_Alignment = 3;
-	//			}
-	//		}
-	//		else
-	//		{
-	//			val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-	//			val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-
-	//			AssTXTVector[i].m_Alignment = 5;
-	//			AssTXTVector[i].m_dX = val1;
-	//			AssTXTVector[i].m_dY = val2;
-
-	//			continue;
-	//		}
-	//	}
-
-	//	val1 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-	//	val2 = val1 - H/2;
-
-	//	if ((double)abs(val2)/(H/2) < 0.05)
-	//	{
-	//		if (vo != 2)
-	//		{
-	//			if (AssTXTVector[i].m_Alignment == -1)
-	//			{
-	//				AssTXTVector[i].m_Alignment = 5;
-	//			}
-	//			else
-	//			{
-	//				AssTXTVector[i].m_Alignment += 3;
-	//			}
-	//		}
-	//	}
-	//	else
-	//	{
-	//		if (val2 < 0)
-	//		{
-	//			val3 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH - AssTXTVector[i].m_LH/5;
-
-	//			if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
-	//			{
-	//				if (vo != 3)
-	//				{
-	//					if (AssTXTVector[i].m_Alignment == -1)
-	//					{
-	//						AssTXTVector[i].m_Alignment = 8;
-	//					}
-	//					else
-	//					{
-	//						AssTXTVector[i].m_Alignment += 6;
-	//					}
-	//				}
-	//			}
-	//			else
-	//			{
-	//				val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-	//				val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-
-	//				AssTXTVector[i].m_Alignment = 5;
-	//				AssTXTVector[i].m_dX = val1;
-	//				AssTXTVector[i].m_dY = val2;
-
-	//				continue;
-	//			}
-	//		}
-	//		else
-	//		{
-	//			val3 = (H - (AssTXTVector[i].m_LY + AssTXTVector[i].m_LH/10));
-
-	//			if ( abs(AssTXTVector[i].m_pAssStyle->m_MarginV - val3) < AssTXTVector[i].m_LH/2 )
-	//			{
-	//				if (vo != 1)
-	//				{
-	//					if (AssTXTVector[i].m_Alignment == -1)
-	//					{
-	//						AssTXTVector[i].m_Alignment = 2;
-	//					}
-	//				}
-	//			}
-	//			else
-	//			{
-	//				val1 = (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2;
-	//				val2 = AssTXTVector[i].m_LY - AssTXTVector[i].m_LH/2;
-
-	//				AssTXTVector[i].m_Alignment = 5;
-	//				AssTXTVector[i].m_dX = val1;
-	//				AssTXTVector[i].m_dY = val2;
-
-	//				continue;
-	//			}
-	//		}
-	//	}
-	//}
-
-	//// מבתוהטםÿול מבתוהטםÿולûו סאבû
-	//i=0;
-	//while(i<NT-1)
-	//{
-	//	if( (AssTXTVector[i+1].m_AssStyleIndex == AssTXTVector[i].m_AssStyleIndex) &&
-	//		(AssTXTVector[i+1].m_BT == AssTXTVector[i].m_BT) &&
-	//		(AssTXTVector[i+1].m_ET == AssTXTVector[i].m_ET) )
-	//	{
-	//		val1 = abs((AssTXTVector[i+1].m_LXB + AssTXTVector[i+1].m_LXE) - (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE))/2;
-	//		val2 = abs((AssTXTVector[i+1].m_LYB + AssTXTVector[i+1].m_LYE) - (AssTXTVector[i].m_LYB + AssTXTVector[i].m_LYE))/2 - 
-	//			   (AssTXTVector[i+1].m_LYE - AssTXTVector[i+1].m_LYB + AssTXTVector[i].m_LYE - AssTXTVector[i].m_LYB)/2;
-	//		val3 = AssTXTVector[i].m_LH;
-
-	//		if ( (val1 < val3*2) &&
-	//			 (val2 < val3) )
-	//		{
-	//			if (AssTXTVector[i+1].m_LYE > AssTXTVector[i].m_LYE)
-	//			{
-	//				AssTXTVector[i].m_TXTStr = AssTXTVector[i].m_TXTStr + string("\\N") + AssTXTVector[i+1].m_TXTStr;
-	//			}
-	//			else
-	//			{
-	//				AssTXTVector[i].m_TXTStr = AssTXTVector[i+1].m_TXTStr + string("\\N") + AssTXTVector[i].m_TXTStr;
-	//			}
-
-	//			if (AssTXTVector[i].m_dX != -1)
-	//			{
-	//				val1 = ((AssTXTVector[i+1].m_LXB + AssTXTVector[i+1].m_LXE)/2 + (AssTXTVector[i].m_LXB + AssTXTVector[i].m_LXE)/2)/2;
-	//				val2 = ((AssTXTVector[i+1].m_LYB + AssTXTVector[i+1].m_LYE)/2 + (AssTXTVector[i].m_LYB + AssTXTVector[i].m_LYE)/2)/2;
-
-	//				AssTXTVector[i].m_dX = val1;
-	//				AssTXTVector[i].m_dY = val2;
-	//			}
-
-	//			for(j=i+1; j<NT-1; j++)
-	//			{
-	//				AssTXTVector[j] = AssTXTVector[j+1];
-	//			}
-	//			NT--;
-	//		}
-	//		else
-	//		{
-	//			i = i;
-	//		}
-	//	}
-
-	//	i++;
-	//}
-
-	//fout.open(string(g_work_dir + "/sub.ass").c_str(), ios::out);
-
-	//fout << "Title: Default Aegisub file\n";
-	//fout << "ScriptType: v4.00+\n";
-	//fout << "PlayResX: " << W << "\n";
-	//fout << "PlayResY: " << H << "\n";
-	//fout << "PlayDepth: 16\n";
-	//fout << "Timer: 100,0000\n";
-	//fout << "WrapStyle: 1\n";
-	//fout << "\n";
-	//fout << "\n";
-	//fout << "[V4+ Styles]\n";
-	//fout << "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n";
-
-	//for(i=0; i<NS; i++)
-	//{
-	//	if (AssTXTStyleVector[i].m_MarginL == -1)
-	//	{
-	//		AssTXTStyleVector[i].m_MarginL = 10;
-	//		AssTXTStyleVector[i].m_MarginR = 10;
-	//	}
-
-	//	YIQ_to_RGB( AssTXTStyleVector[i].m_mY, 
-	//				AssTXTStyleVector[i].m_mI, 
-	//				AssTXTStyleVector[i].m_mQ, 
-	//				mR, mG, mB, 255 );
-
-	//	sprintf(str, "&H00%.2X%.2X%.2X", mB, mG, mR);
-
-	//	fout << "Style: " << AssTXTStyleVector[i].m_Name << ",";
-	//	fout << "Arial Narrow," << AssTXTStyleVector[i].m_LH << ",";
-	//	fout << str << ",";
-	//	fout << "&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,0,";
-	//	fout << AssTXTStyleVector[i].m_Alignment << ",";
-	//	fout << AssTXTStyleVector[i].m_MarginL << ",";
-	//	fout << AssTXTStyleVector[i].m_MarginR << ",";
-	//	fout << AssTXTStyleVector[i].m_MarginV << ",";
-	//	fout << "204\n";
-	//}
-
-	//fout << "\n";
-	//fout << "[Events]\n";
-	//fout << "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text";
-
-	//for(i=0; i<NT; i++)
-	//{
-	//	fout << "\n";
-
-	//	fout << "Dialogue: 0,";
-	//	fout << VideoTimeToStr3(AssTXTVector[i].m_BT) << ",";
-	//	fout << VideoTimeToStr3(AssTXTVector[i].m_ET) << ",";
-	//	fout << AssTXTVector[i].m_pAssStyle->m_Name << ",";
-	//	fout << ",0000,0000,0000,,";
-
-	//	if ( (AssTXTVector[i].m_Alignment != -1) ||
-	//		 (AssTXTVector[i].m_dX != -1) )
-	//	{
-	//		fout << "{";
-
-	//		if (AssTXTVector[i].m_Alignment != -1)
-	//		{
-	//			fout << "\\an" << AssTXTVector[i].m_Alignment;
-	//		}
-
-	//		if (AssTXTVector[i].m_dX != -1)
-	//		{
-	//			fout << "\\pos(" << AssTXTVector[i].m_dX << "," << AssTXTVector[i].m_dY << ")";
-	//		}
-
-	//		fout << "}";
-	//	}
-
-	//	fout << AssTXTVector[i].m_TXTStr;
-	//}
-
-	//fout.close();
-
-	//delete[] AssTXTVector;
-	//delete[] AssTXTStyleVector;
+	SaveSub(srt_sub, ass_sub);
 }
 
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)

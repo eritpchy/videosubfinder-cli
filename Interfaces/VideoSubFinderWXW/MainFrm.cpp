@@ -313,7 +313,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	if (m_blnReopenVideo == false)
 	{
-		wxFileDialog fd(this, _T("Open Video File"),
+		wxFileDialog fd(this, wxT("Open Video File"),
 						wxEmptyString, wxEmptyString, wxT("Video Files (*.avi;*.mp4;*.mpg;*.mpeg;*.mpv;*.m1v;*.dat;*.avs;*.vdr;*.asf;*.asx;*.wmv;*.mkv;*.ogm)|*.avi;*.mp4;*.mpg;*.mpeg;*.mpv;*.m1v;*.dat;*.avs;*.vdr;*.asf;*.asx;*.wmv;*.mkv;*.ogm|All Files (*.*)|*.*"), wxFD_OPEN);
 
 		if(fd.ShowModal() != wxID_OK)

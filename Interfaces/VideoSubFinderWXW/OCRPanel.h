@@ -172,6 +172,7 @@ public:
 	void OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event);
 	void OnBnClickedCreateSubFromTXTResults(wxCommandEvent& event);
 	void OnBnClickedCreateClearedTextImages(wxCommandEvent& event);
+	void SaveSub(wxString srt_sub, wxString ass_sub);
 
 private:
 	DECLARE_EVENT_TABLE()
