@@ -250,7 +250,7 @@ void CVideoBox::Init()
 	m_plblVB->SetBackgroundColour( m_CL1 );
 	
 	m_plblTIME = new CTextBox( m_pVBar, ID_LBL_TIME, 
-									wxT("00:00:00,000/00:00:00,000") );
+									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_LBLFont);
 	m_plblTIME->SetTextColour(*wxWHITE);
@@ -308,7 +308,7 @@ void CVideoBox::OnSize(wxSizeEvent& event)
 
 	m_pVBar->GetClientSize(&w, &h);
 
-	rlTIME.width = 170;
+	rlTIME.width = w - m_pVBar->GetToolSize().GetWidth() * m_pVBar->GetToolsCount() - 2;
 	rlTIME.height = 22;
 	rlTIME.x = w - rlTIME.width;
 	rlTIME.y = (h - rlTIME.height)/2-2;

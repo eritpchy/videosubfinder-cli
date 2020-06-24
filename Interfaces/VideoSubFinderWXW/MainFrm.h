@@ -225,6 +225,7 @@ public:
 	void OnSetPriorityBelownormal(wxCommandEvent& event);
 	void OnSetPriorityAbovenormal(wxCommandEvent& event);
 	void OnSetPriorityHigh(wxCommandEvent& event);
+	string ConvertClockTime(clock_t time);
 
 private:
    DECLARE_EVENT_TABLE()

@@ -38,6 +38,7 @@ __itt_string_handle* shAddIntersectImagesTaskV2 = __itt_string_handle_create(L"A
 __itt_string_handle* shSubFound = __itt_string_handle_create(L"SubFound");
 #endif
 
+clock_t g_StartTimeRunSubSearch = 0;
 int		g_RunSubSearch = 0;
 
 int    g_threads = -1;
@@ -941,7 +942,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	int bln = 0, bln1 = 0, bln2 = 0, finded_prev;
 
 	//g_disable_save_images = true;
-
+	
+	g_StartTimeRunSubSearch = clock();
 	g_RunSubSearch = 1;
 
 	g_pV = pV;

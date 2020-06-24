@@ -904,6 +904,23 @@ void CMainFrame::OnFileSaveSettings(wxCommandEvent& event)
 	SaveSettings();
 }
 
+string CMainFrame::ConvertClockTime(clock_t time)
+{
+	static char str[100];
+	int hour, min, sec, val;
+
+	val = (int)(time / CLOCKS_PER_SEC); // seconds
+	hour = val / 3600;
+	val -= hour * 3600;
+	min = val / 60;
+	val -= min * 60;
+	sec = val;
+
+	snprintf(str, 100, "%02dh:%02dm:%02ds", hour, min, sec);
+
+	return string(str);
+}
+
 void CMainFrame::OnTimer(wxTimerEvent& event)
 {
 	s64 Cur;
@@ -912,7 +929,27 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 
 	if (Cur != m_ct) 
 	{
-		m_pVideoBox->m_plblTIME->SetLabel(ConvertVideoTime(Cur) + m_EndTimeStr);
+		if (g_RunSubSearch == 1)
+		{
+			if (Cur > m_BegTime)
+			{
+				clock_t cur_time = clock();
+				double progress = ((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0;
+
+				clock_t run_time = cur_time - g_StartTimeRunSubSearch;
+				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+
+				static char str[100];
+				snprintf(str, 100, "progress: %%%2.2f eta : %s run_time : %s   |   ", progress, ConvertClockTime(eta), ConvertClockTime(run_time));
+
+				m_pVideoBox->m_plblTIME->SetLabel(str + ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
+			}
+		}
+		else
+		{
+			m_pVideoBox->m_plblTIME->SetLabel(ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
+		}
+
 		m_ct = Cur;
 	}
 

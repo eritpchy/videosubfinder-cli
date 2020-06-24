@@ -24,6 +24,7 @@
 
 using namespace std;
 
+extern clock_t  g_StartTimeRunSubSearch;
 extern int		g_RunSubSearch;
 
 extern int      g_threads; // number of threads

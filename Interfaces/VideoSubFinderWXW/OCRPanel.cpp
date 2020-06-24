@@ -1750,10 +1750,6 @@ void *ThreadCreateClearedTextImages::Entry()
 		}
 	}
 
-	val = (int)FileNamesVector.size();
-	sprintf(str, "%.4d", val);
-	dStr = wxString(" : ") + wxString(str);
-
 	__int64 t1, dt, num_calls;
 
 	//t1 = GetTickCount();	
@@ -1780,6 +1776,8 @@ void *ThreadCreateClearedTextImages::Entry()
 		tasks[k] = TaskFindTextLines(task_queue);
 	}
 
+	clock_t start_time = clock();
+
 	for (k = 0; k < NImages; k++)
 	{
 		try
@@ -1797,14 +1795,26 @@ void *ThreadCreateClearedTextImages::Entry()
 
 			res = p_task_res->m_res;
 			g_pViewImage[0](p_task_res->m_ImRGB, p_task_res->m_w, p_task_res->m_h);
-			g_pViewRGBImage(p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);			
+			g_pViewRGBImage(p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);						
 
-			Str = FileNamesVector[k];
-			Str = GetFileName(Str);
+			if (!(m_pMF->m_blnNoGUI))
+			{
+				clock_t cur_time = clock();
+				double progress = ((double)(k + 1) / (double)NImages) * 100.0;
 
-			val = k + 1;
-			sprintf(str, "%.4d", val);
-			if (!(m_pMF->m_blnNoGUI)) m_pMF->m_pVideoBox->m_plblTIME->SetLabel(wxString(str) + dStr);
+				clock_t run_time = cur_time - start_time;
+				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+
+				static char str[200];
+				snprintf(str, 200, "progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   ", progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
+
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+
+				Str = FileNamesVector[k];
+				Str = GetFileName(Str);			
+
+				m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + Str + "\"");
+			}
 
 			if ((res == 0) && (g_DontDeleteUnrecognizedImages1 == true))
 			{
@@ -1931,7 +1941,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000");
+		m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000   ");
 		m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
 
 		m_pMF->m_pPanel->m_pSHPanel->Enable();
