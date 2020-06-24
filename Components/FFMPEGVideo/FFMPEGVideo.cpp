@@ -89,7 +89,7 @@ void FFMPEGVideo::ShowFrame(void *dc)
 	if ((m_show_video) && (dc != NULL))
 	{
 		int ret;
-		AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
+		AVPixelFormat dest_fmt = AV_PIX_FMT_BGR24;
 		uint8_t* dst_data[4] = { NULL };
 		int dst_linesize[4];
 
@@ -112,14 +112,12 @@ void FFMPEGVideo::ShowFrame(void *dc)
 			if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
 			{
 				unsigned char* img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
-
 				for (int i = 0; i < num_pixels; i++)
 				{
-					img_data[i * 3] = dst_data[0][i * 4 + 2]; //R
-					img_data[i * 3 + 1] = dst_data[0][i * 4 + 1]; //G
-					img_data[i * 3 + 2] = dst_data[0][i * 4]; //B
+					img_data[i * 3] = dst_data[0][i * 3 + 2]; //R
+					img_data[i * 3 + 1] = dst_data[0][i * 3 + 1]; //G
+					img_data[i * 3 + 2] = dst_data[0][i * 3]; //B
 				}
-
 				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
 			}
 		}
@@ -191,6 +189,16 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
 
 	if (frame->format == hw_pix_fmt) {
+		/*enum AVPixelFormat* formats;
+		ret = av_hwframe_transfer_get_formats(frame->hw_frames_ctx,	AV_HWFRAME_TRANSFER_DIRECTION_FROM, &formats, 0);
+		if (ret < 0) {
+			fprintf(stderr, "ERROR: av_hwframe_transfer_get_formats\n");
+			return ret;
+		}
+
+		sw_frame->format = formats[0];
+		av_freep(&formats);*/
+
 		/* retrieve data from GPU to CPU */			
 		if ((ret = av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
 			fprintf(stderr, "Error transferring the data to system memory\n");
@@ -624,7 +632,7 @@ inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data, uint8_t* const dst
 			ret = 0;
 
 #ifdef WIN64
-			ret = NV12_to_BGRA(src_data[0], src_data[1], src_linesize[0],
+			ret = NV12_to_BGR(src_data[0], src_data[1], src_linesize[0],
 				dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
 
 			if (ret == 0)
@@ -667,7 +675,7 @@ inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data, uint8_t* const dst
 int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
 {
 	int ret;
-	AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
+	AVPixelFormat dest_fmt = AV_PIX_FMT_BGR24;
 	uint8_t* dst_data[4] = { NULL };
 	int dst_linesize[4];
 
@@ -695,18 +703,15 @@ int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmi
 		i = ymin * m_Width + xmin;
 		j = 0;
 
-		if (w == m_Width)
+		for (y = 0; y < h; y++)
 		{
-			memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * h * 4);
-		}
-		else
-		{
-			for (y = 0; y < h; y++)
+			for (x = 0; x < w; x++)
 			{
-				memcpy(&(ImRGB.m_pData[j]), &dst_data[0][i * 4], w * 4);
-				j += w;
-				i += m_Width;
+				memcpy(&ImRGB[j], dst_data[0] + i * 3, 3);
+				i++;
+				j++;
 			}
+			i += di;
 		}
 	}
 
