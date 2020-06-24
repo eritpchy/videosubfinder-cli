@@ -140,7 +140,10 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 		m_ImageGeted = true;
 
-		((wxWindow*)m_pVideoWindow)->Refresh(true);
+		if (m_show_video)
+		{
+			((wxWindow*)m_pVideoWindow)->Refresh(true);
+		}
 	}
 
 	return res;
@@ -151,8 +154,11 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 bool OCVVideo::SetVideoWindowPlacement(void *pVideoWindow)
 {	
 	m_pVideoWindow = pVideoWindow;
-	m_show_video = true;
-	((wxWindow*)m_pVideoWindow)->Refresh(true);
+	m_pVideoWindow ? m_show_video = true : m_show_video = false;	
+	if (m_show_video)
+	{
+		((wxWindow*)m_pVideoWindow)->Refresh(true);
+	}
 	return true;
 }
 
