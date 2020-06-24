@@ -1301,7 +1301,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
 
 				static char str[200];
-				snprintf(str, 200, "progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   ", progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
+				snprintf(str, 200, "progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   ", progress, m_pMF->ConvertClockTime(eta).c_str(), m_pMF->ConvertClockTime(run_time).c_str(), k + 1, NImages);
 
 				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
 

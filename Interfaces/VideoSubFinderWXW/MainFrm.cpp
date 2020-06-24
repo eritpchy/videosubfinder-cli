@@ -940,7 +940,7 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
 
 				static char str[100];
-				snprintf(str, 100, "progress: %%%2.2f eta : %s run_time : %s   |   ", progress, ConvertClockTime(eta), ConvertClockTime(run_time));
+				snprintf(str, 100, "progress: %%%2.2f eta : %s run_time : %s   |   ", progress, ConvertClockTime(eta).c_str(), ConvertClockTime(run_time).c_str());
 
 				m_pVideoBox->m_plblTIME->SetLabel(str + ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
 			}
