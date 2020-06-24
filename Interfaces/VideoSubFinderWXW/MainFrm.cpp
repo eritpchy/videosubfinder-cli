@@ -336,11 +336,11 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	if (m_type == 0)
 	{
-		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox->m_pVideoWnd, 0);
+		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox, 0);
 	}
 	else
 	{
-		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox->m_pVideoWnd, 0);
+		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox, 0);
 	}
 
 	fstream fout;

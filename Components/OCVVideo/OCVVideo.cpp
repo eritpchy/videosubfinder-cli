@@ -65,10 +65,10 @@ OCVVideo::~OCVVideo()
 
 void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 {
-	if ((!img.empty()) && m_VC.isOpened() && m_show_video)
+	if ((!img.empty()) && m_VC.isOpened() && m_show_video && (dc != NULL))
 	{
 		int wnd_w, wnd_h, img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
-		((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
+		((wxPaintDC*)dc)->GetSize(&wnd_w, &wnd_h);
 
 		if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
 		{
@@ -81,15 +81,7 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 				img_data[i * 3 + 2] = img.data[i * 3];
 			}
 
-			if (dc != NULL)
-			{
-				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
-			}
-			else
-			{
-				wxClientDC cdc((wxWindow*)m_pVideoWindow);
-				cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
-			}
+			((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
 		}
 	}
 }
@@ -148,7 +140,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 		m_ImageGeted = true;
 
-		ShowFrame(m_cur_frame);		
+		((wxWindow*)m_pVideoWindow)->Refresh(true);
 	}
 
 	return res;
@@ -160,6 +152,7 @@ bool OCVVideo::SetVideoWindowPlacement(void *pVideoWindow)
 {	
 	m_pVideoWindow = pVideoWindow;
 	m_show_video = true;
+	((wxWindow*)m_pVideoWindow)->Refresh(true);
 	return true;
 }
 
@@ -257,7 +250,7 @@ void OCVVideo::OneStep()
 
 			if (m_show_video)
 			{				
-				ShowFrame(m_cur_frame);
+				((wxWindow*)m_pVideoWindow)->Refresh(true);
 			}			
 		}
 		else
@@ -466,7 +459,7 @@ void *ThreadRunVideo::Entry()
 		}
 		m_pVideo->m_Pos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
 		
-		m_pVideo->ShowFrame(m_pVideo->m_cur_frame);
+		((wxWindow*)m_pVideo->m_pVideoWindow)->Refresh(true);
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);
 		if (dt > 0) wxMilliSleep(dt);
 	}

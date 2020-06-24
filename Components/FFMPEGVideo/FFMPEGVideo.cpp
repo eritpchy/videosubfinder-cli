@@ -86,7 +86,7 @@ FFMPEGVideo::~FFMPEGVideo()
 
 void FFMPEGVideo::ShowFrame(void *dc)
 {
-	if (m_show_video)
+	if ((m_show_video) && (dc != NULL))
 	{
 		int ret;
 		AVPixelFormat dest_fmt = AV_PIX_FMT_BGRA;
@@ -107,7 +107,7 @@ void FFMPEGVideo::ShowFrame(void *dc)
 		if (ret > 0)
 		{
 			int wnd_w, wnd_h, img_w = m_Width, img_h = m_Height, num_pixels = img_w * img_h;
-			((wxWindow*)m_pVideoWindow)->GetClientSize(&wnd_w, &wnd_h);
+			((wxPaintDC*)dc)->GetSize(&wnd_w, &wnd_h);
 
 			if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
 			{
@@ -120,15 +120,7 @@ void FFMPEGVideo::ShowFrame(void *dc)
 					img_data[i * 3 + 2] = dst_data[0][i * 4]; //B
 				}
 
-				if (dc != NULL)
-				{
-					((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
-				}
-				else
-				{
-					wxClientDC cdc((wxWindow*)m_pVideoWindow);
-					cdc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
-				}
+				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
 			}
 		}
 
@@ -301,7 +293,7 @@ void FFMPEGVideo::OneStep()
 
 			if (m_show_video)
 			{
-				ShowFrame();
+				((wxWindow*)m_pVideoWindow)->Refresh(true);
 			}
 		}
 		else
@@ -558,6 +550,7 @@ bool FFMPEGVideo::SetVideoWindowPlacement(void *pVideoWindow)
 {
 	m_pVideoWindow = pVideoWindow;
 	m_show_video = true;
+	((wxWindow*)m_pVideoWindow)->Refresh(true);
 	return true;
 }
 
@@ -845,7 +838,6 @@ void *FFMPEGThreadRunVideo::Entry()
 		{
 			break;
 		}
-		m_pVideo->ShowFrame();
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);
 		if (dt > 0) wxMilliSleep(dt);
 	}

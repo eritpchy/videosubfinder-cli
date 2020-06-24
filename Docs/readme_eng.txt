@@ -2,9 +2,36 @@ What allows at the moment:
 automatically create timings to the video and some of the above described chips :).
 
 How to use without deep details:
-1) File->Open Video (any variant)
-1) Just press "Run Search" in first panel (if you need to get only timing and original images with potential subs go after this step to last panel and press "Create Empty Sub")
-2) And press "Create Cleared TXT Images" on last panel (for get Text Mining, if you plan to OCR text after in other software)
+1) Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
+2) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
+3) Click "Create Cleared TXT Images" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
+
+#-----------------------------------------------------
+For OCR (conversion of images of text into machine-encoded text) can be used:
+#-----------------------------------------------------
+1) FineReader: https://www.abbyy.com/finereader/
+1_1. Old video instruction: https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
+#-----------------------------------------------------
+2) Subtitle Edit (Free software): https://www.videohelp.com/software/Subtitle-Edit
+NOTE: The instruction below was tested on 3.5.16 version with images with English and Croatian (Tesseract 3.02) Text and it works
+In VideoSubFinder:
+2_1_1. Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
+2_1_2. Click "Run Search" and get images (in the first tab page: "Search").
+2_1_3. Click "Create Cleared TXT Images" (in the last tab page: "Search").
+2_1_4. [Note: This step can be skipped] Open "TXTImages" folder and remove images without text.
+2_1_5. Click "Create Empty Sub From Cleared TXT Images" which will generate "sub.srt" file with timing only in root directory of program (in the last tab page: "Search").
+In Subtitle Edit:
+2_2_1. Click in menu "File->Open" and select sub.srt file
+2_2_2. Click in menu "File->Import images.." + Click "..." in top right and select all files in "TXTImages" (CTRL+A)
+2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree, right mouse click, select "Image preprocessing...",
+select check box with "Invert colors", press "OK"
+2_2_4. Select "OCR Method" (any Tesseract method works good on English Text)
+2_2_5. Select Right "Language" also as it in Dictionary and download it by pressing "..." and "Download"
+2_2_6. press "Start OCR" and press "OK" at the end if results are good.
+2_2_7. Click in menu "File->Save as..." res.srt and press "Save"
+#-----------------------------------------------------
+
+#########################################################################################################
 
 How to use in details:
 1) Run VideoSubFinder.exe
