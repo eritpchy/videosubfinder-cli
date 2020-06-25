@@ -1054,7 +1054,7 @@ public:
 	int m_w;
 	int m_h;
 	vector<wxString> m_SavedFiles;
-	simple_buffer<int> m_ImRGB;
+	simple_buffer<u8> m_ImBGR;
 	simple_buffer<int> m_ImClearedText;
 	custom_buffer<simple_buffer<int>> m_ImF;
 
@@ -1068,7 +1068,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res)
 {
 	__try
 	{
-		res->m_res = FindTextLines(res->m_ImRGB, res->m_ImClearedText, res->m_ImF[5], res->m_ImF[3], res->m_ImF[1], res->m_ImF[0], res->m_SavedFiles, res->m_w, res->m_h);
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, res->m_ImF[5], res->m_ImF[3], res->m_ImF[1], res->m_ImF[0], res->m_SavedFiles, res->m_w, res->m_h);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
@@ -1086,13 +1086,13 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 		GetImageSize(string(FileName), w, h);
 		res.m_w = w;
 		res.m_h = h;
-		res.m_ImRGB = simple_buffer<int>(w*h, 0);
+		res.m_ImBGR = simple_buffer<u8>(w*h*3, 0);
 		res.m_ImClearedText = simple_buffer<int>(w*h, 0);
 		res.m_ImF = custom_buffer<simple_buffer<int>>(6, simple_buffer<int>(w*h, 0));
 
-		LoadRGBImage(res.m_ImRGB, string(FileName), w, h);
+		LoadBGRImage(res.m_ImBGR, string(FileName));
 
-		res.m_res = GetTransformedImage(res.m_ImRGB, res.m_ImF[3], res.m_ImF[4], res.m_ImF[5], res.m_ImF[1], res.m_ImF[2], w, h, w, h);
+		res.m_res = GetTransformedImage(res.m_ImBGR, res.m_ImF[3], res.m_ImF[4], res.m_ImF[5], res.m_ImF[1], res.m_ImF[2], w, h, w, h);
 
 		if (g_show_transformed_images_only)
 		{
@@ -1289,7 +1289,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			FindTextLinesRes *p_task_res = task_results[k];
 
 			res = p_task_res->m_res;
-			g_pViewImage[0](p_task_res->m_ImRGB, p_task_res->m_w, p_task_res->m_h);
+			g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
 			g_pViewRGBImage(p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);						
 
 			if (!(m_pMF->m_blnNoGUI))

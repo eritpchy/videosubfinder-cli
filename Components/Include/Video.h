@@ -150,13 +150,11 @@ public:
 		return 0;
 	}
 
-	// ImRGB should be in format b:g:r:0
-	virtual void GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+	virtual void GetBGRImage(simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax)
 	{
 	}
 
-	// ImRGB should be in format b:g:r:0
-	virtual int ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+	virtual int ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax)
 	{
 		return -1;
 	}

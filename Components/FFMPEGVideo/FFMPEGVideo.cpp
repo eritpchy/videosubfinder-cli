@@ -96,7 +96,7 @@ void FFMPEGVideo::ShowFrame(void *dc)
 		/* buffer is going to be written to rawvideo file, no alignment */
 		if ((ret = av_image_alloc(dst_data, dst_linesize,
 			m_Width, m_Height, dest_fmt, 1)) < 0) {
-			custom_assert(ret > 0, "FFMPEGVideo::ConvertToRGB\nCould not allocate memory for destination image.");
+			custom_assert(ret > 0, "FFMPEGVideo::ShowFrame\nCould not allocate memory for destination image.");
 		}
 
 		if (ret > 0)
@@ -209,7 +209,7 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		av_frame_unref(frame);
 	}
 	else
-		cur_frame = frame;	
+		cur_frame = frame;
 	
 	if (m_frame_buffer_size == -1)
 	{	
@@ -672,7 +672,9 @@ inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data, uint8_t* const dst
 	return ret;
 }
 
-int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+/////////////////////////////////////////////////////////////////////////////
+
+int FFMPEGVideo::ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax)
 {
 	int ret;
 	AVPixelFormat dest_fmt = AV_PIX_FMT_BGR24;
@@ -682,7 +684,7 @@ int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmi
 	/* buffer is going to be written to rawvideo file, no alignment */
 	if ((ret = av_image_alloc(dst_data, dst_linesize,
 		m_Width, m_Height, dest_fmt, 1)) < 0) {
-		custom_assert(ret > 0, "FFMPEGVideo::ConvertToRGB\nCould not allocate memory for destination image.");
+		custom_assert(ret > 0, "FFMPEGVideo::ConvertToBGR\nCould not allocate memory for destination image.");
 	}
 
 	if (ret > 0)
@@ -692,8 +694,7 @@ int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmi
 
 	if (ret > 0)
 	{
-		int w, h, x, y, i, j, di;
-		u8* color;
+		int w, h, x, y, i, j, di;		
 
 		w = xmax - xmin + 1;
 		h = ymax - ymin + 1;
@@ -703,15 +704,21 @@ int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmi
 		i = ymin * m_Width + xmin;
 		j = 0;
 
-		for (y = 0; y < h; y++)
+		custom_assert(ImBGR.m_size >= w * h * 3, "FFMPEGVideo::ConvertToBGR not: ImBGR.m_size >= w * h * 3");
+
+
+		if (w == m_Width)
 		{
-			for (x = 0; x < w; x++)
+			ImBGR.copy_data(dst_data[0], j * 3, i * 3, w * h * 3);
+		}
+		else
+		{
+			for (y = 0; y < h; y++)
 			{
-				memcpy(&ImRGB[j], dst_data[0] + i * 3, 3);
-				i++;
-				j++;
+				ImBGR.copy_data(dst_data[0], j * 3, i * 3, w * 3);
+				j += w;
+				i += m_Width;
 			}
-			i += di;
 		}
 	}
 
@@ -721,12 +728,12 @@ int FFMPEGVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmi
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// ImRGB in format b:g:r:0
-void FFMPEGVideo::GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+
+void FFMPEGVideo::GetBGRImage(simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax)
 {
 	if (input_ctx)
 	{
-		ConvertToRGB(m_frame_buffer.m_pData, ImRGB, xmin, xmax, ymin, ymax);
+		ConvertToBGR(m_frame_buffer.m_pData, ImBGR, xmin, xmax, ymin, ymax);
 	}
 }
 
@@ -742,7 +749,7 @@ int FFMPEGVideo::GetFrameDataSize()
 void FFMPEGVideo::GetFrameData(simple_buffer<u8>& FrameData)
 {
 	custom_assert(FrameData.size() == m_frame_buffer_size, "void FFMPEGVideo::GetFrameData(simple_buffer<u8>& FrameData)\nnot: FrameData.size() == m_frame_buffer_size");
-	memcpy(&FrameData[0], &m_frame_buffer[0], m_frame_buffer_size);
+	FrameData.copy_data(m_frame_buffer, m_frame_buffer_size);
 }
 
 /////////////////////////////////////////////////////////////////////////////

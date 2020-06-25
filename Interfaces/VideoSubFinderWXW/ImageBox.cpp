@@ -207,3 +207,22 @@ void CImageBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 	m_pIW->Update();
 }
 
+void CImageBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
+{
+	int num_pixels = w * h;
+	unsigned char* img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
+
+	for (int i = 0; i < num_pixels; i++)
+	{
+		img_data[i * 3] = ImBGR[i * 3 + 2];
+		img_data[i * 3 + 1] = ImBGR[i * 3 + 1];
+		img_data[i * 3 + 2] = ImBGR[i * 3];
+	}
+
+	if (m_pImage != NULL) delete m_pImage;
+	m_pImage = new wxImage(w, h, img_data);
+
+	m_pIW->Refresh(false);
+	m_pIW->Update();
+}
+

@@ -96,8 +96,8 @@ public:
 	s64  OneStepWithTimeout();
 	s64  GetPos();
 
-	void GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
-	int ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void GetBGRImage(simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax);
+	int ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax);
 
 	int GetFrameDataSize();
 	void GetFrameData(simple_buffer<u8>& FrameData);

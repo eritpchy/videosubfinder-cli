@@ -299,7 +299,7 @@ void CSettingsPanel::Init()
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 {
-	simple_buffer<int> ImRGB;
+	simple_buffer<u8> ImBGR;
 	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
 	char str[30];
 	clock_t t;
@@ -321,9 +321,9 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		ymin = m_pMF->m_pVideo->m_ymin;
 		ymax = m_pMF->m_pVideo->m_ymax;
 
-		ImRGB = simple_buffer<int>(W*H, 0);
+		ImBGR.set_size(w*h*3);
 
-		m_pMF->m_pVideo->GetRGBImage(ImRGB, xmin, xmax, ymin, ymax);
+		m_pMF->m_pVideo->GetBGRImage(ImBGR, xmin, xmax, ymin, ymax);
 
 		s64 CurPos = m_pMF->m_pVideo->GetPos();
 		ImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
@@ -348,16 +348,16 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			ymin = 0;
 			ymax = h - 1;
 
-			ImRGB = simple_buffer<int>(W*H, 0);
-			LoadRGBImage(ImRGB, filepath, w, h);
+			ImBGR.set_size(W * H * 3);			
+			LoadBGRImage(ImBGR, filepath);
 
-			g_pViewImage[0](ImRGB, W, H);
+			g_pViewBGRImage[0](ImBGR, W, H);
 
 			ImgName = GetFileName(filename);
 		}
 	}
 
-	if (ImRGB.size() == 0)
+	if (ImBGR.size() == 0)
 	{
 		return;
 	}
@@ -368,7 +368,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-	S = GetTransformedImage(ImRGB, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H);
+	S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H);
 	
 	if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
 	{
@@ -376,15 +376,14 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		SavedFiles.push_back(ImgName);
 		simple_buffer<int> ImIL(w*h, 0);
 		ImIL[0] = -1;
-		FindTextLines(ImRGB, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
+
+		FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
 	}
 
 	if (S > 0)
 	{
 		if ((w != W) || (h != H))
 		{
-			ImToNativeSize(ImRGB, w, h, W, H, xmin, xmax, ymin, ymax);
-			
 			for(k=0; k<m_n; k++)
 			{
 				ImToNativeSize(m_ImF[k], w, h, W, H, xmin, xmax, ymin, ymax);

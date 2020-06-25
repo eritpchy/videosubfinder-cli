@@ -397,7 +397,7 @@ float** cuda_kmeans_img(unsigned char *imgData, int numObjs, int numClusters, fl
 	malloc2D(dimObjects, numCoords, numObjs, float);
 	for (i = 0; i < numCoords; i++) {
 		for (j = 0; j < numObjs; j++) {
-			dimObjects[i][j] = (float)(imgData[j*sizeof(int)+i]);
+			dimObjects[i][j] = (float)(imgData[(j * 3) + i]);
 		}
 	}
 

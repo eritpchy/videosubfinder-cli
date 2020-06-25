@@ -99,6 +99,7 @@ public:
 public:
 	void Init();
 	void ViewImage(simple_buffer<int> &Im, int w, int h);
+	void ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h);
 
 public:
 	void OnSize(wxSizeEvent& event);	

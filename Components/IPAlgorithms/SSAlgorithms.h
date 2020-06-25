@@ -56,8 +56,9 @@ int GetCombinedSquare(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size
 void AddTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, simple_buffer<int> &ImRES, int size);
 void AddTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size);
 
-void ImToNativeSize(simple_buffer<int> &ImOrig, simple_buffer<int> &ImRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
-void ImToNativeSize(simple_buffer<int> &Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+void ImToNativeSize(simple_buffer<int>& ImOrig, simple_buffer<int>& ImRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+void ImToNativeSize(simple_buffer<int>& Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+void ImBGRToNativeSize(simple_buffer<u8> &ImBGROrig, simple_buffer<u8> &ImBGRRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
 string VideoTimeToStr(s64 pos);
 s64 GetVideoTime(string time);

@@ -124,8 +124,8 @@ public:
     void OneStep();
 	s64  OneStepWithTimeout();
 	s64  GetPos();
-	void GetRGBImage(simple_buffer<int> &ImRGB, int xmin, int xmax, int ymin, int ymax);
-	int ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax);
+	void GetBGRImage(simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax);
+	int ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax);
 	inline int convert_to_dst_format(u8* frame_data, uint8_t* const dst_data[], const int dst_linesize[], AVPixelFormat dest_fmt);
 
 	int GetFrameDataSize();

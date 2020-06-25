@@ -205,6 +205,64 @@ public:
 		return *this;
 	}
 
+	void copy_data(const custom_buffer<T>& obj, int size)
+	{
+		custom_assert(size >= 0, "custom_buffer<T>::copy_data(const custom_buffer<T>& obj, int size): not: size >= 0");
+		custom_assert(size <= obj.m_size, "custom_buffer<T>::opy_data(const custom_buffer<T>& obj, int size): not: size <= obj.m_size");
+		custom_assert(size <= m_size, "custom_buffer<T>::opy_data(const custom_buffer<T>& obj, int size): not: size <= m_size");
+
+		if (size > 0)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				m_pData[i] = obj.m_pData[i];
+			}
+		}
+	}
+
+	void copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size)
+	{
+		custom_assert(size >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: size >= 0");
+		custom_assert(offset_dst + size - 1 <= m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_dst + size - 1 <= m_size - 1");
+		custom_assert(offset_src + size - 1 <= obj.m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_src + size - 1 <= src.m_size - 1");
+
+		if (size > 0)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				m_pData[offset_dst + i] = src.m_pData[offset_src + i];
+			}
+		}
+	}
+
+	void copy_data(T* pData, int size)
+	{
+		custom_assert(size >= 0, "custom_buffer<T>::copy_data(T* pData, int size): not: size >= 0");
+		custom_assert(size <= m_size, "custom_buffer<T>::copy_data(T* pData, int size): not: size <= m_size");		
+
+		if (size > 0)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				m_pData[i] = pData[i];
+			}
+		}
+	}
+
+	void copy_data(T* pData, int offset_dst, int offset_src, int size)
+	{
+		custom_assert(size >= 0, "simple_buffer<T>::copy_data(T* pData, int size): not: size >= 0");
+		custom_assert(offset_dst + size - 1 <= m_size - 1, "simple_buffer<T>::copy_data(T* pData, int size): not: offset_dst + size - 1 <= m_size - 1");
+
+		if (size > 0)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				m_pData[offset_dst + i] = pData[offset_src + i];
+			}
+		}
+	}
+
 	custom_buffer<T> get_sub_buffer(int offset)
 	{
 		custom_assert(offset < m_size, "get_sub_buffer(int offset): not: offset < m_size");
@@ -226,7 +284,7 @@ public:
 				delete[] m_pData;
 			}
 
-			custom_assert(size >= 0, "custom_buffer(int size): not: size >= 0");
+			custom_assert(size >= 0, "custom_buffer<T>::set_size(int size): not: size >= 0");
 
 			if (size == 0)
 			{
@@ -237,7 +295,7 @@ public:
 			else
 			{
 				m_pData = new T[size];
-				custom_assert(m_pData != NULL, "custom_buffer<T>::operator= (const custom_buffer<T> &obj): not: m_pData != NULL");
+				custom_assert(m_pData != NULL, "custom_buffer<T>::set_size(int size): not: m_pData != NULL");
 				m_size = size;
 				m_need_to_release = true;
 			}
@@ -321,7 +379,7 @@ public:
 
 		if ( (val == 0) || (sizeof(T) == 1) )
 		{
-			memset(m_pData, (int)val, m_size * sizeof(T));
+			memset(m_pData, int(val), m_size * sizeof(T));
 		}
 		else
 		{
@@ -391,6 +449,52 @@ public:
 		return *this;		
 	}
 
+	void copy_data(const custom_buffer<T>& obj, int size)
+	{
+		custom_assert(size >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& obj, int size): not: size >= 0");
+		custom_assert(size <= obj.m_size, "simple_buffer<T>::copy_data(const custom_buffer<T>& obj, int size): not: size <= obj.m_size");
+		custom_assert(size <= m_size, "simple_buffer<T>::copy_data(const custom_buffer<T>& obj, int size): not: size <= m_size");		
+
+		if (size > 0)
+		{
+			memcpy(m_pData, obj.m_pData, size * sizeof(T));
+		}
+	}
+
+	void copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size)
+	{
+		custom_assert(size >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: size >= 0");
+		custom_assert(offset_dst + size - 1 <= m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_dst + size - 1 <= m_size - 1");
+		custom_assert(offset_src + size - 1 <= src.m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_src + size - 1 <= src.m_size - 1");		
+
+		if (size > 0)
+		{
+			memcpy(m_pData + offset_dst, src.m_pData + offset_src, size * sizeof(T));
+		}
+	}
+
+	void copy_data(T* pData, int size)
+	{
+		custom_assert(size >= 0, "simple_buffer<T>::copy_data(T* pData, int size): not: size >= 0");
+		custom_assert(size <= m_size, "simple_buffer<T>::copy_data(T* pData, int size): not: size <= m_size");		
+
+		if (size > 0)
+		{
+			memcpy(m_pData, pData, size * sizeof(T));
+		}
+	}
+
+	void copy_data(T* pData, int offset_dst, int offset_src, int size)
+	{
+		custom_assert(size >= 0, "simple_buffer<T>::copy_data(T* pData, int size): not: size >= 0");
+		custom_assert(offset_dst + size - 1 <= m_size - 1, "simple_buffer<T>::copy_data(T* pData, int size): not: offset_dst + size - 1 <= m_size - 1");
+
+		if (size > 0)
+		{
+			memcpy(m_pData + offset_dst, pData + offset_src, size * sizeof(T));
+		}
+	}
+
 	simple_buffer<T> get_sub_buffer(int offset)
 	{
 		custom_assert(offset < m_size, "simple_buffer<T>::get_sub_buffer(int offset): not: offset < m_size");
@@ -400,13 +504,20 @@ public:
 
 	inline void set_values(T val)
 	{
+		set_values(val, m_size);
+	}
+
+	inline void set_values(T val, int size)
+	{
+		custom_assert((size <= m_size) && (size >= 0), "simple_buffer<T>::set_values(T val, int size = m_size): not: (size <= m_size) && (size >= 0)");
+
 		if ((val == 0) || (sizeof(T) == 1))
 		{
-			memset(m_pData, (int)val, m_size * sizeof(T));
+			memset(m_pData, (int)val, size * sizeof(T));
 		}
 		else
 		{
-			for (int i = 0; i < m_size; i++)
+			for (int i = 0; i < size; i++)
 			{
 				m_pData[i] = val;
 			}

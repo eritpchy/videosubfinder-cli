@@ -28,6 +28,7 @@ using namespace std;
 
 extern void     (*g_pViewRGBImage)(simple_buffer<int> &Im, int w, int h);
 extern void     (*g_pViewImage[2])(simple_buffer<int> &Im, int w, int h);
+extern void     (*g_pViewBGRImage[2])(simple_buffer<u8>& ImBGR, int w, int h);
 
 extern string   g_work_dir;
 extern string   g_app_dir;
@@ -84,7 +85,7 @@ extern bool		g_disable_save_images;
 extern bool     g_save_each_substring_separately;
 extern bool     g_save_scaled_images;
 
-void RGB_to_YUV(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h);
+void BGR_to_YUV(simple_buffer<u8> &ImInBGR, simple_buffer<int> &ImY, simple_buffer<int> &ImU, simple_buffer<int> &ImV, int w, int h);
 void YIQ_to_RGB(int Y, int I, int Q, int &R, int &G, int &B, int max_val);
 void RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h);
 void GetGrayscaleImage(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, int w, int h);
@@ -109,16 +110,16 @@ void ApplyModerateThreshold(simple_buffer<int> &Im, double mthr, int w, int h);
 void AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h);
 void AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h);
 
-void ColorFiltration(simple_buffer<int> &Im, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h);
+void ColorFiltration(simple_buffer<u8> &ImBGR, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h);
 
 void BorderClear(simple_buffer<int> &Im, int dd, int w, int h);
 void EasyBorderClear(simple_buffer<int> &Im, int w, int h);
 
-int GetTransformedImage(simple_buffer<int> &ImRGB, simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImTF, simple_buffer<int> &ImNE, simple_buffer<int> &ImY, int w, int h, int W, int H);
+int GetTransformedImage(simple_buffer<u8> &ImBGR, simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImTF, simple_buffer<int> &ImNE, simple_buffer<int> &ImY, int w, int h, int W, int H);
 int FilterTransformedImage(simple_buffer<int> &ImFF, simple_buffer<int> &ImSF, simple_buffer<int> &ImTF, simple_buffer<int> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, std::string iter_det);
 int FilterImage(simple_buffer<int> &ImF, simple_buffer<int> &ImNE, int w, int h, int W, int H, simple_buffer<int> &LB, simple_buffer<int> &LE, int N);
 
-int FindTextLines(simple_buffer<int>& ImRGB, simple_buffer<int> &ImClearedText, simple_buffer<int>& ImF, simple_buffer<int>& ImNF, simple_buffer<int>& ImNE, simple_buffer<int>& ImIL, vector<wxString>& SavedFiles, int W, int H);
+int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<int> &ImClearedText, simple_buffer<int>& ImF, simple_buffer<int>& ImNF, simple_buffer<int>& ImNE, simple_buffer<int>& ImIL, vector<wxString>& SavedFiles, int W, int H);
 
 void StrAnalyseImage(simple_buffer<int> &Im, simple_buffer<int> &ImGR, simple_buffer<int> &GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 void FindMaxStrDistribution(simple_buffer<int> &GRStr, int delta, simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &N, int offset);
@@ -146,7 +147,9 @@ void ResizeGrayscaleImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, i
 int CompareTXTImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int w1, int h1, int w2, int h2, int YB1, int YB2);
 
 void GetImageSize(string name, int &w, int &h);
+void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h);
 void SaveRGBImage(simple_buffer<int> &Im, string name, int w, int h);
+void LoadBGRImage(simple_buffer<u8>& ImBGR, string name);
 void LoadRGBImage(simple_buffer<int> &Im, string name, int w, int h);
 void SaveGreyscaleImage(simple_buffer<int> &Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 void LoadGreyscaleImage(simple_buffer<int> &Im, string name, int &w, int &h);

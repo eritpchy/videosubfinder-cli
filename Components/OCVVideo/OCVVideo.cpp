@@ -296,9 +296,8 @@ s64 OCVVideo::GetPos()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// ImRGB in format b:g:r:0
-// converting BGR to BGRA
-int OCVVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+
+int OCVVideo::ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax)
 {
 	int w, h, x, y, i, j, di;
 	u8* data = frame_data;
@@ -308,39 +307,50 @@ int OCVVideo::ConvertToRGB(u8* frame_data, simple_buffer<int>& ImRGB, int xmin, 
 	{
 		Im = cv::Mat(m_origHeight, m_origWidth, CV_8UC3);
 		memcpy(Im.data, frame_data, m_origWidth * m_origHeight * 3);
+
+		//cv::imshow("Im orig size", Im);
+
 		cv::resize(Im, Im, cv::Size(m_Width, m_Height), 0, 0, cv::INTER_LINEAR);
 		data = Im.data;
+
+		//cv::imshow("Im resized", Im);		
+		//cv::waitKey(0);
 	}
 
 	w = xmax - xmin + 1;
-	h = ymax - ymin + 1;
+	h = ymax - ymin + 1;	
 
 	di = m_Width - w;
 
 	i = ymin * m_Width + xmin;
 	j = 0;
 
-	for (y = 0; y < h; y++)
+	custom_assert(ImBGR.m_size >= w * h * 3, "OCVVideo::ConvertToBGR not: ImBGR.m_size >= w * h * 3");
+
+	if (w == m_Width)
 	{
-		for (x = 0; x < w; x++)
+		ImBGR.copy_data(data, j * 3, i * 3, w * h * 3);
+	}
+	else
+	{
+		for (y = 0; y < h; y++)
 		{
-			memcpy(&ImRGB[j], data + i * 3, 3);
-			i++;
-			j++;
+			ImBGR.copy_data(data, j * 3, i * 3, w * 3);
+			j += w;
+			i += m_Width;
 		}
-		i += di;
 	}
 
 	return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// ImRGB in format b:g:r:0
-void OCVVideo::GetRGBImage(simple_buffer<int>& ImRGB, int xmin, int xmax, int ymin, int ymax)
+
+void OCVVideo::GetBGRImage(simple_buffer<u8>& ImBGR, int xmin, int xmax, int ymin, int ymax)
 {
 	if (!m_cur_frame.empty())
 	{		
-		ConvertToRGB(m_cur_frame.data, ImRGB, xmin, xmax, ymin, ymax);
+		ConvertToBGR(m_cur_frame.data, ImBGR, xmin, xmax, ymin, ymax);
 	}
 }
 
@@ -358,7 +368,7 @@ void OCVVideo::GetFrameData(simple_buffer<u8>& FrameData)
 	if (!m_cur_frame.empty())
 	{
 		custom_assert(FrameData.size() == m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(simple_buffer<u8>& FrameData)\nnot: FrameData.size() == m_origWidth * m_origHeight * 3");
-		memcpy(&FrameData[0], m_cur_frame.data, m_origWidth * m_origHeight * 3);
+		FrameData.copy_data(m_cur_frame.data, m_origWidth * m_origHeight * 3);
 	}
 }
 
