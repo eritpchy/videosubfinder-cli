@@ -364,7 +364,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	m_pMF->m_pPanel->Disable();	
 
-	m_ImF = custom_buffer<simple_buffer<int>> (m_n, simple_buffer<int>(W*H, 0));
+	m_ImF = custom_buffer<simple_buffer<u8>> (m_n, simple_buffer<u8>(W*H, 0));
 	
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
@@ -374,8 +374,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	{
 		vector<wxString> SavedFiles;
 		SavedFiles.push_back(ImgName);
-		simple_buffer<int> ImIL(w*h, 0);
-		ImIL[0] = -1;
+		simple_buffer<u8> ImIL;
 
 		FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
 	}
@@ -392,7 +391,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	}
 
 	m_plblIF->SetLabel(StrFN[m_cn]);
-	m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], W, H);	
+	m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], W, H);
 
 	m_pMF->m_pPanel->Enable();
 }
@@ -405,7 +404,7 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 	if (m_ImF.m_size > 0)
 	{
 		m_plblIF->SetLabel(StrFN[m_cn]);	
-		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_W, m_H);
+		m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], m_W, m_H);
 	}
 }
 
@@ -417,7 +416,7 @@ void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 	if (m_ImF.m_size > 0)
 	{
 		m_plblIF->SetLabel(StrFN[m_cn]);
-		m_pMF->m_pImageBox->ViewImage(m_ImF[m_cn], m_W, m_H);
+		m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], m_W, m_H);
 	}
 }
 

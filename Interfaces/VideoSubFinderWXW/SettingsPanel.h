@@ -67,7 +67,7 @@ public:
 
 	CMainFrame	*m_pMF;
 
-	custom_buffer<simple_buffer<int>> m_ImF;
+	custom_buffer<simple_buffer<u8>> m_ImF;
 
 	void Init();
 

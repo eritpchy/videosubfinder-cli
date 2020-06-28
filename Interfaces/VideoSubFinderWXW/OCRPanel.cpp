@@ -1055,8 +1055,8 @@ public:
 	int m_h;
 	vector<wxString> m_SavedFiles;
 	simple_buffer<u8> m_ImBGR;
-	simple_buffer<int> m_ImClearedText;
-	custom_buffer<simple_buffer<int>> m_ImF;
+	simple_buffer<u8> m_ImClearedText;
+	custom_buffer<simple_buffer<u8>> m_ImF;
 
 	FindTextLinesRes()
 	{
@@ -1067,7 +1067,7 @@ public:
 void FindTextLinesWithExcFilter(FindTextLinesRes *res)
 {
 	__try
-	{
+	{		
 		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, res->m_ImF[5], res->m_ImF[3], res->m_ImF[1], res->m_ImF[0], res->m_SavedFiles, res->m_w, res->m_h);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
@@ -1087,8 +1087,8 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 		res.m_w = w;
 		res.m_h = h;
 		res.m_ImBGR = simple_buffer<u8>(w*h*3, 0);
-		res.m_ImClearedText = simple_buffer<int>(w*h, 0);
-		res.m_ImF = custom_buffer<simple_buffer<int>>(6, simple_buffer<int>(w*h, 0));
+		res.m_ImClearedText = simple_buffer<u8>(w*h, 0);
+		res.m_ImF = custom_buffer<simple_buffer<u8>>(6, simple_buffer<u8>(w*h, 0));
 
 		LoadBGRImage(res.m_ImBGR, string(FileName));
 
@@ -1112,7 +1112,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 			if (wxFileExists(Str))
 			{
-				LoadGreyscaleImage(res.m_ImF[5], string(Str), w, h);				
+				LoadBinaryImage(res.m_ImF[5], string(Str), w, h);
 				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
 				RestoreStillExistLines(res.m_ImF[5], res.m_ImF[3], w, h);
 				ExtendImFWithDataFromImNF(res.m_ImF[5], res.m_ImF[3], w, h);
@@ -1120,8 +1120,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 			}
 		}
 
-		// IL image
-		res.m_ImF[0][0] = -1;
+		// IL image	
 		if (g_use_ILA_images_for_get_txt_area)
 		{
 			Str = FileName;
@@ -1130,7 +1129,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 			if (wxFileExists(Str))
 			{
-				LoadGreyscaleImage(res.m_ImF[0], string(Str), w, h);
+				LoadBinaryImage(res.m_ImF[0], string(Str), w, h);
 				if (g_show_results) SaveGreyscaleImage(res.m_ImF[0], "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
 
 				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
@@ -1141,7 +1140,15 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 				IntersectTwoImages(res.m_ImF[3], res.m_ImF[0], w, h);
 				if (g_show_results) SaveGreyscaleImage(res.m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, w, h);
 			}
-		}		
+			else
+			{
+				res.m_ImF[0].set_size(0);
+			}
+		}
+		else
+		{
+			res.m_ImF[0].set_size(0);
+		}
 
 		Str = GetFileName(FileName);
 		res.m_SavedFiles.push_back(Str);
@@ -1290,7 +1297,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 			res = p_task_res->m_res;
 			g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
-			g_pViewRGBImage(p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);						
+			g_pViewGreyscaleImage[1](p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);
 
 			if (!(m_pMF->m_blnNoGUI))
 			{
@@ -1317,16 +1324,7 @@ void *ThreadCreateClearedTextImages::Entry()
 				Str = GetFileName(Str);
 				Str = wxString("/TXTImages/") + Str + wxString("_00001") + g_im_save_format;
 
-				int color, wc;
-				u8 *pClr;
-				pClr = (u8*)(&color);
-				color = 0;
-				pClr[0] = 255;
-				pClr[1] = 255;
-				pClr[2] = 255;
-				wc = color;
-
-				simple_buffer<int> ImRES1((int)(p_task_res->m_w * g_scale)*(int)(p_task_res->m_h / g_scale), wc);
+				simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale)*(int)(p_task_res->m_h / g_scale), 255);
 				SaveGreyscaleImage(ImRES1, string(Str), p_task_res->m_w*g_scale, p_task_res->m_h / g_scale);
 			}
 			/*
@@ -1376,8 +1374,8 @@ void *ThreadCreateClearedTextImages::Entry()
 						simple_buffer<int> ImRES1(task_res.m_w*task_res.m_h, 0);
 						simple_buffer<int> ImRES2(task_res.m_w*task_res.m_h, 0);
 
-						LoadGreyscaleImage(ImRES1, prevSavedFiles[i], w1, h1);
-						LoadGreyscaleImage(ImRES2, task_res.m_SavedFiles[i], w2, h2);
+						LoadBinaryImage(ImRES1, prevSavedFiles[i], w1, h1);
+						LoadBinaryImage(ImRES2, task_res.m_SavedFiles[i], w2, h2);
 
 						Str = prevSavedFiles[i].c_str();
 						i = Str.length()-1;

@@ -47,6 +47,20 @@ void  ViewImageInVideoBox(simple_buffer<int> &Im, int w, int h)
 
 /////////////////////////////////////////////////////////////////////////////
 
+void  ViewGreyscaleImageInImageBox(simple_buffer<u8>& Im, int w, int h)
+{
+	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewGrayscaleImage(Im, w, h);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void  ViewGreyscaleImageInVideoBox(simple_buffer<u8>& Im, int w, int h)
+{
+	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pVideoBox->ViewGrayscaleImage(Im, w, h);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 void  ViewBGRImageInImageBox(simple_buffer<u8>& ImBGR, int w, int h)
 {
 	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewBGRImage(ImBGR, w, h);
@@ -171,7 +185,10 @@ CMainFrame::CMainFrame(const wxString& title)
 	g_pViewImage[1] = ViewImageInImageBox;
 	g_pViewBGRImage[0] = ViewBGRImageInVideoBox;
 	g_pViewBGRImage[1] = ViewBGRImageInImageBox;
+	g_pViewGreyscaleImage[0] = ViewGreyscaleImageInVideoBox;
+	g_pViewGreyscaleImage[1] = ViewGreyscaleImageInImageBox;
 	g_pViewRGBImage = ViewRGBImage;
+
 
 	m_blnReopenVideo = false;
 

@@ -464,6 +464,26 @@ void CVideoBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 	m_pVBox->m_pVideoWnd->Update();
 }
 
+void CVideoBox::ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h)
+{
+	int num_pixels = w * h;
+
+	unsigned char* img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
+
+	for (int i = 0; i < num_pixels; i++)
+	{
+		img_data[i * 3] = Im[i];
+		img_data[i * 3 + 1] = Im[i];
+		img_data[i * 3 + 2] = Im[i];
+	}
+
+	if (m_pImage != NULL) delete m_pImage;
+	m_pImage = new wxImage(w, h, img_data);
+
+	m_pVBox->m_pVideoWnd->Refresh(false);
+	m_pVBox->m_pVideoWnd->Update();
+}
+
 void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 {
 	int num_pixels = w * h;

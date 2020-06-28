@@ -523,5 +523,22 @@ public:
 			}
 		}
 	}
+
+	inline void set_values(T val, int offset, int size)
+	{
+		custom_assert((offset + size - 1 <= m_size) && (size >= 0), "simple_buffer<T>::set_values(T val, int offset, int size): not: (offset + size - 1 <= m_size) && (size >= 0)");
+
+		if ((val == 0) || (sizeof(T) == 1))
+		{
+			memset(m_pData + offset, (int)val, size * sizeof(T));
+		}
+		else
+		{
+			for (int i = offset; i < (offset + size); i++)
+			{
+				m_pData[i] = val;
+			}
+		}
+	}
 };
 

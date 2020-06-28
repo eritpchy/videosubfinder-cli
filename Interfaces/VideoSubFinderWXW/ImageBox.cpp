@@ -165,7 +165,7 @@ void CImageBox::ViewRGBImage(simple_buffer<int> &Im, int w, int h)
 	m_pIW->Update();
 }
 
-void CImageBox::ViewGrayscaleImage(simple_buffer<int> &Im, int w, int h)
+void CImageBox::ViewGrayscaleImage(simple_buffer<u8> &Im, int w, int h)
 {
 	int num_pixels = w*h;
 
