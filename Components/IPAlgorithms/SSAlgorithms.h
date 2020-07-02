@@ -80,19 +80,13 @@ void ImToNativeSize(simple_buffer<T>& ImOrig, simple_buffer<T>& ImRes, int w, in
 	custom_assert(ImRes.m_size >= W * H, "ImToNativeSize: Im.m_size >= W*H");
 	memset(ImRes.m_pData, 255, W * H * sizeof(T));
 
-	//can_be_optimized
 	i = 0;
 	j = ymin * W + xmin;
-	dj = W - w;
 	for (y = 0; y < h; y++)
 	{
-		for (x = 0; x < w; x++)
-		{
-			ImRes[j] = ImOrig[i];
-			i++;
-			j++;
-		}
-		j += dj;
+		ImRes.copy_data(ImOrig, j, i, w);
+		i += w;
+		j += W;
 	}
 }
 
@@ -102,7 +96,6 @@ void ImToNativeSize(simple_buffer<T>& ImOrig, simple_buffer<T>& ImRes, int w, in
 template <class T>
 void ImToNativeSize(simple_buffer<T>& Im, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax)
 {
-	//can_be_optimized
-	simple_buffer<T> ImTMP(Im);
+	simple_buffer<T> ImTMP(Im, 0, w*h);
 	ImToNativeSize(ImTMP, Im, w, h, W, H, xmin, xmax, ymin, ymax);
 }

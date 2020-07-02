@@ -158,11 +158,15 @@ void CImageBox::ViewRGBImage(simple_buffer<int> &Im, int w, int h)
 		img_data[i * 3 + 2] = color[0];
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pIW->Refresh(false);
-	m_pIW->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pIW->Refresh(false);
+		m_pIW->Update();
+	}
 }
 
 void CImageBox::ViewGrayscaleImage(simple_buffer<u8> &Im, int w, int h)
@@ -178,11 +182,15 @@ void CImageBox::ViewGrayscaleImage(simple_buffer<u8> &Im, int w, int h)
 		img_data[i * 3 + 2] = Im[i];
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pIW->Refresh(false);
-	m_pIW->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pIW->Refresh(false);
+		m_pIW->Update();
+	}
 }
 
 void CImageBox::ViewImage(simple_buffer<int> &Im, int w, int h)
@@ -200,11 +208,15 @@ void CImageBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 		img_data[i * 3 + 2] = color[0];
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pIW->Refresh(false);
-	m_pIW->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pIW->Refresh(false);
+		m_pIW->Update();
+	}
 }
 
 void CImageBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
@@ -219,10 +231,14 @@ void CImageBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 		img_data[i * 3 + 2] = ImBGR[i * 3];
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pIW->Refresh(false);
-	m_pIW->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pIW->Refresh(false);
+		m_pIW->Update();
+	}
 }
 

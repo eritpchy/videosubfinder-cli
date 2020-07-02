@@ -142,13 +142,14 @@ public:
 
 	custom_buffer(const custom_buffer<T> &obj)
 	{
+		custom_assert(obj.m_size > 0, "custom_buffer(const custom_buffer<T> &obj): not: obj.m_size > 0");
 		m_size = obj.m_size;
 		m_need_to_release = obj.m_need_to_release;
 
 		if (m_need_to_release)
 		{
 			m_pData = new T[m_size];
-			custom_assert(m_pData != NULL, "custom_buffer<T>::custom_buffer(const custom_buffer<T> &obj): not: m_pData != NULL");
+			custom_assert(m_pData != NULL, "custom_buffer(const custom_buffer<T> &obj): not: m_pData != NULL");
 			for (int i = 0; i < m_size; i++)
 			{
 				m_pData[i] = obj.m_pData[i];
@@ -392,6 +393,7 @@ public:
 
 	simple_buffer(const simple_buffer<T>& obj)
 	{
+		custom_assert(obj.m_size > 0, "simple_buffer(const simple_buffer<T>& obj): not: obj.m_size > 0");
 		m_size = obj.m_size;
 		m_need_to_release = obj.m_need_to_release;
 
@@ -404,6 +406,27 @@ public:
 		else
 		{
 			m_pData = obj.m_pData;
+		}
+	}
+
+	simple_buffer(const simple_buffer<T>& obj, int offset, int size)
+	{
+		custom_assert(size > 0, "simple_buffer(const simple_buffer<T>& obj, int offset, int size): not: size >= 0");
+		custom_assert(offset >= 0, "simple_buffer(const simple_buffer<T>& obj, int offset, int size): not: offset >= 0");
+		custom_assert(offset + size <= obj.m_size, "simple_buffer(const simple_buffer<T>& obj, int offset, int size): not: offset + size <= obj.m_size");
+		m_size = size;
+
+		m_need_to_release = obj.m_need_to_release;
+
+		if (m_need_to_release)
+		{
+			m_pData = new T[m_size];
+			custom_assert(m_pData != NULL, "simple_buffer<T>::simple_buffer(const simple_buffer<T>& obj): not: m_pData != NULL");
+			memcpy(m_pData, obj.m_pData + offset, m_size * sizeof(T));
+		}
+		else
+		{
+			m_pData = obj.m_pData + offset;
 		}
 	}
 

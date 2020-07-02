@@ -73,7 +73,9 @@ public:
 	void OnSize( wxSizeEvent& event );
 
 private:
-   DECLARE_EVENT_TABLE()
+	std::mutex m_view_mutex;
+	
+	DECLARE_EVENT_TABLE()
 };
 
 

@@ -18,6 +18,7 @@
 #include <wx/toolbar.h>
 #include <wx/mdi.h>
 #include <wx/image.h>
+#include <mutex>
 #include "MyResource.h"
 #include "MainFrm.h"
 #include "TextBox.h"
@@ -112,7 +113,9 @@ public:
 	void OnHScroll(wxScrollEvent& event);
 
 private:
-   DECLARE_EVENT_TABLE()
+	std::mutex m_view_mutex;
+
+	DECLARE_EVENT_TABLE()
 };
 
 

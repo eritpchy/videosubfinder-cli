@@ -155,7 +155,6 @@ int CompareTXTImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int w1, i
 
 void GetImageSize(string name, int &w, int &h);
 void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h);
-void SaveRGBImage(simple_buffer<int> &Im, string name, int w, int h);
 void LoadBGRImage(simple_buffer<u8>& ImBGR, string name);
 void LoadRGBImage(simple_buffer<int> &Im, string name, int w, int h);
 void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);

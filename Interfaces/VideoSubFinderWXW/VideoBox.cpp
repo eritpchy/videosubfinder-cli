@@ -457,11 +457,15 @@ void CVideoBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 		img_data[i * 3 + 2] = color[0]; //b
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pVBox->m_pVideoWnd->Refresh(false);
-	m_pVBox->m_pVideoWnd->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pVBox->m_pVideoWnd->Refresh(false);
+		m_pVBox->m_pVideoWnd->Update();
+	}
 }
 
 void CVideoBox::ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h)
@@ -477,11 +481,15 @@ void CVideoBox::ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h)
 		img_data[i * 3 + 2] = Im[i];
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pVBox->m_pVideoWnd->Refresh(false);
-	m_pVBox->m_pVideoWnd->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pVBox->m_pVideoWnd->Refresh(false);
+		m_pVBox->m_pVideoWnd->Update();
+	}
 }
 
 void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
@@ -496,11 +504,15 @@ void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 		img_data[i * 3 + 2] = ImBGR[i * 3];
 	}
 
-	if (m_pImage != NULL) delete m_pImage;
-	m_pImage = new wxImage(w, h, img_data);
+	{
+		std::lock_guard<std::mutex> guard(m_view_mutex);
 
-	m_pVBox->m_pVideoWnd->Refresh(false);
-	m_pVBox->m_pVideoWnd->Update();
+		if (m_pImage != NULL) delete m_pImage;
+		m_pImage = new wxImage(w, h, img_data);
+
+		m_pVBox->m_pVideoWnd->Refresh(false);
+		m_pVBox->m_pVideoWnd->Update();
+	}
 }
 
 void CVideoBox::OnHScroll(wxScrollEvent& event)

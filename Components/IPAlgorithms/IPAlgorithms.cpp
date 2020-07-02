@@ -1733,7 +1733,7 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 {	
 	int res = 0;
 #ifdef WIN64	
-	int numObjs = w * h, numObjsFF;
+	int numObjs = w * h, i, j, numObjsFF;
 	float **clusters;	
 	simple_buffer<char> color_cluster_id(1 << 24, -1);
 
@@ -1742,7 +1742,7 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 		simple_buffer<int> labelsFF(numObjs, 0);
 
 		numObjsFF = 0;
-		for (int i = 0; i < w * h; i++)
+		for (i = 0; i < w * h; i++)
 		{
 			if (ImFF[i] != 0)
 			{
@@ -1757,31 +1757,23 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 			return res;
 		}
 
-		//can_be_optimized
-		if (numObjsFF > 0)
+		clusters = cuda_kmeans_img(ImBGRFF.m_pData, numObjsFF, numClusters, threshold, labelsFF.m_pData, initial_loop_iterations);
+		if (clusters == NULL)
 		{
-			clusters = cuda_kmeans_img(ImBGRFF.m_pData, numObjsFF, numClusters, threshold, labelsFF.m_pData, initial_loop_iterations);
-			if (clusters == NULL)
-			{
-				custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
-				return res;
-			}
-
-			free(clusters[0]);
-			free(clusters);
+			custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+			return res;
 		}
 
-		//can_be_optimized
-		if (numObjsFF > 0)
+		free(clusters[0]);
+		free(clusters);
+
+		j = 0;
+		for (i = 0; i < w * h; i++)
 		{
-			numObjsFF = 0;
-			for (int i = 0; i < w * h; i++)
+			if (ImFF[i] != 0)
 			{
-				if (ImFF[i] != 0)
-				{
-					color_cluster_id[GetBGRColor(ImBGR, i)] = labelsFF[numObjsFF];
-					numObjsFF++;
-				}
+				color_cluster_id[GetBGRColor(ImBGR, i)] = labelsFF[j];
+				j++;
 			}
 		}
 	}
@@ -1790,21 +1782,18 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 	{
 		simple_buffer<int> labelsMASK(w * h, 0);
 
-		//can_be_optimized
-		if (numObjsFF > 0)
+		for (i = 0; i < w*h; i++)
 		{
-			for (int i = 0; i < w*h; i++)
+			if (ImFF[i] != 0)
 			{
-				if (ImFF[i] != 0)
-				{
-					labelsMASK[i] = color_cluster_id[GetBGRColor(ImBGR, i)];
-				}
-				else
-				{
-					labelsMASK[i] = -1;
-				}
+				labelsMASK[i] = color_cluster_id[GetBGRColor(ImBGR, i)];
+			}
+			else
+			{
+				labelsMASK[i] = -1;
 			}
 		}
+
 		min_x = 0;
 		max_x = w - 1;
 		min_y = 0;
@@ -1819,102 +1808,79 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 		free(clusters[0]);
 		free(clusters);
 
-		for (int i = 0; i < w * h; i++)
+		for (i = 0; i < w * h; i++)
 		{
 			labels[i] = labelsMASK[i];
 		}
 	}
 	else
-	{
-		//can_be_optimized
-		// looks zomby code
-		if (numObjsFF == 0)
-		{
-			custom_assert(numObjsFF > 0, "cuda_kmeans: numObjsFF > 0");
-			/*
-			min_x = 0;
-			max_x = w - 1;
-			min_y = 0;
-			max_y = h - 1;
+	{		
+		int x, y, ww, hh;
 
-			clusters = cuda_kmeans_img(ImBGR.m_pData, numObjs, numClusters, threshold, labels.m_pData, loop_iterations);
-			if (clusters == NULL)
+		min_x = w-1;
+		max_x = 0;
+		min_y = h-1;
+		max_y = 0;
+
+		for (y = 0, i = 0; y<h; y++)
+		{
+			for (x = 0; x < w; x++, i++)
 			{
-				custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
-				return res;
+				if (ImFF[i] != 0)
+				{
+					if (x < min_x) min_x = x;
+					if (x > max_x) max_x = x;
+					if (y < min_y) min_y = y;
+					if (y > max_y) max_y = y;
+				}
 			}
-			free(clusters[0]);
-			free(clusters);*/
 		}
-		else
+		min_x = std::max<int>(min_x - 2, 0);
+		max_x = std::min<int>(max_x + 2, w-1);
+		min_y = std::max<int>(min_y - 2, 0);
+		max_y = std::min<int>(max_y + 2, h - 1);
+
+		ww = max_x - min_x + 1;
+		hh = max_y - min_y + 1;
+
+		simple_buffer<u8> ImBGRMASK(ww * hh * 3, 0);
+		simple_buffer<int> labelsMASK(ww*hh, 0);
+		int numObjsMASK = ww*hh;
+
+		for (y = min_y, j = 0; y <= max_y; y++)
 		{
-			int i, j, x, y, ww, hh;
-
-			min_x = w-1;
-			max_x = 0;
-			min_y = h-1;
-			max_y = 0;
-
-			for (y = 0, i = 0; y<h; y++)
+			for (x = min_x, i = y * w + min_x; x <= max_x; x++, i++, j++)
 			{
-				for (x = 0; x < w; x++, i++)
+				SetBGRColor(ImBGRMASK, j, ImBGR, i);
+
+				if (ImFF[i] != 0)
 				{
-					if (ImFF[i] != 0)
-					{
-						if (x < min_x) min_x = x;
-						if (x > max_x) max_x = x;
-						if (y < min_y) min_y = y;
-						if (y > max_y) max_y = y;
-					}
+					labelsMASK[j] = color_cluster_id[GetBGRColor(ImBGRMASK, j)];
+				}
+				else
+				{
+					labelsMASK[j] = -1;
 				}
 			}
-			min_x = std::max<int>(min_x - 2, 0);
-			max_x = std::min<int>(max_x + 2, w-1);
-			min_y = std::max<int>(min_y - 2, 0);
-			max_y = std::min<int>(max_y + 2, h - 1);
+		}
 
-			ww = max_x - min_x + 1;
-			hh = max_y - min_y + 1;
+		clusters = cuda_kmeans_img(ImBGRMASK.m_pData, numObjsMASK, numClusters, threshold, labelsMASK.m_pData, loop_iterations);
+		if (clusters == NULL)
+		{
+			custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
+			return res;
+		}
+		free(clusters[0]);
+		free(clusters);
 
-			simple_buffer<u8> ImBGRMASK(ww * hh * 3, 0);
-			simple_buffer<int> labelsMASK(ww*hh, 0);
-			int numObjsMASK = ww*hh;
-
-			for (y = min_y, j = 0; y <= max_y; y++)
-			{
-				for (x = min_x, i = y * w + min_x; x <= max_x; x++, i++, j++)
-				{
-					SetBGRColor(ImBGRMASK, j, ImBGR, i);
-
-					if (ImFF[i] != 0)
-					{
-						labelsMASK[j] = color_cluster_id[GetBGRColor(ImBGRMASK, j)];
-					}
-					else
-					{
-						labelsMASK[j] = -1;
-					}
-				}
-			}
-
-			clusters = cuda_kmeans_img(ImBGRMASK.m_pData, numObjsMASK, numClusters, threshold, labelsMASK.m_pData, loop_iterations);
-			if (clusters == NULL)
-			{
-				custom_assert(clusters != NULL, "cuda_kmeans crashed, not enough CUDA memory");
-				return res;
-			}
-			free(clusters[0]);
-			free(clusters);
-
-			for (i = 0; i < ww*hh; i++)
-			{
-				color_cluster_id[GetBGRColor(ImBGRMASK, i)] = labelsMASK[i];
-			}
+		for (i = 0; i < ww*hh; i++)
+		{
+			color_cluster_id[GetBGRColor(ImBGRMASK, i)] = labelsMASK[i];
+		}
 			
-			for (int i = 0; i < w*h; i++)
-			{
-				labels[i] = color_cluster_id[GetBGRColor(ImBGR, i)];
-			}
+		for (i = 0; i < w*h; i++)
+		{
+			labels[i] = color_cluster_id[GetBGRColor(ImBGR, i)];
 		}
 	}
 #endif
@@ -2189,11 +2155,7 @@ void SortClusters(simple_buffer<char> &labels, simple_buffer<int> &cluster_id, s
 {
 	int x, y, i, j, val;	
 
-	//can_be_optimized
-	for (i = 0; i < clusterCount; i++)
-	{
-		cluster_cnt[i] = 0;
-	}
+	cluster_cnt.set_values(0, clusterCount);
 
 	for (y = min_y; y <= max_y; y++)
 	{
@@ -4551,8 +4513,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	ww = W * g_scale;
 	hh = h;
 
-	simple_buffer<u8> ImSubForSave(ww*hh, 0);
-	for (i = 0; i < ww*hh; i++) ImSubForSave[i] = 255;
+	simple_buffer<u8> ImSubForSave(ww*hh, 255);
 
 	cnt = 0;
 	for (y = 0, i = 0; y < h; y++)
@@ -4592,8 +4553,6 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			}
 			cv::dilate(cv_ImDilate, cv_ImDilate, cv::Mat(), cv::Point(-1, -1), 2);
 
-			//can_be_optimized
-			ImFFD = simple_buffer<u8>(W*res.m_im_h, 0);
 			for (i = 0; i < res.m_im_h*W; i++)
 			{
 				if (cv_ImDilate.data[i] != 0)
@@ -6677,7 +6636,6 @@ void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, i
 	fout.close();
 }
 
-//can_be_optimized
 void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_buffer<u8> &ImI, simple_buffer<u8> &ImQ)
 {
 	CMyPoint *PA;
@@ -6691,7 +6649,8 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_
 
 	int SIZE = w * h;
 
-	simple_buffer<int> pImage(SIZE, 0), pImageY(SIZE, 0), pImageI(SIZE, 0), pImageQ(SIZE, 0);
+	simple_buffer<char> pImage(SIZE, 0);
+	simple_buffer<u8> pImageY(SIZE, 0), pImageI(SIZE, 0), pImageQ(SIZE, 0);
 
 	PA = pFigure->m_PointsArray;
 
@@ -6780,9 +6739,9 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_
 			{
 				if (pImage[i] == 1)
 				{
-					mY += pImageY[i];
-					mI += pImageI[i];
-					mQ += pImageQ[i];
+					mY += (int)pImageY[i];
+					mI += (int)pImageI[i];
+					mQ += (int)pImageQ[i];
 					weight++;
 				}
 			}
@@ -6800,9 +6759,9 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_
 						{
 							if (pImage[i] == -1)
 							{
-								mY += pImageY[i];
-								mI += pImageI[i];
-								mQ += pImageQ[i];
+								mY += (int)pImageY[i];
+								mI += (int)pImageI[i];
+								mQ += (int)pImageQ[i];
 								weight++;
 							}
 						}
@@ -7113,25 +7072,11 @@ void StrAnalyseImage(simple_buffer<u8> &Im, simple_buffer<u8> &ImGR, simple_buff
 	ie = ye*w;
 	for (y=yb; y<=ye; y++, ib+=w)
 	{
-		for (x=xb; x<=xe; x++)
+		for (i = ib + xb; i <= ib + xe; i++)
 		{
-			i = ib + x; 
-			
 			if ( Im[i] != 0 )
 			{
 				val = (int)ImGR[i] + offset;
-
-				//can_be_optimized
-
-				if (val<0)
-				{
-					assert(false);
-				}
-				if (val >= 256 + offset)
-				{
-					assert(false);
-				}
-
 				GRStr[val]++;
 			}
 		}
@@ -7306,38 +7251,6 @@ void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h)
 	}
 }
 
-void SaveRGBImage(simple_buffer<int> &Im, string name, int w, int h)
-{
-	if (g_disable_save_images) return;
-
-	cv::Mat im(h, w, CV_8UC4);
-	custom_assert(w * h <= Im.m_size, "SaveRGBImage(simple_buffer<int> &Im, string name, int w, int h)\nnot: w * h <= Im.m_size");
-	memcpy(im.data, &Im[0], w*h * 4);
-
-	cv::cvtColor(im, im, cv::COLOR_BGRA2BGR);
-
-	vector<int> compression_params;
-
-	if (g_im_save_format == ".jpeg")
-	{
-		compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
-		compression_params.push_back(100);
-	}
-	else if (g_im_save_format == ".bmp")
-	{
-		compression_params.push_back(CV_IMWRITE_PAM_FORMAT_RGB);
-	}
-
-	try {
-		cv::imwrite(g_work_dir + name, im, compression_params);
-	}
-	catch (runtime_error& ex) {
-		char msg[500];
-		sprintf(msg, "Exception saving image to %s format: %s\n", g_im_save_format.c_str(), ex.what());
-		wxMessageBox(msg, "ERROR: SaveRGBImage");
-	}
-}
-
 void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int add, double scale, int quality, int dpi)
 {
 	if (g_disable_save_images) return;
@@ -7388,13 +7301,11 @@ void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int ad
 	}
 }
 
-//can_be_optimized
-// BGRA to BGR
 void SaveImageWithLinesInfo(simple_buffer<u8> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h)
 {
 	if (g_disable_save_images) return;
 
-	simple_buffer<int> ImTMP(w*h, 0);
+	simple_buffer<u8> ImTMP(w*h*3, 0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;
 	u8 *pClr;
@@ -7429,35 +7340,31 @@ void SaveImageWithLinesInfo(simple_buffer<u8> &Im, string name, int lb1, int le1
 	pClr[2] = 255;
 	wc = color;
 
-
 	for (int i = 0; i < w*h; i++)
 	{
 		if (Im[i] != 0)
 		{
-			ImTMP[i] = wc;
+			SetBGRColor(ImTMP, i, wc);
 		}
 	}
 
 	for (x = 0; x < w; x++)
 	{
-		if ((lb1 >= 0) && (lb1 < h)) ImTMP[lb1 * w + x] = cc;
-		if ((le1 >= 0) && (le1 < h)) ImTMP[le1 * w + x] = cc;
+		if ((lb1 >= 0) && (lb1 < h)) SetBGRColor(ImTMP, lb1 * w + x, cc);
+		if ((le1 >= 0) && (le1 < h)) SetBGRColor(ImTMP, le1 * w + x, cc);
 
-		if ((lb2 >= 0) && (lb2 < h)) ImTMP[lb2 * w + x] = gc;
-		if ((le2 >= 0) && (le2 < h)) ImTMP[le2 * w + x] = gc;
+		if ((lb2 >= 0) && (lb2 < h)) SetBGRColor(ImTMP, lb2 * w + x, gc);
+		if ((le2 >= 0) && (le2 < h)) SetBGRColor(ImTMP, le2 * w + x, gc);
 	}
 
-	SaveRGBImage(ImTMP, name, w, h);
+	SaveBGRImage(ImTMP, name, w, h);
 }
 
 void SaveImageWithSubParams(simple_buffer<u8>& Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h)
 {
 	if (g_disable_save_images) return;
 
-	//can_be_optimized
-	//use BGR instead of BGRA
-
-	simple_buffer<int> ImTMP(w*h, 0);
+	simple_buffer<u8> ImTMP(w*h*3, 0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;
 	u8 *pClr;
@@ -7497,17 +7404,17 @@ void SaveImageWithSubParams(simple_buffer<u8>& Im, string name, int lb, int le, 
 	{
 		if (Im[i] != 0)
 		{
-			ImTMP[i] = wc;
+			SetBGRColor(ImTMP, i, wc);
 		}
 	}
 
 	for (x = 0; x < w; x++)
 	{
-		ImTMP[lb * w + x] = cc;
-		ImTMP[le * w + x] = cc;
+		SetBGRColor(ImTMP, lb * w + x, cc);
+		SetBGRColor(ImTMP, le * w + x, cc);
 
-		ImTMP[(LMAXY - LH + 1) * w + x] = gc;
-		ImTMP[LMAXY * w + x] = gc;
+		SetBGRColor(ImTMP, (LMAXY - LH + 1) * w + x, gc);
+		SetBGRColor(ImTMP, LMAXY * w + x, gc);
 	}
 
 	if (real_im_x_center < 0) real_im_x_center = 0;
@@ -7515,10 +7422,10 @@ void SaveImageWithSubParams(simple_buffer<u8>& Im, string name, int lb, int le, 
 
 	for (y = 0; y < h; y++)
 	{
-		ImTMP[y * w + real_im_x_center] = rc;
+		SetBGRColor(ImTMP, y * w + real_im_x_center, rc);
 	}
 
-	SaveRGBImage(ImTMP, name, w, h);
+	SaveBGRImage(ImTMP, name, w, h);
 }
 
 void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::Mat& res)
