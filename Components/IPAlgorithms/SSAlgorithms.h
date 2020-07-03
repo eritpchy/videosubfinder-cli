@@ -49,12 +49,6 @@ int DifficultCompareTwoSubs2(simple_buffer<u8> &ImF1, simple_buffer<u16> *pImILA
 
 int CompareTwoSubsOptimal(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, int ymin);
 
-//int DifficultCompareTwoSubs(simple_buffer<int> &ImRGB1, simple_buffer<int> &ImF1, simple_buffer<int> &ImRGB2, simple_buffer<int> &ImF2, int w, int h, int W, int H, int ymin);
-
-int SimpleCombineTwoImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size);
-
-int GetCombinedSquare(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int size);
-
 template <class T>
 void AddTwoImages(simple_buffer<T> &Im1, simple_buffer<T> &Im2, simple_buffer<T> &ImRES, int size);
 template <class T>

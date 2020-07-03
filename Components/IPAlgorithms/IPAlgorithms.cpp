@@ -132,9 +132,9 @@ int g_scale = 4;
 
 int g_use_simple = false;
 
-#define STR_SIZE (256 * 2) // 
+#define STR_SIZE (256 * 2)
 
-#define MAX_EDGE_STR 786432 //на сам деле ~ 32*3*255
+#define MAX_EDGE_STR (11 * 16 * 256)
 
 //int g_LN;
 
@@ -357,31 +357,39 @@ void ColorFiltration(simple_buffer<u8>& ImBGR, simple_buffer<int>& LB, simple_bu
 	N = k;
 }
 
-void ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<int> &ImMOE, int w, int h)
+void ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)
 {
 	const int mx = w - 1;
 	const int my = h - 1;
 	__int64 t1, dt, num_calls;
 
-	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
 
 	concurrency::parallel_for(1, my, [&](int y)
 	{
-		int x, val, val1, val2, val3, val4, max;
+		int x;
+		short val, val1, val2, val3, val4, max;
 		u8* pIm;
-		int* pImMOE;
+		u16* pImMOE;
 
 		for (x = 1, pIm = &ImIn[y*w + x], pImMOE = &ImMOE[y*w + x]; x < mx; x++, pIm++, pImMOE++)
 		{
+			// val1 in range [-255, 255]
+			// val2 in range [-255, 255]
+			// val3 in range [-255, 255]
+			// val4 in range [-255, 255]
+			// => val and max in range mod([-16*255(=4080), 16*255]) = [0, 16*255] < max(u16)
+			// short [-32768, 32767] : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
+
 			//val1 = lt - rb;
-			val1 = (int)(*(pIm - w - 1)) - (int)(*(pIm + w + 1));
+			val1 = (short)(*(pIm - w - 1)) - (short)(*(pIm + w + 1));
 			//val2 = rt - lb;
-			val2 = (int)(*(pIm - w + 1)) - (int)(*(pIm + w - 1));
+			val2 = (short)(*(pIm - w + 1)) - (short)(*(pIm + w - 1));
 			//val3 = mt - mb;
-			val3 = (int)(*(pIm - w)) - (int)(*(pIm + w));
+			val3 = (short)(*(pIm - w)) - (short)(*(pIm + w));
 			//val4 = lm - rm;
-			val4 = (int)(*(pIm - 1)) - (int)(*(pIm + 1));
+			val4 = (short)(*(pIm - 1)) - (short)(*(pIm + 1));
 
 			//val = lt + rt - lb - rb + 2*(mt-mb);
 			val = 3 * (val1 + val2) + 10 * val3;
@@ -403,15 +411,15 @@ void ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<int> &ImMOE, int 
 			if (val < 0) val = -val;
 			if (max < val) max = val;
 
-			*pImMOE = max;
+			*pImMOE = (u16)max;
 		}
 	});
 }
 
-void FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<int> &ImNOE, int w, int h)
+void FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, int w, int h)
 {
-	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImNOE.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImNOE.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
 
 	__int64 t1, dt, num_calls;
 
@@ -420,65 +428,78 @@ void FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<int> &ImNOE, 
 
 	concurrency::parallel_for(1, my, [&](int y)
 	{
-		int x, val, val1, val2;
+		int x;
+		short val, val1, val2;
 		u8* pIm;
-		int* pImNOE;
+		u16* pImNOE;
 
 		for (x = 1, pIm = &ImIn[y*w + x], pImNOE = &ImNOE[y*w + x]; x < mx; x++, pIm++, pImNOE++)
 		{
-			val1 = (int)(*(pIm - w));
-			val2 = (int)(*(pIm - w - 1));
+			// val1 in range [-255*2, 255*2]
+			// val2 in range [-255, 255]
+			// => val in range mod([-16*255(=4080), 16*255]) = [0, 16*255] < max(u16)
+			// short [-32768, 32767] : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
 
-			val1 += (int)(*(pIm - 1)) - (int)(*(pIm + 1));
+			val1 = (short)(*(pIm - w));
+			val2 = (short)(*(pIm - w - 1));
 
-			val1 -= (int)(*(pIm + w));
-			val2 -= (int)(*(pIm + w + 1));
+			val1 += (short)(*(pIm - 1)) - (short)(*(pIm + 1));
+
+			val1 -= (short)(*(pIm + w));
+			val2 -= (short)(*(pIm + w + 1));
 
 			val = 3 * val1 + 10 * val2;
 
 			if (val < 0) val = -val;
-			*pImNOE = val;
+			*pImNOE = (u16)val;
 		}
 	});
 }
 
-void FastImprovedSobelHEdge(simple_buffer<u8> &ImIn, simple_buffer<int> &ImHOE, int w, int h)
+void FastImprovedSobelHEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImHOE, int w, int h)
 {	
-	custom_assert(ImIn.size() >= w * h, "FastImprovedSobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImHOE.size() >= w * h, "FastImprovedSobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
+	custom_assert(ImIn.size() >= w * h, "FastImprovedSobelHEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImHOE, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImHOE.size() >= w * h, "FastImprovedSobelHEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImHOE, int w, int h)\nnot: ImHOE.size() >= w*h");
 
 	const int mx = w - 1;
 	const int my = h - 1;
 
 	concurrency::parallel_for(1, my, [&](int y)
 	{
-		int x, val, val1, val2;
+		int x;
+		short val, val1, val2;
 		u8* pIm;
-		int* pImHOE;
+		u16* pImHOE;
 
 		for (x = 1, pIm = &ImIn[y*w + x], pImHOE = &ImHOE[y*w + x]; x < mx; x++, pIm++, pImHOE++)
 		{
-			val1 = (int)(*(pIm - w - 1)) + (int)(*(pIm - w + 1));
-			val2 = (int)(*(pIm - w));
+			// val1 in range [-255*2, 255*2]
+			// val2 in range [-255, 255]
+			// => val in range mod([-16*255(=4080), 16*255]) = [0, 16*255] < max(u16)
+			// short [-32768, 32767] : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
 
-			val1 -= (int)(*(pIm + w - 1)) + (int)(*(pIm + w + 1));
-			val2 -= (int)(*(pIm + w));
+			val1 = (short)(*(pIm - w - 1)) + (short)(*(pIm - w + 1));
+			val2 = (short)(*(pIm - w));
+
+			val1 -= (short)(*(pIm + w - 1)) + (short)(*(pIm + w + 1));
+			val2 -= (short)(*(pIm + w));
 
 			val = 3 * val1 + 10 * val2;
 
 			if (val < 0) val = -val;
-			*pImHOE = val;
+			*pImHOE = (u16)val;
 		}
 	});
 }
 
-void FindAndApplyLocalThresholding(simple_buffer<int> &Im, int dw, int dh, int w, int h)
+template <class T>
+void FindAndApplyLocalThresholding(simple_buffer<T>& Im, int dw, int dh, int w, int h)
 {
 	int i, di, ia, da, x, y, nx, ny, mx, my, MX;
 	int val, min, max, mid, lmax, rmax, li, ri, thr;
 	simple_buffer<int> edgeStr(MAX_EDGE_STR, 0);
 	
-	custom_assert(Im.size() >= w*h, "FindAndApplyLocalThresholding(simple_buffer<int> &Im, int dw, int dh, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "FindAndApplyLocalThresholding(simple_buffer<T> &Im, int dw, int dh, int w, int h)\nnot: Im.size() >= w*h");
 
 	MX = 0;
 
@@ -646,35 +667,36 @@ void FindAndApplyLocalThresholding(simple_buffer<int> &Im, int dw, int dh, int w
 	}
 }
 
-void ApplyModerateThreshold(simple_buffer<int> &Im, double mthr, int w, int h)
+template <class T>
+void ApplyModerateThreshold(simple_buffer<T> &Im, double mthr, int w, int h)
 {
-	int thr;
-	int mx = 0;
-	int *pIm = &Im[0];
-	int *pImMAX = pIm + w*h;
+	T thr;
+	T mx = 0;
+	T *pIm = &Im[0];
+	T *pImMAX = pIm + (w * h);
 	
-	custom_assert(Im.size() >= w*h, "ApplyModerateThreshold(simple_buffer<int> &Im, double mthr, int w, int h)\nnot: Im.size() >= w*h");
+	custom_assert(Im.size() >= w*h, "ApplyModerateThreshold(simple_buffer<T> &Im, double mthr, int w, int h)\nnot: Im.size() >= w*h");
 
 	for(; pIm < pImMAX; pIm++)
 	{
 		if (*pIm > mx) mx = *pIm;
 	}
 
-	thr = (int)((double)mx*mthr);
+	thr = (T)((double)mx*mthr);
 
 	for(pIm = &Im[0]; pIm < pImMAX; pIm++)
 	{
 		if (*pIm < thr) *pIm = 0;
-		else *pIm = 255;
+		else *pIm = (T)255;
 	}
 }
 
-void AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
+void AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)
 {
 	__int64 t1, dt, num_calls;
 
-	custom_assert(ImIn.size() >= w * h, "AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImOut.size() >= w * h, "AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
+	custom_assert(ImIn.size() >= w * h, "AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImOut.size() >= w * h, "AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	const int mx = w - 2;
 	const int my = h - 2;	
@@ -682,25 +704,27 @@ void AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
 	concurrency::parallel_for(2, my, [&](int y)
 	{
 		int i, x, val;
-
+		
+		// max_ImOut == max_ImIn * ((2*4) + (4*8) + (5*4) + (10*4) + (20*4) + 40 == 220)/220 == max_ImIn == MAX_EDGE_STR-1 (11 * 16 * 256 - 1)
+		// max_val  == max_ImIn * ((2*4) + (4*8) + (5*4) + (10*4) + (20*4) + 40 == 220) == 220 * max_ImIn == 220 * MAX_EDGE_STR-1 (11 * 16 * 256 - 1) < max(s32)
 		for (x = 2, i = w * y + x; x < mx; x++, i++)
 		{
-			val = 2 * (ImIn[i - w * 2 - 2] + ImIn[i - w * 2 + 2] + ImIn[i + w * 2 - 2] + ImIn[i + w * 2 + 2]) +
-				+4 * (ImIn[i - w * 2 - 1] + ImIn[i - w * 2 + 1] + ImIn[i - w - 2] + ImIn[i - w + 2] + ImIn[i + w - 2] + ImIn[i + w + 2] + ImIn[i + w * 2 - 1] + ImIn[i + w * 2 + 1]) +
-				+5 * (ImIn[i - w * 2] + ImIn[i - 2] + ImIn[i + 2] + ImIn[i + w * 2]) +
-				+10 * (ImIn[i - w - 1] + ImIn[i - w + 1] + ImIn[i + w - 1] + ImIn[i + w + 1]) +
-				+20 * (ImIn[i - w] + ImIn[i - 1] + ImIn[i + 1] + ImIn[i + w]) +
-				+40 * ImIn[i];
+			val = 2 * ((int)ImIn[i - w * 2 - 2] + (int)ImIn[i - w * 2 + 2] + (int)ImIn[i + w * 2 - 2] + (int)ImIn[i + w * 2 + 2]) +
+				+4 * ((int)ImIn[i - w * 2 - 1] + (int)ImIn[i - w * 2 + 1] + (int)ImIn[i - w - 2] + (int)ImIn[i - w + 2] + (int)ImIn[i + w - 2] + (int)ImIn[i + w + 2] + (int)ImIn[i + w * 2 - 1] + (int)ImIn[i + w * 2 + 1]) +
+				+5 * ((int)ImIn[i - w * 2] + (int)ImIn[i - 2] + (int)ImIn[i + 2] + (int)ImIn[i + w * 2]) +
+				+10 * ((int)ImIn[i - w - 1] + (int)ImIn[i - w + 1] + (int)ImIn[i + w - 1] + (int)ImIn[i + w + 1]) +
+				+20 * ((int)ImIn[i - w] + (int)ImIn[i - 1] + (int)ImIn[i + 1] + (int)ImIn[i + w]) +
+				+40 * (int)ImIn[i];
 
-			ImOut[i] = val / 220;
+			ImOut[i] = (u16)(val / 220);
 		}
 	});
 }
 
-void AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
+void AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)
 {	
-	custom_assert(ImIn.size() >= w*h, "AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
-	custom_assert(ImOut.size() >= w*h, "AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
+	custom_assert(ImIn.size() >= w*h, "AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
+	custom_assert(ImOut.size() >= w*h, "AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
 	__int64 t1, dt, num_calls;
 
@@ -726,22 +750,25 @@ void AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h)
 				+ 1*(ImIn[i - w] + ImIn[i - 1] + ImIn[i + 1] + ImIn[i + w]) +
 				+ 0*ImIn[i];*/
 
+			// max_ImOut == max_ImIn * ((8+5+4+5+8)+(5+2+1+2+5)+(4+1+1+4)+(5+2+1+2+5)+(8+5+4+5+8) == 100)/100 == max_ImIn == MAX_EDGE_STR-1 (11 * 16 * 256 - 1)
+			// max_val  == max_ImIn * ((2*4) + (4*8) + (5*4) + (10*4) + (20*4) + 40 == 100) == 100 * max_ImIn == 100 * MAX_EDGE_STR-1 (11 * 16 * 256 - 1) < max(s32)
+
 			ii = i - ((w + 1) << 1);
-			val = 8 * ImIn[ii] + 5 * ImIn[ii + 1] + 4 * ImIn[ii + 2] + 5 * ImIn[ii + 3] + 8 * ImIn[ii + 4];
+			val = 8 * (int)ImIn[ii] + 5 * (int)ImIn[ii + 1] + 4 * (int)ImIn[ii + 2] + 5 * (int)ImIn[ii + 3] + 8 * (int)ImIn[ii + 4];
 
 			ii += w;
-			val += 5 * ImIn[ii] + 2 * ImIn[ii + 1] + ImIn[ii + 2] + 2 * ImIn[ii + 3] + 5 * ImIn[ii + 4];
+			val += 5 * (int)ImIn[ii] + 2 * (int)ImIn[ii + 1] + (int)ImIn[ii + 2] + 2 * (int)ImIn[ii + 3] + 5 * (int)ImIn[ii + 4];
 
 			ii += w;
-			val += 4 * ImIn[ii] + ImIn[ii + 1] + ImIn[ii + 3] + 4 * ImIn[ii + 4];
+			val += 4 * (int)ImIn[ii] + (int)ImIn[ii + 1] + (int)ImIn[ii + 3] + 4 * (int)ImIn[ii + 4];
 
 			ii += w;
-			val += 5 * ImIn[ii] + 2 * ImIn[ii + 1] + ImIn[ii + 2] + 2 * ImIn[ii + 3] + 5 * ImIn[ii + 4];
+			val += 5 * (int)ImIn[ii] + 2 * (int)ImIn[ii + 1] + (int)ImIn[ii + 2] + 2 * (int)ImIn[ii + 3] + 5 * (int)ImIn[ii + 4];
 
 			ii += w;
-			val += 8 * ImIn[ii] + 5 * ImIn[ii + 1] + 4 * ImIn[ii + 2] + 5 * ImIn[ii + 3] + 8 * ImIn[ii + 4];
+			val += 8 * (int)ImIn[ii] + 5 * (int)ImIn[ii + 1] + 4 * (int)ImIn[ii + 2] + 5 * (int)ImIn[ii + 3] + 8 * (int)ImIn[ii + 4];
 
-			ImOut[i] = val / 100;
+			ImOut[i] = (u16)(val / 100);
 		}
 	});
 }
@@ -813,9 +840,9 @@ void CombineTwoImages(simple_buffer<T> &ImRes, simple_buffer<T> &Im2, int w, int
 	}
 }
 
-void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, simple_buffer<int> &ImUMOE, simple_buffer<int> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
+void GetImCMOEWithThr1(simple_buffer<u16> &ImCMOE, simple_buffer<u16> &ImYMOE, simple_buffer<u16> &ImUMOE, simple_buffer<u16> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
 {
-	simple_buffer<int> ImRES2(w*h), ImRES3(w*h);
+	simple_buffer<u16> ImRES2(w*h), ImRES3(w*h);
 	int mx, my, i, k, y, x;
 	mx = w - 1;
 	my = h - 1;
@@ -827,15 +854,19 @@ void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	{
 		for (x = 1; x < mx; x++, i++)
 		{
+			// affects on MAX_EDGE_STR
+			// max_ImCMOE = (3 * 16 * 256 - 1)
 			ImCMOE[i] = ImYMOE[i] + ImUMOE[i] + ImVMOE[i];
 		}
 	}
 
 	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);	
-
+	
+	// max_ImRES2 == max_ImCMOE = (3 * 16 * 256 - 1)
 	AplyESS(ImCMOE, ImRES2, w, h);
 
 	BorderClear(ImRES2, 2, w, h);
+	// max_ImRES3 == max_ImRES2 == max_ImCMOE = (3 * 16 * 256 - 1)
 	AplyECP(ImRES2, ImRES3, w, h);	
 
 	BorderClear(ImCMOE, 2, w, h);
@@ -847,6 +878,7 @@ void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	{
 		for (x = 2; x < mx; x++, i++)
 		{
+			// max_ImCMOE == (2 * 3 * 16 * 256 - 1 < u16) / 2
 			ImCMOE[i] = (ImRES2[i] + ImRES3[i]) / 2;
 		}
 	}
@@ -859,9 +891,9 @@ void GetImCMOEWithThr1(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 }
 
 
-void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, simple_buffer<int> &ImUMOE, simple_buffer<int> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
+void GetImCMOEWithThr2(simple_buffer<u16> &ImCMOE, simple_buffer<u16> &ImYMOE, simple_buffer<u16> &ImUMOE, simple_buffer<u16> &ImVMOE, int w, int h, int W, int H, simple_buffer<int> &offsets, simple_buffer<int> &dhs, int N, double mthr)
 {
-	simple_buffer<int> ImRES5(w*h), ImRES6(w*h);
+	simple_buffer<u16> ImRES5(w*h), ImRES6(w*h);
 	int mx, my, i, k, y, x;
 	mx = w - 1;
 	my = h - 1;
@@ -876,15 +908,19 @@ void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	{
 		for (x = 1; x < mx; x++, i++)
 		{
+			// affects on MAX_EDGE_STR (11 * 16 * 256)
+			// max_ImCMOE = (11 * 16 * 256 - 1)
 			ImCMOE[i] = ImYMOE[i] + (ImUMOE[i] + ImVMOE[i]) * 5;
 		}
 	}
 
 	FindAndApplyLocalThresholding(ImCMOE, w, 32, w, h);
 
+	// max_ImRES5 == max_ImCMOE = (11 * 16 * 256 - 1)
 	AplyESS(ImCMOE, ImRES5, w, h);
 
 	BorderClear(ImRES5, 2, w, h);
+	// max_ImRES6 == max_ImRES5 == max_ImCMOE = (11 * 16 * 256 - 1)
 	AplyECP(ImRES5, ImRES6, w, h);
 
 	BorderClear(ImCMOE, 2, w, h);
@@ -896,7 +932,8 @@ void GetImCMOEWithThr2(simple_buffer<int> &ImCMOE, simple_buffer<int> &ImYMOE, s
 	{
 		for (x = 2; x < mx; x++, i++)
 		{
-			ImCMOE[i] = (ImRES5[i] + ImRES6[i]) / 2;
+			// max_ImCMOE == (2 * 11 * 16 * 256 - 1 > u16) / 2
+			ImCMOE[i] = (u16)(((int)ImRES5[i] + (int)ImRES6[i]) / 2);
 		}
 	}
 
@@ -928,8 +965,8 @@ void GetImFF(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8>
 	}
 
 	simple_buffer<u8> ImY(ww * hh), ImU(ww * hh), ImV(ww * hh);
-	simple_buffer<int> ImYMOE(ww * hh), ImUMOE(ww * hh), ImVMOE(ww * hh);
-	simple_buffer<int> ImRES1(ww * hh), ImRES4(ww * hh);
+	simple_buffer<u16> ImYMOE(ww * hh), ImUMOE(ww * hh), ImVMOE(ww * hh);
+	simple_buffer<u16> ImRES1(ww * hh), ImRES4(ww * hh);
 	
 	for(k=0; k<N; k++)
 	{
@@ -995,8 +1032,8 @@ void GetImFF(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8>
 
 void GetImNE(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, simple_buffer<u8> &ImU, simple_buffer<u8> &ImV, int w, int h)
 {
-	simple_buffer<int> ImYMOE(w*h), ImUMOE(w*h), ImVMOE(w*h);
-	simple_buffer<int> ImRES1(w*h), ImRES2(w*h);
+	simple_buffer<u16> ImYMOE(w*h), ImUMOE(w*h), ImVMOE(w*h);
+	simple_buffer<u16> ImRES1(w*h), ImRES2(w*h);
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
@@ -1015,6 +1052,9 @@ void GetImNE(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	mx = w - 1;
 	my = h - 1;
 		
+
+	// ImRES1 values in range [0, 3*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
+	// ImRES2 values in range [0, 11*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
 	concurrency::parallel_invoke(
 		[&] { 
 			int i = w + 1, x, y;
@@ -1062,8 +1102,8 @@ void GetImNE(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 
 void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> &ImU, simple_buffer<u8> &ImV, int w, int h)
 {
-	simple_buffer<int> ImYMOE(w*h), ImUMOE(w*h), ImVMOE(w*h);
-	simple_buffer<int> ImRES1(w*h), ImRES2(w*h);
+	simple_buffer<u16> ImYMOE(w*h), ImUMOE(w*h), ImVMOE(w*h);
+	simple_buffer<u16> ImRES1(w*h), ImRES2(w*h);
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
@@ -1082,6 +1122,8 @@ void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	mx = w - 1;
 	my = h - 1;
 
+	// ImRES1 values in range [0, 3*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
+	// ImRES2 values in range [0, 11*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
 	concurrency::parallel_invoke(
 		[&] {
 			int i = w + 1, x, y;

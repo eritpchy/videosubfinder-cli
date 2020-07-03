@@ -142,22 +142,32 @@ public:
 
 	custom_buffer(const custom_buffer<T> &obj)
 	{
-		custom_assert(obj.m_size > 0, "custom_buffer(const custom_buffer<T> &obj): not: obj.m_size > 0");
-		m_size = obj.m_size;
-		m_need_to_release = obj.m_need_to_release;
+		custom_assert(obj.m_size >= 0, "custom_buffer(const custom_buffer<T> &obj): not: obj.m_size >= 0");
 
-		if (m_need_to_release)
+		if (obj.m_size == 0)
 		{
-			m_pData = new T[m_size];
-			custom_assert(m_pData != NULL, "custom_buffer(const custom_buffer<T> &obj): not: m_pData != NULL");
-			for (int i = 0; i < m_size; i++)
-			{
-				m_pData[i] = obj.m_pData[i];
-			}
+			m_pData = NULL;
+			m_size = 0;
+			m_need_to_release = false;
 		}
 		else
 		{
-			m_pData = obj.m_pData;
+			m_size = obj.m_size;
+			m_need_to_release = obj.m_need_to_release;
+
+			if (m_need_to_release)
+			{
+				m_pData = new T[m_size];
+				custom_assert(m_pData != NULL, "custom_buffer(const custom_buffer<T> &obj): not: m_pData != NULL");
+				for (int i = 0; i < m_size; i++)
+				{
+					m_pData[i] = obj.m_pData[i];
+				}
+			}
+			else
+			{
+				m_pData = obj.m_pData;
+			}
 		}
 	}
 
@@ -393,19 +403,28 @@ public:
 
 	simple_buffer(const simple_buffer<T>& obj)
 	{
-		custom_assert(obj.m_size > 0, "simple_buffer(const simple_buffer<T>& obj): not: obj.m_size > 0");
+		custom_assert(obj.m_size >= 0, "simple_buffer(const simple_buffer<T>& obj): not: obj.m_size >= 0");
 		m_size = obj.m_size;
 		m_need_to_release = obj.m_need_to_release;
 
-		if (m_need_to_release)
+		if (obj.m_size == 0)
 		{
-			m_pData = new T[m_size];
-			custom_assert(m_pData != NULL, "simple_buffer<T>::simple_buffer(const simple_buffer<T>& obj): not: m_pData != NULL");
-			memcpy(m_pData, obj.m_pData, m_size * sizeof(T));
+			m_pData = NULL;
+			m_size = 0;
+			m_need_to_release = false;
 		}
 		else
 		{
-			m_pData = obj.m_pData;
+			if (m_need_to_release)
+			{
+				m_pData = new T[m_size];
+				custom_assert(m_pData != NULL, "simple_buffer<T>::simple_buffer(const simple_buffer<T>& obj): not: m_pData != NULL");
+				memcpy(m_pData, obj.m_pData, m_size * sizeof(T));
+			}
+			else
+			{
+				m_pData = obj.m_pData;
+			}
 		}
 	}
 

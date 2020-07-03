@@ -93,29 +93,14 @@ extern bool		g_disable_save_images;
 extern bool     g_save_each_substring_separately;
 extern bool     g_save_scaled_images;
 
-void BGR_to_YUV(simple_buffer<u8> &ImInBGR, simple_buffer<u8> &ImY, simple_buffer<u8> &ImU, simple_buffer<u8> &ImV, int w, int h);
-void YIQ_to_RGB(int Y, int I, int Q, int &R, int &G, int &B, int max_val);
-void RGB_to_YIQ(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, simple_buffer<int> &ImI, simple_buffer<int> &ImQ, int w, int h);
-void GetGrayscaleImage(simple_buffer<int> &ImIn, simple_buffer<int> &ImY, int w, int h);
+template <class T>
+void FindAndApplyLocalThresholding(simple_buffer<T>& Im, int dw, int dh, int w, int h);
 
-void SobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h);
-void ImprovedSobelMEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImMOE, int w, int h);
-void SobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h);
-void FastImprovedSobelHEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImHOE, int w, int h);
-void FastSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h);
-void FastImprovedSobelVEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImVOE, int w, int h);
-void SobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h);
-void FastImprovedSobelNEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImNOE, int w, int h);
-void SobelSEdge(simple_buffer<int> &ImIn, simple_buffer<int> &ImSOE, int w, int h);
+template <class T>
+void ApplyModerateThreshold(simple_buffer<T> &Im, double mthr, int w, int h);
 
-void IncreaseContrastOperator(simple_buffer<int> &ImIn, simple_buffer<int> &ImRES, int w, int h);
-
-void FindAndApplyLocalThresholding(simple_buffer<int> &Im, int dw, int dh, int w, int h);
-void ApplyModerateThresholdBySplit(simple_buffer<int> &Im, double mthr, int w, int h, int W, int H);
-void ApplyModerateThreshold(simple_buffer<int> &Im, double mthr, int w, int h);
-
-void AplyESS(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h);
-void AplyECP(simple_buffer<int> &ImIn, simple_buffer<int> &ImOut, int w, int h);
+void AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h);
+void AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h);
 
 void ColorFiltration(simple_buffer<u8> &ImBGR, simple_buffer<int> &LB, simple_buffer<int> &LE, int &N, int w, int h);
 
@@ -137,26 +122,13 @@ void ExtendImFWithDataFromImNF(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, 
 
 void StrAnalyseImage(simple_buffer<u8>& Im, simple_buffer<u8>& ImGR, simple_buffer<int>& GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 
-void ClearImage4x4(simple_buffer<int> &Im, int w, int h, int white);
-void ClearImageSpecific1(simple_buffer<int> &Im, int w, int h, int yb, int ye, int xb, int xe, int white);
-int ClearImageFromBorders(simple_buffer<int> &Im, int w, int h, int ddy1, int ddy2, int white);
-
-int ClearImageLogical(simple_buffer<int> &Im, int w, int h, int LH, int LMAXY, int xb, int xe, int white, int W, int H, int real_im_x_center);
-
 void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ, int W, int H);
 void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_buffer<u8> &ImI, simple_buffer<u8> &ImQ);
 void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple_buffer<u8>& ImI, simple_buffer<u8>& ImQ, int w, int h, int& LH, int& LMAXY, int& XB, int& XE, int& YB, int& YE, int& mY, int& mI, int& mQ, u8 white);
 
-void ResizeImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h);
-void SimpleResizeImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h);
-void ResizeGrayscaleImage4x(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h);
-
-int CompareTXTImages(simple_buffer<int> &Im1, simple_buffer<int> &Im2, int w1, int h1, int w2, int h2, int YB1, int YB2);
-
 void GetImageSize(string name, int &w, int &h);
 void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h);
 void LoadBGRImage(simple_buffer<u8>& ImBGR, string name);
-void LoadRGBImage(simple_buffer<int> &Im, string name, int w, int h);
 void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 void SaveGreyscaleImage(simple_buffer<int>& Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 template <class T>
