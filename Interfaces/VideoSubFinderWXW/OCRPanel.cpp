@@ -1067,20 +1067,21 @@ public:
 	int m_h;
 	vector<wxString> m_SavedFiles;
 	simple_buffer<u8> m_ImBGR;
-	simple_buffer<u8> m_ImClearedText;
-	custom_buffer<simple_buffer<u8>> m_ImF;
+	simple_buffer<u8> m_ImClearedText;	
 
 	FindTextLinesRes()
 	{
 		m_res = 0;
+		m_w = 0;
+		m_h = 0;
 	}
 };
 
-void FindTextLinesWithExcFilter(FindTextLinesRes *res)
+void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, simple_buffer<u8>* pImNF, simple_buffer<u8>* pImNE, simple_buffer<u8>* pImIL)
 {
 	__try
 	{		
-		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, res->m_ImF[5], res->m_ImF[3], res->m_ImF[1], res->m_ImF[0], res->m_SavedFiles, res->m_w, res->m_h);
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
@@ -1098,21 +1099,26 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 		GetImageSize(string(FileName), w, h);
 		res.m_w = w;
 		res.m_h = h;
-		res.m_ImBGR = simple_buffer<u8>(w*h*3, 0);
-		res.m_ImClearedText = simple_buffer<u8>(w*h, 0);
-		res.m_ImF = custom_buffer<simple_buffer<u8>>(6, simple_buffer<u8>(w*h, 0));
+		res.m_ImBGR = simple_buffer<u8>(w * h * 3, 0);
+		res.m_ImClearedText = simple_buffer<u8>(w * h, 0);		
 
 		LoadBGRImage(res.m_ImBGR, string(FileName));
 
-		res.m_res = GetTransformedImage(res.m_ImBGR, res.m_ImF[3], res.m_ImF[4], res.m_ImF[5], res.m_ImF[1], res.m_ImF[2], w, h, w, h);
+		simple_buffer<u8> ImFF(w * h)/*3*/, ImTF(w * h)/*5*/, ImNE(w * h)/*1*/, ImIL/*0*/;
+
+		{
+			simple_buffer<u8> ImSF(w * h)/*4*/, ImY(w * h)/*2*/;
+
+			res.m_res = GetTransformedImage(res.m_ImBGR, ImFF, ImSF, ImTF, ImNE, ImY, w, h, w, h);
+		}
 
 		if (g_show_transformed_images_only)
 		{
 			Str = FileName;
 			Str = GetFileName(Str);
 			Str = "/TXTImages/" + Str + g_im_save_format;
-			SaveGreyscaleImage(res.m_ImF[5], string(Str), w, h);
-			res.m_ImClearedText = res.m_ImF[5];
+			SaveGreyscaleImage(ImTF, string(Str), w, h);
+			res.m_ImClearedText = ImTF;
 			return;
 		}
 
@@ -1124,11 +1130,11 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 			if (wxFileExists(Str))
 			{
-				LoadBinaryImage(res.m_ImF[5], string(Str), w, h);
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
-				RestoreStillExistLines(res.m_ImF[5], res.m_ImF[3], w, h);
-				ExtendImFWithDataFromImNF(res.m_ImF[5], res.m_ImF[3], w, h);
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
+				LoadBinaryImage(ImTF, string(Str), w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
+				RestoreStillExistLines(ImTF, ImFF, w, h);
+				ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
 			}
 		}
 
@@ -1141,31 +1147,31 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 			if (wxFileExists(Str))
 			{
-				LoadBinaryImage(res.m_ImF[0], string(Str), w, h);
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[0], "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
+				ImIL.set_size(w * h);
+				LoadBinaryImage(ImIL, string(Str), w, h);
+				if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
 
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
-				IntersectTwoImages(res.m_ImF[5], res.m_ImF[0], w, h);
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[5], "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
+				IntersectTwoImages(ImTF, ImIL, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, w, h);
 
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, w, h);
-				IntersectTwoImages(res.m_ImF[3], res.m_ImF[0], w, h);
-				if (g_show_results) SaveGreyscaleImage(res.m_ImF[3], "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, w, h);
-			}
-			else
-			{
-				res.m_ImF[0].set_size(0);
-			}
-		}
-		else
-		{
-			res.m_ImF[0].set_size(0);
-		}
+				if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, w, h);
+				IntersectTwoImages(ImFF, ImIL, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, w, h);
+			}			
+		}		
 
 		Str = GetFileName(FileName);
 		res.m_SavedFiles.push_back(Str);
 
-		FindTextLinesWithExcFilter(&res);
+		FindTextLinesWithExcFilter(&res, &ImTF, &ImFF, &ImNE, &ImIL);
+
+		// free memory for reduce usage
+		if (g_pMF->m_blnNoGUI)
+		{
+			res.m_ImBGR.set_size(0);
+			res.m_ImClearedText.set_size(0);
+		}
 	}
 	catch (const exception& e)
 	{
@@ -1204,8 +1210,7 @@ concurrency::task<void> TaskFindTextLines(concurrency::concurrent_queue<find_tex
 						}
 						else
 						{
-							FindTextLines(g_work_dir + "/RGBImages/" + text_queue_data.m_file_name, *text_queue_data.m_p_res);
-							text_queue_data.m_p_res->m_ImF.set_size(0);							
+							FindTextLines(g_work_dir + "/RGBImages/" + text_queue_data.m_file_name, *text_queue_data.m_p_res);															
 						}
 
 						text_queue_data.m_p_event->set();
@@ -1308,11 +1313,13 @@ void *ThreadCreateClearedTextImages::Entry()
 			FindTextLinesRes *p_task_res = task_results[k];
 
 			res = p_task_res->m_res;
-			g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
-			g_pViewGreyscaleImage[1](p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);
+			
 
 			if (!(m_pMF->m_blnNoGUI))
 			{
+				g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
+				g_pViewGreyscaleImage[1](p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);
+
 				clock_t cur_time = clock();
 				double progress = ((double)(k + 1) / (double)NImages) * 100.0;
 
@@ -1339,95 +1346,6 @@ void *ThreadCreateClearedTextImages::Entry()
 				simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale)*(int)(p_task_res->m_h / g_scale), 255);
 				SaveGreyscaleImage(ImRES1, string(Str), p_task_res->m_w*g_scale, p_task_res->m_h / g_scale);
 			}
-			/*
-			if ( (k>1) && (res == 1) && (g_ValidateAndCompareTXTImages == true) && (prevSavedFiles.size() == task_res.m_SavedFiles.size()) )
-			{
-				Str = prevSavedFiles[i].c_str();
-				i = Str.length()-1;
-				while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-				Str = Str.Mid(i+1);
-
-				hour1 = Str.Mid(0,1);
-				min1 = Str.Mid(2,2);
-				sec1 = Str.Mid(5,2);
-				msec1 = Str.Mid(8,3);
-
-				hour2 = Str.Mid(13,1);
-				min2 = Str.Mid(15,2);
-				sec2 = Str.Mid(18,2);
-				msec2 = Str.Mid(21,3);
-
-				bt1 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-				et1 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
-
-				Str = task_res.m_SavedFiles[i].c_str();
-				i = Str.length()-1;
-				while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-				Str = Str.Mid(i+1);
-
-				hour1 = Str.Mid(0,1);
-				min1 = Str.Mid(2,2);
-				sec1 = Str.Mid(5,2);
-				msec1 = Str.Mid(8,3);
-
-				hour2 = Str.Mid(13,1);
-				min2 = Str.Mid(15,2);
-				sec2 = Str.Mid(18,2);
-				msec2 = Str.Mid(21,3);
-
-				bt2 = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-				et2 = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
-
-				if (bt2-et1 < 300)
-				{
-					bln = 1;
-					for (i=0; i<(int)task_res.m_SavedFiles.size(); i++)
-					{
-						simple_buffer<int> ImRES1(task_res.m_w*task_res.m_h, 0);
-						simple_buffer<int> ImRES2(task_res.m_w*task_res.m_h, 0);
-
-						LoadBinaryImage(ImRES1, prevSavedFiles[i], w1, h1);
-						LoadBinaryImage(ImRES2, task_res.m_SavedFiles[i], w2, h2);
-
-						Str = prevSavedFiles[i].c_str();
-						i = Str.length()-1;
-						while (Str[i] != '_') i--;
-						j = i;
-						i--;
-						while (Str[i] != '_') i--;
-						Str = Str.Mid(i+1, j-i-1);
-						YB1 = atoi(Str);
-
-						Str = task_res.m_SavedFiles[i].c_str();
-						i = Str.length()-1;
-						while (Str[i] != '_') i--;
-						j = i;
-						i--;
-						while (Str[i] != '_') i--;
-						Str = Str.Mid(i+1, j-i-1);
-						YB2 = atoi(Str);
-
-						bln = CompareTXTImages(ImRES1, ImRES2, w1, h1, w2, h2, YB1, YB2);
-						if (bln == 0) break;
-					}
-
-					if (bln == 1)
-					{
-						for (i=0; i<(int)task_res.m_SavedFiles.size(); i++)
-						{
-							DeleteFile(wxString(prevSavedFiles[i].c_str()));
-
-							Str = prevSavedFiles[i].c_str();
-							i = Str.length()-1;
-							while ((Str[i] != '\\') && (Str[i] != '/')) i--;
-							Str = Str.Mid(0,i+1+11)+wxString(task_res.m_SavedFiles[i].c_str()).Mid(i+1+11);
-
-							MoveFile(wxString(task_res.m_SavedFiles[i].c_str()), Str);
-						}
-					}
-				}
-			}
-			*/
 
 			delete task_events[k];
 			delete task_results[k];
