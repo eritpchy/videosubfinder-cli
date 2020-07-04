@@ -669,18 +669,26 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 
 void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 {
-	wxFileDialog fd(m_pMF, wxT("Save subtitle as..."),
-		g_work_dir, "sub", wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass"), wxFD_SAVE);	
-	int res = fd.ShowModal();
-
-	if (res == wxID_OK)
+	if (!(m_pMF->m_blnNoGUI))
 	{
-		wxString path = fd.GetPath();
-		wxString ext = GetFileExtension(path);
+		m_sub_path.Clear();
+		wxFileDialog fd(m_pMF, wxT("Save subtitle as..."),
+			g_work_dir, "sub", wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass"), wxFD_SAVE);
+		int res = fd.ShowModal();
+
+		if (res == wxID_OK)
+		{
+			m_sub_path = fd.GetPath();
+		}
+	}
+	
+	if (m_sub_path.size() > 0)
+	{
+		wxString ext = GetFileExtension(m_sub_path);
 
 		if (ext == wxString("srt"))
 		{
-			wxFFileOutputStream fout(path);
+			wxFFileOutputStream fout(m_sub_path);
 			wxTextOutputStream tout(fout);
 			tout << srt_sub;
 			tout.Flush();
@@ -688,11 +696,15 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 		}
 		else if (ext == wxString("ass"))
 		{
-			wxFFileOutputStream fout(path);
+			wxFFileOutputStream fout(m_sub_path);
 			wxTextOutputStream tout(fout);
 			tout << ass_sub;
 			tout.Flush();
 			fout.Close();
+		}
+		else
+		{
+			wxMessageBox("Only .ass and .srt output subtitles formats are supported", "Error", wxOK, this);
 		}
 	}
 }

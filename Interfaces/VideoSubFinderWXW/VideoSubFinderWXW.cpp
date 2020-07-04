@@ -21,9 +21,9 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_SWITCH, "c", "clear_dirs", "Clear Folders (remove all images), performed before any other steps" },
 	{ wxCMD_LINE_SWITCH, "r", "run_search", "Run Search (find frames with hardcoded text (hardsub) on video)" },	
 	{ wxCMD_LINE_SWITCH, "ccti", "create_cleared_text_images", "Create Cleared Text Images" },
-	{ wxCMD_LINE_SWITCH, "ces", "create_empty_sub", "Create Empty Sub" },
-	{ wxCMD_LINE_SWITCH, "cscti", "create_sub_from_cleared_txt_images", "Create Sub From Cleared TXT Images" },
-	{ wxCMD_LINE_SWITCH, "cstxt", "create_sub_from_txt_results", "Create Sub From TXT Results" },
+	{ wxCMD_LINE_OPTION, "ces", "create_empty_sub", "Create Empty Sub With Provided Output File Name (*.ass or *.srt)" },
+	{ wxCMD_LINE_OPTION, "cscti", "create_sub_from_cleared_txt_images", "Create Sub From Cleared TXT Images With Provided Output File Name (*.ass or *.srt)" },
+	{ wxCMD_LINE_OPTION, "cstxt", "create_sub_from_txt_results", "Create Sub From TXT Results With Provided Output File Name (*.ass or *.srt)" },
 	{ wxCMD_LINE_OPTION, "i", "input_video", "input video file" },
 	{ wxCMD_LINE_SWITCH, "ovocv", "open_video_opencv", "open video by OpenCV (default)" },
 	{ wxCMD_LINE_SWITCH, "ovffmpeg", "open_video_ffmpeg", "open video by FFMPEG with GPU Acceleration" },
@@ -208,26 +208,29 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("ces"))
+	if (m_pMainWnd->m_parser.Found("ces", &wxStr))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CES);
 		m_pMainWnd->m_blnNoGUI = true;
+		m_pMainWnd->m_pPanel->m_pOCRPanel->m_sub_path = wxStr;
 		m_pMainWnd->m_pPanel->m_pOCRPanel->OnBnClickedCreateEmptySub(bn_event);
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("cscti"))
+	if (m_pMainWnd->m_parser.Found("cscti", &wxStr))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CSCTI);
 		m_pMainWnd->m_blnNoGUI = true;
+		m_pMainWnd->m_pPanel->m_pOCRPanel->m_sub_path = wxStr;
 		m_pMainWnd->m_pPanel->m_pOCRPanel->OnBnClickedCreateSubFromClearedTXTImages(bn_event);
 		blnNeedToExit = true;
 	}
 
-	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("cstxt"))
+	if (m_pMainWnd->m_parser.Found("cstxt", &wxStr))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CSTXT);
 		m_pMainWnd->m_blnNoGUI = true;
+		m_pMainWnd->m_pPanel->m_pOCRPanel->m_sub_path = wxStr;
 		m_pMainWnd->m_pPanel->m_pOCRPanel->OnBnClickedCreateSubFromTXTResults(bn_event);
 		blnNeedToExit = true;
 	}

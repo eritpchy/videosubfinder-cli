@@ -1,18 +1,41 @@
-What allows at the moment:
-automatically create timings to the video and some of the above described chips :).
+#########################################################################################################
+ABOUT
+#########################################################################################################
 
+This program provides two main functionality:
+1) Autodetect frames with hardcoded text (hardsub) on video (by using digital image processing algorithms) and generate by them empty subtitle with timing.
+2) Generate cleared images with text from images with hardsub (by using text mining algorithms) for further recognition by other softwares (like FineReader or Subtitle Edit) and generation subtitle with timing and text.
+For working of this program will be required "Microsoft Visual C++ Redistributable for Visual Studio 2015, 2017 and 2019": https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
+x64: https://aka.ms/vs/16/release/vc_redist.x64.exe
+x86: https://aka.ms/vs/16/release/vc_redist.x86.exe
+Latest versions were tested on: Windows 10
+
+#########################################################################################################
+Quick Start Guide
+#########################################################################################################
 How to use without deep details:
 1) Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
 2) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
 3) Click "Create Cleared TXT Images" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
 
-#-----------------------------------------------------
+Video instructions:
+There are many instructions which can be found in youtube and was made by this programm users.
+One of most recomended by them are:
+https://www.youtube.com/watch?v=Cd36qODmYF8
+https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
+
+#########################################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:
+#########################################################################################################
+
+(1) FineReader: https://www.abbyy.com/finereader/
+1_1. Video instructions:
+https://www.youtube.com/watch?v=Cd36qODmYF8
+https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
+
 #-----------------------------------------------------
-1) FineReader: https://www.abbyy.com/finereader/
-1_1. Old video instruction: https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
-#-----------------------------------------------------
-2) Subtitle Edit (Free software): https://www.videohelp.com/software/Subtitle-Edit
+
+(2) Subtitle Edit (Free software): https://www.videohelp.com/software/Subtitle-Edit
 NOTE: The instruction below was tested on 3.5.16 version with images with English and Croatian (Tesseract 3.02) Text and it works
 In VideoSubFinder:
 2_1_1. Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
@@ -29,11 +52,15 @@ select check box with "Invert colors", press "OK"
 2_2_5. Select Right "Language" also as it in Dictionary and download it by pressing "..." and "Download"
 2_2_6. press "Start OCR" and press "OK" at the end if results are good.
 2_2_7. Click in menu "File->Save as..." res.srt and press "Save"
+
+One of recomended articles by Subtitle Edit users:
+https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line/
+
 #-----------------------------------------------------
 
 #########################################################################################################
 
-How to use in details:
+How to use in details (OLD):
 1) Run VideoSubFinder.exe
 
 2) In the menu select File-> Open Video, select the video file in which

@@ -140,6 +140,8 @@ public:
 	COCRPanel(CSSOWnd* pParent);
 	~COCRPanel();
 
+	wxString m_sub_path;
+
 	wxFont    m_BTNFont;
 	wxFont    m_LBLFont;
 
