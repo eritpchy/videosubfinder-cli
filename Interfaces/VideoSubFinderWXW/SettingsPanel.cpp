@@ -246,7 +246,7 @@ void CSettingsPanel::Init()
                            rcOIM.GetPosition(), rcOIM.GetSize() );
 
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ocr_threads, 1, 100);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ocr_threads, -1, 100);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scale, 1, 4);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smthr, 0.0, 1.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);

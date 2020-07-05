@@ -1185,6 +1185,11 @@ void CMainFrame::ClearDir(wxString DirName)
 	FileNamesVector.clear();
 }
 
+void CMainFrame::ShowErrorMessage(wxString& msg)
+{
+	wxMessageBox(msg, wxT("Error Info"), wxOK | wxICON_ERROR);
+}
+
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
 	wxSize cl_size = this->GetClientSize();

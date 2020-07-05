@@ -4706,6 +4706,28 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 		k++;		
 	}
 
+	k = 0;
+	while (k < N)
+	{
+		if (LLE[k] - LLB[k] + 1 > H / 2)
+		{
+			N++;
+
+			for (i = N-1; i > k; i--)
+			{
+				LL[i] = LL[i - 1];
+				LR[i] = LR[i - 1];
+				LLB[i] = LLB[i - 1];
+				LLE[i] = LLE[i - 1];
+			}
+
+			LLE[k] = (H / 2) - 1;
+			LLB[k + 1] = LLE[k] + 1;
+		}
+
+		k++;
+	}
+
 #ifdef WIN64
 	vector<concurrency::task<FindTextRes>> FindTextTasks;
 	

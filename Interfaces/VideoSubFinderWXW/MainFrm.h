@@ -229,6 +229,7 @@ public:
 	void OnSetPriorityHigh(wxCommandEvent& event);
 	wxString ConvertClockTime(clock_t time);
 	void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
+	void ShowErrorMessage(wxString& msg);
 
 private:
    DECLARE_EVENT_TABLE()

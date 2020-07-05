@@ -996,7 +996,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, 
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
-		int j = 2;
+		res->m_res = -1;
 	}
 }
 
@@ -1077,6 +1077,11 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 		FindTextLinesWithExcFilter(&res, &ImTF, &ImFF, &ImNE, &ImIL);
 
+		if (res.m_res == -1)
+		{
+			g_pMF->SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileName);
+		}
+
 		// free memory for reduce usage
 		if (g_pMF->m_blnNoGUI)
 		{
@@ -1132,9 +1137,42 @@ concurrency::task<void> TaskFindTextLines(concurrency::concurrent_queue<find_tex
 	);
 }
 
+s64 getTotalSystemMemory()
+{
+	MEMORYSTATUSEX status;
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatusEx(&status);
+	return status.ullTotalPhys;
+}
+
 void *ThreadCreateClearedTextImages::Entry()
 {
 	g_IsCreateClearedTextImages = 1;
+	
+	if (g_ocr_threads <= 0)
+	{
+		g_ocr_threads = std::thread::hardware_concurrency();
+
+#ifdef WIN64
+		double max_mem = (double)getTotalSystemMemory()/(1 << 30);
+		double one_thr_max_mem = (double)13/16; // MAX ~10.7Gb in 16 thread
+		int max_thrs = std::max<int>((int)(max_mem / one_thr_max_mem), 1);
+		if (g_ocr_threads > max_thrs)
+		{
+			g_ocr_threads = max_thrs;
+		}
+#else
+		if (g_ocr_threads > 1)
+		{
+			g_ocr_threads = 1;
+		}
+#endif
+	}
+
+#ifdef WIN32
+	// Create a scheduler policy that allows up to g_ocr_threads simultaneous tasks.
+	concurrency::CurrentScheduler::Create(concurrency::SchedulerPolicy(2, Concurrency::MinConcurrency, 1, Concurrency::MaxConcurrency, g_ocr_threads));
+#endif
 
 	wxString Str, dStr;
 	wxString fname;
@@ -1246,6 +1284,11 @@ void *ThreadCreateClearedTextImages::Entry()
 				Str = GetFileName(Str);			
 
 				m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + Str + "\"");
+
+				if (res == -1)
+				{
+					g_pMF->ShowErrorMessage(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k]);
+				}
 			}
 
 			if ((res == 0) && (g_DontDeleteUnrecognizedImages1 == true))

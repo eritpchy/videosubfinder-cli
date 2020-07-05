@@ -946,12 +946,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	// in case of x86 cv::ocl::setUseOpenCL(g_use_ocl) breack ffmpeg cuda usage
 	//cv::ocl::setUseOpenCL(g_use_ocl);
 
-	// Create a scheduler policy that allows up to 1000
-	// simultaneous tasks.
-	concurrency::SchedulerPolicy policy(2, concurrency::MaxConcurrency, 1000, concurrency::ContextPriority, THREAD_PRIORITY_HIGHEST);
-
-	// Attach the policy to the current scheduler.
-	concurrency::CurrentScheduler::Create(policy);
+	//NOTE: works more faster without SchedulerPolicy on x64
 
 	wxString Str;
 	s64 CurPos, prevPos;
@@ -1003,6 +998,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	if (g_threads <= 0)
 	{
 		g_threads = std::thread::hardware_concurrency();
+
+#ifdef WIN32
+		if (g_threads > 12)
+		{
+			g_threads = 12;
+		}
+#endif
 	}
 	if (g_threads < 2)
 	{
