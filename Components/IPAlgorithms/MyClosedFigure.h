@@ -49,8 +49,8 @@ public:
 	int m_Count;
 	int m_Weight;
 	int m_DY;
-	string m_SymbolValue;
-	string m_ParentImageName;
+	wxString m_SymbolValue;
+	wxString m_ParentImageName;
 
 	int m_mY;
 	int m_mI;

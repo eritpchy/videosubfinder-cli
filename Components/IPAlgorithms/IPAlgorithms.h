@@ -19,7 +19,7 @@
 #include "SSAlgorithms.h"
 #include "DataTypes.h"
 #include "MyClosedFigure.h"
-#include <string>
+#include <wx/string.h>
 #include <fstream>
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
@@ -38,9 +38,9 @@ extern void     (*g_pViewImage[2])(simple_buffer<int> &Im, int w, int h);
 extern void     (*g_pViewGreyscaleImage[2])(simple_buffer<u8>& ImGR, int w, int h);
 extern void     (*g_pViewBGRImage[2])(simple_buffer<u8>& ImBGR, int w, int h);
 
-extern string   g_work_dir;
-extern string   g_app_dir;
-extern string   g_im_save_format;
+extern wxString   g_work_dir;
+extern wxString   g_app_dir;
+extern wxString   g_im_save_format;
 
 extern double	g_smthr;  //moderate threshold for scaled image
 extern double	g_mthr;  //moderate threshold
@@ -110,7 +110,7 @@ template <class T>
 void EasyBorderClear(simple_buffer<T> &Im, int w, int h);
 
 int GetTransformedImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H);
-int FilterTransformedImage(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, std::string iter_det);
+int FilterTransformedImage(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, wxString iter_det);
 int FilterImage(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, int w, int h, int W, int H, simple_buffer<int> &LB, simple_buffer<int> &LE, int N);
 
 int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8> &ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, vector<wxString>& SavedFiles, int W, int H);
@@ -122,19 +122,18 @@ void ExtendImFWithDataFromImNF(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, 
 
 void StrAnalyseImage(simple_buffer<u8>& Im, simple_buffer<u8>& ImGR, simple_buffer<int>& GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 
-void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ, int W, int H);
 void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_buffer<u8> &ImI, simple_buffer<u8> &ImQ);
 void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple_buffer<u8>& ImI, simple_buffer<u8>& ImQ, int w, int h, int& LH, int& LMAXY, int& XB, int& XE, int& YB, int& YE, int& mY, int& mI, int& mQ, u8 white);
 
-void GetImageSize(string name, int &w, int &h);
-void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h);
-void LoadBGRImage(simple_buffer<u8>& ImBGR, string name);
-void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
-void SaveGreyscaleImage(simple_buffer<int>& Im, string name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
+void GetImageSize(wxString name, int &w, int &h);
+void SaveBGRImage(simple_buffer<u8>& ImBGR, wxString name, int w, int h);
+void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name);
+void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
+void SaveGreyscaleImage(simple_buffer<int>& Im, wxString name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 template <class T>
-void LoadBinaryImage(simple_buffer<T>& Im, string name, int& w, int& h, T white = 255);
+void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white = 255);
 template <class T>
-void SaveBinaryImage(simple_buffer<T> &Im, string name, int w, int h, int quality = -1, int dpi = -1);
+void SaveBinaryImage(simple_buffer<T> &Im, wxString name, int w, int h, int quality = -1, int dpi = -1);
 template <class T1, class T2>
 void IntersectTwoImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, int w, int h);
 template <class T1, class T2>
@@ -180,7 +179,7 @@ void IntersectImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buffer<T2>*>
 }
 
 template <class T>
-void SaveBinaryImage(simple_buffer<T>& Im, string name, int w, int h, int quality, int dpi)
+void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int quality, int dpi)
 {
 	if (g_disable_save_images) return;
 
@@ -215,23 +214,23 @@ void SaveBinaryImage(simple_buffer<T>& Im, string name, int w, int h, int qualit
 	}
 
 	try {
-		cv::imwrite(g_work_dir + name, im, compression_params);
+		cv::imwrite(cv::String((g_work_dir + name).ToUTF8()), im, compression_params);
 	}
 	catch (runtime_error& ex) {
-		char msg[500];
-		sprintf(msg, "Exception saving image to %s format: %s\n", g_im_save_format.c_str(), ex.what());
+		wxString msg;
+		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
 		wxMessageBox(msg, "ERROR: SaveRGBImage");
 	}
 }
 
 template <class T>
-void LoadBinaryImage(simple_buffer<T>& Im, string name, int& w, int& h, T white)
+void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white)
 {
-	cv::Mat im = cv::imread(name, cv::IMREAD_COLOR); // load in BGR format
+	cv::Mat im = cv::imread(cv::String(name.ToUTF8()), cv::IMREAD_COLOR); // load in BGR format
 	w = im.cols;
 	h = im.rows;
 
-	custom_assert(Im.m_size >= w * h, "LoadBinaryImage(simple_buffer<T>& Im, string name, int& w, int& h)\nnot: Im.m_size >= w * h");
+	custom_assert(Im.m_size >= w * h, "LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h)\nnot: Im.m_size >= w * h");
 
 	for (int i = 0; i < w * h; i++)
 	{

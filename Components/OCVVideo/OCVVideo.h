@@ -104,5 +104,5 @@ public:
 
 	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 
-	void ErrorMessage(string str);
+	void ErrorMessage(wxString str);
 };

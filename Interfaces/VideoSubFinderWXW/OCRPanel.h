@@ -22,7 +22,6 @@
 #include <wx/panel.h>
 #include <wx/textctrl.h>
 #include <vector>
-#include <fstream>
 
 using namespace std;
 
@@ -57,7 +56,7 @@ public:
 	int		m_W;
 	int		m_H;
 
-	string	m_TXTStr;
+	wxString	m_TXTStr;
 	int		m_LH;
 	int		m_LY;
 	int		m_LXB;
@@ -120,7 +119,7 @@ public:
 	int		m_MarginL;
 	int		m_MarginR;
 	int		m_MarginV;
-	string  m_Name;
+	wxString  m_Name;
 };
 
 class ThreadCreateClearedTextImages : public wxThread

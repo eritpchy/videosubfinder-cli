@@ -161,8 +161,8 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		m_pMF->m_pImageBox->ClearScreen();
 
-		m_pMF->m_BegTime = GetVideoTime(string(m_plblBTA1->GetValue().c_str()));
-		m_pMF->m_EndTime = GetVideoTime(string(m_plblBTA2->GetValue().c_str()));
+		m_pMF->m_BegTime = GetVideoTime(wxString(m_plblBTA1->GetValue()));
+		m_pMF->m_EndTime = GetVideoTime(wxString(m_plblBTA2->GetValue()));
 
 		m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
 		m_pSearchThread->Create();
@@ -236,7 +236,7 @@ void ThreadSearchSubtitlesRun()
 		}
 		catch (const exception& e)
 		{
-			g_pMF->SaveError(string("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + e.what());
+			g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + wxString(e.what()));
 		}
 	}
 }

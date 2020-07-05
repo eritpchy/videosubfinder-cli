@@ -133,7 +133,7 @@ public:
 
 	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 
-	void ErrorMessage(string str);
+	void ErrorMessage(wxString str);
 
 	int hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType type);
 	int decode_frame(s64& frame_pos);

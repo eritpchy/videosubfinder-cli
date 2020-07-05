@@ -17,6 +17,9 @@
 #include "MainFrm.h"
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/wfstream.h>
+#include <wx/txtstrm.h>
+#include <wx/regex.h>
 
 CMainFrame *g_pMF;
 
@@ -27,7 +30,7 @@ const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
 int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det)
 {
-	g_pMF->SaveError(string("Got C Exception: ") + det);
+	g_pMF->SaveError(wxT("Got C Exception: ") + wxString(det));
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
@@ -175,7 +178,7 @@ CMainFrame::CMainFrame(const wxString& title)
 	
 	Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
 	Str.Replace("\\", "/");
-	g_app_dir = Str.ToStdString();
+	g_app_dir = Str;
 	g_work_dir = g_app_dir;
 
 	g_pV = NULL;
@@ -210,9 +213,9 @@ void CMainFrame::Init()
 
 	wxMenuBar *pMenuBar = new wxMenuBar;
 
-	m_GeneralSettingsFileName = g_app_dir + string("/settings/general.cfg");
+	m_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
 
-	m_ErrorFileName = g_work_dir + string("/error.log");
+	m_ErrorFileName = g_work_dir + wxT("/error.log");
 
 	LoadSettings();
 
@@ -376,11 +379,13 @@ void CMainFrame::OnFileOpenVideo(int type)
 		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox, 0);
 	}
 
-	fstream fout;
-	string rpl_path = g_work_dir + string("/report.log");
-	fout.open(rpl_path.c_str(), ios::out);
-	fout <<	"Filename: " << m_FileName << "\n" << m_pVideo->m_log;
-	fout.close();
+	wxString rpl_path = g_work_dir + wxT("/report.log");
+	wxFFileOutputStream ffout(rpl_path);
+	wxTextOutputStream fout(ffout);
+
+	fout << wxT("Filename: ") << m_FileName << wxT("\n") << m_pVideo->m_log;
+	fout.Flush();
+	ffout.Close();
 
 	if (m_blnOpenVideoResult == false) 
 	{
@@ -513,7 +518,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	//m_pPanel->m_pSSPanel->OnBnClickedTest();
 
-	m_EndTimeStr = string("/") + ConvertVideoTime(m_pVideo->m_Duration);
+	m_EndTimeStr = wxT("/") + ConvertVideoTime(m_pVideo->m_Duration);
 
 	if ( !m_timer.IsRunning() ) 
 	{
@@ -587,197 +592,218 @@ void CMainFrame::PauseVideo()
 	}
 }
 
-void CMainFrame::LoadSettings()
+void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& settings)
 {
-	ifstream fin;
+	wxFileInputStream ffin(file_name);
 
-	fin.open(m_GeneralSettingsFileName.c_str(), ios::in);
-	
-	if (fin.bad())
+	if (!ffin.IsOk())
 	{
-		(void)wxMessageBox("ERROR: Can't open settings file: " + m_GeneralSettingsFileName);
+		(void)wxMessageBox(wxT("ERROR: Can't open settings file: ") + file_name);
 		exit(1);
 	}
+
+	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
+	wxString name, val, line;
+	wxRegEx re = "^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([^[:space:]].*[^[:space:]]|[^[:space:]])[[:space:]]*$";
+
+	while (ffin.IsOk() && !ffin.Eof())
+	{
+		line = fin.ReadLine();		
+
+		if (line.size() > 0)
+		{
+			if (re.Matches(line))
+			{
+				name = re.GetMatch(line, 1);
+				val = re.GetMatch(line, 2);
+				settings[name] = val;
+			}
+			else
+			{
+				(void)wxMessageBox(wxT("Unsupported line format: ") + line + wxT("\nin file: ") + file_name);
+				exit(1);
+			}
+		}
+	}
+}
+
+void CMainFrame::LoadSettings()
+{
+	ReadSettings(m_GeneralSettingsFileName, m_general_settings);
 	
+	ReadProperty(m_general_settings, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
+	ReadProperty(m_general_settings, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
+
+	ReadProperty(m_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
+	ReadProperty(m_general_settings, g_show_results, "dump_debug_images");
+	ReadProperty(m_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
+	ReadProperty(m_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
+	ReadProperty(m_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
+	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
+	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
+	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
+	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
+	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
+	ReadProperty(m_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
+
+	ReadProperty(m_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
+	ReadProperty(m_general_settings, g_mthr, "moderate_threshold");
+	ReadProperty(m_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
+	ReadProperty(m_general_settings, g_segw, "segment_width");
+	ReadProperty(m_general_settings, g_segh, "segment_height");
+	ReadProperty(m_general_settings, g_msegc, "minimum_segments_count");
+	ReadProperty(m_general_settings, g_scd, "min_sum_color_diff");
+	ReadProperty(m_general_settings, g_btd, "between_text_distace");
+	ReadProperty(m_general_settings, g_tco, "text_centre_offset");
+	ReadProperty(m_general_settings, g_scale, "image_scale_for_clear_image");
 	
-	ReadProperty(fin, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
-	ReadProperty(fin, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
+	ReadProperty(m_general_settings, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
+	ReadProperty(m_general_settings, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
 
-	ReadProperty(fin, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
-	ReadProperty(fin, g_show_results, "dump_debug_images");
-	ReadProperty(fin, g_show_sf_results, "dump_debug_second_filtration_images");
-	ReadProperty(fin, g_clear_test_images_folder, "clear_test_images_folder");
-	ReadProperty(fin, g_show_transformed_images_only, "show_transformed_images_only");
-	ReadProperty(fin, g_use_ocl, "use_ocl");
-	ReadProperty(fin, g_use_cuda_gpu, "use_cuda_gpu");
-	ReadProperty(fin, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
-	ReadProperty(fin, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
-	ReadProperty(fin, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
-	ReadProperty(fin, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
+	ReadProperty(m_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
+	ReadProperty(m_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
+	ReadProperty(m_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");	
 
-	ReadProperty(fin, g_smthr, "moderate_threshold_for_scaled_image");
-	ReadProperty(fin, g_mthr, "moderate_threshold");
-	ReadProperty(fin, g_mnthr, "moderate_threshold_for_NEdges");
-	ReadProperty(fin, g_segw, "segment_width");
-	ReadProperty(fin, g_segh, "segment_height");
-	ReadProperty(fin, g_msegc, "minimum_segments_count");
-	ReadProperty(fin, g_scd, "min_sum_color_diff");
-	ReadProperty(fin, g_btd, "between_text_distace");
-	ReadProperty(fin, g_tco, "text_centre_offset");
-	ReadProperty(fin, g_scale, "image_scale_for_clear_image");
+	ReadProperty(m_general_settings, g_mpn, "min_points_number");
+	ReadProperty(m_general_settings, g_mpd, "min_points_density");
+	ReadProperty(m_general_settings, g_msh, "min_symbol_height");
+	ReadProperty(m_general_settings, g_msd, "min_symbol_density");
+	ReadProperty(m_general_settings, g_mpned, "min_NEdges_points_density");				
+
+	ReadProperty(m_general_settings, g_clear_txt_folders, "clear_txt_folders");
+	ReadProperty(m_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
+
+	ReadProperty(m_general_settings, g_threads, "threads");
+	ReadProperty(m_general_settings, g_ocr_threads, "ocr_threads");
+	ReadProperty(m_general_settings, g_DL, "sub_frame_length");
+	ReadProperty(m_general_settings, g_tp, "text_procent");
+	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_procent");
+	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");	
 	
-	ReadProperty(fin, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
-	ReadProperty(fin, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
+	ReadProperty(m_general_settings, g_clear_image_logical, "clear_image_logical");
 
-	ReadProperty(fin, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
-	ReadProperty(fin, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
-	ReadProperty(fin, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");	
+	ReadProperty(m_general_settings, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
 
-	ReadProperty(fin, g_mpn, "min_points_number");
-	ReadProperty(fin, g_mpd, "min_points_density");
-	ReadProperty(fin, g_msh, "min_symbol_height");
-	ReadProperty(fin, g_msd, "min_symbol_density");
-	ReadProperty(fin, g_mpned, "min_NEdges_points_density");				
+	ReadProperty(m_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
 
-	ReadProperty(fin, g_clear_txt_folders, "clear_txt_folders");
-	ReadProperty(fin, g_join_subs_and_correct_time, "join_subs_and_correct_time");
+	ReadProperty(m_general_settings, m_cfg.m_prefered_locale, "prefered_locale");
 
-	ReadProperty(fin, g_threads, "threads");
-	ReadProperty(fin, g_ocr_threads, "ocr_threads");
-	ReadProperty(fin, g_DL, "sub_frame_length");
-	ReadProperty(fin, g_tp, "text_procent");
-	ReadProperty(fin, g_mtpl, "min_text_len_(in_procent)");
-	//ReadProperty(fin, g_sse, "sub_square_error");
-	ReadProperty(fin, g_veple, "vedges_points_line_error");	
+	ReadProperty(m_general_settings, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
 	
-	ReadProperty(fin, g_clear_image_logical, "clear_image_logical");
+	ReadProperty(m_general_settings, m_cfg.m_txt_dw, "txt_dw");
+	ReadProperty(m_general_settings, m_cfg.m_txt_dy, "txt_dy");
 
-	ReadProperty(fin, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
+	ReadProperty(m_general_settings, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
+	ReadProperty(m_general_settings, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
 
-	ReadProperty(fin, g_DefStringForEmptySub, "def_string_for_empty_sub");
+	ReadProperty(m_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
+	ReadProperty(m_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
+	ReadProperty(m_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
+	ReadProperty(m_general_settings, g_max_dl_down, "max_dl_down");
+	ReadProperty(m_general_settings, g_max_dl_up, "max_dl_up");
 
-	ReadProperty(fin, m_cfg.m_prefered_locale, "prefered_locale");
+	ReadProperty(m_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
 
-	ReadProperty(fin, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
-	
-	ReadProperty(fin, m_cfg.m_txt_dw, "txt_dw");
-	ReadProperty(fin, m_cfg.m_txt_dy, "txt_dy");
+	ReadProperty(m_general_settings, g_hw_device, "hw_device");
 
-	ReadProperty(fin, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
-	ReadProperty(fin, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
+	ReadProperty(m_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
+	ReadProperty(m_general_settings, g_save_scaled_images, "save_scaled_images");
 
-	ReadProperty(fin, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
-	ReadProperty(fin, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
-	ReadProperty(fin, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
-	ReadProperty(fin, g_max_dl_down, "max_dl_down");
-	ReadProperty(fin, g_max_dl_up, "max_dl_up");
+	//------------------------------------------------
 
-	ReadProperty(fin, g_remove_wide_symbols, "remove_wide_symbols");
+	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
 
-	ReadProperty(fin, g_hw_device, "hw_device");
-
-	ReadProperty(fin, g_save_each_substring_separately, "save_each_substring_separately");
-	ReadProperty(fin, g_save_scaled_images, "save_scaled_images");
-
-	fin.close();
-
-	fin.open((g_app_dir + string("/settings/") + string(m_cfg.m_prefered_locale.mb_str()) + string("/locale.cfg")).c_str(), ios::in);
-	
-	ReadProperty(fin, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
-	ReadProperty(fin, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
-	ReadProperty(fin, m_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
-	ReadProperty(fin, m_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
-	ReadProperty(fin, m_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
-	ReadProperty(fin, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
-	ReadProperty(fin, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
-	ReadProperty(fin, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
-	ReadProperty(fin, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
-	ReadProperty(fin, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
 		
-	ReadProperty(fin, m_cfg.m_ssp_hw_device, "ssp_hw_device");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
-	ReadProperty(fin, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, "ssp_oi_property_cpu_kmeans_initial_loop_iterations");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, "ssp_oi_property_cpu_kmeans_loop_iterations");
-	ReadProperty(fin, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
-	ReadProperty(fin, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
-	ReadProperty(fin, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, "ssp_oi_property_generate_cleared_text_images_on_test");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_dump_debug_images, "ssp_oi_property_dump_debug_images");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, "ssp_oi_property_dump_debug_second_filtration_images");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_clear_test_images_folder, "ssp_oi_property_clear_test_images_folder");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_show_transformed_images_only, "ssp_oi_property_show_transformed_images_only");
-	ReadProperty(fin, m_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
-	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_moderate_nedges_threshold, "ssp_oi_property_moderate_nedges_threshold");
-	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, "ssp_oi_sub_group_settings_for_color_filtering");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_segment_width, "ssp_oi_property_segment_width");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_segments_count, "ssp_oi_property_min_segments_count");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_sum_color_difference, "ssp_oi_property_min_sum_color_difference");
-	ReadProperty(fin, m_cfg.m_ssp_oi_group_secondary_image_processing, "ssp_oi_group_secondary_image_processing");
-	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, "ssp_oi_sub_group_settings_for_linear_filtering");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_line_height, "ssp_oi_property_line_height");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_max_between_text_distance, "ssp_oi_property_max_between_text_distance");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_max_text_center_offset, "ssp_oi_property_max_text_center_offset");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_max_text_center_percent_offset, "ssp_oi_property_max_text_center_percent_offset");
-	ReadProperty(fin, m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, "ssp_oi_sub_group_settings_for_color_border_points");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_points_number, "ssp_oi_property_min_points_number");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_points_density, "ssp_oi_property_min_points_density");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_symbol_height, "ssp_oi_property_min_symbol_height");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_symbol_density, "ssp_oi_property_min_symbol_density");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_vedges_points_density, "ssp_oi_property_min_vedges_points_density");
-	ReadProperty(fin, m_cfg.m_ssp_oi_property_min_nedges_points_density, "ssp_oi_property_min_nedges_points_density");
-	ReadProperty(fin, m_cfg.m_ssp_oi_group_tertiary_image_processing, "ssp_oi_group_tertiary_image_processing");
-	ReadProperty(fin, m_cfg.m_ssp_oim_group_ocr_settings, "ssp_oim_group_ocr_settings");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, "ssp_oim_property_using_ilaimages_for_getting_txt_areas");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_default_string_for_empty_sub, "ssp_oim_property_default_string_for_empty_sub");
-	ReadProperty(fin, m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, "ssp_oim_group_settings_for_multiframe_image_processing");
-	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_threads, "ssp_oim_property_threads");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
-	//ReadProperty(fin, m_cfg.m_ssp_oim_property_sub_square_error, "ssp_oim_property_sub_square_error");
-	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
-	ReadProperty(fin, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_text_procent, "ssp_oim_property_text_procent");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");	
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_hw_device, "ssp_hw_device");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, "ssp_oi_property_cpu_kmeans_initial_loop_iterations");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, "ssp_oi_property_cpu_kmeans_loop_iterations");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, "ssp_oi_property_generate_cleared_text_images_on_test");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_dump_debug_images, "ssp_oi_property_dump_debug_images");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, "ssp_oi_property_dump_debug_second_filtration_images");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_clear_test_images_folder, "ssp_oi_property_clear_test_images_folder");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_show_transformed_images_only, "ssp_oi_property_show_transformed_images_only");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_nedges_threshold, "ssp_oi_property_moderate_nedges_threshold");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, "ssp_oi_sub_group_settings_for_color_filtering");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_segment_width, "ssp_oi_property_segment_width");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_segments_count, "ssp_oi_property_min_segments_count");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_sum_color_difference, "ssp_oi_property_min_sum_color_difference");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_secondary_image_processing, "ssp_oi_group_secondary_image_processing");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, "ssp_oi_sub_group_settings_for_linear_filtering");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_line_height, "ssp_oi_property_line_height");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_max_between_text_distance, "ssp_oi_property_max_between_text_distance");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_max_text_center_offset, "ssp_oi_property_max_text_center_offset");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_max_text_center_percent_offset, "ssp_oi_property_max_text_center_percent_offset");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, "ssp_oi_sub_group_settings_for_color_border_points");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_points_number, "ssp_oi_property_min_points_number");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_points_density, "ssp_oi_property_min_points_density");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_symbol_height, "ssp_oi_property_min_symbol_height");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_symbol_density, "ssp_oi_property_min_symbol_density");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_vedges_points_density, "ssp_oi_property_min_vedges_points_density");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_nedges_points_density, "ssp_oi_property_min_nedges_points_density");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_tertiary_image_processing, "ssp_oi_group_tertiary_image_processing");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_group_ocr_settings, "ssp_oim_group_ocr_settings");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, "ssp_oim_property_using_ilaimages_for_getting_txt_areas");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_default_string_for_empty_sub, "ssp_oim_property_default_string_for_empty_sub");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, "ssp_oim_group_settings_for_multiframe_image_processing");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_threads, "ssp_oim_property_threads");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_text_procent, "ssp_oim_property_text_procent");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");	
 
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, "ssp_oim_property_use_ILA_images_for_search_subtitles");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, "ssp_oim_property_replace_ISA_by_filtered_version");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_max_dl_down, "ssp_oim_property_max_dl_down");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_max_dl_up, "ssp_oim_property_max_dl_up");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, "ssp_oim_property_use_ILA_images_for_search_subtitles");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, "ssp_oim_property_replace_ISA_by_filtered_version");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_max_dl_down, "ssp_oim_property_max_dl_down");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_max_dl_up, "ssp_oim_property_max_dl_up");
 
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, "ssp_oim_property_use_gradient_images_for_clear_txt_images");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, "ssp_oim_property_clear_txt_images_by_main_color");
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, "ssp_oim_property_use_gradient_images_for_clear_txt_images");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, "ssp_oim_property_clear_txt_images_by_main_color");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
 
-	ReadProperty(fin, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
-
-	fin.close();
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
 }
 
 void CMainFrame::SaveSettings()
 {
-	ofstream fout;
+	wxFFileOutputStream ffout(m_GeneralSettingsFileName);
+	wxTextOutputStream fout(ffout);
 
 	m_pPanel->m_pSSPanel->m_pOI->SaveEditControlValue();
 	m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
-
-	fout.open(m_GeneralSettingsFileName.c_str(), ios::out);	
 
 	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
 
@@ -824,8 +850,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_ocr_threads, "ocr_threads");
 	WriteProperty(fout, g_DL, "sub_frame_length");
 	WriteProperty(fout, g_tp, "text_procent");
-	WriteProperty(fout, g_mtpl, "min_text_len_(in_procent)");
-	//WriteProperty(fout, g_sse, "sub_square_error");
+	WriteProperty(fout, g_mtpl, "min_text_len_in_procent");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
 
 	WriteProperty(fout, g_clear_txt_folders, "clear_txt_folders");
@@ -858,14 +883,17 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_save_each_substring_separately, "save_each_substring_separately");
 	WriteProperty(fout, g_save_scaled_images, "save_scaled_images");
 
-	fout.close();
+	fout.Flush();
+	ffout.Close();
 }
 
-void CMainFrame::SaveError(std::string error)
+void CMainFrame::SaveError(wxString error)
 {
-	ofstream fout;
-	fout.open(m_ErrorFileName.c_str(), ios::out | ios::app);
+	wxFFileOutputStream ffout(m_ErrorFileName, wxT("ab"));
+	wxTextOutputStream fout(ffout);
 	fout << error << '\n';
+	fout.Flush();
+	ffout.Close();
 }
 
 void CMainFrame::OnEditSetBeginTime(wxCommandEvent& event)
@@ -937,9 +965,9 @@ void CMainFrame::OnFileSaveSettings(wxCommandEvent& event)
 	SaveSettings();
 }
 
-string CMainFrame::ConvertClockTime(clock_t time)
+wxString CMainFrame::ConvertClockTime(clock_t time)
 {
-	static char str[100];
+	wxString str;
 	int hour, min, sec, val;
 
 	val = (int)(time / CLOCKS_PER_SEC); // seconds
@@ -949,9 +977,9 @@ string CMainFrame::ConvertClockTime(clock_t time)
 	val -= min * 60;
 	sec = val;
 
-	snprintf(str, 100, "%02dh:%02dm:%02ds", hour, min, sec);
+	str.Printf(wxT("%02dh:%02dm:%02ds"), hour, min, sec);
 
-	return string(str);
+	return str;
 }
 
 void CMainFrame::OnTimer(wxTimerEvent& event)
@@ -972,8 +1000,8 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 				clock_t run_time = cur_time - g_StartTimeRunSubSearch;
 				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
 
-				static char str[100];
-				snprintf(str, 100, "progress: %%%2.2f eta : %s run_time : %s   |   ", progress, ConvertClockTime(eta).c_str(), ConvertClockTime(run_time).c_str());
+				wxString str;
+				str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   "), progress, ConvertClockTime(eta), ConvertClockTime(run_time));
 
 				m_pVideoBox->m_plblTIME->SetLabel(str + ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
 			}
@@ -994,9 +1022,9 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 	//m_pVideoBox->m_pVBox->m_pVSL2->Refresh(true);
 }
 
-string VideoTimeToStr2(s64 pos)
+wxString VideoTimeToStr2(s64 pos)
 {
-	static char str[100];
+	wxString str;
 	int hour, min, sec, msec, val;
 
 	val = (int)(pos / 1000); // seconds
@@ -1007,14 +1035,14 @@ string VideoTimeToStr2(s64 pos)
 	val -= min * 60;
 	sec = val;
 
-	sprintf(str, "%02d:%02d:%02d,%03d", hour, min, sec, msec);
+	str.Printf(wxT("%02d:%02d:%02d,%03d"), hour, min, sec, msec);
 
-	return string(str);
+	return str;
 }
 
-string VideoTimeToStr3(s64 pos)
+wxString VideoTimeToStr3(s64 pos)
 {
-	static char str[100];
+	wxString str;
 	int hour, min, sec, sec_100, val;
 
 	val = (int)(pos / 1000); // seconds
@@ -1025,14 +1053,14 @@ string VideoTimeToStr3(s64 pos)
 	val -= min * 60;
 	sec = val;
 
-	sprintf(str, "%.1d:%.2d:%.2d.%.2d", hour, min, sec, sec_100);
+	str.Printf(wxT("%.1d:%.2d:%.2d.%.2d"), hour, min, sec, sec_100);
 
-	return string(str);
+	return str;
 }
 
-string ConvertVideoTime(s64 pos)
+wxString ConvertVideoTime(s64 pos)
 {
-	static char str[100];
+	wxString str;
 	int hour, min, sec, msec, val;
 	
 	val = (int)(pos / 1000); // seconds
@@ -1043,9 +1071,9 @@ string ConvertVideoTime(s64 pos)
 	val -= min * 60;
 	sec = val;
 
-	sprintf(str, "%02d:%02d:%02d:%03d", hour, min, sec, msec);
+	str.Printf(wxT("%02d:%02d:%02d:%03d"), hour, min, sec, msec);
 	
-	return string(str);
+	return str;
 }
 
 void CMainFrame::OnQuit(wxCommandEvent& event)
@@ -1066,22 +1094,21 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		//SetThreadPriority(m_pPanel->m_OCRPanel.m_hSearchThread, THREAD_PRIORITY_HIGHEST);
 	}
 
-	if ( (g_IsSearching == 0) && (m_FileName != wxString("")) )
+	if ( (g_IsSearching == 0) && (m_FileName.size() > 0) )
 	{
-		fstream fout;
-		string pvi_path = g_work_dir + string("/previous_video.inf");
-
-		fout.open(pvi_path.c_str(), ios::out);
-
+		wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
+		wxFFileOutputStream ffout(pvi_path);
+		wxTextOutputStream fout(ffout);
 		fout <<	m_FileName << '\n';
 
-		fout <<	m_BegTime << '\n';
+		fout <<	(int)m_BegTime << '\n';
 
-		fout <<	m_EndTime << '\n';
+		fout <<	(int)m_EndTime << '\n';
 
 		fout <<	m_type << '\n';
 
-		fout.close();
+		fout.Flush();
+		ffout.Close();
 	}
 
 	if (g_IsSearching == 1)
@@ -1110,25 +1137,21 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 
 void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 {
-	char str[300];
-	fstream fin;
-	string pvi_path = g_work_dir + string("/previous_video.inf");
-
-	fin.open(pvi_path.c_str(), ios::in);
+	wxString str;
+	wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
+	wxFileInputStream ffin(pvi_path);
+	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
 	
-	fin.getline(str, 300);
-	m_FileName = wxString::FromUTF8(str);
+	m_FileName = fin.ReadLine();
 
-	fin.getline(str, 300);
-	m_BegTime = (s64)strtod(str, NULL);
+	str = fin.ReadLine();
+	m_BegTime = (s64)wxAtoi(str);
 
-	fin.getline(str, 300);
-	m_EndTime = (s64)strtod(str, NULL);
+	str = fin.ReadLine();
+	m_EndTime = (s64)wxAtoi(str);
 
-	fin.getline(str, 300);
-	m_type = (int)strtod(str, NULL);
-
-	fin.close();
+	str = fin.ReadLine();
+	m_type = (s64)wxAtoi(str);
 
 	m_blnReopenVideo = true;
 
@@ -1145,8 +1168,8 @@ void CMainFrame::ClearDir(wxString DirName)
 	res = dir.GetFirst(&filename);
     while ( res )
     {
-        if ( (filename != wxString(".")) && 
-			 (filename != wxString("..")) )
+        if ( (filename != wxT(".")) && 
+			 (filename != wxT("..")) )
 		{
 			FileNamesVector.push_back(filename);
 		}
@@ -1282,74 +1305,43 @@ void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColor& BColor
     }
 }
 
-void WriteProperty(ofstream &fout, int val, string Name)
+void WriteProperty(wxTextOutputStream& fout, int val, wxString Name)
 {
 	fout << Name << " = " << val << '\n';
 }
 
-void WriteProperty(ofstream &fout, bool val, string Name)
+void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name)
 {
 	fout << Name << " = " << val << '\n';
 }
 
-void WriteProperty(ofstream &fout, double val, string Name)
+void WriteProperty(wxTextOutputStream& fout, double val, wxString Name)
 {
 	fout << Name << " = " << val << '\n';
 }
 
-void WriteProperty(ofstream &fout, wxString val, string Name)
+void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name)
 {
 	fout << Name << " = " << val << '\n';
 }
 
-void ReadProperty(ifstream &fin, int &val, string Name)
+void ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
 {
-	char name[100], str[100];
+	auto search = settings.find(Name);
 
-	fin.clear();
-	fin.seekg(0);
-	do
-	{
-		fin >> name;
-		fin >> str;
-		str[0] = '\0';
-
-		fin.getline(str, 100);
-		for(int i=0; i < strlen(str); i++)
-		{
-			str[i] = str[i+1];
-		}
-	} while((Name != string(name)) && !fin.eof());
-	
-	if (!fin.eof()) 
-	{
-		val = (int)strtod(str, NULL);
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		val = wxAtoi(_val);
 	}
 }
 
-void ReadProperty(ifstream &fin, bool &val, string Name)
+void ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name)
 {
-	char name[100], str[100];
+	auto search = settings.find(Name);
 
-	fin.clear();
-	fin.seekg(0);
-	do
-	{
-		fin >> name;
-		fin >> str;
-		str[0] = '\0';
-
-		fin.getline(str, 100);
-		for(int i=0; i < strlen(str); i++)
-		{
-			str[i] = str[i+1];
-		}
-	} while((Name != string(name)) && !fin.eof());
-	
-	if (!fin.eof()) 
-	{
-		int get_val = (int)strtod(str, NULL);
-
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		int get_val = wxAtoi(_val);
 		if (get_val != 0)
 		{
 			val = true;
@@ -1361,52 +1353,21 @@ void ReadProperty(ifstream &fin, bool &val, string Name)
 	}
 }
 
-void ReadProperty(ifstream &fin, double &val, string Name)
+void ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name)
 {
-	char name[100], str[100];
+	auto search = settings.find(Name);
 
-	fin.clear();
-	fin.seekg(0);
-	do
-	{
-		fin >> name;
-		fin >> str;
-		str[0] = '\0';
-		
-		fin.getline(str, 100);
-		for(int i=0; i < strlen(str); i++)
-		{
-			str[i] = str[i+1];
-		}
-	} while((Name != string(name)) && !fin.eof());
-	
-	if (!fin.eof()) 
-	{
-		val = strtod(str, NULL);
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		_val.ToDouble(&val);
 	}
 }
 
-void ReadProperty(ifstream &fin, wxString &val, string Name)
+void ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name)
 {
-	char name[100], str[100];
+	auto search = settings.find(Name);
 
-	fin.clear();
-	fin.seekg(0);
-	do
-	{
-		fin >> name;
-		fin >> str;
-		str[0] = '\0';
-
-		fin.getline(str, 100);
-		for(int i=0; i < strlen(str); i++)
-		{
-			str[i] = str[i+1];
-		}
-	} while((Name != string(name)) && !fin.eof());
-	
-	if (!fin.eof()) 
-	{
-		val = wxString(str);
+	if (search != settings.end()) {
+		val = search->second;
 	}
 }

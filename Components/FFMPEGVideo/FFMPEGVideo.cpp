@@ -175,8 +175,6 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 	int size;
 	int ret = 0;	
 
-	//sw_frame->format = AV_PIX_FMT_NV12;
-
 	ret = avcodec_receive_frame(decoder_ctx, frame);
 	if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
 		return 0;
@@ -189,15 +187,6 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
 
 	if (frame->format == hw_pix_fmt) {
-		/*enum AVPixelFormat* formats;
-		ret = av_hwframe_transfer_get_formats(frame->hw_frames_ctx,	AV_HWFRAME_TRANSFER_DIRECTION_FROM, &formats, 0);
-		if (ret < 0) {
-			fprintf(stderr, "ERROR: av_hwframe_transfer_get_formats\n");
-			return ret;
-		}
-
-		sw_frame->format = formats[0];
-		av_freep(&formats);*/
 
 		/* retrieve data from GPU to CPU */			
 		if ((ret = av_hwframe_transfer_data(sw_frame, frame, 0)) < 0) {
@@ -341,12 +330,12 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	type = av_hwdevice_find_type_by_name(g_hw_device.ToUTF8());
 	if (type == AV_HWDEVICE_TYPE_NONE)
 	{
-		std::string msg;
+		wxString msg;
 		msg = "Device type is not supported.\n";
 		msg += "Available device types: ";
 		type = AV_HWDEVICE_TYPE_NONE;
 		while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
-			msg += std::string(av_hwdevice_get_type_name(type)) + " ";
+			msg += wxString(av_hwdevice_get_type_name(type)) + " ";
 		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 		CloseMovie();
 		return false;
@@ -354,13 +343,13 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	// open the input file
 	if (avformat_open_input(&input_ctx, csMovieName.ToUTF8(), NULL, NULL) != 0) {
-		wxMessageBox(std::string("Cannot open input file: ") + csMovieName.ToUTF8(), "FFMPEGVideo::OpenMovie");
+		wxMessageBox(wxT("Cannot open input file: ") + csMovieName, wxT("FFMPEGVideo::OpenMovie"));
 		CloseMovie();
 		return false;
 	}
 
 	if (avformat_find_stream_info(input_ctx, NULL) < 0) {
-		wxMessageBox("Cannot find input stream information.", "FFMPEGVideo::OpenMovie");
+		wxMessageBox(wxT("Cannot find input stream information."), wxT("FFMPEGVideo::OpenMovie"));
 		CloseMovie();
 		return false;
 	}
@@ -377,9 +366,9 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	for (i = 0;; i++) {
 		const AVCodecHWConfig *config = avcodec_get_hw_config(decoder, i);
 		if (!config) {
-			char msg[500];
-			sprintf(msg, "Decoder %s does not support device type %s.",
-				decoder->name, av_hwdevice_get_type_name(type));
+			wxString msg;
+			msg.Printf(wxT("Decoder %s does not support device type %s."),
+				wxString(decoder->name), wxString(av_hwdevice_get_type_name(type)));
 			wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 			CloseMovie();
 			return false;
@@ -416,8 +405,8 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	}
 
 	if ((ret = avcodec_open2(decoder_ctx, decoder, NULL)) < 0) {
-		char msg[500];
-		sprintf(msg, "Failed to open codec for stream #%u\n", video_stream);
+		wxString msg;
+		msg.Printf(wxT("Failed to open codec for stream #%u\n"), video_stream);
 		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 		CloseMovie();
 		return false;
@@ -589,9 +578,9 @@ void FFMPEGVideo::SetPosFast(s64 Pos)
 
 /////////////////////////////////////////////////////////////////////////////
 
-void FFMPEGVideo::ErrorMessage(string str)
+void FFMPEGVideo::ErrorMessage(wxString str)
 {
-	wxMessageBox(str.c_str(), "ERROR MESSAGE");
+	wxMessageBox(str, "ERROR MESSAGE");
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -17,7 +17,7 @@
 #include "MyResource.h"
 #include "SettingsPanel.h"
 
-vector<string> StrFN;
+vector<wxString> StrFN;
 
 BEGIN_EVENT_TABLE(CSettingsPanel, wxPanel)
 	EVT_BUTTON(ID_TEST, CSettingsPanel::OnBnClickedTest)
@@ -36,11 +36,11 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 
 	m_n = 5;
 	StrFN.resize(m_n);
-	StrFN[0] = string("After First Filtration");
-	StrFN[1] = string("After Second Filtration");
-	StrFN[2] = string("After Third Filtration");
-	StrFN[3] = string("NEdges Points Image");
-	StrFN[4] = string("Cleared Text Image");
+	StrFN[0] = wxT("After First Filtration");
+	StrFN[1] = wxT("After Second Filtration");
+	StrFN[2] = wxT("After Third Filtration");
+	StrFN[3] = wxT("NEdges Points Image");
+	StrFN[4] = wxT("Cleared Text Image");
 	m_cn = 4;
 	m_W = 0;
 	m_H = 0;
@@ -336,7 +336,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 		if (dir.GetFirst(&filename))
 		{
-			string filepath = g_work_dir + "/RGBImages/" + filename;
+			wxString filepath = g_work_dir + "/RGBImages/" + filename;
 
 			GetImageSize(filepath, w, h);
 			

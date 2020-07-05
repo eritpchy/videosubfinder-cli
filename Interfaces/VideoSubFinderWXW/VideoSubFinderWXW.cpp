@@ -133,12 +133,12 @@ bool CVideoSubFinderApp::OnInit()
 
 				if (m_pMainWnd->m_parser.Found("s", &wxStr))
 				{
-					m_pMainWnd->m_BegTime = GetVideoTime(wxStr.ToStdString());
+					m_pMainWnd->m_BegTime = GetVideoTime(wxStr);
 				}
 
 				if (m_pMainWnd->m_parser.Found("e", &wxStr))
 				{
-					m_pMainWnd->m_EndTime = GetVideoTime(wxStr.ToStdString());
+					m_pMainWnd->m_EndTime = GetVideoTime(wxStr);
 				}
 
 				double double_val;				
@@ -147,7 +147,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						printf("ERROR: wrong \"be\" command line option value\n");
+						wxMessageBox("ERROR: wrong \"be\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL2->m_pos = 1 - double_val;
@@ -157,7 +157,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						printf("ERROR: wrong \"te\" command line option value\n");
+						wxMessageBox("ERROR: wrong \"te\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL1->m_pos = 1 - double_val;
@@ -168,7 +168,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						printf("ERROR: wrong \"le\" command line option value\n");
+						wxMessageBox("ERROR: wrong \"le\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL1->m_pos = double_val;
@@ -178,7 +178,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						printf("ERROR: wrong \"re\" command line option value\n");
+						wxMessageBox("ERROR: wrong \"re\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL2->m_pos = double_val;
@@ -192,7 +192,7 @@ bool CVideoSubFinderApp::OnInit()
 		}
 		else
 		{
-			printf("ERROR: input video file was not provided\n");
+			wxMessageBox("ERROR: input video file was not provided\n");
 			return false;
 		}
 

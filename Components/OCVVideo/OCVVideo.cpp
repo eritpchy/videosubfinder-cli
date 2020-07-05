@@ -276,9 +276,9 @@ s64 OCVVideo::OneStepWithTimeout()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::ErrorMessage(string str)
+void OCVVideo::ErrorMessage(wxString str)
 {
-	wxMessageBox(str.c_str(), "ERROR MESSAGE");
+	wxMessageBox(str, "ERROR MESSAGE");
 }
 
 /////////////////////////////////////////////////////////////////////////////

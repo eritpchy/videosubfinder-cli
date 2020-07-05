@@ -216,8 +216,8 @@ CVideoBox::~CVideoBox()
 
 void CVideoBox::Init()
 {
-	//string strVBClass;
-	//string strVBXClass;
+	//wxString strVBClass;
+	//wxString strVBXClass;
 	wxBitmap bmp;
 
 	m_VBX = wxColour(125, 125, 125);

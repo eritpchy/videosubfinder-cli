@@ -32,7 +32,6 @@
 #include "SSAlgorithms.h"
 #include "IPAlgorithms.h"
 #include <time.h>
-#include <fstream>
 
 using namespace std;
 
@@ -158,7 +157,7 @@ public:
 	//CDocManager m_DocManager;
 	wxString	m_FileName;
 
-	string		m_EndTimeStr;
+	wxString		m_EndTimeStr;
 
 	wxTimer		m_timer;
 
@@ -179,8 +178,8 @@ public:
 	s64			m_BegTime;
 	s64			m_EndTime;
 
-	string		m_GeneralSettingsFileName;
-	string		m_ErrorFileName;
+	wxString		m_GeneralSettingsFileName;
+	wxString		m_ErrorFileName;
 
 	bool		m_blnReopenVideo;
 
@@ -191,6 +190,9 @@ public:
 
 	Settings	m_cfg;
 
+	std::map<wxString, wxString> m_general_settings;
+	std::map<wxString, wxString> m_locale_settings;
+
 	wxCmdLineParser m_parser;
 
 public:
@@ -199,7 +201,7 @@ public:
 	void PauseVideo();
 	void LoadSettings();
 	void SaveSettings();
-	void SaveError(std::string error);
+	void SaveError(wxString error);
 	void OnFileOpenVideo(int type);
 	void ClearDir(wxString DirName);
 
@@ -225,7 +227,8 @@ public:
 	void OnSetPriorityBelownormal(wxCommandEvent& event);
 	void OnSetPriorityAbovenormal(wxCommandEvent& event);
 	void OnSetPriorityHigh(wxCommandEvent& event);
-	string ConvertClockTime(clock_t time);
+	wxString ConvertClockTime(clock_t time);
+	void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
 
 private:
    DECLARE_EVENT_TABLE()
@@ -248,18 +251,18 @@ public:
 	wxTextCtrl * dialogText;
 };
 
-string ConvertVideoTime(s64 pos);
-string VideoTimeToStr2(s64 pos);
-string VideoTimeToStr3(s64 pos);
+wxString ConvertVideoTime(s64 pos);
+wxString VideoTimeToStr2(s64 pos);
+wxString VideoTimeToStr3(s64 pos);
 
-void WriteProperty(ofstream &fout, int val, string Name);
-void WriteProperty(ofstream &fout, bool val, string Name);
-void WriteProperty(ofstream &fout, double val, string Name);
-void WriteProperty(ofstream &fout, wxString val, string Name);
-void ReadProperty(ifstream &fin, int &val, string Name);
-void ReadProperty(ifstream &fin, bool &val, string Name);
-void ReadProperty(ifstream &fin, double &val, string Name);
-void ReadProperty(ifstream &fin, wxString &val, string Name);
+void WriteProperty(wxTextOutputStream& fout, int val, wxString Name);
+void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name);
+void WriteProperty(wxTextOutputStream& fout, double val, wxString Name);
+void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name);
+void ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name);
+void ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name);
+void ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name);
+void ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name);
 
 bool IsMMX_and_SSE();
 bool IsSSE2();

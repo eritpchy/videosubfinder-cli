@@ -29,19 +29,19 @@
 #include <ppltasks.h>
 using namespace std;
 
-void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> ImMASK, simple_buffer<u8>& ImIL, int w, int h, int W, int H, int LH, std::string iter_det);
-int CheckOnSubPresence(simple_buffer<u8> &ImMASK, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImFRes, int w, int h, int W, int H, int XB, int YB, std::string iter_det);
-void SaveImageWithLinesInfo(simple_buffer<u8> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h);
+void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> ImMASK, simple_buffer<u8>& ImIL, int w, int h, int W, int H, int LH, wxString iter_det);
+int CheckOnSubPresence(simple_buffer<u8> &ImMASK, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImFRes, int w, int h, int W, int H, int XB, int YB, wxString iter_det);
+void SaveImageWithLinesInfo(simple_buffer<u8> &Im, wxString name, int lb1, int le1, int lb2, int le2, int w, int h);
 
 template <class T>
 void ExtendByInsideFigures(simple_buffer<T> &ImRES, int w, int h, T white = 255, bool simple = true);
-void SaveImageWithSubParams(simple_buffer<u8>& Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h);
+void SaveImageWithSubParams(simple_buffer<u8>& Im, wxString name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h);
 
 template <class T>
-int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, int real_im_x_center, T white, std::string iter_det);
+int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, int real_im_x_center, T white, wxString iter_det);
 
 int ClearImageOptimal2(simple_buffer<u8> &Im, int w, int h, int min_x, int max_x, int min_y, int max_y, u8 white);
-void GetMainColorImage(simple_buffer<u8>& ImRES, simple_buffer<u8>* pImMainCluster, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImY, simple_buffer<u8>& ImU, simple_buffer<u8>& ImV, int w, int h, std::string iter_det, int min_x, int max_x);
+void GetMainColorImage(simple_buffer<u8>& ImRES, simple_buffer<u8>* pImMainCluster, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImY, simple_buffer<u8>& ImU, simple_buffer<u8>& ImV, int w, int h, wxString iter_det, int min_x, int max_x);
 template <class T>
 void GreyscaleImageToBinary(simple_buffer<T> &ImRES, simple_buffer<T> &ImGR, int w, int h, T white);
 template <class T>
@@ -52,15 +52,15 @@ void(*g_pViewRGBImage)(simple_buffer<int> &Im, int w, int h);
 void(*g_pViewImage[2])(simple_buffer<int> &Im, int w, int h);
 void(*g_pViewGreyscaleImage[2])(simple_buffer<u8>& ImGR, int w, int h);
 void(*g_pViewBGRImage[2])(simple_buffer<u8>& ImBGR, int w, int h);
-int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LMAXY, int& lb, int& le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other = true);
-int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, u8 white, std::string iter_det);
-int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, u8 white, std::string iter_det);
+int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LMAXY, int& lb, int& le, int min_h, int real_im_x_center, int yb, int ye, wxString iter_det, bool combine_figures_related_to_each_other = true);
+int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, u8 white, wxString iter_det);
+int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, u8 white, wxString iter_det);
 int ClearImageOpt3(simple_buffer<u8> &Im, int w, int h, int real_im_x_center, u8 white);
 int ClearImageOpt4(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, u8 white);
 int ClearImageOpt5(simple_buffer<u8> &Im, int w, int h, int LH, int LMAXY, int real_im_x_center, u8 white);
 int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, int h, u8 white, double thr = 0.2);
 int ClearImageOptimal(simple_buffer<u8> &Im, int w, int h, u8 white);
-void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, std::string iter_det);
+void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, wxString iter_det);
 int ClearImageFromSmallSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H, u8 white);
 int SecondFiltration(simple_buffer<u8> &Im, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H);
 
@@ -90,11 +90,11 @@ void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::UMat& res);
 
 void GetClustersImage(simple_buffer<u8>& ImRES, simple_buffer<char>& labels, int clusterCount, int w, int h);
 
-string  g_work_dir;
-string  g_app_dir;
+wxString  g_work_dir;
+wxString  g_app_dir;
 
-string  g_im_save_format = ".jpeg";
-//string  g_im_save_format = ".bmp";
+wxString  g_im_save_format = ".jpeg";
+//wxString  g_im_save_format = ".bmp";
 
 double	g_mthr = 0.4;
 double	g_smthr = 0.25;
@@ -1177,7 +1177,7 @@ void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	}
 }
 
-int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, simple_buffer<u8>& ImTF, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H, std::string iter_det = "main")
+int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, simple_buffer<u8>& ImTF, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H, wxString iter_det = "main")
 {
 	simple_buffer<u8> ImRES1(w * h), ImRES2(w * h);
 	int res = 0;
@@ -1321,7 +1321,7 @@ inline bool IsTooRight(int lb, int le, const int dw2, int real_im_x_center)
 // H - full image include scale (if is) height
 int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H)
 {		
-	std::string now;
+	wxString now;
 	if (g_show_sf_results) now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
 
 	int res = 0;
@@ -1934,7 +1934,7 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 	return res;
 }
 
-int opencv_kmeans(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buffer<char> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, std::string iter_det, bool mask_only = false)
+int opencv_kmeans(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buffer<char> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, wxString iter_det, bool mask_only = false)
 {
 	simple_buffer<char> color_cluster_id(1 << 24, 0);
 	int numObjsFF;
@@ -2191,7 +2191,7 @@ void SortClusters(simple_buffer<char> &labels, simple_buffer<int> &cluster_id, s
 	SortClustersData(cluster_id, cluster_cnt, clusterCount);	
 }
 
-void GetInfoByLocation(simple_buffer<u8> &Im, int &len, int &ww, int &max_section, int &cnts, int w, int h, int max_x, u8 white, std::string iter_det)
+void GetInfoByLocation(simple_buffer<u8> &Im, int &len, int &ww, int &max_section, int &cnts, int w, int h, int max_x, u8 white, wxString iter_det)
 {
 	custom_buffer<CMyClosedFigure> pFigures;
 	SearchClosedFigures(Im, w, h, white, pFigures);
@@ -2243,7 +2243,7 @@ void GetInfoByLocation(simple_buffer<u8> &Im, int &len, int &ww, int &max_sectio
 	}
 }
 
-void GetClustersInfoByLocation(simple_buffer<u8> &ImMASKClusters, simple_buffer<int> &len, simple_buffer<int> &ww, simple_buffer<int> &max_section, simple_buffer<int> &cnts, int clusterCount, int w, int h, int max_x, std::string iter_det)
+void GetClustersInfoByLocation(simple_buffer<u8> &ImMASKClusters, simple_buffer<int> &len, simple_buffer<int> &ww, simple_buffer<int> &max_section, simple_buffer<int> &cnts, int clusterCount, int w, int h, int max_x, wxString iter_det)
 {
 	concurrency::parallel_for(0, clusterCount, [&ImMASKClusters, &len, &ww, &max_section, &cnts, clusterCount, w, h, max_x, iter_det](int cluster_id)
 	{
@@ -2286,7 +2286,7 @@ void GetBinaryImageFromClustersImageByClusterId(simple_buffer<u8> &ImRES, simple
 	}
 }
 
-void RestoreImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, int clusterCount, int w, int h, std::string iter_det)
+void RestoreImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, int clusterCount, int w, int h, wxString iter_det)
 {	
 	concurrency::parallel_for(0, clusterCount, [&ImClusters, &ImMASKF, clusterCount, w, h](int cluster_id)
 	{
@@ -2300,7 +2300,7 @@ void RestoreImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, in
 	});
 }
 
-int FilterImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, simple_buffer<char> &labels, int clusterCount, int w, int h, int max_x, int &deleted_by_location, std::string iter_det)
+int FilterImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, simple_buffer<char> &labels, int clusterCount, int w, int h, int max_x, int &deleted_by_location, wxString iter_det)
 {
 	simple_buffer<u8> ImRES4(w * h);
 	int val, i, j;
@@ -2587,7 +2587,7 @@ int FilterImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, simp
 	return num_main_clusters;
 }
 
-int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImMASK2, simple_buffer<u8>& ImMaskWithBorder, simple_buffer<u8>& ImMaskWithBorderF, simple_buffer<u8>& ImClusters2, simple_buffer<char>& labels2, int clusterCount2, int w, int h, std::string iter_det)
+int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImMASK2, simple_buffer<u8>& ImMaskWithBorder, simple_buffer<u8>& ImMaskWithBorderF, simple_buffer<u8>& ImClusters2, simple_buffer<char>& labels2, int clusterCount2, int w, int h, wxString iter_det)
 {
 	int min_x, max_x, min_y, max_y;
 	int res = 0;
@@ -2642,7 +2642,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImMASK
 	return res;
 }
 
-void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> ImMASK, simple_buffer<u8>& ImIL, int w, int h, int W, int H, int LH, std::string iter_det)
+void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> ImMASK, simple_buffer<u8>& ImIL, int w, int h, int W, int H, int LH, wxString iter_det)
 {
 	cv::ocl::setUseOpenCL(g_use_ocl);
 
@@ -2702,7 +2702,7 @@ void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> I
 	}
 }
 
-int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> ImMASK, simple_buffer<u8> ImMASK2, simple_buffer<u8> &ImIL, simple_buffer<u8> &ImRES, simple_buffer<u8> &ImY, simple_buffer<u8> &ImU, simple_buffer<u8> &ImV, simple_buffer<u8> &ImMaskWithBorder, simple_buffer<u8> &ImMaskWithBorderF, simple_buffer<u8> &ImClusters2, simple_buffer<char> &labels2, int w, int h, int W, int H, std::string iter_det, int real_im_x_center, int min_h)
+int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> ImMASK, simple_buffer<u8> ImMASK2, simple_buffer<u8> &ImIL, simple_buffer<u8> &ImRES, simple_buffer<u8> &ImY, simple_buffer<u8> &ImU, simple_buffer<u8> &ImV, simple_buffer<u8> &ImMaskWithBorder, simple_buffer<u8> &ImMaskWithBorderF, simple_buffer<u8> &ImClusters2, simple_buffer<char> &labels2, int w, int h, int W, int H, wxString iter_det, int real_im_x_center, int min_h)
 {
 	int x, y, i, j, j2, val1, val2;
 	int clusterCount2 = 6;
@@ -3340,7 +3340,7 @@ public:
 	cv::Mat m_cv_ImClearedText;
 	cv::Mat m_cv_ImClearedTextScaled;
 	int m_im_h;
-	string m_ImageName;
+	wxString m_ImageName;
 	int m_YB;
 	int m_LH;
 	int m_LY;
@@ -3357,7 +3357,7 @@ public:
 	simple_buffer<int> m_LLE;
 	int m_N;
 	int m_k;
-	string m_iter_det;
+	wxString m_iter_det;
 
 	FindTextRes()
 	{
@@ -3365,7 +3365,7 @@ public:
 	}
 };
 
-void GetMainColorImage(simple_buffer<u8>& ImRES, simple_buffer<u8>* pImMainCluster, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImY, simple_buffer<u8>& ImU, simple_buffer<u8>& ImV, int w, int h, std::string iter_det, int min_x, int max_x)
+void GetMainColorImage(simple_buffer<u8>& ImRES, simple_buffer<u8>* pImMainCluster, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImY, simple_buffer<u8>& ImU, simple_buffer<u8>& ImV, int w, int h, wxString iter_det, int min_x, int max_x)
 {
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	int delta, val1, val2, val3, val4, NN, ys1;
@@ -3571,7 +3571,7 @@ void ExtendByInsideFigures(simple_buffer<T>& ImRES, int w, int h, T white, bool 
 	}
 }
 
-int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImFRes, int w, int h, int W, int H, int XB, int YB, std::string iter_det)
+int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImFRes, int w, int h, int W, int H, int XB, int YB, wxString iter_det)
 {
 	simple_buffer<u8> ImTMP;
 	int i, j, x, y, ww, hh, res = 0;
@@ -3645,7 +3645,7 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 	return res;
 }
 
-FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, string SaveName, std::string iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, int W, int H)
+FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, int W, int H)
 {
 	int i, j, l, r, x, y, ib, bln, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, w_orig, h_orig, ww, hh, cnt;
 	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
@@ -4524,13 +4524,12 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			res.m_mI = mI;
 			res.m_mQ = mQ;
 
-			char str[10];
-			string FullName;
+			wxString FullName, str;
 
-			FullName = string("/TXTImages/");
+			FullName = wxT("/TXTImages/");
 			FullName += SaveName;
-			FullName += string("_");
-			sprintf(str, "%.5d", res.m_LY);
+			FullName += wxT("_");
+			str.Printf(wxT("%.5d"), res.m_LY);
 			FullName += str;
 			FullName += g_im_save_format;
 
@@ -4554,7 +4553,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	return res;
 }
 
-inline concurrency::task<FindTextRes> TaskFindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, string &SaveName, std::string &iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int W, int H)
+inline concurrency::task<FindTextRes> TaskFindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString &SaveName, wxString &iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int W, int H)
 {	
 	return concurrency::create_task([&ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, W, H]	{
 			return FindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, W, H);
@@ -4577,7 +4576,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	int mY, mI, mQ;
 	int LH, LMAXY;
 	double mthr;
-	string SaveName, FullName, Str;
+	wxString SaveName, FullName, Str;
 	char str[30];
 	int res = 0;
 	int iter = 0;	
@@ -4712,7 +4711,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	
 	for (k = 0; k < N; k++)
 	{
-		FindTextTasks.emplace_back(TaskFindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, W, H));
+		FindTextTasks.emplace_back(TaskFindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, wxT("l") + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, W, H));
 	}
 	
 	k = 0;
@@ -4825,7 +4824,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 
 	if (res == 1)
 	{
-		FullName = string("/TXTImages/");
+		FullName = wxT("/TXTImages/");
 		FullName += SaveName;
 		FullName += g_im_save_format;
 
@@ -5071,7 +5070,7 @@ int ClearImageOptimal2(simple_buffer<u8> &Im, int w, int h, int min_x, int max_x
 	return 1;
 }
 
-void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, std::string iter_det)
+void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, wxString iter_det)
 {
 	int i, j, k;
 	CMyClosedFigure *pFigureI, *pFigureJ;
@@ -5143,7 +5142,7 @@ void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures
 	}
 }
 
-int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LMAXY, int& lb, int& le, int min_h, int real_im_x_center, int yb, int ye, std::string iter_det, bool combine_figures_related_to_each_other)
+int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LMAXY, int& lb, int& le, int min_h, int real_im_x_center, int yb, int ye, wxString iter_det, bool combine_figures_related_to_each_other)
 {
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, val, N, minN, H, delta, NNN, jY, jI, jQ;
@@ -5414,7 +5413,7 @@ int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, in
 	return N;
 }
 
-int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, u8 white, std::string iter_det)
+int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, u8 white, wxString iter_det)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -5462,7 +5461,7 @@ int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H,
 	}
 }
 
-int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, u8 white, std::string iter_det)
+int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, u8 white, wxString iter_det)
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
@@ -5905,7 +5904,7 @@ void CombineFiguresRelatedToEachOther2(simple_buffer<CMyClosedFigure*> &ppFigure
 }
 
 template <class T>
-int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, int real_im_x_center, T white, std::string iter_det)
+int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, int real_im_x_center, T white, wxString iter_det)
 {
 	const int dw = (int)(g_btd*(double)W);
 	const int dw2 = (int)(g_tco*(double)W*2.0);
@@ -6470,60 +6469,6 @@ int IsComma(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	}
 
 	return ret;
-}
-
-void SaveTextLineParameters(string ImageName, int YB, int LH, int LY, int LXB, int LXE, int LYB, int LYE, int mY, int mI, int mQ, int W, int H)
-{
-	char str[100];
-	string PropString, fname;
-	ofstream fout;
-
-	sprintf(str, "%.4d", YB);
-	PropString = string("YB ");
-    PropString += string(str);
-	
-	sprintf(str, "%.4d", LH);
-	PropString += string(" LH ");
-    PropString += string(str);
-
-	sprintf(str, "%.4d", LY);
-	PropString += string(" LY ");
-    PropString += string(str);
-	
-	sprintf(str, "%.4d", LXB);
-	PropString += string(" LXB ");
-    PropString += string(str);
-
-	sprintf(str, "%.4d", LXE);
-	PropString += string(" LXE ");
-    PropString += string(str);
-
-	sprintf(str, "%.4d", LYB);
-	PropString += string(" LYB ");
-    PropString += string(str);
-
-	sprintf(str, "%.4d", LYE);
-	PropString += string(" LYE ");
-    PropString += string(str);
-
-	sprintf(str, "%.3d %.3d %.3d", mY, mI, mQ);
-	PropString += string(" YIQ ");
-    PropString += string(str);
-
-	sprintf(str, "%d", W);
-	PropString += string(" W ");
-	PropString += string(str);
-
-	sprintf(str, "%d", H);
-	PropString += string(" H ");
-	PropString += string(str);
-	
-	fname = g_work_dir + string("/text_lines.info");
-	fout.open(fname.c_str(), ios::out | ios::app);
-
-	fout << ImageName << " = " << PropString << '\n';
-
-	fout.close();
 }
 
 void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_buffer<u8> &ImI, simple_buffer<u8> &ImQ)
@@ -7096,23 +7041,23 @@ void FindMaxStr(simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &max_i,
 	max_val = ys;
 }
 
-void GetImageSize(string name, int &w, int &h)
+void GetImageSize(wxString name, int &w, int &h)
 {
-	cv::Mat im = cv::imread(name, 1);
+	cv::Mat im = cv::imread(cv::String(name.ToUTF8()), 1);
 	w = im.cols;
 	h = im.rows;
 }
 
-void LoadBGRImage(simple_buffer<u8>& ImBGR, string name)
+void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name)
 {
-	cv::Mat im = cv::imread(name, cv::IMREAD_COLOR); // load in BGR format
+	cv::Mat im = cv::imread(cv::String(name.ToUTF8()), cv::IMREAD_COLOR); // load in BGR format
 	int w = im.cols;
 	int h = im.rows;
 
 	ImBGR.copy_data(im.data, w * h * 3);
 }
 
-void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h)
+void SaveBGRImage(simple_buffer<u8>& ImBGR, wxString name, int w, int h)
 {
 	if (g_disable_save_images) return;
 
@@ -7132,16 +7077,16 @@ void SaveBGRImage(simple_buffer<u8>& ImBGR, string name, int w, int h)
 	}
 
 	try {
-		cv::imwrite(g_work_dir + name, im, compression_params);
+		cv::imwrite(cv::String((g_work_dir + name).ToUTF8()), im, compression_params);
 	}
 	catch (runtime_error& ex) {
-		char msg[500];
-		sprintf(msg, "Exception saving image to %s format: %s\n", g_im_save_format.c_str(), ex.what());
+		wxString msg;
+		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
 		wxMessageBox(msg, "ERROR: SaveRGBImage");
 	}
 }
 
-void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int add, double scale, int quality, int dpi)
+void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int add, double scale, int quality, int dpi)
 {
 	if (g_disable_save_images) return;
 
@@ -7182,16 +7127,16 @@ void SaveGreyscaleImage(simple_buffer<u8>& Im, string name, int w, int h, int ad
 	}
 
 	try {
-		cv::imwrite(g_work_dir + name, im, compression_params);
+		cv::imwrite(cv::String((g_work_dir + name).ToUTF8()), im, compression_params);
 	}
 	catch (runtime_error& ex) {
-		char msg[500];
-		sprintf(msg, "Exception saving image to %s format: %s\n", g_im_save_format.c_str(), ex.what());
+		wxString msg;
+		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
 		wxMessageBox(msg, "ERROR: SaveRGBImage");
 	}
 }
 
-void SaveImageWithLinesInfo(simple_buffer<u8> &Im, string name, int lb1, int le1, int lb2, int le2, int w, int h)
+void SaveImageWithLinesInfo(simple_buffer<u8> &Im, wxString name, int lb1, int le1, int lb2, int le2, int w, int h)
 {
 	if (g_disable_save_images) return;
 
@@ -7250,7 +7195,7 @@ void SaveImageWithLinesInfo(simple_buffer<u8> &Im, string name, int lb1, int le1
 	SaveBGRImage(ImTMP, name, w, h);
 }
 
-void SaveImageWithSubParams(simple_buffer<u8>& Im, string name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h)
+void SaveImageWithSubParams(simple_buffer<u8>& Im, wxString name, int lb, int le, int LH, int LMAXY, int real_im_x_center, int w, int h)
 {
 	if (g_disable_save_images) return;
 

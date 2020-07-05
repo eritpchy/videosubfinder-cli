@@ -75,8 +75,8 @@ CImageBox::~CImageBox()
 
 void CImageBox::Init()
 {
-	string strIBClass;
-	string strIBXClass;
+	wxString strIBClass;
+	wxString strIBXClass;
 
 	m_IWColor = wxColour(125, 125, 125);
 

@@ -26,6 +26,7 @@
 #include <concurrent_queue.h>
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
+#include <wx/regex.h>
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
@@ -48,7 +49,6 @@ int  g_ocr_threads = 8;
 
 AssTXTLine::AssTXTLine()
 {
-	m_TXTStr = string("");
 	m_LH = 0;
 	m_LY = 0;
 	m_LXB = 0;
@@ -121,8 +121,6 @@ AssTXTStyle::AssTXTStyle()
 	m_MarginL = 10;
 	m_MarginR = 10;
 	m_MarginV = 10;
-
-	m_Name = string("");
 }
 
 // W - full image include scale (if is) width
@@ -360,7 +358,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 	wxString Str, SubStr, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 	int i, j, k, sec, msec;
 	u64 bt, et, dt, mdt;
-	char str[30];
+	wxString str_int;
 
 	wxDir dir(g_work_dir + "/RGBImages");
 	vector<wxString> FileNamesVector;
@@ -404,8 +402,8 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		sec2 = Str.Mid(18,2);
 		msec2 = Str.Mid(21,3);
 
-		bt = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-		et = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
+		bt = (wxAtoi(hour1)*3600 + wxAtoi(min1)*60 + wxAtoi(sec1))*1000 + wxAtoi(msec1);
+		et = (wxAtoi(hour2)*3600 + wxAtoi(min2)*60 + wxAtoi(sec2))*1000 + wxAtoi(msec2);
 
 		BT.push_back(bt);
 		ET.push_back(et);
@@ -443,15 +441,14 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		sec = (int)(dt/1000);
 		msec = (int)(dt%1000);
 		
-		_itoa(sec, str, 10);
-		sec1 = str;
+		sec1 = wxString::Format(wxT("%i"), sec);
 
-		_itoa(msec, str, 10);
-		if (msec < 10) msec1 = wxString("00")+str; 
+		str_int = wxString::Format(wxT("%i"), msec);
+		if (msec < 10) msec1 = wxT("00") + str_int;
 		else
 		{
-			if (msec < 100) msec1 = wxString("0")+str; 
-			else msec1 = str; 
+			if (msec < 100) msec1 = wxT("0")+ str_int;
+			else msec1 = str_int;
 		}
 
 		SubStr = g_DefStringForEmptySub;
@@ -461,7 +458,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		srt_sub << (k+1) << "\n" << Str << "\n" << SubStr << "\n\n";
+		srt_sub << (k+1) << wxT("\n") << Str << wxT("\n") << SubStr << "\n\n";
 	}
 
 	wxString ass_sub;
@@ -475,15 +472,14 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		sec = (int)(dt / 1000);
 		msec = (int)(dt % 1000);
 
-		_itoa(sec, str, 10);
-		sec1 = str;
+		sec1 = wxString::Format(wxT("%i"), sec);
 
-		_itoa(msec, str, 10);
-		if (msec < 10) msec1 = wxString("00") + str;
+		str_int = wxString::Format(wxT("%i"), msec);
+		if (msec < 10) msec1 = wxT("00") + str_int;
 		else
 		{
-			if (msec < 100) msec1 = wxString("0") + str;
-			else msec1 = str;
+			if (msec < 100) msec1 = wxT("0") + str_int;
+			else msec1 = str_int;
 		}
 
 		SubStr = g_DefStringForEmptySub;
@@ -493,7 +489,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + "\n";
+		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + wxT("\n");
 	}
 	
 	SaveSub(srt_sub, ass_sub);
@@ -508,10 +504,10 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 {
 	wxString Str, SubStr, Name, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 	int i, j, k, kb, sec, msec;
-	char str[30];
+	wxString str_int;
 	u64 bt, et, dt, mdt;
 
-	wxString dir_path = wxString(g_work_dir + string("/TXTImages/"));
+	wxString dir_path = wxString(g_work_dir + wxT("/TXTImages/"));
 	wxDir dir(dir_path);
 	vector<wxString> FileNamesVector;
 	vector<u64> BT, ET;
@@ -572,8 +568,8 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		sec2 = Str.Mid(18,2);
 		msec2 = Str.Mid(21,3);
 
-		bt = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-		et = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
+		bt = (wxAtoi(hour1)*3600 + wxAtoi(min1)*60 + wxAtoi(sec1))*1000 + wxAtoi(msec1);
+		et = (wxAtoi(hour2)*3600 + wxAtoi(min2)*60 + wxAtoi(sec2))*1000 + wxAtoi(msec2);
 
 		BT.push_back(bt);
 		ET.push_back(et);
@@ -611,15 +607,14 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		sec = (int)(dt/1000);
 		msec = (int)(dt%1000);
 		
-		_itoa(sec, str, 10);
-		sec1 = str;
+		sec1 = wxString::Format(wxT("%i"), sec);
 
-		_itoa(msec, str, 10);
-		if (msec < 10) msec1 = wxString("00")+str; 
+		str_int = wxString::Format(wxT("%i"), msec);
+		if (msec < 10) msec1 = wxT("00") + str_int;
 		else
 		{
-			if (msec < 100) msec1 = wxString("0")+str; 
-			else msec1 = str; 
+			if (msec < 100) msec1 = wxT("0") + str_int;
+			else msec1 = str_int;
 		}
 
 		SubStr = g_DefStringForEmptySub;
@@ -629,7 +624,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		srt_sub << (k+1) << "\n" << Str << "\n" << SubStr << "\n\n";
+		srt_sub << (k+1) << wxT("\n") << Str << wxT("\n") << SubStr << "\n\n";
 	}
 
 	wxString ass_sub;
@@ -643,15 +638,14 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		sec = (int)(dt / 1000);
 		msec = (int)(dt % 1000);
 
-		_itoa(sec, str, 10);
-		sec1 = str;
+		sec1 = wxString::Format(wxT("%i"), sec);
 
-		_itoa(msec, str, 10);
-		if (msec < 10) msec1 = wxString("00") + str;
+		str_int = wxString::Format(wxT("%i"), msec);
+		if (msec < 10) msec1 = wxT("00") + str_int;
 		else
 		{
-			if (msec < 100) msec1 = wxString("0") + str;
-			else msec1 = str;
+			if (msec < 100) msec1 = wxT("0") + str_int;
+			else msec1 = str_int;
 		}
 
 		SubStr = g_DefStringForEmptySub;
@@ -661,7 +655,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
 		}
 
-		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + "\n";
+		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + wxT("\n");
 	}
 
 	SaveSub(srt_sub, ass_sub);
@@ -686,21 +680,21 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 	{
 		wxString ext = GetFileExtension(m_sub_path);
 
-		if (ext == wxString("srt"))
+		if (ext == wxT("srt"))
 		{
-			wxFFileOutputStream fout(m_sub_path);
-			wxTextOutputStream tout(fout);
-			tout << srt_sub;
-			tout.Flush();
-			fout.Close();
+			wxFFileOutputStream ffout(m_sub_path);
+			wxTextOutputStream fout(ffout);
+			fout << srt_sub;
+			fout.Flush();
+			ffout.Close();
 		}
-		else if (ext == wxString("ass"))
+		else if (ext == wxT("ass"))
 		{
-			wxFFileOutputStream fout(m_sub_path);
-			wxTextOutputStream tout(fout);
-			tout << ass_sub;
-			tout.Flush();
-			fout.Close();
+			wxFFileOutputStream ffout(m_sub_path);
+			wxTextOutputStream fout(ffout);
+			fout << ass_sub;
+			fout.Flush();
+			ffout.Close();
 		}
 		else
 		{
@@ -714,30 +708,16 @@ void COCRPanel::CreateSubFromTXTResults()
 	wxString Str, Name, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 	int i, j, k, kb, sec, msec, max_mY_dif, max_mI_dif, max_mQ_dif, max_posY_dif;
 	int val1, val2, val3, val4, val5, val6, val7, val8;
-	string fname, image_name;
+	wxString fname, image_name;
 	u64 bt, et, dt, mdt;
 	double max_LH_dif;
 	int bln;
 
 	vector<wxString> FileNamesVector;
 	vector<wxString> TXTVector;
-	vector<u64> BT, ET;
+	vector<u64> BT, ET;	
 
-	//AssTXTLine *AssTXTVector;
-	//AssTXTStyle *AssTXTStyleVector; 	
-	//AssTXTLine AssLine;
-	//AssTXTStyle AssStyle;
-	//YIQ_LH_Struct AssStyleDatum;
-	//int mR, mG, mB, NT, NS;
-	//string BaseStyleName;
-	//BaseStyleName = string("Base");
-	//max_mY_dif = 16;
-	//max_mI_dif = 10;
-	//max_mQ_dif = 10;
-	//max_posY_dif = 5;
-	//max_LH_dif = 0.20;
-
-	wxString dir_path = wxString(g_work_dir + string("/TXTResults/"));
+	wxString dir_path = wxString(g_work_dir + wxT("/TXTResults/"));
 	wxDir dir(dir_path);
 	wxString filename;
 	bool res;
@@ -765,23 +745,8 @@ void COCRPanel::CreateSubFromTXTResults()
 
 	Str = m_pMSD->GetValue();
 	mdt = (s64)atof(Str)*1000;
-
-	//str[0] = '\0';
-
-	//fname = g_work_dir + string("/text_lines.info");
-	//txt_info.open(fname.c_str(), ios::in);
-
-/*	NT = 0;
-	AssTXTVector = new AssTXTLine[(int)FileNamesVector.size()];
-
-	NS = 0;
-	AssTXTStyleVector = new AssTXTStyle[(int)FileNamesVector.size()];*/	
 	
-    //--------------
-
 	int W, H;
-
-    //--------------
     
 	k = 0;
 	while (k < (int)FileNamesVector.size())
@@ -800,8 +765,8 @@ void COCRPanel::CreateSubFromTXTResults()
 		sec2 = Str.Mid(18,2);
 		msec2 = Str.Mid(21,3);
 
-		bt = (atoi(hour1)*3600 + atoi(min1)*60 + atoi(sec1))*1000 + atoi(msec1);
-		et = (atoi(hour2)*3600 + atoi(min2)*60 + atoi(sec2))*1000 + atoi(msec2);
+		bt = (wxAtoi(hour1)*3600 + wxAtoi(min1)*60 + wxAtoi(sec1))*1000 + wxAtoi(msec1);
+		et = (wxAtoi(hour2)*3600 + wxAtoi(min2)*60 + wxAtoi(sec2))*1000 + wxAtoi(msec2);
 
 		BT.push_back(bt);
 		ET.push_back(et);
@@ -812,77 +777,27 @@ void COCRPanel::CreateSubFromTXTResults()
 			   (FileNamesVector[kb].Mid(0, 11) == FileNamesVector[k].Mid(0, 11))
 			 )
 		{
-			Name = g_work_dir + "/TXTResults/"+FileNamesVector[k];
+			Name = g_work_dir + wxT("/TXTResults/") + FileNamesVector[k];
 
-			std::ifstream fin(Name.ToStdString());
-			std::string str((std::istreambuf_iterator<char>(fin)),
-							std::istreambuf_iterator<char>());
-			fin.close();
+			wxFileInputStream ffin(Name);
+			wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
+			wxString str;
+
+			while (ffin.IsOk() && !ffin.Eof())
+			{
+				str += fin.ReadLine();
+				if (ffin.IsOk() && !ffin.Eof())
+				{
+					str += wxT("\n");
+				}
+			}
+			
 			if (str.size() > 0)
 			{
-				if (i > 0) Str += "\n";
+				if (i > 0) Str += wxT("\n");
 				Str += str;
 				i++;
-			}			
-
-			//AssLine.m_TXTStr = string(str);
-			//AssLine.m_BT = bt;
-			//AssLine.m_ET = et;			
-
-			//image_name = string("/TXTImages/") + GetFileName(FileNamesVector[k]) + g_im_save_format;
-			//
-   //         fname = string("");
-			//do
-			//{
-   //             if ( txt_info.eof() )                
-   //             {
-   //                 break;
-   //             }
-
-			//	txt_info >> fname; // file name
-			//	
-			//	txt_info >> str; // "="
-			//	txt_info >> str; // "YB"
-			//	txt_info >> str; // YB value
-			//	txt_info >> str; // "LH"
-			//	txt_info >>	AssLine.m_LH;
-			//	txt_info >> str; // "LY"
-			//	txt_info >>	AssLine.m_LY;
-			//	txt_info >> str; // "LXB"
-			//	txt_info >>	AssLine.m_LXB;
-			//	txt_info >> str; // "LXE"
-			//	txt_info >>	AssLine.m_LXE;
-			//	txt_info >> str; // "LYB"
-			//	txt_info >>	AssLine.m_LYB;
-			//	txt_info >> str; // "LYE"
-			//	txt_info >>	AssLine.m_LYE;
-			//	txt_info >> str; // "YIQ"
-			//	txt_info >>	AssLine.m_mY;
-			//	txt_info >>	AssLine.m_mI;
-			//	txt_info >>	AssLine.m_mQ;
-			//	txt_info >> str; // "W"
-			//	txt_info >> AssLine.m_W;
-			//	txt_info >> str; // "H"
-			//	txt_info >> AssLine.m_H;
-			//}
-			//while (fname != image_name);
-			//
-			//if (fname != image_name)
-			//{
-			//	txt_info.close();
-			//	Str = wxString("There is not info about \"") + wxString(image_name.c_str()) 
-   //                 + wxString("\" in \"text_lines.info\" file.\n") 
-   //                 + wxString("Please run \"Create Cleared Text Images\" again.");
-
-			//	#ifdef WIN32
-			//	::MessageBox(NULL, Str, L"CreateSubFromTXTResults", MB_ICONERROR);			
-			//	#endif
-
-			//	return;
-			//}
-
-			//AssTXTVector[NT] = AssLine;
-			//NT++;
+			}
 
 			k++;
 
@@ -894,8 +809,6 @@ void COCRPanel::CreateSubFromTXTResults()
 
 		TXTVector.push_back(Str);
 	}
-
-	//txt_info.close();
 
 	// создаем srt subtitle
 	
@@ -923,7 +836,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			}
 			else
 			{
-				TXTVector[k] = wxString("#unrecognized text#");
+				TXTVector[k] = wxT("#unrecognized text#");
 			}
 		}
 
@@ -981,7 +894,7 @@ void COCRPanel::CreateSubFromTXTResults()
 			  " --> "+
 			  VideoTimeToStr2(et);
 
-		srt_sub << (k+1) << "\n" << Str << "\n" << TXTVector[k] << "\n\n";
+		srt_sub << (k+1) << wxT("\n") << Str << wxT("\n") << TXTVector[k] << wxT("\n\n");
 	}
 
 	wxString ass_sub;
@@ -993,13 +906,12 @@ void COCRPanel::CreateSubFromTXTResults()
 
 		//example: Dialogue: 0,0:00:03.29,0:00:05.00,Default,,0,0,0,,Regulars gather up!
 
-		std::string txt = TXTVector[k];
-		std::regex re("\\n");
-		std::smatch match;
-		std::string res;
-		txt = std::regex_replace(txt, re, "\\N");
+		wxString txt = TXTVector[k];
+		wxRegEx re(wxT("\n"));
 
-		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + txt + "\n";
+		re.ReplaceAll(&txt, wxT("\\\\N"));
+
+		ass_sub << wxT("Dialogue: 0,") + VideoTimeToStr3(bt) + wxT(",") + VideoTimeToStr3(et) + wxT(",Default,,0,0,0,,") + txt + wxT("\n");
 	}
 
 	SaveSub(srt_sub, ass_sub);
@@ -1044,7 +956,6 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
 		m_pSearchThread->Create();
 		m_pSearchThread->Run();
-		//if (!(m_pMF->m_blnNoGUI)) m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 	}
 	else
 	{
@@ -1096,13 +1007,13 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 		wxString Str;
 		int w, h;
 
-		GetImageSize(string(FileName), w, h);
+		GetImageSize(wxString(FileName), w, h);
 		res.m_w = w;
 		res.m_h = h;
 		res.m_ImBGR = simple_buffer<u8>(w * h * 3, 0);
 		res.m_ImClearedText = simple_buffer<u8>(w * h, 0);		
 
-		LoadBGRImage(res.m_ImBGR, string(FileName));
+		LoadBGRImage(res.m_ImBGR, wxString(FileName));
 
 		simple_buffer<u8> ImFF(w * h)/*3*/, ImTF(w * h)/*5*/, ImNE(w * h)/*1*/, ImIL/*0*/;
 
@@ -1117,7 +1028,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 			Str = FileName;
 			Str = GetFileName(Str);
 			Str = "/TXTImages/" + Str + g_im_save_format;
-			SaveGreyscaleImage(ImTF, string(Str), w, h);
+			SaveGreyscaleImage(ImTF, wxString(Str), w, h);
 			res.m_ImClearedText = ImTF;
 			return;
 		}
@@ -1130,7 +1041,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 			if (wxFileExists(Str))
 			{
-				LoadBinaryImage(ImTF, string(Str), w, h);
+				LoadBinaryImage(ImTF, wxString(Str), w, h);
 				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
 				RestoreStillExistLines(ImTF, ImFF, w, h);
 				ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
@@ -1148,7 +1059,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 			if (wxFileExists(Str))
 			{
 				ImIL.set_size(w * h);
-				LoadBinaryImage(ImIL, string(Str), w, h);
+				LoadBinaryImage(ImIL, wxString(Str), w, h);
 				if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
 
 				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
@@ -1175,7 +1086,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(string("Got C++ Exception: got error in FindTextLines: ") + e.what());
+		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLines: ") + wxString(e.what()));
 	}
 }
 
@@ -1226,7 +1137,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	g_IsCreateClearedTextImages = 1;
 
 	wxString Str, dStr;
-	string fname;
+	wxString fname;
 	ofstream fout;
 	char str[30];
 	int i, j, k, xmin, xmax, ymin, ymax, val;
@@ -1326,8 +1237,8 @@ void *ThreadCreateClearedTextImages::Entry()
 				clock_t run_time = cur_time - start_time;
 				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
 
-				static char str[200];
-				snprintf(str, 200, "progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   ", progress, m_pMF->ConvertClockTime(eta).c_str(), m_pMF->ConvertClockTime(run_time).c_str(), k + 1, NImages);
+				wxString str;
+				str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
 
 				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
 
@@ -1341,10 +1252,10 @@ void *ThreadCreateClearedTextImages::Entry()
 			{
 				Str = FileNamesVector[k];
 				Str = GetFileName(Str);
-				Str = wxString("/TXTImages/") + Str + wxString("_00001") + g_im_save_format;
+				Str = wxT("/TXTImages/") + Str + wxT("_00001") + g_im_save_format;
 
 				simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale)*(int)(p_task_res->m_h / g_scale), 255);
-				SaveGreyscaleImage(ImRES1, string(Str), p_task_res->m_w*g_scale, p_task_res->m_h / g_scale);
+				SaveGreyscaleImage(ImRES1, wxString(Str), p_task_res->m_w*g_scale, p_task_res->m_h / g_scale);
 			}
 
 			delete task_events[k];
@@ -1354,7 +1265,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		}
 		catch (const exception& e)
 		{
-			g_pMF->SaveError(string("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + e.what());
+			g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + wxString(e.what()));
 		}
 	}
 

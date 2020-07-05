@@ -51,8 +51,8 @@ public:
 	s64			m_Duration;
 	s64			m_Pos;
 
-	string		m_log;
-	string		m_Dir;
+	wxString		m_log;
+	wxString		m_Dir;
 	void	*m_pVideoWindow;
 
 	// VideoWindowSettins
