@@ -3,7 +3,7 @@ ABOUT
 #########################################################################################################
 
 This program provides two main functionality:
-1) Autodetect frames with hardcoded text (hardsub) on video (by using digital image processing algorithms) and generate by them empty subtitle with timing.
+1) Auto-detect frames with hard-coded text (hardsub) on video (by using digital image processing algorithms) and generate by them empty subtitle with timing.
 2) Generate cleared images with text from images with hardsub (by using text mining algorithms) for further recognition by other softwares (like FineReader or Subtitle Edit) and generation subtitle with timing and text.
 For working of this program will be required "Microsoft Visual C++ Redistributable for Visual Studio 2015, 2017 and 2019": https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 x64: https://aka.ms/vs/16/release/vc_redist.x64.exe
@@ -19,8 +19,8 @@ How to use without deep details:
 3) Click "Create Cleared TXT Images" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
 
 Video instructions:
-There are many instructions which can be found in youtube and was made by this programm users.
-One of most recomended by them are:
+There are many instructions which can be found in youtube and was made by this program users.
+One of most recommended by them are:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 

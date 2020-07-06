@@ -22,73 +22,33 @@
 
 using namespace std;
 
-class CMyPoint
-{
-public:
-	int m_x;
-	int m_y;
-	int	m_i;
-
-	CMyPoint() {/* m_i = -1; */}
-	CMyPoint(int x, int y, int i) {m_x=x; m_y=y; m_i=i;}
-}; 
-
-typedef enum {UP, DOWN} POS;
-
 class CMyClosedFigure
 {
 public:
-	CMyPoint *m_PointsArray;
-	int m_minX;
-	int m_maxX;
-	int m_minY;
-	int m_maxY;
-	int m_w;
-	int m_h;
-	int m_Square;
-	int m_Count;
-	int m_Weight;
-	int m_DY;
-	wxString m_SymbolValue;
-	wxString m_ParentImageName;
+	simple_buffer<int> m_PointsArray;
 
-	int m_mY;
-	int m_mI;
-	int m_mQ;
-	int m_mmY;
-	int m_mmI;
-	int m_mmQ;
-
-	char *m_pImage;
-	int m_Imagew;
-	int m_Imageh;
-	char m_White;
-	char m_Black;
-
-	POS m_pos;
+	u16 m_minX;
+	u16 m_maxX;
+	u16 m_minY;
+	u16 m_maxY;
 
 	CMyClosedFigure();
 	~CMyClosedFigure();
 
-	bool operator>(CMyClosedFigure& other);
+	inline int width() {
+		return (int)(m_maxX - m_minX + 1);
+	}
+
+	inline int height() {
+		return (int)(m_maxY - m_minY + 1);
+	}
+
 	void operator=(CMyClosedFigure& other);
 	void operator+=(CMyClosedFigure& other);
-
-	void refresh();
-	bool IsNear(CMyClosedFigure &other,int pogreshnost);	
-	void CreateImage(int w,int h,char White,char Black);
-	double CompareWith(CMyClosedFigure &other,double MaxPercentDeviation);
-
-	//bool IsPointIn(CMyPoint *Point);
-	//void AddPoints(CMyClosedFigure *other);	
-	
-	//void AlignPoints();
 };
 
 template <class T>
 clock_t SearchClosedFigures(simple_buffer<T> &Im, int w, int h, T white, custom_buffer<CMyClosedFigure> &FiguresArray);
-
-clock_t CreateIndexedImage(simple_buffer<int> &Im, simple_buffer<int> &ImRES, int w, int h, int white, int &Number);
 
 //-----------------------------------------------------
 
@@ -386,14 +346,11 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 	for (i = 0; i < N; i++)
 	{
 		pf = &(FiguresArray[i]);
-		pf->m_PointsArray = new CMyPoint[NN[i]];
-		pf->m_Square = NN[i];
+		pf->m_PointsArray.set_size(NN[i]);
 		pf->m_minX = minX[i];
 		pf->m_maxX = maxX[i];
 		pf->m_minY = minY[i];
 		pf->m_maxY = maxY[i];
-		pf->m_w = maxX[i] - minX[i] + 1;
-		pf->m_h = maxY[i] - minY[i] + 1;
 	}
 
 	for (y = 0, i = 0; y < h; y++)
@@ -403,28 +360,11 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 			if (Im[i] == white)
 			{
 				j = key[m[i]];
-				FiguresArray[j].m_PointsArray[I[j]] = CMyPoint(x, y, i);
+				FiguresArray[j].m_PointsArray[I[j]] = i;
 				I[j]++;
 			}
 		}
 	}
-
-	/*
-#ifdef CUSTOM_DEBUG
-	{
-		for (i = 0; i < N; i++)
-		{
-			pf = &(FiguresArray[i]);
-			CMyPoint *PA = pf->m_PointsArray;
-
-			for (int l = 0; l < pf->m_Square; l++)
-			{
-				custom_assert(PA[l].m_i >= 0, "PA[l].m_i < 0");
-			}
-		}
-	}
-#endif
-	*/
 
 	delete[] m;
 	delete[] key;

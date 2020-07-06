@@ -491,6 +491,29 @@ public:
 		return *this;		
 	}
 
+	void operator+=(custom_buffer<T>& obj)
+	{
+		custom_assert(m_size >= 0, "operator+=(custom_buffer<T>& obj): not: m_size >= 0");
+		custom_assert(obj.m_size >= 0, "operator+=(custom_buffer<T>& obj): not: obj.m_size >= 0");
+
+		int new_size = m_size + obj.m_size;
+
+		if (new_size > 0)
+		{
+			T* pOldData = m_pData;
+
+			m_pData = new T[new_size];
+			custom_assert(m_pData != NULL, "operator+=(custom_buffer<T>& obj): not: m_pData != NULL");
+			m_need_to_release = true;
+
+			if (pOldData) memcpy(m_pData, pOldData, m_size * sizeof(T));
+			if (obj.m_pData) memcpy(m_pData + m_size, obj.m_pData, obj.m_size * sizeof(T));
+			if (pOldData) delete[] pOldData;
+
+			m_size = new_size;
+		}
+	}
+
 	void copy_data(const custom_buffer<T>& obj, int size)
 	{
 		custom_assert(size >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& obj, int size): not: size >= 0");

@@ -2215,7 +2215,7 @@ void GetInfoByLocation(simple_buffer<u8> &Im, int &len, int &ww, int &max_sectio
 			for (int x = pFigure->m_minX; x <= pFigure->m_maxX; x++) x_range[x] = 1;
 			if (pFigure->m_minX < _min_x) _min_x = pFigure->m_minX;
 			if (pFigure->m_maxX > _max_x) _max_x = pFigure->m_maxX;
-			cnts += pFigure->m_Square;
+			cnts += pFigure->m_PointsArray.m_size;
 		}
 	}
 
@@ -4974,7 +4974,6 @@ int ClearImageOptimal(simple_buffer<u8> &Im, int w, int h, u8 white)
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
 	int val=0, val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -4998,14 +4997,12 @@ int ClearImageOptimal(simple_buffer<u8> &Im, int w, int h, u8 white)
 			(pFigure->m_minY < 1) ||
 			(pFigure->m_maxY > h-2) ||
 			((pFigure->m_minX <= 4) || (pFigure->m_maxX >= (w - 1) - 4)) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= h * 2))
+			(g_remove_wide_symbols && (pFigure->width() >= h * 2))
 			)
-		{		
-			PA = pFigure->m_PointsArray;
-			
-			for(l=0; l < pFigure->m_Square; l++)
+		{	
+			for(l=0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = (PA[l].m_y*w)+PA[l].m_x;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5031,7 +5028,6 @@ int ClearImageOptimal2(simple_buffer<u8> &Im, int w, int h, int min_x, int max_x
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
 	int val = 0, val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -5055,23 +5051,21 @@ int ClearImageOptimal2(simple_buffer<u8> &Im, int w, int h, int min_x, int max_x
 			(pFigure->m_minY <= min_y) ||
 			(pFigure->m_maxY >= max_y) ||
 			((pFigure->m_minX <= min_x) || (pFigure->m_maxX >= max_x)) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= h * 2)) ||
-			((pFigure->m_w < 3) || (pFigure->m_h < 3)) //|| bad for multiple points with main color like: ......
-			//( (pFigure->m_Square >= 0.95*((M_PI*pFigure->m_w*pFigure->m_h) / 4.0)) && //is like ellipse or rectangle on 95% 
-//			  (std::max<int>(pFigure->m_h, pFigure->m_w) <= 2 * std::min<int>(pFigure->m_h, pFigure->m_w)) )
+			(g_remove_wide_symbols && (pFigure->width() >= h * 2)) ||
+			((pFigure->width() < 3) || (pFigure->height() < 3)) //|| bad for multiple points with main color like: ......
+			//( (pFigure->m_PointsArray.m_size >= 0.95*((M_PI*pFigure->width()*pFigure->height()) / 4.0)) && //is like ellipse or rectangle on 95% 
+//			  (std::max<int>(pFigure->height(), pFigure->width()) <= 2 * std::min<int>(pFigure->height(), pFigure->width())) )
 			)
 		{
-			/*if((pFigure->m_Square >= 0.95*((M_PI*pFigure->m_w*pFigure->m_h) / 4.0)) && //is like ellipse or rectangle on 95% 
-				(std::max<int>(pFigure->m_h, pFigure->m_w) <= 2 * std::min<int>(pFigure->m_h, pFigure->m_w)))
+			/*if((pFigure->m_PointsArray.m_size >= 0.95*((M_PI*pFigure->width()*pFigure->height()) / 4.0)) && //is like ellipse or rectangle on 95% 
+				(std::max<int>(pFigure->height(), pFigure->width()) <= 2 * std::min<int>(pFigure->height(), pFigure->width())))
 			{
 				i = i;
 			}*/
 
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = (PA[l].m_y*w) + PA[l].m_x;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5111,7 +5105,7 @@ void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures
 				pFigureJ = ppFigures[j];
 
 				if ( (i != j) && 
-					 (pFigureJ->m_w < 5*min_h)
+					 (pFigureJ->width() < 5*min_h)
 					)
 				{
 					int val1 = (pFigureI->m_maxX + pFigureI->m_minX) - (pFigureJ->m_maxX + pFigureJ->m_minX);
@@ -5120,17 +5114,17 @@ void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures
 
 					int my = (pFigureI->m_maxY + pFigureI->m_minY) / 2;
 
-					if ((pFigureI->m_h >= min_h / 3) && // ImI is not too small
-						(pFigureI->m_w <= 1.5*(double)pFigureJ->m_w) && // ImI is not too wide
+					if ((pFigureI->height() >= min_h / 3) && // ImI is not too small
+						(pFigureI->width() <= 1.5*(double)pFigureJ->width()) && // ImI is not too wide
 						(pFigureI->m_minY < pFigureJ->m_minY) && // ImI is on top of ImJ						
-						( ( (pFigureI->m_maxY < pFigureJ->m_minY + (pFigureJ->m_h / 2)) &&
-						    (pFigureI->m_w >= 1.5*(double)pFigureI->m_h) && 
-							(pFigureI->m_h <= pFigureJ->m_h) ) || // ImI is wider then its height (if on top half or higher) and not too high
+						( ( (pFigureI->m_maxY < pFigureJ->m_minY + (pFigureJ->height() / 2)) &&
+						    (pFigureI->width() >= 1.5*(double)pFigureI->height()) && 
+							(pFigureI->height() <= pFigureJ->height()) ) || // ImI is wider then its height (if on top half or higher) and not too high
 							( (pFigureI->m_maxY < pFigureJ->m_maxY) && // ImI max is located on first half of ImJ
-							  (pFigureI->m_maxY >= pFigureJ->m_minY + (pFigureJ->m_h / 2)) ) ) &&
+							  (pFigureI->m_maxY >= pFigureJ->m_minY + (pFigureJ->height() / 2)) ) ) &&
 						( 
-						(val1 >= 0.75*(double)pFigureI->m_w) && // ImI intersect with ImJ by x more then 0.75*ImI_width
-						((pFigureJ->m_minY - pFigureI->m_maxY - 1) <= std::min<int>((std::min<int>(pFigureI->m_h, pFigureJ->m_h) / 3), std::max<int>(pFigureI->m_h, pFigureJ->m_h) / 4)) // distance between ImI and ImJ is not bigger then Images_height / 4
+						(val1 >= 0.75*(double)pFigureI->width()) && // ImI intersect with ImJ by x more then 0.75*ImI_width
+						((pFigureJ->m_minY - pFigureI->m_maxY - 1) <= std::min<int>((std::min<int>(pFigureI->height(), pFigureJ->height()) / 3), std::max<int>(pFigureI->height(), pFigureJ->height()) / 4)) // distance between ImI and ImJ is not bigger then Images_height / 4
 						))
 					{
 						/*
@@ -5171,7 +5165,6 @@ int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LM
 	simple_buffer<int> GRStr(256 * 2, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	int val1, val2, val3;
 	int NNY;
-	CMyPoint *PA;
 	clock_t t;
 
 	LMAXY = 0;
@@ -5211,7 +5204,7 @@ int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LM
 	{
 		pFigure = ppFigures[i];		
 
-		if ( (pFigure->m_h >= min_h) &&
+		if ( (pFigure->height() >= min_h) &&
 			 ((pFigure->m_minY + pFigure->m_maxY)/2 > yb) &&
 			((pFigure->m_minY + pFigure->m_maxY)/2 < ye) &&
 			(!((pFigure->m_minX <= 4) ||
@@ -5222,9 +5215,9 @@ int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LM
 			)
 		{
 			good_figures[j] = pFigure;
-			if ((pFigure->m_h > LH) && (pFigure->m_minX < real_im_x_center))
+			if ((pFigure->height() > LH) && (pFigure->m_minX < real_im_x_center))
 			{
-				LH = pFigure->m_h;
+				LH = pFigure->height();
 			}
 			if (pFigure->m_minY < lb)
 			{
@@ -5380,7 +5373,6 @@ int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, in
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -5403,11 +5395,9 @@ int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, in
 		int cnt = 0;
 		pFigure = ppFigures[i];
 
-		PA = pFigure->m_PointsArray;
-
-		for (l = 0; l < pFigure->m_Square; l++)
+		for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 		{
-			ii = (PA[l].m_y*w) + PA[l].m_x;
+			ii = pFigure->m_PointsArray[l];
 
 			if (ImMASK[ii] == 0)
 			{
@@ -5415,11 +5405,11 @@ int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, in
 			}
 		}
 
-		if (cnt >= std::max<int>(thr*pFigure->m_Square, 1))
+		if (cnt >= std::max<int>(thr*pFigure->m_PointsArray.m_size, 1))
 		{
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = (PA[l].m_y*w) + PA[l].m_x;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5440,7 +5430,6 @@ int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H,
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -5467,11 +5456,9 @@ int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H,
 		if ((val1 >= 0.25*(double)LH) // Im intersect with [LMAXY, LMAXY - LH + 1] more then on 25%
 			)
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5488,7 +5475,6 @@ int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 	int max_len = std::min<int>(0.25*W, h * 2);
 
@@ -5518,14 +5504,12 @@ int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (6 * LH) / 5) ||
 			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (1 * LH) / 5) || // do agressive even Arabic
 			(pFigure->m_maxY < LMAXY - LH) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= LH * 3)) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= max_len)) //||
-			//((pFigure->m_w < 3) || (pFigure->m_h < 3)) || image can be too broken in 6 clusters
-			//(pFigure->m_Square >= (LH * LH)/2) //remove good symbols
+			(g_remove_wide_symbols && (pFigure->width() >= LH * 3)) ||
+			(g_remove_wide_symbols && (pFigure->width() >= max_len)) //||
+			//((pFigure->width() < 3) || (pFigure->height() < 3)) || image can be too broken in 6 clusters
+			//(pFigure->m_PointsArray.m_size >= (LH * LH)/2) //remove good symbols
 			)
 		{
-			PA = pFigure->m_PointsArray;
-
 			/*
 #ifdef CUSTOM_DEBUG
 			if (iter_det == "l2_02_05_01_id4")
@@ -5535,9 +5519,9 @@ int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 #endif			
 			*/
 
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5573,11 +5557,9 @@ int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 
 		if (pFigure->m_minX > max_x)
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5596,7 +5578,6 @@ int ClearImageOpt3(simple_buffer<u8> &Im, int w, int h, int real_im_x_center, u8
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -5634,11 +5615,9 @@ int ClearImageOpt3(simple_buffer<u8> &Im, int w, int h, int real_im_x_center, u8
 
 		if (pFigure->m_minX > max_x)
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5657,7 +5636,6 @@ int ClearImageOpt4(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 	int min_h = H * g_min_h;
 
@@ -5684,22 +5662,20 @@ int ClearImageOpt4(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 			(pFigure->m_maxX >= (w - 1) - g_scale) ||
 			(pFigure->m_minY < ddy1) ||
 			(pFigure->m_maxY > ddy2) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= LH * 3)) ||
+			(g_remove_wide_symbols && (pFigure->width() >= LH * 3)) ||
 			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (6 * LH) / 5) ||
 			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (1 * LH) / 5) || // do agressive even Arabic
-			((pFigure->m_w < 3) || (pFigure->m_h < 3)) ||
+			((pFigure->width() < 3) || (pFigure->height() < 3)) ||
 			( ((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) <= (LH/8))  &&
 			  ((pFigure->m_maxY - LMAXY) >= (LH / 16)) ) //||
 			//(pFigure->m_maxY < LMAXY - (LH / 2)) || // only main characters are saved
 			//(pFigure->m_minY > LMAXY - LH / 5) ||
-			//(pFigure->m_Square >= (LH * LH) / 2) //|| remove good symbols
-			//(pFigure->m_Square <= 0.1*(pFigure->m_w*pFigure->m_h)) ||
-			//( (pFigure->m_Square >= 0.7*(pFigure->m_w*pFigure->m_h)) &&
-			// (pFigure->m_h >= LH/2) && (pFigure->m_w >= pFigure->m_h/3) )
+			//(pFigure->m_PointsArray.m_size >= (LH * LH) / 2) //|| remove good symbols
+			//(pFigure->m_PointsArray.m_size <= 0.1*(pFigure->width()*pFigure->height())) ||
+			//( (pFigure->m_PointsArray.m_size >= 0.7*(pFigure->width()*pFigure->height())) &&
+			// (pFigure->height() >= LH/2) && (pFigure->width() >= pFigure->height()/3) )
 			)
 		{
-			PA = pFigure->m_PointsArray;
-
 			/*
 #ifdef CUSTOM_DEBUG
 			if ((pFigure->m_minX >= 1320) &&
@@ -5710,9 +5686,9 @@ int ClearImageOpt4(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 #endif			
 			*/
 
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5748,11 +5724,9 @@ int ClearImageOpt4(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 
 		if (pFigure->m_minX > max_x)
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5771,7 +5745,6 @@ int ClearImageOpt5(simple_buffer<u8> &Im, int w, int h, int LH, int LMAXY, int r
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -5797,15 +5770,13 @@ int ClearImageOpt5(simple_buffer<u8> &Im, int w, int h, int LH, int LMAXY, int r
 			(pFigure->m_maxX >= (w - 1) - g_scale) ||
 			(pFigure->m_minY < ddy1) ||
 			(pFigure->m_maxY > ddy2) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= LH * 3)) ||
-			(g_remove_wide_symbols && (pFigure->m_w >= h * 2)) ||
+			(g_remove_wide_symbols && (pFigure->width() >= LH * 3)) ||
+			(g_remove_wide_symbols && (pFigure->width() >= h * 2)) ||
 			((LMAXY - ((pFigure->m_minY + pFigure->m_maxY) / 2)) > (7 * LH) / 5) ||
 			((((pFigure->m_minY + pFigure->m_maxY) / 2) - LMAXY) > (3 * LH) / 5) || // final clear: Arabic symbols can have dots below line
-			((pFigure->m_w < 3) || (pFigure->m_h < 3))
+			((pFigure->width() < 3) || (pFigure->height() < 3))
 			)
 		{
-			PA = pFigure->m_PointsArray;
-
 			/*
 #ifdef CUSTOM_DEBUG
 			if ((pFigure->m_minX >= 1320) &&
@@ -5816,9 +5787,9 @@ int ClearImageOpt5(simple_buffer<u8> &Im, int w, int h, int LH, int LMAXY, int r
 #endif
 			*/
 
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5854,11 +5825,9 @@ int ClearImageOpt5(simple_buffer<u8> &Im, int w, int h, int LH, int LMAXY, int r
 
 		if (pFigure->m_minX > max_x)
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -5933,7 +5902,6 @@ int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, i
 
 	CMyClosedFigure *pFigure;
 	int i, j, k, val1, val2, l, ii, N, res = 0, x, y, y2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -5987,11 +5955,10 @@ int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, i
 				for (j = i + 1; j < N; j++)
 				{
 					pFigure = ppFigures[j];
-					PA = pFigure->m_PointsArray;
-					
-					for (l = 0; l < pFigure->m_Square; l++)
+
+					for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 					{
-						ii = PA[l].m_i;
+						ii = pFigure->m_PointsArray[l];
 						Im[ii] = 0;
 					}
 				}
@@ -6006,11 +5973,10 @@ int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, i
 				for (j = 0; j <= i; j++)
 				{
 					pFigure = ppFigures[j];
-					PA = pFigure->m_PointsArray;
 
-					for (l = 0; l < pFigure->m_Square; l++)
+					for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 					{
-						ii = PA[l].m_i;
+						ii = pFigure->m_PointsArray[l];
 						Im[ii] = 0;
 					}
 				}
@@ -6030,7 +5996,6 @@ int ClearImageFromSmallSymbols(simple_buffer<u8>& Im, int w, int h, int W, int H
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N, res = 0, x, y, y2;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -6052,14 +6017,12 @@ int ClearImageFromSmallSymbols(simple_buffer<u8>& Im, int w, int h, int W, int H
 	{
 		pFigure = ppFigures[i];
 
-		if ((pFigure->m_h < g_msh*(double)H) ||
-			(pFigure->m_w <= g_segh) ||
-			(pFigure->m_h <= g_segh) //||
-			//(pFigure->m_Square < g_msd*(pFigure->m_h*pFigure->m_w))
+		if ((pFigure->height() < g_msh*(double)H) ||
+			(pFigure->width() <= g_segh) ||
+			(pFigure->height() <= g_segh) //||
+			//(pFigure->m_PointsArray.m_size < g_msd*(pFigure->height()*pFigure->width()))
 			)
 		{
-			PA = pFigure->m_PointsArray;
-
 			/*
 #ifdef CUSTOM_DEBUG
 			if ((pFigure->m_minX >= 1320) &&
@@ -6070,9 +6033,9 @@ int ClearImageFromSmallSymbols(simple_buffer<u8>& Im, int w, int h, int W, int H
 #endif			
 			*/
 
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im[ii] = 0;
 			}
 
@@ -6138,7 +6101,6 @@ int GetAllInsideFigures(simple_buffer<T> &Im, simple_buffer<T> &ImRes, custom_bu
 {
 	CMyClosedFigure *pFigure;
 	int i, j, l, x, y, ii, cnt;
-	CMyPoint *PA;
 
 	ImRes.set_values(0, w * h);
 
@@ -6183,11 +6145,9 @@ int GetAllInsideFigures(simple_buffer<T> &Im, simple_buffer<T> &ImRes, custom_bu
 		}
 		else
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				ImRes[ii] = white;
 			}
 		}
@@ -6201,12 +6161,11 @@ template <class T>
 void ConvertCMyClosedFigureToSubImage(CMyClosedFigure *pFigure, simple_buffer<T> &ImRes, int w, int h, int ww, int hh, int min_x, int min_y, T white)
 {
 	int ii, l, x, y;
-	CMyPoint *PA = pFigure->m_PointsArray;
 
-	for (l = 0; l < pFigure->m_Square; l++)
+	for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 	{
-		x = PA[l].m_x;
-		y = PA[l].m_y;
+		y = pFigure->m_PointsArray[l] / w;
+		x = pFigure->m_PointsArray[l] - (y * w);		
 
 		ii = (y - min_y)*ww + x - min_x;
 		ImRes[ii] = white;
@@ -6236,7 +6195,6 @@ int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int
 {
 	CMyClosedFigure *pFigure;
 	int i, j, l, x, y, ii, cnt, N;
-	CMyPoint *PA;
 	custom_buffer<CMyClosedFigure> pFigures;
 	simple_buffer<CMyClosedFigure*> ppFigures;
 	simple_buffer<T> ImIntRes(w * h, 0);
@@ -6272,7 +6230,7 @@ int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int
 		
 		if (found)
 		{
-			int N1, ww = ppFigures[i]->m_w, hh = ppFigures[i]->m_h, x, y, min_x = ppFigures[i]->m_minX, min_y = ppFigures[i]->m_minY;
+			int N1, ww = ppFigures[i]->width(), hh = ppFigures[i]->height(), x, y, min_x = ppFigures[i]->m_minX, min_y = ppFigures[i]->m_minY;
 			simple_buffer<T> Im1(ww * hh, 0), ImInt1(ww * hh, 0);
 			custom_buffer<CMyClosedFigure> pFigures1;
 			simple_buffer<CMyClosedFigure*> ppFigures1;
@@ -6320,7 +6278,6 @@ int GetImageWithOutsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, in
 {
 	CMyClosedFigure *pFigure;
 	int i, l, x, y, ii, cnt, N;
-	CMyPoint *PA;
 
 	ImRes.set_values(0, w * h);
 
@@ -6347,11 +6304,9 @@ int GetImageWithOutsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, in
 			(pFigure->m_maxY == h - 1)
 			)
 		{
-			PA = pFigure->m_PointsArray;
-
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				ImRes[ii] = white;
 			}
 		}
@@ -6374,7 +6329,6 @@ void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>
 	simple_buffer<T> Im2(ImIn2);
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii;
-	CMyPoint *PA;
 	clock_t t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -6383,12 +6337,11 @@ void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>
 	for (i = 0; i < pFigures.size(); i++)
 	{
 		pFigure = &(pFigures[i]);
-		PA = pFigure->m_PointsArray;
 
 		bool found = false;
-		for (l = 0; l < pFigure->m_Square; l++)
+		for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 		{
-			ii = PA[l].m_i;
+			ii = pFigure->m_PointsArray[l];
 			if (Im2[ii] != 0)
 			{
 				found = true;
@@ -6398,9 +6351,9 @@ void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>
 
 		if (!found)
 		{
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				ImInOut[ii] = 0;
 			}
 		}
@@ -6410,12 +6363,11 @@ void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>
 	for (i = 0; i < pFigures.size(); i++)
 	{
 		pFigure = &(pFigures[i]);
-		PA = pFigure->m_PointsArray;
 
 		bool found = false;
-		for (l = 0; l < pFigure->m_Square; l++)
+		for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 		{
-			ii = PA[l].m_i;
+			ii = pFigure->m_PointsArray[l];
 			if (ImInOut[ii] != 0)
 			{
 				found = true;
@@ -6425,9 +6377,9 @@ void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>
 
 		if (!found)
 		{
-			for (l = 0; l < pFigure->m_Square; l++)
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
-				ii = PA[l].m_i;
+				ii = pFigure->m_PointsArray[l];
 				Im2[ii] = 0;
 			}
 		}
@@ -6445,11 +6397,11 @@ int IsPoint(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	
 	ret = 0;
 
-	if (pFigure->m_h < pFigure->m_w) dval = (double)pFigure->m_h/pFigure->m_w;
-	else dval = (double)pFigure->m_w/pFigure->m_h;
+	if (pFigure->height() < pFigure->width()) dval = (double)pFigure->height()/pFigure->width();
+	else dval = (double)pFigure->width()/pFigure->height();
 
-	if ( (pFigure->m_w >= g_minpw * W) && (pFigure->m_w <= g_maxpw * W) &&
-	     (pFigure->m_h >= g_minph * H) && (pFigure->m_h <= g_maxph * H) &&
+	if ( (pFigure->width() >= g_minpw * W) && (pFigure->width() <= g_maxpw * W) &&
+	     (pFigure->height() >= g_minph * H) && (pFigure->height() <= g_maxph * H) &&
 	     (dval >= g_minpwh) ) 
 	{
 		if ( ( (pFigure->m_maxY <= LMAXY + (LLH/4)) &&
@@ -6474,11 +6426,11 @@ int IsComma(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	
 	ret = 0;
 
-	if (pFigure->m_h < pFigure->m_w) dval = (double)pFigure->m_h/pFigure->m_w;
-	else dval = (double)pFigure->m_w/pFigure->m_h;
+	if (pFigure->height() < pFigure->width()) dval = (double)pFigure->height()/pFigure->width();
+	else dval = (double)pFigure->width()/pFigure->height();
 
-	if ( (pFigure->m_w >= g_minpw * W) && (pFigure->m_w <= 2 * g_maxpw * W) &&
-	     (dval <= (2.0/3.0)) && (pFigure->m_h <= (int)((double)LLH*0.8)) )
+	if ( (pFigure->width() >= g_minpw * W) && (pFigure->width() <= 2 * g_maxpw * W) &&
+	     (dval <= (2.0/3.0)) && (pFigure->height() <= (int)((double)LLH*0.8)) )
 	{
 		if (((pFigure->m_maxY <= LMAXY + (LLH / 4)) &&
 			(pFigure->m_maxY >= LMAXY - std::max<int>(g_dmaxy, LLH / 3))) ||
@@ -6493,11 +6445,10 @@ int IsComma(CMyClosedFigure *pFigure, int LMAXY, int LLH, int W, int H)
 	return ret;
 }
 
-void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_buffer<u8> &ImI, simple_buffer<u8> &ImQ)
+void GetSymbolAvgColor(CMyClosedFigure* pFigure, simple_buffer<u8>& ImY, simple_buffer<u8>& ImI, simple_buffer<u8>& ImQ, int& mY, int& mI, int& mQ, int& weight, int W, int H)
 {
-	CMyPoint *PA;
 	int i, ii, j, w, h, x, y, xx, yy, val;
-	int r, min_x, max_x, min_y, max_y, mY, mI, mQ, weight;
+	int r, min_x, max_x, min_y, max_y;
 
 	w = pFigure->m_maxX - pFigure->m_minX + 1;
 	h = pFigure->m_maxY - pFigure->m_minY + 1;
@@ -6509,12 +6460,12 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_
 	simple_buffer<char> pImage(SIZE, 0);
 	simple_buffer<u8> pImageY(SIZE, 0), pImageI(SIZE, 0), pImageQ(SIZE, 0);
 
-	PA = pFigure->m_PointsArray;
-
-	for(i=0; i < pFigure->m_Square; i++)
+	for(i=0; i < pFigure->m_PointsArray.m_size; i++)
 	{
-		ii = PA[i].m_i;
-		j = (PA[i].m_y - pFigure->m_minY)*w + (PA[i].m_x - pFigure->m_minX);
+		ii = pFigure->m_PointsArray[i];
+		y = ii / W;
+		x = ii - (y * W);
+		j = (y - pFigure->m_minY)*w + (x - pFigure->m_minX);
 
 		pImage[j] = 1;
 		pImageY[j] = ImY[ii];
@@ -6604,7 +6555,7 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_
 			}
 		}
 
-		if (weight < pFigure->m_Square/5)
+		if (weight < pFigure->m_PointsArray.m_size/5)
 		{
 			if (r == 0)
 			{
@@ -6640,22 +6591,16 @@ void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_
 			}
 			r = (r*3)/4;
 		}
-	} while (weight < pFigure->m_Square/5);
+	} while (weight < pFigure->m_PointsArray.m_size/5);
 
 	mY = mY/weight;
 	mI = mI/weight;
 	mQ = mQ/weight;
-
-	pFigure->m_mY = mY;
-	pFigure->m_mI = mI;
-	pFigure->m_mQ = mQ;
-	pFigure->m_Weight = weight;
 }
 
 void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple_buffer<u8>& ImI, simple_buffer<u8>& ImQ, int w, int h, int& LH, int& LMAXY, int& XB, int& XE, int& YB, int& YE, int& mY, int& mI, int& mQ, u8 white)
 {
 	CMyClosedFigure *pFigure = NULL;
-	CMyPoint *PA = NULL;
 	int i, j, k, l, N, val, val1, val2, val3, val4;
 	int *NH = NULL, NNY, min_h, min_w, prev_min_w;
 	clock_t t;
@@ -6695,7 +6640,7 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 		{
 			pFigure = ppFigures[i];
 
-			if ( (pFigure->m_h >= min_h) && (pFigure->m_w >= min_w) )
+			if ( (pFigure->height() >= min_h) && (pFigure->width() >= min_w) )
 			{				
 				k++;
 			}
@@ -6717,18 +6662,20 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 	val1 = 0;
 	val2 = 0;
 	val3 = 0;
+	int weight;
+
 	for(i=0; i<N; i++)
 	{
 		pFigure = ppFigures[i];
 		
-		if ( (pFigure->m_h >= min_h) && (pFigure->m_w >= min_w) )
+		if ( (pFigure->height() >= min_h) && (pFigure->width() >= min_w) )
 		{		
-			GetSymbolAvgColor(pFigure, ImY, ImI, ImQ);
+			GetSymbolAvgColor(pFigure, ImY, ImI, ImQ, mY, mI, mQ, weight, w, h);
 
-			val += pFigure->m_Weight;
-			val1 += pFigure->m_mY*pFigure->m_Weight;
-			val2 += pFigure->m_mI*pFigure->m_Weight;
-			val3 += pFigure->m_mQ*pFigure->m_Weight;
+			val += weight;
+			val1 += mY*weight;
+			val2 += mI*weight;
+			val3 += mQ*weight;
 		}
 	}
 
@@ -6742,7 +6689,7 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 
 	for(i=0, j=0; i < N; i++)
 	{
-		if (ppFigures[i]->m_h >= min_h)
+		if (ppFigures[i]->height() >= min_h)
 		{
 			maxY[j] = ppFigures[i]->m_maxY;
 			j++;
@@ -6851,7 +6798,7 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 
 		if ( (pFigure->m_maxY <= LMAXY) && 
 			 (pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 8)) &&
-             (pFigure->m_h >= min_h) )
+             (pFigure->height() >= min_h) )
 		{
 			if (pFigure->m_minY > val1)
 			{
@@ -6878,7 +6825,7 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 
 		if ( (pFigure->m_maxY <= LMAXY) && 
 			(pFigure->m_maxY >= LMAXY- std::max<int>(g_dmaxy, LH / 8)) &&
-			(pFigure->m_h >= min_h) )
+			(pFigure->height() >= min_h) )
 		{
 			if (pFigure->m_minY >= val3)
 			{

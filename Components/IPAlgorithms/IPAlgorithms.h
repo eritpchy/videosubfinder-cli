@@ -122,7 +122,7 @@ void ExtendImFWithDataFromImNF(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, 
 
 void StrAnalyseImage(simple_buffer<u8>& Im, simple_buffer<u8>& ImGR, simple_buffer<int>& GRStr, int w, int h, int xb, int xe, int yb, int ye, int offset);
 
-void GetSymbolAvgColor(CMyClosedFigure *pFigure, simple_buffer<u8> &ImY, simple_buffer<u8> &ImI, simple_buffer<u8> &ImQ);
+void GetSymbolAvgColor(CMyClosedFigure* pFigure, simple_buffer<u8>& ImY, simple_buffer<u8>& ImI, simple_buffer<u8>& ImQ, int& mY, int& mI, int& mQ, int& weight, int W, int H);
 void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple_buffer<u8>& ImI, simple_buffer<u8>& ImQ, int w, int h, int& LH, int& LMAXY, int& XB, int& XE, int& YB, int& YE, int& mY, int& mI, int& mQ, u8 white);
 
 void GetImageSize(wxString name, int &w, int &h);
