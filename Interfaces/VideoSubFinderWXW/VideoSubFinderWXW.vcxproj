@@ -358,13 +358,15 @@
     <ClCompile Include="SeparatingLine.cpp" />
     <ClCompile Include="SettingsPanel.cpp" />
     <ClCompile Include="SSOWnd.cpp" />
-    <ClCompile Include="TextBox.cpp" />
+    <ClCompile Include="StaticText.cpp" />
+    <ClCompile Include="TextCtrl.cpp" />
     <ClCompile Include="VideoBox.cpp" />
     <ClCompile Include="VideoSubFinderWXW.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckBox.h" />
     <ClInclude Include="CommonFunctions.h" />
+    <ClInclude Include="Control.h" />
     <ClInclude Include="DataGrid.h" />
     <ClInclude Include="..\..\Components\Include\DataTypes.h" />
     <ClInclude Include="ImageBox.h" />
@@ -377,7 +379,8 @@
     <ClInclude Include="SeparatingLine.h" />
     <ClInclude Include="SettingsPanel.h" />
     <ClInclude Include="SSOWnd.h" />
-    <ClInclude Include="TextBox.h" />
+    <ClInclude Include="StaticText.h" />
+    <ClInclude Include="TextCtrl.h" />
     <ClInclude Include="VideoBox.h" />
     <ClInclude Include="VideoSubFinderWXW.h" />
   </ItemGroup>

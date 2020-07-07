@@ -19,6 +19,7 @@
 #include "DataTypes.h"
 #include "MyResource.h"
 #include "CheckBox.h"
+#include "TextCtrl.h"
 #include <wx/panel.h>
 #include <wx/textctrl.h>
 #include <vector>
@@ -149,7 +150,7 @@ public:
 	CCheckBox    *m_pcbCTXTF;
 	CCheckBox    *m_pcbSESS;
 	CCheckBox    *m_pcbSSI;
-	wxTextCtrl	 *m_pMSD;
+	CTextCtrl	 *m_pMSD;
 	wxButton	 *m_pCCTI;
 	wxButton	 *m_pCES;
 	wxButton	 *m_pCSCTI;

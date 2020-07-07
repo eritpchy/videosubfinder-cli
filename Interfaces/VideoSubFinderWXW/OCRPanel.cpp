@@ -302,8 +302,8 @@ void COCRPanel::Init()
 	m_plblMSD->SetFont(m_LBLFont);
 	m_plblMSD->SetBackgroundColour( m_CL1 );
 
-	m_pMSD = new wxTextCtrl( m_pP3, wxID_ANY,
-		wxString::Format(wxT("%f"), m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
+	m_pMSD = new CTextCtrl(m_pP3, wxID_ANY,
+		&(m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_LBLFont);
 
 	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
@@ -385,8 +385,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		}
 	}	
 
-	Str = m_pMSD->GetValue();
-	mdt = (s64)atof(Str)*1000;
+	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	for(k=0; k<(int)FileNamesVector.size(); k++)
 	{
@@ -533,8 +532,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		}
 	}
 
-	Str = m_pMSD->GetValue();
-	mdt = (s64)atof(Str)*1000;
+	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	k = 0;
 	while (k < (int)FileNamesVector.size())
@@ -743,8 +741,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		}
 	}
 
-	Str = m_pMSD->GetValue();
-	mdt = (s64)atof(Str)*1000;
+	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
 	
 	int W, H;
     

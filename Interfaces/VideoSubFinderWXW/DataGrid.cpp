@@ -15,8 +15,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "DataGrid.h"
+#include "Control.h"
 
-class CGridCellTextEditor: public wxGridCellTextEditor
+class CGridCellTextEditor: public wxGridCellTextEditor, public CControl
 {
 public:
 	CGridCellTextEditor(int row, int col, wxGrid* grid, wxString *pstr)
@@ -26,7 +27,7 @@ public:
 		m_grid = grid;
 
 		m_pstr = pstr;
-		grid->SetCellValue( row, col, *m_pstr );
+		m_grid->SetCellValue(m_row, m_col, *m_pstr );
 	}
 
 	
@@ -44,6 +45,11 @@ public:
 		return res;
 	}
 
+	void RefreshData()
+	{
+		m_grid->SetCellValue(m_row, m_col, *m_pstr);
+	}
+
 	int m_row;
 	int m_col;
 	wxGrid* m_grid;
@@ -51,7 +57,7 @@ public:
 	wxString *m_pstr;
 };
 
-class CGridCellChoiceEditor : public wxGridCellChoiceEditor
+class CGridCellChoiceEditor : public wxGridCellChoiceEditor, public CControl
 {
 public:
 	CGridCellChoiceEditor(int row, int col, wxGrid* grid, wxString *pstr, wxArrayString vals) : wxGridCellChoiceEditor(vals)
@@ -92,6 +98,11 @@ public:
 		return res;
 	}
 
+	void RefreshData()
+	{
+		m_grid->SetCellValue(m_row, m_col, *m_pstr);
+	}
+
 	int m_row;
 	int m_col;
 	wxGrid* m_grid;
@@ -99,7 +110,7 @@ public:
 	wxString *m_pstr;
 };
 
-class CGridCellNumberEditor: public wxGridCellNumberEditor
+class CGridCellNumberEditor: public wxGridCellNumberEditor, public CControl
 {
 public:
 	CGridCellNumberEditor(int row, int col, wxGrid* grid, int *pval, int val_min, int val_max)
@@ -146,6 +157,13 @@ public:
 		return res;
 	}
 
+	void RefreshData()
+	{
+		wxString Str;
+		Str << *m_pval;
+		m_grid->SetCellValue(m_row, m_col, Str);
+	}
+
 	int m_row;
 	int m_col;
 	wxGrid* m_grid;
@@ -155,7 +173,7 @@ public:
 	int *m_pval;
 };
 
-class CGridCellFloatEditor: public wxGridCellFloatEditor
+class CGridCellFloatEditor: public wxGridCellFloatEditor, public CControl
 {
 public:
 	CGridCellFloatEditor(int row, int col, wxGrid* grid, double *pval, double val_min, double val_max)
@@ -202,6 +220,13 @@ public:
 		return res;
 	}
 
+	void RefreshData()
+	{
+		wxString Str;
+		Str << *m_pval;
+		m_grid->SetCellValue(m_row, m_col, Str);
+	}
+
 	int m_row;
 	int m_col;
 	wxGrid* m_grid;
@@ -211,7 +236,7 @@ public:
 	double *m_pval;
 };
 
-class CGridCellBoolEditor: public wxGridCellBoolEditor
+class CGridCellBoolEditor: public wxGridCellBoolEditor, public CControl
 {
 public:
 	CGridCellBoolEditor(int row, int col, wxGrid* grid, bool *pbln)
@@ -256,6 +281,22 @@ public:
 		}
 
 		return res;
+	}
+
+	void RefreshData()
+	{
+		wxString Str;
+		
+		if (*m_pbln)
+		{
+			Str = "1";
+		}
+		else
+		{
+			Str = "";
+		}
+
+		m_grid->SetCellValue(m_row, m_col, Str);
 	}
 
 	int m_row;

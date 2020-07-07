@@ -21,7 +21,7 @@
 #include <mutex>
 #include "MyResource.h"
 #include "MainFrm.h"
-#include "TextBox.h"
+#include "StaticText.h"
 #include "ScrollBar.h"
 #include "SeparatingLine.h"
 
@@ -82,8 +82,8 @@ public:
 	wxFont    m_LBLFont;
 
 	wxToolBar		*m_pVBar;
-	CTextBox		*m_plblVB;
-	CTextBox		*m_plblTIME;
+	CStaticText		*m_plblVB;
+	CStaticText		*m_plblTIME;
 	CVideoWindow	*m_pVBox;
 	CScrollBar		*m_pSB;
 

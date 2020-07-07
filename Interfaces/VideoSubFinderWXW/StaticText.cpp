@@ -14,13 +14,13 @@
 //																				//
 //////////////////////////////////////////////////////////////////////////////////
 
-#include "TextBox.h"
+#include "StaticText.h"
 
-BEGIN_EVENT_TABLE(CTextBox, wxPanel)
-	EVT_SIZE(CTextBox::OnSize)
+BEGIN_EVENT_TABLE(CStaticText, wxPanel)
+	EVT_SIZE(CStaticText::OnSize)
 END_EVENT_TABLE()
 
-CTextBox::CTextBox(  wxWindow* parent,
+CStaticText::CStaticText(  wxWindow* parent,
 				wxWindowID id,
 				const wxString& label,
 				long text_style,
@@ -36,11 +36,11 @@ CTextBox::CTextBox(  wxWindow* parent,
 	m_text_style = text_style;
 }
 
-CTextBox::~CTextBox()
+CStaticText::~CStaticText()
 {
 }
 
-bool CTextBox::SetFont(const wxFont& font)
+bool CStaticText::SetFont(const wxFont& font)
 {
 	return m_pST->SetFont(font);
 
@@ -48,7 +48,7 @@ bool CTextBox::SetFont(const wxFont& font)
 	OnSize(event);
 }
 
-void CTextBox::SetLabel(const wxString& label)
+void CStaticText::SetLabel(const wxString& label)
 {
 	m_pST->SetLabel(label);
 
@@ -56,18 +56,18 @@ void CTextBox::SetLabel(const wxString& label)
 	OnSize(event);
 }
 
-bool CTextBox::SetBackgroundColour(const wxColour& colour)
+bool CStaticText::SetBackgroundColour(const wxColour& colour)
 {
 	return ( wxPanel::SetBackgroundColour(colour) && 
 		     m_pST->SetBackgroundColour(colour) );
 }
 
-void CTextBox::SetTextColour(const wxColour& colour)
+void CStaticText::SetTextColour(const wxColour& colour)
 {
 	m_pST->SetForegroundColour(colour);
 }
 
-void CTextBox::OnSize(wxSizeEvent& event)
+void CStaticText::OnSize(wxSizeEvent& event)
 {
 	int w, h, tw, th, x, y;
 

@@ -15,25 +15,26 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <wx/checkbox.h>
-#include "Control.h"
+#include <vector>
 
-class CCheckBox : public wxCheckBox, public CControl
+class CControl
 {
 public:
-	bool* m_p_val;
+	static std::vector<CControl*> m_all_controls;
 
-	CCheckBox(wxWindow* parent,
-		wxWindowID id,
-		bool* p_val,
-		const wxString& label,
-		const wxPoint& pos = wxDefaultPosition,
-		const wxSize& size = wxDefaultSize,
-		long style = 0);
+	CControl()
+	{
+		CControl::m_all_controls.push_back(this);
+	}
 
-	void OnCheckBoxEvent(wxCommandEvent& evt);
-	void RefreshData();
-	
-private:
-   DECLARE_EVENT_TABLE()
+	static void RefreshAllControlsData()
+	{
+		for (int i = 0; i < m_all_controls.size(); i++)
+		{
+			m_all_controls[i]->RefreshData();
+		}
+	}
+
+	virtual void RefreshData() = 0;
 };
+

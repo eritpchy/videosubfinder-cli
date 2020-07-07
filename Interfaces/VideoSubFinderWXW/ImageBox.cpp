@@ -87,7 +87,7 @@ void CImageBox::Init()
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 
-	m_plblIB = new CTextBox( this, ID_LBL_IB, wxT("Image Box") );
+	m_plblIB = new CStaticText( this, ID_LBL_IB, wxT("Image Box") );
 	m_IBColor = m_plblIB->GetBackgroundColour();
 	m_plblIB->SetSize(0, 0, 390, 30);
 	m_plblIB->SetFont(m_LBLFont);

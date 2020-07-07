@@ -131,7 +131,8 @@ public:
 	wxString	m_ssp_oim_property_use_gradient_images_for_clear_txt_images;
 	wxString	m_ssp_oim_property_clear_txt_images_by_main_color;
 	wxString	m_ssp_oim_property_remove_wide_symbols;
-	wxString	m_ssp_oim_property_use_ILA_images_for_clear_txt_images;
+	wxString	m_ssp_oim_property_use_ILA_images_for_clear_txt_images;	
+	wxString	m_label_settings_file;
 };
 
 class CMainFrame : public wxMDIParentFrame

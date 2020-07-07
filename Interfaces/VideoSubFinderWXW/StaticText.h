@@ -1,4 +1,4 @@
-                              //TextBox.h//                                
+                              //StaticText.h//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -18,10 +18,10 @@
 #include <wx/panel.h>
 #include <wx/stattext.h>
 
-class CTextBox : public wxPanel
+class CStaticText : public wxPanel
 {
 public:
-	CTextBox (wxWindow* parent,
+	CStaticText (wxWindow* parent,
 				   wxWindowID id = wxID_ANY,				   
 				   const wxString& label = "",
 				   long text_style = wxALIGN_CENTER,
@@ -29,7 +29,7 @@ public:
 				   const wxPoint& pos = wxDefaultPosition,
 				   const wxSize& size = wxDefaultSize,
 				   const wxString& name = "panel");		
-	~CTextBox();
+	~CStaticText();
 	
 	wxWindow		*m_pParent;
 	wxStaticText	*m_pST;

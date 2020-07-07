@@ -20,11 +20,14 @@
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
+#include "Control.h"
 
 CMainFrame *g_pMF;
 
 const DWORD _MMX_FEATURE_BIT = 0x00800000;
 const DWORD _SSE2_FEATURE_BIT = 0x04000000;
+
+std::vector<CControl*> CControl::m_all_controls;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -795,6 +798,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
 
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
+
+	ReadProperty(m_locale_settings, m_cfg.m_label_settings_file, "label_settings_file");
 }
 
 void CMainFrame::SaveSettings()
@@ -937,9 +942,12 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 		}
 
 		m_GeneralSettingsFileName = fd.GetPath();
-	}
+		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(m_GeneralSettingsFileName + wxT(" "));
 
-	LoadSettings();
+		LoadSettings();
+
+		CControl::RefreshAllControlsData();
+	}
 }
 
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
@@ -955,9 +963,11 @@ void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 		}
 
 		m_GeneralSettingsFileName = fd.GetPath();
-	}
 
-	SaveSettings();
+		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(m_GeneralSettingsFileName + wxT(" "));
+
+		SaveSettings();
+	}
 }
 
 void CMainFrame::OnFileSaveSettings(wxCommandEvent& event)

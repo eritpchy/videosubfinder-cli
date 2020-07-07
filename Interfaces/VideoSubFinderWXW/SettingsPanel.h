@@ -16,7 +16,7 @@
 
 #pragma once
 #include "SSOWnd.h"
-#include "TextBox.h"
+#include "StaticText.h"
 #include "DataGrid.h"
 #include "DataTypes.h"
 #include <wx/panel.h>
@@ -45,7 +45,10 @@ public:
 
 	wxBitmapButton *m_pLeft;
 	wxBitmapButton *m_pRight;
-	CTextBox	   *m_plblIF;
+	CStaticText	   *m_plblIF;
+
+	CStaticText* m_plblGSFN;
+	CStaticText* m_pGSFN;
 
 	int		m_cn;
 	int		m_n;

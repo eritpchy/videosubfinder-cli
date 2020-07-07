@@ -15,23 +15,30 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <wx/checkbox.h>
+#include <wx/textctrl.h>
 #include "Control.h"
 
-class CCheckBox : public wxCheckBox, public CControl
+class CTextCtrl : public wxTextCtrl, public CControl
 {
 public:
-	bool* m_p_val;
-
-	CCheckBox(wxWindow* parent,
+	wxString* m_p_str_val = NULL;
+	double* m_p_f_val = NULL;
+	
+	CTextCtrl(wxWindow* parent, 
 		wxWindowID id,
-		bool* p_val,
-		const wxString& label,
+		wxString* p_str_val,
 		const wxPoint& pos = wxDefaultPosition,
 		const wxSize& size = wxDefaultSize,
 		long style = 0);
 
-	void OnCheckBoxEvent(wxCommandEvent& evt);
+	CTextCtrl(wxWindow* parent,
+		wxWindowID id,
+		double* p_f_val,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize,
+		long style = 0);
+
+	void OnTextCtrlEvent(wxCommandEvent& evt);
 	void RefreshData();
 	
 private:

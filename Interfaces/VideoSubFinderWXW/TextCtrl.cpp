@@ -15,37 +15,58 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "CheckBox.h"
+#include "TextCtrl.h"
 
-BEGIN_EVENT_TABLE(CCheckBox, wxCheckBox)
-	EVT_CHECKBOX(wxID_ANY, CCheckBox::OnCheckBoxEvent)
+BEGIN_EVENT_TABLE(CTextCtrl, wxTextCtrl)
+	EVT_TEXT(wxID_ANY, CTextCtrl::OnTextCtrlEvent)
 END_EVENT_TABLE()
 
-CCheckBox::CCheckBox(wxWindow* parent,
+CTextCtrl::CTextCtrl(wxWindow* parent,
 	wxWindowID id,
-	bool* p_val,
-	const wxString& label,		
+	wxString* p_str_val,
 	const wxPoint& pos,
 	const wxSize& size,
-	long style) : wxCheckBox(parent, id, label, pos, size, style)
+	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
 {
-	m_p_val = p_val;
-	this->SetValue(*m_p_val);
+	m_p_str_val = p_str_val;
+	ChangeValue(*m_p_str_val);
 }
 
-void CCheckBox::OnCheckBoxEvent(wxCommandEvent& evt)
+CTextCtrl::CTextCtrl(wxWindow* parent,
+	wxWindowID id,
+	double* p_f_val,
+	const wxPoint& pos,
+	const wxSize& size,
+	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
 {
-	if (evt.IsChecked())
+	m_p_f_val = p_f_val;
+	ChangeValue(wxString::Format(wxT("%f"), *m_p_f_val));
+}
+
+void CTextCtrl::OnTextCtrlEvent(wxCommandEvent& evt)
+{
+	if (m_p_str_val)
 	{
-		*m_p_val = true;
+		*m_p_str_val = GetValue();
 	}
-	else
+	else if (m_p_f_val)
 	{
-		*m_p_val = false;
+		double value;
+		if (GetValue().ToDouble(&value))
+		{
+			*m_p_f_val = value;
+		}		
 	}
 }
 
-void CCheckBox::RefreshData()
+void CTextCtrl::RefreshData()
 {
-	this->SetValue(*m_p_val);
+	if (m_p_str_val)
+	{
+		ChangeValue(*m_p_str_val);
+	}
+	else if (m_p_f_val)
+	{
+		ChangeValue(wxString::Format(wxT("%f"), *m_p_f_val));
+	}
 }

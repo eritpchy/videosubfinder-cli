@@ -244,12 +244,12 @@ void CVideoBox::Init()
 	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_stop.bmp", m_CLVBar);
 	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);	
 
-	m_plblVB = new CTextBox( this, ID_LBL_VB, wxT("Video Box") );
+	m_plblVB = new CStaticText( this, ID_LBL_VB, wxT("Video Box") );
 	m_plblVB->SetSize(0, 0, 390, 30);
 	m_plblVB->SetFont(m_LBLFont);
 	m_plblVB->SetBackgroundColour( m_CL1 );
 	
-	m_plblTIME = new CTextBox( m_pVBar, ID_LBL_TIME, 
+	m_plblTIME = new CStaticText( m_pVBar, ID_LBL_TIME, 
 									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_LBLFont);

@@ -188,7 +188,7 @@ void CSettingsPanel::Init()
 		bmp_na, rcRight.GetPosition(), rcRight.GetSize() );
 	m_pRight->SetBitmapSelected(bmp_od);
 
-	m_plblIF = new CTextBox( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
+	m_plblIF = new CStaticText( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
 	m_plblIF->SetFont(m_LBLFont);
 	m_plblIF->SetBackgroundColour( m_CL3 );
 	m_plblIF->SetSize(rlIF);
@@ -295,6 +295,23 @@ void CSettingsPanel::Init()
 
 	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.75);
 	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.25);
+
+	wxRect rlGSFN, rcGSFN;
+	rlGSFN = rlIF;
+	rlGSFN.y = rcTEST.GetBottom() + 8;
+
+	rcGSFN = rlGSFN;
+	rcGSFN.y = rlGSFN.GetBottom() + 4;
+
+	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_settings_file);
+	m_plblGSFN->SetFont(m_LBLFont);
+	m_plblGSFN->SetBackgroundColour(m_CL1);
+	m_plblGSFN->SetSize(rlGSFN);
+
+	m_pGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_GeneralSettingsFileName + wxT(" "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);	
+	m_pGSFN->SetFont(m_LBLFont);
+	m_pGSFN->SetBackgroundColour(wxColour(255, 255, 255));
+	m_pGSFN->SetSize(rcGSFN);
 }
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)

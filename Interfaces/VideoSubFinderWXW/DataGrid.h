@@ -76,6 +76,7 @@ public:
 	void AddProperty( wxString label, 
 					  wxColour colour1, wxColour colour2,
 		              wxFont font, bool *pbln );
+
 	//void AddSubGroup();
 	//bool SetFont(const wxFont& font);
 	//void SetLabel(const wxString& label);

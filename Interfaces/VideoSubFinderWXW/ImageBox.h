@@ -19,7 +19,7 @@
 #include <wx/image.h>
 #include "MyResource.h"
 #include "MainFrm.h"
-#include "TextBox.h"
+#include "StaticText.h"
 
 class CImageBox;
 
@@ -46,7 +46,7 @@ public:
 
 	wxFont		m_LBLFont;
 
-	CTextBox	*m_plblIB;
+	CStaticText	*m_plblIB;
 	CImageWnd   *m_pIW;
 
 	wxColour	m_IWColor;
