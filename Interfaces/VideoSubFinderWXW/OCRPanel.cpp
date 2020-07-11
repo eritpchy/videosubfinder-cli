@@ -1005,7 +1005,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 	try
 	{
 		wxString Str;
-		int w, h;
+		int w, h, w2, h2;
 
 		GetImageSize(wxString(FileName), w, h);
 		res.m_w = w;
@@ -1035,40 +1035,54 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 
 		if (g_use_ISA_images_for_get_txt_area)
 		{
-			Str = FileName;
-			Str = GetFileName(Str);
-			Str = g_work_dir + "/ISAImages/" + Str + g_im_save_format;
+			Str = g_work_dir + "/ISAImages/" + GetFileName(FileName) + g_im_save_format;
 
 			if (wxFileExists(Str))
 			{
-				LoadBinaryImage(ImTF, wxString(Str), w, h);
-				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
-				RestoreStillExistLines(ImTF, ImFF, w, h);
-				ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
+				GetImageSize(Str, w2, h2);
+
+				if ((w2 == w) && (h2 == h))
+				{
+					LoadBinaryImage(ImTF, wxString(Str), w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
+					RestoreStillExistLines(ImTF, ImFF, w, h);
+					ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
+				}
+				else
+				{
+					g_pMF->ShowErrorMessage(wxString::Format(wxT("ISA Image \"%s\" has wrong size"), GetFileName(FileName) + g_im_save_format));
+				}
 			}
 		}
 
 		// IL image	
 		if (g_use_ILA_images_for_get_txt_area)
 		{
-			Str = FileName;
-			Str = GetFileName(Str);
-			Str = g_work_dir + "/ILAImages/" + Str + g_im_save_format;
+			Str = g_work_dir + "/ILAImages/" + GetFileName(FileName) + g_im_save_format;
 
 			if (wxFileExists(Str))
 			{
-				ImIL.set_size(w * h);
-				LoadBinaryImage(ImIL, wxString(Str), w, h);
-				if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
+				GetImageSize(Str, w2, h2);
+				
+				if ((w2 == w) && (h2 == h))
+				{
+					ImIL.set_size(w * h);
+					LoadBinaryImage(ImIL, wxString(Str), w, h);
+					if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
 
-				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
-				IntersectTwoImages(ImTF, ImIL, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
+					IntersectTwoImages(ImTF, ImIL, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_05_ISAImageIntILAImage" + g_im_save_format, w, h);
 
-				if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, w, h);
-				IntersectTwoImages(ImFF, ImIL, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/ThreadCreateClearedTextImages_06_ImNF" + g_im_save_format, w, h);
+					IntersectTwoImages(ImFF, ImIL, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/ThreadCreateClearedTextImages_07_ImNFIntILAImage" + g_im_save_format, w, h);
+				}
+				else
+				{
+					g_pMF->ShowErrorMessage(wxString::Format(wxT("ILA Image \"%s\" has wrong size"), GetFileName(FileName) + g_im_save_format));
+				}
 			}			
 		}		
 
