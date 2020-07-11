@@ -283,7 +283,7 @@ void ThreadSearchSubtitlesEnd()
 			handler = g_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
 			wxPostEvent(handler, bn_event);
 		}
-		else if (g_RunSubSearch == 1)
+		else if ((g_RunSubSearch == 1) && g_playback_sound)
 		{
 			wxString Str = g_app_dir + wxT("/finished.wav");
 			if (wxFileExists(Str))

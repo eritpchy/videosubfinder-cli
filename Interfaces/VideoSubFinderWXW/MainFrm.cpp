@@ -24,6 +24,8 @@
 
 CMainFrame *g_pMF;
 
+bool g_playback_sound = false;
+
 const DWORD _MMX_FEATURE_BIT = 0x00800000;
 const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
@@ -726,6 +728,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
 	ReadProperty(m_general_settings, g_save_scaled_images, "save_scaled_images");
 
+	ReadProperty(m_general_settings, g_playback_sound, "playback_sound");
+
 	//------------------------------------------------
 
 	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
@@ -814,6 +818,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
 
 	ReadProperty(m_locale_settings, m_cfg.m_label_settings_file, "label_settings_file");
+	ReadProperty(m_locale_settings, m_cfg.m_playback_sound, "label_playback_sound");
 }
 
 void CMainFrame::SaveSettings()
@@ -901,6 +906,8 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, g_save_each_substring_separately, "save_each_substring_separately");
 	WriteProperty(fout, g_save_scaled_images, "save_scaled_images");
+
+	WriteProperty(fout, g_playback_sound, "playback_sound");
 
 	fout.Flush();
 	ffout.Close();

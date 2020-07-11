@@ -35,6 +35,8 @@
 
 using namespace std;
 
+extern bool g_playback_sound;
+
 class CSSOWnd;
 class CVideoBox;
 class CImageBox;
@@ -63,6 +65,7 @@ public:
 	wxString	m_ocr_button_cesfcti_text;
 	wxString	m_ocr_button_test_text;
 
+	wxString	m_playback_sound;
 	wxString	m_ssp_hw_device;
 	wxString	m_ssp_label_parameters_influencing_image_processing;
 	wxString	m_ssp_label_ocl_and_multiframe_image_stream_processing;

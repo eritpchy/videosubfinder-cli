@@ -1347,7 +1347,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		m_pMF->m_pPanel->m_pSSPanel->Enable();		
 		m_pMF->m_pPanel->m_pOCRPanel->Enable();
 
-		if (g_RunCreateClearedTextImages == 1)
+		if ((g_RunCreateClearedTextImages == 1) && g_playback_sound)
 		{
 			Str = g_app_dir + wxT("/finished.wav");
 			if (wxFileExists(Str))
