@@ -16,6 +16,7 @@
 
 #include "SearchPanel.h"
 #include <exception>
+#include <wx/sound.h>
 
 int g_IsSearching = 0;
 int g_IsClose = 0;
@@ -281,6 +282,18 @@ void ThreadSearchSubtitlesEnd()
 			wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
 			handler = g_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
 			wxPostEvent(handler, bn_event);
+		}
+		else if (g_RunSubSearch == 1)
+		{
+			wxString Str = g_app_dir + wxT("/finished.wav");
+			if (wxFileExists(Str))
+			{
+				wxSound sound(Str);
+				if (sound.IsOk())
+				{
+					sound.Play();
+				}
+			}
 		}
 	}
 

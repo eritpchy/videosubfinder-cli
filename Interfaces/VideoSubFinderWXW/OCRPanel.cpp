@@ -27,6 +27,7 @@
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
+#include <wx/sound.h>
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
@@ -1345,6 +1346,19 @@ void *ThreadCreateClearedTextImages::Entry()
 		m_pMF->m_pPanel->m_pSHPanel->Enable();
 		m_pMF->m_pPanel->m_pSSPanel->Enable();		
 		m_pMF->m_pPanel->m_pOCRPanel->Enable();
+
+		if (g_RunCreateClearedTextImages == 1)
+		{
+			Str = g_app_dir + wxT("/finished.wav");
+			if (wxFileExists(Str))
+			{
+				wxSound sound(Str);
+				if (sound.IsOk())
+				{
+					sound.Play();
+				}
+			}
+		}
 	}
 
 	g_IsCreateClearedTextImages = 0;
