@@ -42,6 +42,10 @@ void CImageWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 			this->GetClientSize(&w, &h);
 			dc.DrawBitmap(m_pIB->m_pImage->Scale(w, h), 0, 0);
 		}
+		else
+		{
+			dc.Clear();
+		}
 	}
 }
 
@@ -137,10 +141,9 @@ void CImageBox::ClearScreen()
 		m_pIW->GetClientSize(&w, &h);
 
 		delete m_pImage;
-		m_pImage = new wxImage(w, h);
-
-		m_pIW->Refresh(false);
+		m_pImage = new wxImage(w, h);		
 	}
+	m_pIW->Refresh(false);
 }
 
 void CImageBox::ViewRGBImage(simple_buffer<int> &Im, int w, int h)

@@ -369,6 +369,20 @@ void CMainFrame::OnFileOpenVideo(int type)
 		csFileName = fd.GetPath();
 	}
 
+	if (m_pVideoBox->m_pImage != NULL)
+	{
+		delete m_pVideoBox->m_pImage;
+		m_pVideoBox->m_pImage = NULL;
+	}
+	m_pVideoBox->ClearScreen();
+
+	if (m_pImageBox->m_pImage != NULL)
+	{		
+		delete m_pImageBox->m_pImage;
+		m_pImageBox->m_pImage = NULL;
+	}
+	m_pImageBox->ClearScreen();
+
 	m_FileName = csFileName;
 
 	this->Disable();
@@ -1005,8 +1019,7 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 			if (Cur > m_BegTime)
 			{
 				clock_t cur_time = clock();
-				double progress = ((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0;
-
+				double progress = std::min<double>(((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0, 100.0);
 				clock_t run_time = cur_time - g_StartTimeRunSubSearch;
 				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
 

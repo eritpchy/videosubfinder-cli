@@ -1315,7 +1315,6 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		m_pMF->m_pVideoBox->m_plblTIME->SetLabel("00:00:00,000/00:00:00,000   ");
 		m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
 
 		m_pMF->m_pPanel->m_pSHPanel->Enable();

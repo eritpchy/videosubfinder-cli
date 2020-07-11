@@ -74,6 +74,10 @@ void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 			this->GetClientSize(&w, &h);
 			dc.DrawBitmap(m_pVB->m_pImage->Scale(w, h), 0, 0);
 		}
+		else
+		{
+			dc.Clear();
+		}
 	}
 }
 
@@ -513,6 +517,19 @@ void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 		m_pVBox->m_pVideoWnd->Refresh(false);
 		m_pVBox->m_pVideoWnd->Update();
 	}
+}
+
+void CVideoBox::ClearScreen()
+{
+	if (m_pImage != NULL)
+	{
+		int w, h;
+		m_pVBox->m_pVideoWnd->GetClientSize(&w, &h);
+
+		delete m_pImage;
+		m_pImage = new wxImage(w, h);
+	}
+	m_pVBox->m_pVideoWnd->Refresh(false);
 }
 
 void CVideoBox::OnHScroll(wxScrollEvent& event)

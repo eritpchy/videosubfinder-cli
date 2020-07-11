@@ -102,6 +102,7 @@ public:
 	void ViewImage(simple_buffer<int> &Im, int w, int h);
 	void ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h);
 	void ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h);
+	void ClearScreen();
 
 public:
 	void OnSize(wxSizeEvent& event);	
