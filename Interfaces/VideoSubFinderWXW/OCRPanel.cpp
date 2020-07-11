@@ -946,6 +946,9 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 				m_pMF->m_pVideo->SetNullRender();
 			}
 
+			m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox");
+			m_pMF->m_pVideoBox->m_plblTIME->SetLabel("");
+
 			m_pMF->m_pPanel->m_pSSPanel->Disable();
 			m_pMF->m_pPanel->m_pSHPanel->Disable();
 		}
@@ -1223,93 +1226,101 @@ void *ThreadCreateClearedTextImages::Entry()
 		
 	int NImages = FileNamesVector.size();
 
-	concurrency::concurrent_queue<find_text_queue_data> task_queue;
-	simple_buffer<FindTextLinesRes*> task_results(NImages);
-	simple_buffer<my_event*> task_events(NImages);
-	vector<concurrency::task<void>> tasks(g_ocr_threads, concurrency::create_task([] {}));
-
-	for (k = 0; k < NImages; k++)
+	if (NImages > 0)
 	{
-		task_results[k] = new FindTextLinesRes();
-		task_events[k] = new my_event();
-		task_queue.push({ FileNamesVector[k], task_results[k], task_events[k] });
-	}
+		concurrency::concurrent_queue<find_text_queue_data> task_queue;
+		simple_buffer<FindTextLinesRes*> task_results(NImages);
+		simple_buffer<my_event*> task_events(NImages);
+		vector<concurrency::task<void>> tasks(g_ocr_threads, concurrency::create_task([] {}));
 
-	for (k = 0; k < g_ocr_threads; k++)
-	{
-		task_queue.push({ "", NULL, NULL, true });
-		tasks[k] = TaskFindTextLines(task_queue);
-	}
+		m_pMF->m_pVideoBox->m_pSB->SetScrollPos(0);
+		m_pMF->m_pVideoBox->m_pSB->SetScrollRange(0, NImages);
 
-	clock_t start_time = clock();
-
-	for (k = 0; k < NImages; k++)
-	{
-		try
+		for (k = 0; k < NImages; k++)
 		{
-			task_events[k]->wait();			
+			task_results[k] = new FindTextLinesRes();
+			task_events[k] = new my_event();
+			task_queue.push({ FileNamesVector[k], task_results[k], task_events[k] });
+		}
 
-			if (task_events[k]->m_need_to_skip)
+		for (k = 0; k < g_ocr_threads; k++)
+		{
+			task_queue.push({ "", NULL, NULL, true });
+			tasks[k] = TaskFindTextLines(task_queue);
+		}
+
+		clock_t start_time = clock();
+
+		for (k = 0; k < NImages; k++)
+		{
+			try
 			{
+				task_events[k]->wait();
+
+				if (task_events[k]->m_need_to_skip)
+				{
+					delete task_events[k];
+					delete task_results[k];
+					continue;
+				}
+
+				FindTextLinesRes* p_task_res = task_results[k];
+
+				res = p_task_res->m_res;
+
+
+				if (!(m_pMF->m_blnNoGUI))
+				{
+					g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
+					g_pViewGreyscaleImage[1](p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);
+
+					clock_t cur_time = clock();
+					double progress = ((double)(k + 1) / (double)NImages) * 100.0;
+
+					clock_t run_time = cur_time - start_time;
+					clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+
+					wxString str;
+					str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
+
+					m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+
+					Str = FileNamesVector[k];
+					Str = GetFileName(Str);
+
+					m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + Str + "\"");
+
+					m_pMF->m_pVideoBox->m_pSB->SetScrollPos(k + 1);
+
+					if (res == -1)
+					{
+						g_pMF->ShowErrorMessage(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k]);
+					}
+				}
+
+				if ((res == 0) && (g_DontDeleteUnrecognizedImages1 == true))
+				{
+					Str = FileNamesVector[k];
+					Str = GetFileName(Str);
+					Str = wxT("/TXTImages/") + Str + wxT("_00001") + g_im_save_format;
+
+					simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale) * (int)(p_task_res->m_h / g_scale), 255);
+					SaveGreyscaleImage(ImRES1, wxString(Str), p_task_res->m_w * g_scale, p_task_res->m_h / g_scale);
+				}
+
 				delete task_events[k];
 				delete task_results[k];
-				continue;
+
+				prevSavedFiles = p_task_res->m_SavedFiles;
 			}
-
-			FindTextLinesRes *p_task_res = task_results[k];
-
-			res = p_task_res->m_res;
-			
-
-			if (!(m_pMF->m_blnNoGUI))
+			catch (const exception& e)
 			{
-				g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
-				g_pViewGreyscaleImage[1](p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);
-
-				clock_t cur_time = clock();
-				double progress = ((double)(k + 1) / (double)NImages) * 100.0;
-
-				clock_t run_time = cur_time - start_time;
-				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
-
-				wxString str;
-				str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
-
-				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
-
-				Str = FileNamesVector[k];
-				Str = GetFileName(Str);			
-
-				m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + Str + "\"");
-
-				if (res == -1)
-				{
-					g_pMF->ShowErrorMessage(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k]);
-				}
+				g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + wxString(e.what()));
 			}
-
-			if ((res == 0) && (g_DontDeleteUnrecognizedImages1 == true))
-			{
-				Str = FileNamesVector[k];
-				Str = GetFileName(Str);
-				Str = wxT("/TXTImages/") + Str + wxT("_00001") + g_im_save_format;
-
-				simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale)*(int)(p_task_res->m_h / g_scale), 255);
-				SaveGreyscaleImage(ImRES1, wxString(Str), p_task_res->m_w*g_scale, p_task_res->m_h / g_scale);
-			}
-
-			delete task_events[k];
-			delete task_results[k];
-
-			prevSavedFiles = p_task_res->m_SavedFiles;
 		}
-		catch (const exception& e)
-		{
-			g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + wxString(e.what()));
-		}
+
+		concurrency::when_all(begin(tasks), end(tasks)).wait();
 	}
-
-	concurrency::when_all(begin(tasks), end(tasks)).wait();
 
 	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));
 

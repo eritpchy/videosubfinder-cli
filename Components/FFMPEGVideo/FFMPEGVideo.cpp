@@ -469,6 +469,8 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	m_fps = video->avg_frame_rate.num / (double)video->avg_frame_rate.den;
 
+	m_MovieName = csMovieName;
+
 	return res;
 }
 
