@@ -23,6 +23,8 @@
 
 wxString g_hw_device = "none";
 
+bool g_bln_get_hw_format = true;
+
 wxArrayString GetAvailableHWDeviceTypes()
 {
 	wxArrayString res;
@@ -151,7 +153,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
 			return *p;
 	}
 
-	wxMessageBox("Failed to get HW surface format.", "FFMPEGVideo::get_hw_format");
+	g_bln_get_hw_format = false;
 	return AV_PIX_FMT_NONE;
 }
 
@@ -363,6 +365,8 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	}
 	video_stream = ret;
 
+	hw_pix_fmt = AV_PIX_FMT_NONE;
+
 	for (i = 0;; i++) {
 		const AVCodecHWConfig *config = avcodec_get_hw_config(decoder, i);
 		if (!config) {
@@ -378,6 +382,14 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 			hw_pix_fmt = config->pix_fmt;
 			break;
 		}
+	}
+
+	if (hw_pix_fmt == AV_PIX_FMT_NONE) {
+		wxString msg;
+		msg.Printf(wxT("Failed to find decoder HW config with support of device type %s for current video."), wxString(av_hwdevice_get_type_name(type)));
+		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
+		CloseMovie();
+		return false;
 	}
 
 	if (!(decoder_ctx = avcodec_alloc_context3(decoder)))
@@ -438,7 +450,14 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	m_Pos = -2;
 
+	g_bln_get_hw_format = true;
 	OneStep();
+
+	if (!g_bln_get_hw_format) {
+		wxMessageBox("Failed to get HW surface format.", "FFMPEGVideo::get_hw_format");
+		CloseMovie();
+		return false;
+	}
 
 	if (m_ImageGeted) {
 		res = true;
