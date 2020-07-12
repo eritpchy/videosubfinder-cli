@@ -184,6 +184,7 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 		int i, j, i1, i2, jj, kk;
 		int x, y;
 		bool bln, bln2;
+		custom_assert(n_splits > 0, "SearchClosedFigures: n_splits > 0");
 		int yb = i_split * (h / n_splits);
 		int ye = (i_split == n_splits - 1) ? (h - 1) : (yb + (h / n_splits) - 1);
 		int hh = ye - yb + 1;
@@ -233,6 +234,7 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 	for (int i_split = 1; i_split < n_splits; i_split++)
 	{
 		int i, j, i1, i2, jj, kk;
+		custom_assert(n_splits > 0, "SearchClosedFigures: n_splits > 0");
 		int x, y = i_split * (h / n_splits);
 		bool bln, bln2;
 
@@ -277,6 +279,7 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 
 	for (int i_split = 0; i_split < n_splits; i_split++)
 	{
+		custom_assert(n_splits > 0, "SearchClosedFigures: n_splits > 0");
 		int yb = i_split * (h / n_splits);
 		int index_min = yb * w + 1;
 
@@ -296,6 +299,7 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 
 	for (int i_split = 0; i_split < n_splits; i_split++)
 	{
+		custom_assert(n_splits > 0, "SearchClosedFigures: n_splits > 0");
 		int yb = i_split * (h / n_splits);
 		int index_min = yb * w + 1;
 

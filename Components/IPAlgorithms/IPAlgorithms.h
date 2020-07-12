@@ -92,6 +92,7 @@ extern bool		g_disable_save_images;
 
 extern bool     g_save_each_substring_separately;
 extern bool     g_save_scaled_images;
+extern bool		g_border_is_darker;
 
 template <class T>
 void FindAndApplyLocalThresholding(simple_buffer<T>& Im, int dw, int dh, int w, int h);

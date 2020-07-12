@@ -72,6 +72,7 @@ public:
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_use_ocl;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
+	wxString	m_border_is_darker;
 	wxString	m_ssp_ocr_threads;
 	wxString	m_ssp_oi_property_image_scale_for_clear_image;
 	wxString	m_ssp_oi_property_moderate_threshold_for_scaled_image;

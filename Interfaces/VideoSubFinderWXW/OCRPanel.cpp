@@ -1246,10 +1246,31 @@ void *ThreadCreateClearedTextImages::Entry()
 		concurrency::concurrent_queue<find_text_queue_data> task_queue;
 		simple_buffer<FindTextLinesRes*> task_results(NImages);
 		simple_buffer<my_event*> task_events(NImages);
-		vector<concurrency::task<void>> tasks(g_ocr_threads, concurrency::create_task([] {}));
+		vector<concurrency::task<void>> tasks(g_ocr_threads, concurrency::create_task([] {}));		
 
-		m_pMF->m_pVideoBox->m_pSB->SetScrollPos(0);
-		m_pMF->m_pVideoBox->m_pSB->SetScrollRange(0, NImages);
+		if (!(m_pMF->m_blnNoGUI))
+		{
+			m_pMF->m_pVideoBox->m_pSB->SetScrollPos(0);
+			m_pMF->m_pVideoBox->m_pSB->SetScrollRange(0, NImages);
+
+			if (m_pMF->m_pVideoBox->m_pImage != NULL)
+			{
+				delete m_pMF->m_pVideoBox->m_pImage;
+				m_pMF->m_pVideoBox->m_pImage = NULL;
+			}
+			m_pMF->m_pVideoBox->ClearScreen();
+
+			if (m_pMF->m_pImageBox->m_pImage != NULL)
+			{
+				delete m_pMF->m_pImageBox->m_pImage;
+				m_pMF->m_pImageBox->m_pImage = NULL;
+			}
+			m_pMF->m_pImageBox->ClearScreen();
+
+			wxString str;
+			str.Printf(wxT("progress: 0%%   |   0 : %.5d   "), NImages);
+			m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+		}
 
 		for (k = 0; k < NImages; k++)
 		{
@@ -1297,7 +1318,6 @@ void *ThreadCreateClearedTextImages::Entry()
 
 					wxString str;
 					str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
-
 					m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
 
 					Str = FileNamesVector[k];

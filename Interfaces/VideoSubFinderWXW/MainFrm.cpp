@@ -730,6 +730,8 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_general_settings, g_playback_sound, "playback_sound");
 
+	ReadProperty(m_general_settings, g_border_is_darker, "border_is_darker");
+
 	//------------------------------------------------
 
 	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
@@ -748,6 +750,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_hw_device, "ssp_hw_device");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
@@ -908,6 +911,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_save_scaled_images, "save_scaled_images");
 
 	WriteProperty(fout, g_playback_sound, "playback_sound");
+
+	WriteProperty(fout, g_border_is_darker, "border_is_darker");
 
 	fout.Flush();
 	ffout.Close();

@@ -1640,6 +1640,7 @@ int AnalyseImage(simple_buffer<u8>& Im, simple_buffer<u16>* pImILA, int w, int h
 	tp = g_tp;
 	mtl = (int)(g_mtpl*(double)w);
 	
+	custom_assert(segh > 0, "AnalyseImage: segh > 0");
 	n = h/segh;
 	da = w*segh;
 
@@ -1724,6 +1725,7 @@ int AnalyseImage(simple_buffer<u8>& Im, simple_buffer<u16>* pImILA, int w, int h
 
 		len2 = g_le[k][l]-g_lb[k][0]+1;
 
+		custom_assert(len2 > 0, "AnalyseImage: len2 > 0");
 		if ((double)len/(double)len2 >= tp) return 1;
 
 		val1 = (g_le[k][l-1]+g_lb[k][0]+1)-w;
@@ -2172,7 +2174,8 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 				break;
 			}
 
-			if ((double)dif / (double)cmb <= veple)
+			custom_assert(cmb > 0, "CompareTwoSubs: cmb > 0");
+			if ((double)dif <= veple * (double)cmb)
 			{
 				continue;
 			}
@@ -2227,6 +2230,7 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 				break;
 			}
 
+			custom_assert(cmb > 0, "CompareTwoSubs: cmb > 0");
 			if ((double)dif / (double)cmb > veple)
 			{
 				bln = 0;
