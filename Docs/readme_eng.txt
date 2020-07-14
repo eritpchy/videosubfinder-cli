@@ -16,13 +16,40 @@ Quick Start Guide
 How to use without deep details:
 1) Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
 2) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
-3) Click "Create Cleared TXT Images" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
+3) MOST IMPORTANT PART: Before continue: Check does subtitles has darker border color then subtitles text color (in most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
+In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
+4) Click "Create Cleared TXT Images" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
 One of most recommended by them are:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
+
+#########################################################################################################
+Recommended Settings And Some Solutions
+#########################################################################################################
+
+1) Correct results during "Create Cleared TXT Images":
+Before starting "Create Cleared TXT Images":
+Check does subtitles has darker border color then subtitles text color (in most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
+In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
+
+2) "Create Cleared TXT Images" from subs with bad quality:
+In this case sometimes really help to improve RGBImages quality by using "Topaz Gigapixel AI".
+Take into the note that most settings for "Create Cleared TXT Images" are aligned with RGBImages resolution 480-720p.
+So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
+Also you will need to align images sizes in "ILAImages" and "ISAImages" with "RGBImages" sizes after that, or just
+remove or disable them during "Create Cleared TXT Images" run.
+
+3) Performance during "Create Cleared TXT Images":
+Currently program use:
+"CPU kmeans initial loop iterations" == 20  
+CPU kmeans loop iterations" = 30
+This is required in case of subs which don't have good borders, in such cases can be to complex to separate text from background.
+In case of subs with solid/good borders you can try to decrease both of them to 10, this will increase performance ~x2.
+Dependently from what CPU and GPU you have, if speed is important it is recommended to turn on "Use CUDA GPU Acceleration" checkbox,
+this can also increase performance ~x2.
 
 #########################################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:

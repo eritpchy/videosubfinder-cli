@@ -48,59 +48,110 @@ public:
 };
 
 template <class T>
-clock_t SearchClosedFigures(simple_buffer<T> &Im, int w, int h, T white, custom_buffer<CMyClosedFigure> &FiguresArray);
+clock_t SearchClosedFigures(simple_buffer<T> &Im, int w, int h, T white, custom_buffer<CMyClosedFigure> &FiguresArray, bool  combine_diagonal_points = true);
 
 //-----------------------------------------------------
 
 template <class T>
-void GetInfoAboutNearestPoints(simple_buffer<T>& Im, int& x, int& y, int& i, int& w, bool& bln, bool& bln2, int& i1, int& i2, T& white)
+void GetInfoAboutNearestPoints(simple_buffer<T>& Im, int& x, int& y, int& i, int& w, bool& bln, bool& bln2, int& i1, int& i2, T& white, bool  combine_diagonal_points)
 {
-	//Проверяем есть ли с лева точка фигуры
-	if ((x > 0) && (Im[i - 1] == white))//[x-1][y]
-	{//есть:
-		bln = true;
-		i1 = i - 1;
+	if (combine_diagonal_points)
+	{
+		//Проверяем есть ли с лева точка фигуры
+		if ((x > 0) && (Im[i - 1] == white))//[x-1][y]
+		{//есть:
+			bln = true;
+			i1 = i - 1;
 
-		if (y > 0)
-		{
-			//Проверяем нет ли c низу с лева точки фигуры
-			if (Im[i - w - 1] != white)//[x-1][y-1]
-			{//с низу с лева точки фигуры нету:
+			if (y > 0)
+			{
+				//Проверяем нет ли c низу с лева точки фигуры
+				if (Im[i - w - 1] != white)//[x-1][y-1]
+				{//с низу с лева точки фигуры нету:
 
-				//Проверяем есть ли с низу точка фигуры
-				if (Im[i - w] == white)//[x][y-1]
-				{//есть:
-					bln2 = true;
-					i2 = i - w;
+					//Проверяем есть ли с низу точка фигуры
+					if (Im[i - w] == white)//[x][y-1]
+					{//есть:
+						bln2 = true;
+						i2 = i - w;
+					}
+					else
+					{//нету: 
+
+						//Проверяем есть ли с низу с права точка фигуры
+						if (x < w - 1)
+						{
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{//есть:
+								bln2 = true;
+								i2 = i - w + 1;
+							}
+						}
+					}
 				}
 				else
-				{//нету: 
+				{//с низу с лева точка фигуры есть:
 
-					//Проверяем есть ли с низу с права точка фигуры
-					if (x < w - 1)
-					{
-						if (Im[i - w + 1] == white)//[x+1][y-1]
-						{//есть:
-							bln2 = true;
-							i2 = i - w + 1;
+					//Проверяем нет ли с низу точки фигуры
+					if (Im[i - w] != white)//[x][y-1]
+					{//нет:
+
+						//Проверяем есть ли с низу с права точка фигуры
+						if (x < w - 1)
+						{
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{//есть:
+								bln2 = true;
+								i2 = i - w + 1;
+							}
 						}
 					}
 				}
 			}
-			else
-			{//с низу с лева точка фигуры есть:
+		}
+		else
+		{//с лева точки фигуры нету:
 
-				//Проверяем нет ли с низу точки фигуры
-				if (Im[i - w] != white)//[x][y-1]
-				{//нет:
+			if (y > 0)
+			{
+				//Проверяем есть ли с низу точка фигуры
+				if (Im[i - w] == white)//[x][y-1]
+				{//есть:
+					bln = true;
+					i1 = i - w;
+				}
+				else
+				{//нету:
 
-					//Проверяем есть ли с низу с права точка фигуры
-					if (x < w - 1)
-					{
-						if (Im[i - w + 1] == white)//[x+1][y-1]
-						{//есть:
-							bln2 = true;
-							i2 = i - w + 1;
+					//Проверяем есть ли снизу слева точка фигуры
+					if ((x > 0) && (Im[i - w - 1] == white))//[x-1][y-1]
+					{//есть:
+						bln = true;
+						i1 = i - w - 1;
+
+						//Проверяем есть ли снизу справа точка фигуры
+						if (x < w - 1)
+						{
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{
+								//есть:
+								bln2 = true;
+								i2 = i - w + 1;
+							}
+						}
+					}
+					else
+					{//нету: 
+
+						//Проверяем есть ли снизу справа точка фигуры
+						if (x < w - 1)
+						{
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{
+								//есть:
+								bln = true;
+								i1 = i - w + 1;
+							}
 						}
 					}
 				}
@@ -108,50 +159,105 @@ void GetInfoAboutNearestPoints(simple_buffer<T>& Im, int& x, int& y, int& i, int
 		}
 	}
 	else
-	{//с лева точки фигуры нету:
+	{
+		//Проверяем есть ли с лева точка фигуры
+		if ((x > 0) && (Im[i - 1] == white))//[x-1][y]
+		{//есть:
+			bln = true;
+			i1 = i - 1;
 
-		if (y > 0)
-		{
-			//Проверяем есть ли с низу точка фигуры
-			if (Im[i - w] == white)//[x][y-1]
-			{//есть:
-				bln = true;
-				i1 = i - w;
+			if (y > 0)
+			{
+				//Проверяем нет ли c низу с лева точки фигуры
+				if (Im[i - w - 1] != white)//[x-1][y-1]
+				{//с низу с лева точки фигуры нету:
+
+					//Проверяем есть ли с низу точка фигуры
+					if (Im[i - w] == white)//[x][y-1]
+					{//есть:
+						bln2 = true;
+						i2 = i - w;
+					}
+					/*else
+					{//нету: 
+
+						//Проверяем есть ли с низу с права точка фигуры
+						if (x < w - 1)
+						{
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{//есть:
+								bln2 = true;
+								i2 = i - w + 1;
+							}
+						}
+					}*/
+				}
+				/*else
+				{//с низу с лева точка фигуры есть:
+
+					//Проверяем нет ли с низу точки фигуры
+					if (Im[i - w] != white)//[x][y-1]
+					{//нет:
+
+						//Проверяем есть ли с низу с права точка фигуры
+						if (x < w - 1)
+						{
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{//есть:
+								bln2 = true;
+								i2 = i - w + 1;
+							}
+						}
+					}
+				}*/
 			}
-			else
-			{//нету:
+		}
+		else
+		{//с лева точки фигуры нету:
 
-				//Проверяем есть ли снизу слева точка фигуры
-				if ((x > 0) && (Im[i - w - 1] == white))//[x-1][y-1]
+			if (y > 0)
+			{
+				//Проверяем есть ли с низу точка фигуры
+				if (Im[i - w] == white)//[x][y-1]
 				{//есть:
 					bln = true;
-					i1 = i - w - 1;
+					i1 = i - w;
+				}
+				/*else
+				{//нету:
 
-					//Проверяем есть ли снизу справа точка фигуры
-					if (x < w - 1)
-					{
-						if (Im[i - w + 1] == white)//[x+1][y-1]
+					//Проверяем есть ли снизу слева точка фигуры
+					if ((x > 0) && (Im[i - w - 1] == white))//[x-1][y-1]
+					{//есть:
+						bln = true;
+						i1 = i - w - 1;
+
+						//Проверяем есть ли снизу справа точка фигуры
+						if (x < w - 1)
 						{
-							//есть:
-							bln2 = true;
-							i2 = i - w + 1;
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{
+								//есть:
+								bln2 = true;
+								i2 = i - w + 1;
+							}
 						}
 					}
-				}
-				else
-				{//нету: 
+					else
+					{//нету: 
 
-					//Проверяем есть ли снизу справа точка фигуры
-					if (x < w - 1)
-					{
-						if (Im[i - w + 1] == white)//[x+1][y-1]
+						//Проверяем есть ли снизу справа точка фигуры
+						if (x < w - 1)
 						{
-							//есть:
-							bln = true;
-							i1 = i - w + 1;
+							if (Im[i - w + 1] == white)//[x+1][y-1]
+							{
+								//есть:
+								bln = true;
+								i1 = i - w + 1;
+							}
 						}
 					}
-				}
+				}*/
 			}
 		}
 	}
@@ -160,7 +266,7 @@ void GetInfoAboutNearestPoints(simple_buffer<T>& Im, int& x, int& y, int& i, int
 /////////////////////////////////////////////////////////////////////////////
 
 template <class T>
-clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_buffer<CMyClosedFigure>& FiguresArray)
+clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_buffer<CMyClosedFigure>& FiguresArray, bool  combine_diagonal_points)
 {
 	int* m, * key, * key2, * max_index_in_split;
 	const int n_splits = 1;
@@ -199,7 +305,7 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 					bln = false;
 					bln2 = false;
 
-					GetInfoAboutNearestPoints(Im, x, y, i, w, bln, bln2, i1, i2, white);
+					GetInfoAboutNearestPoints(Im, x, y, i, w, bln, bln2, i1, i2, white, combine_diagonal_points);
 
 					if (bln)
 					{
@@ -245,7 +351,7 @@ clock_t SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_
 				bln = false;
 				bln2 = false;
 
-				GetInfoAboutNearestPoints(Im, x, y, i, w, bln, bln2, i1, i2, white);
+				GetInfoAboutNearestPoints(Im, x, y, i, w, bln, bln2, i1, i2, white, combine_diagonal_points);
 
 				if (bln)
 				{
