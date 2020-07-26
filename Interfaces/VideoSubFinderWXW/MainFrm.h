@@ -65,6 +65,7 @@ public:
 	wxString	m_ocr_button_cesfcti_text;
 	wxString	m_ocr_button_test_text;
 
+	wxString	m_label_text_alignment;
 	wxString	m_playback_sound;
 	wxString	m_ssp_hw_device;
 	wxString	m_ssp_label_parameters_influencing_image_processing;
@@ -125,7 +126,7 @@ public:
 	wxString	m_ssp_oim_sub_group_settings_for_comparing_subs;
 	wxString	m_ssp_oim_property_vedges_points_line_error;
 	wxString	m_ssp_oim_sub_group_settings_for_checking_sub;
-	wxString	m_ssp_oim_property_text_procent;
+	wxString	m_ssp_oim_property_text_percent;
 	wxString	m_ssp_oim_property_min_text_length;
 	wxString	m_ssp_oim_property_use_ISA_images_for_search_subtitles;
 	wxString	m_ssp_oim_property_use_ILA_images_for_search_subtitles;

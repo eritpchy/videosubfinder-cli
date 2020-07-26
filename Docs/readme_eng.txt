@@ -18,7 +18,7 @@ How to use without deep details:
 2) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
 3) MOST IMPORTANT PART: Before continue: Check does subtitles has darker border color then subtitles text color (in most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
-4) Click "Create Cleared TXT Images" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
+4) Click "Create Cleared TXTImages" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
@@ -27,28 +27,41 @@ https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 
 #########################################################################################################
-Recommended Settings And Some Solutions
+Recommended Settings And Some Solutions For "Run Search"
 #########################################################################################################
 
-1) Correct results during "Create Cleared TXT Images":
-Before starting "Create Cleared TXT Images":
-Check does subtitles has darker border color then subtitles text color (in most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
-In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
+1) If subtitles has too unstable color, old video with bad quality, with distortions and flickering of image,
+or you try to get subs which gradually become visible than invisible (like on some openings of films),
+it is recommended to disable all options related to use ILAImages:
+"Use ILAImages for search subtitles"
+"Use ILAImages for getting TXT areas"
+"Use ILAImages For Clear TXTImages"
 
-2) "Create Cleared TXT Images" from subs with bad quality:
-In this case sometimes really help to improve RGBImages quality by using "Topaz Gigapixel AI".
-Take into the note that most settings for "Create Cleared TXT Images" are aligned with RGBImages resolution 480-720p.
+#########################################################################################################
+Recommended Settings And Some Solutions For "Create Cleared TXTImages"
+#########################################################################################################
+
+1) Correct results during "Create Cleared TXTImages":
+Before starting "Create Cleared TXTImages":
+Check does subtitles has darker border color then subtitles text color (in most case it is so,
+if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
+In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated,
+in such cases decision will be applied according this setting.
+
+2) "Create Cleared TXTImages" from subs with bad quality:
+In this case sometimes really help to improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
+Take into the note that most settings for "Create Cleared TXTImages" are aligned with RGBImages resolution 480-720p.
 So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
 Also you will need to align images sizes in "ILAImages" and "ISAImages" with "RGBImages" sizes after that, or just
-remove or disable them during "Create Cleared TXT Images" run.
+remove or disable them during "Create Cleared TXTImages" run.
 
-3) Performance during "Create Cleared TXT Images":
+3) Performance during "Create Cleared TXTImages":
 Currently program use:
-"CPU kmeans initial loop iterations" == 20  
+"CPU kmeans initial loop iterations" == 20
 CPU kmeans loop iterations" = 30
-This is required in case of subs which don't have good borders, in such cases can be to complex to separate text from background.
+This is required in case of subs which don't have good borders, in such cases can be too complex to separate text from background.
 In case of subs with solid/good borders you can try to decrease both of them to 10, this will increase performance ~x2.
-Dependently from what CPU and GPU you have, if speed is important it is recommended to turn on "Use CUDA GPU Acceleration" checkbox,
+Dependently from what CPU and Nvidia GPU you have, if speed is important it is recommended to turn on "Use CUDA GPU Acceleration" checkbox,
 this can also increase performance ~x2.
 
 #########################################################################################################
@@ -67,9 +80,9 @@ NOTE: The instruction below was tested on 3.5.16 version with images with Englis
 In VideoSubFinder:
 2_1_1. Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
 2_1_2. Click "Run Search" and get images (in the first tab page: "Search").
-2_1_3. Click "Create Cleared TXT Images" (in the last tab page: "Search").
+2_1_3. Click "Create Cleared TXTImages" (in the last tab page: "Search").
 2_1_4. [Note: This step can be skipped] Open "TXTImages" folder and remove images without text.
-2_1_5. Click "Create Empty Sub From Cleared TXT Images" which will generate "sub.srt" file with timing only in root directory of program (in the last tab page: "Search").
+2_1_5. Click "Create Empty Sub From Cleared TXTImages" which will generate "sub.srt" file with timing only in root directory of program (in the last tab page: "Search").
 In Subtitle Edit:
 2_2_1. Click in menu "File->Open" and select sub.srt file
 2_2_2. Click in menu "File->Import images.." + Click "..." in top right and select all files in "TXTImages" (CTRL+A)

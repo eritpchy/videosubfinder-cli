@@ -44,8 +44,8 @@ int		g_RunSubSearch = 0;
 int    g_threads = -1;
 
 int		g_DL = 6;	 //sub frame length
-double	g_tp = 0.3;	 //text procent
-double	g_mtpl = 0.022;  //min text len (in procent)
+double	g_tp = 0.3;	 //text percent
+double	g_mtpl = 0.022;  //min text len (in percent)
 double	g_veple = 0.35; //vedges points line error
 
 bool g_use_ISA_images_for_search_subtitles = true;
@@ -56,7 +56,7 @@ int g_max_dl_up = 40;
 
 CVideo *g_pV;
 
-inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImISA, simple_buffer<u16> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H)
+inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImISA, simple_buffer<u16> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H, int min_x, int max_x)
 {
 	int res = 1;
 
@@ -93,7 +93,7 @@ inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8>
 		
 		simple_buffer<u8> ImSF(ImFF);
 
-		res = FilterTransformedImage(ImFF, ImSF, ImTF, ImNE, LB, LE, 1, w, h, W, H, VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn));
+		res = FilterTransformedImage(ImFF, ImSF, ImTF, ImNE, LB, LE, 1, w, h, W, H, min_x, max_x, VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn));
 
 #ifdef CUSTOM_DEBUG
 		{
@@ -157,7 +157,7 @@ inline void IntersectYImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buff
 
 int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buffer<simple_buffer<u8>*> &ImYForward, simple_buffer<simple_buffer<u8>*> &ImNEForward,
 			simple_buffer<u8> &ImIntS, simple_buffer<u16> &ImYS, simple_buffer<u8> &ImNES, simple_buffer<u8> &prevImNE,
-			int w, int h, int ymin, int W, int H, int offset )
+			int w, int h, int W, int H, int min_x, int max_x, int offset )
 {
 	simple_buffer<u8> ImInt2(w*h, 0);
 	simple_buffer<u16> ImYInt2(w*h, 0);
@@ -186,14 +186,14 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_
 		);
 	}
 
-	bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, ImInt2, &ImYInt2, *(ImNEForward[offset]), w, h, W, H, ymin);	
+	bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, ImInt2, &ImYInt2, *(ImNEForward[offset]), w, h, W, H, min_x, max_x);
 
 	return bln;
 }
 
 int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buffer<simple_buffer<u8>*> &ImYForward, simple_buffer<simple_buffer<u8>*> &ImNEForward,
 	simple_buffer<u8> &ImIntS, simple_buffer<u16> &ImYS, simple_buffer<u8> &ImNES, simple_buffer<u8> &prevImNE,
-	int w, int h, int ymin, int W, int H)
+	int w, int h, int W, int H, int min_x, int max_x)
 {	
 	int DL = g_DL;
 	int offset = 0;
@@ -202,7 +202,7 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 	{
 		for (offset = 0; offset < DL - 1; offset++)
 		{
-			if (CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, offset) == 0)
+			if (CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, min_x, max_x, offset) == 0)
 			{
 				break;
 			}
@@ -219,11 +219,11 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 			if ((l != r) && (blns[l] == -1) && (blns[r] == -1))
 			{
 				concurrency::parallel_invoke(
-					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, ymin, W, H, l] {
-						blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, l);
+					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, W, H, min_x, max_x, l] {
+						blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, min_x, max_x, l);
 					},
-					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, ymin, W, H, r] {
-						blns[r] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, r);
+					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, W, H, min_x, max_x, r] {
+						blns[r] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, min_x, max_x, r);
 					}
 				);				
 			}
@@ -231,12 +231,12 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 			{
 				if (blns[l] == -1)
 				{
-					blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, l);
+					blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, min_x, max_x, l);
 				}
 
 				if (blns[r] == -1)
 				{
-					blns[r] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H, r);
+					blns[r] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, min_x, max_x, r);
 				}
 			}
 
@@ -289,9 +289,9 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 	return offset;
 }
 
-inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int &w, int &h, int &W, int &H, int &res)
+inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H, int min_x, int max_x, int &res)
 {
-	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, &w, &h, &W, &H, &res]
+	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, w, h, W, H, min_x, max_x, &res]
 	{
 		simple_buffer<u8> ImFF(w*h, 0), ImSF(w*h, 0);
 		evt_rgb.wait();
@@ -303,7 +303,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 #ifdef CUSTOM_TA
 			__itt_task_begin(domain, __itt_null, __itt_null, shGetTransformedImage);
 #endif
-			res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H);
+			res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H, min_x, max_x);
 #ifdef CUSTOM_TA 
 			__itt_task_end(domain);
 #endif
@@ -321,7 +321,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 class RunSearch
 {
 	int m_threads;
-	int m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax, m_size;
+	int m_w, m_h, m_W, m_H, /*m_real_im_x_center,*/ m_xmin, m_xmax, m_ymin, m_ymax, m_size;
 	CVideo *m_pV;
 	int m_fn_start;
 	s64 m_prevPos;
@@ -375,6 +375,7 @@ public:
 		m_h = pV->m_h;
 		m_W = pV->m_Width;
 		m_H = pV->m_Height;
+		//m_real_im_x_center = (m_xmin + m_xmax) / 2;
 		m_xmin = pV->m_xmin;
 		m_xmax = pV->m_xmax;
 		m_ymin = pV->m_ymin;
@@ -748,7 +749,7 @@ public:
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			*(m_pthrs_res[fdn]) = 0;
-			m_thrs[fdn] = TaskConvertImage(fn, *(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImBGR[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
+			m_thrs[fdn] = TaskConvertImage(fn, *(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImBGR[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, m_xmin, m_xmax, *(m_pthrs_res[fdn]));
 		}
 	}
 
@@ -952,7 +953,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	s64 CurPos, prevPos;
 	int fn; //cur frame num
 	int max_rgb_fn; //max rgb frame num which will be obtained
-	int w, h, W, H, xmin, xmax, ymin, ymax, size;
+	int w, h, W, H, real_im_x_center, xmin, xmax /*, ymin, ymax*/, size;
 	int DL, threads;
 
 	int bf, ef; // begin, end frame
@@ -969,6 +970,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	g_StartTimeRunSubSearch = clock();
 	g_RunSubSearch = 1;
 
+	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
+
 	g_pV = pV;
 
 	w = g_pV->m_w;
@@ -977,8 +980,9 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	H = g_pV->m_Height;
 	xmin = g_pV->m_xmin;
 	xmax = g_pV->m_xmax;
-	ymin = g_pV->m_ymin;
-	ymax = g_pV->m_ymax;
+	/*ymin = g_pV->m_ymin;
+	ymax = g_pV->m_ymax;*/
+	real_im_x_center = w / 2;
 
 #ifdef CUSTOM_DEBUG
 	{		
@@ -1326,7 +1330,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 				}
 				else
 				{
-					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, pImYInt, *pImNE, w, h, W, H, ymin);
+					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, pImYInt, *pImNE, w, h, W, H, xmin, xmax);
 					
 					if ((bln > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL)))
 					{
@@ -1363,7 +1367,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (finded_prev == 1)
 						{
-							bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
+							bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, xmin, xmax);
 							
 							if (bln == 0)
 							{														
@@ -1379,7 +1383,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								}
 #endif
 
-								if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H) == 1)
+								if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
 								{
 									Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet);
 									rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
@@ -1402,7 +1406,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						
 						if (fn > bf + 1)
 						{
-							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H);
+							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, xmin, xmax);
 
 							pef = fn + offset - 1;
 							pet = PosForward[offset] - 1;
@@ -1462,7 +1466,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			{
 				if (finded_prev == 1)
 				{
-					bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
+					bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, xmin, xmax);
 
 					if (bln == 1)
 					{
@@ -1489,7 +1493,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 #endif
 
-						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H) == 1)
+						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
 						{
 							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet);
 							rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
@@ -1509,7 +1513,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						{
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, ymin);
+								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, xmin, xmax);
 
 								if (bln == 0)
 								{
@@ -1523,7 +1527,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 						else
 						{			
-							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, ymin, W, H);
+							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, xmin, xmax);
 
 							if (offset > 0)
 							{
@@ -1544,7 +1548,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					{
 						if (finded_prev == 1)
 						{
-							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, ymin);
+							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, xmin, xmax);
 
 							if (bln == 1)
 							{
@@ -1566,7 +1570,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 #endif
 
-						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H) == 1)
+						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, xmin, xmax) == 1)
 						{
 							Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et);
 							rs.AddSaveImagesTask(ImFS, ImIntS, ImYS, Str);
@@ -1718,44 +1722,67 @@ int AnalyseImage(simple_buffer<u8>& Im, simple_buffer<u16>* pImILA, int w, int h
 	}
 	l--;
 	
-	while(l>0)
+	if (g_text_alignment != TextAlignment::Any)
 	{
-		if (g_lb[k][0]*2 >= w) return 0;
-		if (len < mtl) return 0;
-
-		len2 = g_le[k][l]-g_lb[k][0]+1;
-
-		custom_assert(len2 > 0, "AnalyseImage: len2 > 0");
-		if ((double)len/(double)len2 >= tp) return 1;
-
-		val1 = (g_le[k][l-1]+g_lb[k][0]+1)-w;
-		if (val1<0) val1 = -val1;
-
-		val2 = (g_le[k][l]+g_lb[k][1]+1)-w;
-		if (val2<0) val2 = -val2;
-
-		if (val1 <= val2)
+		while (l > 0)
 		{
-			len -= g_le[k][l]-g_lb[k][l]+1;
-		}
-		else
-		{
-			len -= g_le[k][0]-g_lb[k][0]+1;
+			if (len < mtl) return 0;
 
-			for(i=0; i<l; i++)
+			len2 = g_le[k][l] - g_lb[k][0] + 1;
+
+			custom_assert(len2 > 0, "AnalyseImage: len2 > 0");
+			if ((double)len / (double)len2 >= tp) return 1;
+
+			if (g_text_alignment == TextAlignment::Center)
 			{
-				g_lb[k][i] = g_lb[k][i+1];
-				g_le[k][i] = g_le[k][i+1];
-			}
-		}
+				if (g_lb[k][0] * 2 >= w) return 0;
 
-		l--;
-	};
+				val1 = (g_le[k][l - 1] + g_lb[k][0] + 1) - w;
+				if (val1 < 0) val1 = -val1;
+
+				val2 = (g_le[k][l] + g_lb[k][1] + 1) - w;
+				if (val2 < 0) val2 = -val2;
+
+				if (val1 <= val2)
+				{
+					len -= g_le[k][l] - g_lb[k][l] + 1;
+				}
+				else
+				{
+					len -= g_le[k][0] - g_lb[k][0] + 1;
+
+					for (i = 0; i < l; i++)
+					{
+						g_lb[k][i] = g_lb[k][i + 1];
+						g_le[k][i] = g_le[k][i + 1];
+					}
+				}
+			}
+			else if (g_text_alignment == TextAlignment::Left)
+			{
+				len -= g_le[k][l] - g_lb[k][l] + 1;
+			}
+			else
+			{
+				len -= g_le[k][0] - g_lb[k][0] + 1;
+
+				for (i = 0; i < l; i++)
+				{
+					g_lb[k][i] = g_lb[k][i + 1];
+					g_le[k][i] = g_le[k][i + 1];
+				}
+			}
+
+			l--;
+		};
+	}
 	
 	if (len > mtl)
-	if (g_lb[k][0]*2 < w)
-	{ 
-		return 1;
+	{
+		if ((g_lb[k][0] * 2 < w) || (g_text_alignment != TextAlignment::Center))
+		{
+			return 1;
+		}
 	}
 
 	return 0;
@@ -1881,7 +1908,7 @@ int GetLinesInfo(simple_buffer<T> &ImRES, simple_buffer<int> &lb, simple_buffer<
 	return ln;
 }
 
-int DifficultCompareTwoSubs2(simple_buffer<u8>& ImF1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImNE11, simple_buffer<u8>& ImNE12, simple_buffer<u8>& ImF2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImNE2, int w, int h, int W, int H, int ymin)
+int DifficultCompareTwoSubs2(simple_buffer<u8>& ImF1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImNE11, simple_buffer<u8>& ImNE12, simple_buffer<u8>& ImF2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImNE2, int w, int h, int W, int H, int min_x, int max_x)
 {
 	simple_buffer<u8> ImFF1(ImF1), ImFF2(ImF2);
 	simple_buffer<u8> ImRES(w*h, 0);
@@ -1929,26 +1956,26 @@ int DifficultCompareTwoSubs2(simple_buffer<u8>& ImF1, simple_buffer<u16>* pImILA
 	concurrency::parallel_invoke(
 		[&] {
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_1_ImFF1" + g_im_save_format, w, h);
-			FilterImage(ImFF1, ImNE11, w, h, W, H, lb, le, ln);
+			FilterImage(ImFF1, ImNE11, w, h, W, H, min_x, max_x, lb, le, ln);
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_2_ImFF1F" + g_im_save_format, w, h);
 			filter_image(ImFF1);
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_3_ImFF1FF" + g_im_save_format, w, h);
 		},
 		[&] {
 			if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/DifficultCompareTwoSubs2_03_1_ImFF2" + g_im_save_format, w, h);
-			FilterImage(ImFF2, ImNE2, w, h, W, H, lb, le, ln);
+			FilterImage(ImFF2, ImNE2, w, h, W, H, min_x, max_x, lb, le, ln);
 			if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/DifficultCompareTwoSubs2_03_2_ImFF2F" + g_im_save_format, w, h);
 			filter_image(ImFF2);
 			if (g_show_results) SaveGreyscaleImage(ImFF2, "/TestImages/DifficultCompareTwoSubs2_03_3_ImFF2FF" + g_im_save_format, w, h);
 		}
 	);	
 
-	res = CompareTwoSubs(ImFF1, pImILA1, ImNE11, ImNE12, ImFF2, pImILA2, ImNE2, w, h, W, H, ymin);
+	res = CompareTwoSubs(ImFF1, pImILA1, ImNE11, ImNE12, ImFF2, pImILA2, ImNE2, w, h, W, H);
 
 	return res;
 }
 
-int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImVE11, simple_buffer<u8>& ImVE12, simple_buffer<u8>& Im2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImVE2, int w, int h, int W, int H, int ymin)
+int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImVE11, simple_buffer<u8>& ImVE12, simple_buffer<u8>& Im2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImVE2, int w, int h, int W, int H)
 {
 	simple_buffer<u8> ImRES(w * h, 0), ImVE11R(ImVE11), ImVE12R(ImVE12), ImVE2R(ImVE2);
 	simple_buffer<int> lb(h, 0), le(h, 0);
@@ -2129,18 +2156,12 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 		return 0;
 	}
 
-	auto compare = [&ImRES, &lb, &le, ln, l, w, ymin, H, veple](simple_buffer<u8> &ImVE1, simple_buffer<u8> &ImVE2) {
+	auto compare = [&ImRES, &lb, &le, ln, l, w, H, veple](simple_buffer<u8> &ImVE1, simple_buffer<u8> &ImVE2) {
 		int bln = 1, k, i, ib, ie, dif, dif1, dif2, cmb, val1, val2;
 		for (k = 0; k < ln; k++)
 		{
 			ib = (lb[k] + 1)*w;
-			ie = (le[k] - 1)*w;
-
-			if (((ln > 0) && (l < ln - 1) && (lb[l] + ymin > H / 4) &&
-				(le[l] + ymin < H / 2) && (lb[ln - 1] + ymin > H / 2))) // egnoring garbage line
-			{
-				continue;
-			}
+			ie = (le[k] - 1)*w;			
 
 			dif1 = 0;
 			dif2 = 0;
@@ -2261,18 +2282,18 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 	return bln;
 }
 
-int CompareTwoSubsOptimal(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImVE11, simple_buffer<u8>& ImVE12, simple_buffer<u8>& Im2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImVE2, int w, int h, int W, int H, int ymin)
+int CompareTwoSubsOptimal(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImVE11, simple_buffer<u8>& ImVE12, simple_buffer<u8>& Im2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImVE2, int w, int h, int W, int H, int min_x, int max_x)
 {
 	int bln = 0;
 	
 	if (bln == 0)
 	{
-		bln = CompareTwoSubs(Im1, pImILA1, ImVE11, ImVE12, Im2, pImILA2, ImVE2, w, h, W, H, ymin);
+		bln = CompareTwoSubs(Im1, pImILA1, ImVE11, ImVE12, Im2, pImILA2, ImVE2, w, h, W, H);
 	}
 
 	if (bln == 0)
 	{
-		bln = DifficultCompareTwoSubs2(Im1, pImILA1, ImVE11, ImVE12, Im2, pImILA2, ImVE2, w, h, W, H, ymin);
+		bln = DifficultCompareTwoSubs2(Im1, pImILA1, ImVE11, ImVE12, Im2, pImILA2, ImVE2, w, h, W, H, min_x, max_x);
 	}
 
 	return bln;

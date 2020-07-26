@@ -49,6 +49,12 @@ wxString get_add_info();
 
 extern bool g_use_ocl;
 
+enum TextAlignment {
+	Center,
+	Left,
+	Right,	
+	Any
+};
 
 class custom_event : public concurrency::event
 {

@@ -50,7 +50,7 @@ extern int		g_segh;  //segment height
 extern int		g_msegc; //minimum segments count
 extern int		g_scd;   //min sum color diff
 extern double	g_btd;   //between text distace
-extern double	g_tco;   //text centre offset
+extern double	g_to;   //text offset
 
 extern int		g_mpn;	 //min points number
 extern double	g_mpd;   //min points density
@@ -94,6 +94,13 @@ extern bool     g_save_each_substring_separately;
 extern bool     g_save_scaled_images;
 extern bool		g_border_is_darker;
 
+extern TextAlignment g_text_alignment;
+extern wxString g_text_alignment_string;
+
+wxArrayString GetAvailableTextAlignments();
+wxString ConvertTextAlignmentToString(TextAlignment val);
+TextAlignment ConvertStringToTextAlignment(wxString val);
+
 template <class T>
 void FindAndApplyLocalThresholding(simple_buffer<T>& Im, int dw, int dh, int w, int h);
 
@@ -110,9 +117,10 @@ void BorderClear(simple_buffer<T> &Im, int dd, int w, int h);
 template <class T>
 void EasyBorderClear(simple_buffer<T> &Im, int w, int h);
 
-int GetTransformedImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H);
-int FilterTransformedImage(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, wxString iter_det);
-int FilterImage(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, int w, int h, int W, int H, simple_buffer<int> &LB, simple_buffer<int> &LE, int N);
+int GetTransformedImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H, int min_x, int max_x);
+int FilterTransformedImage(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
+int FilterImage(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, int w, int h, int W, int H, int min_x, int max_x, simple_buffer<int> &LB, simple_buffer<int> &LE, int N);
+void GetImXLocation(simple_buffer<u8>& ImBGR, int W, int min_y, int max_y, int& min_x_res, int& max_x_res);
 
 int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8> &ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, vector<wxString>& SavedFiles, int W, int H);
 

@@ -1021,7 +1021,15 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 		{
 			simple_buffer<u8> ImSF(w * h)/*4*/, ImY(w * h)/*2*/;
 
-			res.m_res = GetTransformedImage(res.m_ImBGR, ImFF, ImSF, ImTF, ImNE, ImY, w, h, w, h);
+			int min_x, max_x;
+
+			GetImXLocation(res.m_ImBGR, w, 0, h-1, min_x, max_x);
+
+			if (min_x > max_x)
+			{
+				return;
+			}
+			res.m_res = GetTransformedImage(res.m_ImBGR, ImFF, ImSF, ImTF, ImNE, ImY, w, h, w, h, min_x, max_x);
 		}
 
 		if (g_show_transformed_images_only)
@@ -1164,6 +1172,8 @@ void *ThreadCreateClearedTextImages::Entry()
 {
 	g_IsCreateClearedTextImages = 1;
 	
+	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
+
 	if (g_ocr_threads <= 0)
 	{
 		g_ocr_threads = std::thread::hardware_concurrency();

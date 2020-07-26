@@ -198,6 +198,8 @@ void CSettingsPanel::Init()
 
     m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);	
 	
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_text_alignment, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_text_alignment_string, GetAvailableTextAlignments());
+
 	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, m_LBLFont, &g_playback_sound);
 
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_hw_device, GetAvailableHWDeviceTypes());
@@ -228,7 +230,7 @@ void CSettingsPanel::Init()
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segh, 1, 50);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tco, 0.0, 1.0);	
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_to, 0.0, 1.0);	
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);	
@@ -293,7 +295,7 @@ void CSettingsPanel::Init()
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 1.0);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_procent, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_percent, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);
 
 	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.75);
@@ -324,7 +326,9 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	char str[30];
 	clock_t t;
 	wxString ImgName;
-		
+	
+	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
+
 	if (m_pMF->m_VIsOpen)
 	{
 		m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
@@ -332,18 +336,19 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-		w = m_pMF->m_pVideo->m_w;
-		h = m_pMF->m_pVideo->m_h;
-		m_W = W = m_pMF->m_pVideo->m_Width;
-		m_H = H = m_pMF->m_pVideo->m_Height;
+		m_W = W = w = m_pMF->m_pVideo->m_Width;
+		m_H = H = h = m_pMF->m_pVideo->m_Height;
 		xmin = m_pMF->m_pVideo->m_xmin;
 		xmax = m_pMF->m_pVideo->m_xmax;
 		ymin = m_pMF->m_pVideo->m_ymin;
 		ymax = m_pMF->m_pVideo->m_ymax;
+		ImBGR.set_size(W*H*3);
 
-		ImBGR.set_size(w*h*3);
-
-		m_pMF->m_pVideo->GetBGRImage(ImBGR, xmin, xmax, ymin, ymax);
+		{
+			simple_buffer<u8> ImTMP_BGR(m_pMF->m_pVideo->m_w * m_pMF->m_pVideo->m_h * 3);
+			m_pMF->m_pVideo->GetBGRImage(ImTMP_BGR, xmin, xmax, ymin, ymax);			
+			ImBGRToNativeSize(ImTMP_BGR, ImBGR, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h, W, H, xmin, xmax, ymin, ymax);
+		}
 
 		s64 CurPos = m_pMF->m_pVideo->GetPos();
 		ImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
@@ -371,6 +376,8 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			ImBGR.set_size(W * H * 3);			
 			LoadBGRImage(ImBGR, filepath);
 
+			GetImXLocation(ImBGR, W, ymin, ymax, xmin, xmax);
+
 			g_pViewBGRImage[0](ImBGR, W, H);
 
 			ImgName = GetFileName(filename);
@@ -388,7 +395,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-	S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H);
+	S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H, xmin, xmax);
 	
 	if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
 	{
@@ -398,18 +405,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 		FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
 	}
-
-	if (S > 0)
-	{
-		if ((w != W) || (h != H))
-		{
-			for(k=0; k<m_n; k++)
-			{
-				ImToNativeSize(m_ImF[k], w, h, W, H, xmin, xmax, ymin, ymax);
-			}
-		}
-	}
-
+	
 	m_plblIF->SetLabel(StrFN[m_cn]);
 	m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], W, H);
 

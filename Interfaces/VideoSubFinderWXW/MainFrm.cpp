@@ -673,7 +673,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_msegc, "minimum_segments_count");
 	ReadProperty(m_general_settings, g_scd, "min_sum_color_diff");
 	ReadProperty(m_general_settings, g_btd, "between_text_distace");
-	ReadProperty(m_general_settings, g_tco, "text_centre_offset");
+	ReadProperty(m_general_settings, g_to, "text_centre_offset");
 	ReadProperty(m_general_settings, g_scale, "image_scale_for_clear_image");
 	
 	ReadProperty(m_general_settings, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
@@ -695,8 +695,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_threads, "threads");
 	ReadProperty(m_general_settings, g_ocr_threads, "ocr_threads");
 	ReadProperty(m_general_settings, g_DL, "sub_frame_length");
-	ReadProperty(m_general_settings, g_tp, "text_procent");
-	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_procent");
+	ReadProperty(m_general_settings, g_tp, "text_percent");
+	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_percent");
 	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");	
 	
 	ReadProperty(m_general_settings, g_clear_image_logical, "clear_image_logical");
@@ -732,6 +732,8 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_general_settings, g_border_is_darker, "border_is_darker");
 
+	ReadProperty(m_general_settings, g_text_alignment_string, "text_alignment");
+
 	//------------------------------------------------
 
 	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
@@ -746,7 +748,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
-		
+
+	ReadProperty(m_locale_settings, m_cfg.m_label_text_alignment, "label_text_alignment");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_hw_device, "ssp_hw_device");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
@@ -805,7 +808,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_text_procent, "ssp_oim_property_text_procent");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_text_percent, "ssp_oim_property_text_percent");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");	
 
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
@@ -857,7 +860,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_msegc, "minimum_segments_count");
 	WriteProperty(fout, g_scd, "min_sum_color_diff");
 	WriteProperty(fout, g_btd, "between_text_distace");
-	WriteProperty(fout, g_tco, "text_centre_offset");
+	WriteProperty(fout, g_to, "text_centre_offset");
 	WriteProperty(fout, g_scale, "image_scale_for_clear_image");
 
 	WriteProperty(fout, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
@@ -876,8 +879,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_threads, "threads");
 	WriteProperty(fout, g_ocr_threads, "ocr_threads");
 	WriteProperty(fout, g_DL, "sub_frame_length");
-	WriteProperty(fout, g_tp, "text_procent");
-	WriteProperty(fout, g_mtpl, "min_text_len_in_procent");
+	WriteProperty(fout, g_tp, "text_percent");
+	WriteProperty(fout, g_mtpl, "min_text_len_in_percent");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
 
 	WriteProperty(fout, g_clear_txt_folders, "clear_txt_folders");
@@ -906,6 +909,8 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_remove_wide_symbols, "remove_wide_symbols");
 
 	WriteProperty(fout, g_hw_device, "hw_device");
+
+	WriteProperty(fout, g_text_alignment_string, "text_alignment");
 
 	WriteProperty(fout, g_save_each_substring_separately, "save_each_substring_separately");
 	WriteProperty(fout, g_save_scaled_images, "save_scaled_images");

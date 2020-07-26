@@ -30,7 +30,7 @@
 using namespace std;
 
 void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> ImMASK, simple_buffer<u8>& ImIL, int w, int h, int W, int H, int LH, wxString iter_det);
-int CheckOnSubPresence(simple_buffer<u8> &ImMASK, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImFRes, int w, int h, int W, int H, int XB, int YB, wxString iter_det);
+int CheckOnSubPresence(simple_buffer<u8> &ImMASK, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImFRes, int w, int h, int W, int H, int min_x, int max_x, int XB, int YB, wxString iter_det);
 void SaveBinaryImageWithLinesInfo(simple_buffer<u8> &Im, wxString name, int lb1, int le1, int lb2, int le2, int w, int h);
 
 template <class T>
@@ -62,7 +62,7 @@ int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, in
 int ClearImageOptimal(simple_buffer<u8> &Im, int w, int h, u8 white);
 void CombineFiguresRelatedToEachOther(simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int min_h, wxString iter_det);
 int ClearImageFromSmallSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H, u8 white);
-int SecondFiltration(simple_buffer<u8> &Im, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H);
+int SecondFiltration(simple_buffer<u8> &Im, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, int min_x, int max_x);
 
 template <class T>
 int GetImageWithInsideFigures(simple_buffer<T> &Im, simple_buffer<T> &ImRes, int w, int h, T white, bool simple = false);
@@ -111,7 +111,7 @@ int     g_segh = 3;
 int		g_msegc = 2;
 int		g_scd = 800;
 double	g_btd = 0.05;
-double	g_tco = 0.1; // Max Text Center Offset
+double	g_to = 0.1; // Max Text Offset
 
 int		g_mpn = 50;
 double	g_mpd = 0.3;
@@ -176,6 +176,63 @@ bool g_save_each_substring_separately = true;
 bool g_save_scaled_images = true;
 
 bool g_border_is_darker  = true;
+
+TextAlignment g_text_alignment = TextAlignment::Center;
+wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
+
+wxArrayString GetAvailableTextAlignments()
+{
+	wxArrayString res;
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Center));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Left));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Right));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Any));
+	return res;
+}
+
+wxString ConvertTextAlignmentToString(TextAlignment val)
+{
+	wxString res;
+	switch (val)
+	{
+	case TextAlignment::Center:
+		res = wxT("Center");
+		break;
+	case TextAlignment::Left:
+		res = wxT("Left");
+		break;
+	case TextAlignment::Right:
+		res = wxT("Right");
+		break;
+	case TextAlignment::Any:
+		res = wxT("Any");
+		break;
+	}
+
+	return res;
+}
+
+TextAlignment ConvertStringToTextAlignment(wxString val)
+{
+	TextAlignment res;
+	if (val == ConvertTextAlignmentToString(TextAlignment::Center))
+	{
+		res = TextAlignment::Center;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Left))
+	{
+		res = TextAlignment::Left;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Right))
+	{
+		res = TextAlignment::Right;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Any))
+	{
+		res = TextAlignment::Any;
+	}
+	return res;
+}
 
 inline void SetBGRColor(simple_buffer<u8>& ImBGR, int pixel_id, int bgra_color)
 {
@@ -1233,7 +1290,42 @@ void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	}
 }
 
-int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, simple_buffer<u8>& ImTF, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H, wxString iter_det = "main")
+void FilterImageByNotIntersectedFiguresWithImMask(simple_buffer<u8>& ImInOut, simple_buffer<u8>& ImMASK, int w, int h, u8 white)
+{
+	CMyClosedFigure* pFigure;
+	int i, j, k, l, ii;
+	clock_t t;
+
+	custom_buffer<CMyClosedFigure> pFigures;
+
+	t = SearchClosedFigures(ImInOut, w, h, white, pFigures);
+	for (i = 0; i < pFigures.size(); i++)
+	{
+		pFigure = &(pFigures[i]);
+
+		bool found = false;
+		for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+		{
+			ii = pFigure->m_PointsArray[l];
+			if (ImMASK[ii])
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+			{
+				ii = pFigure->m_PointsArray[l];
+				ImInOut[ii] = 0;
+			}
+		}
+	}
+}
+
+int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, simple_buffer<u8>& ImTF, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det = "main")
 {
 	simple_buffer<u8> ImRES1(w * h), ImRES2(w * h);
 	int res = 0;
@@ -1254,31 +1346,41 @@ int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, sim
 
 	ImRES1.copy_data(ImSF, w * h);
 
-	res = SecondFiltration(ImSF, ImNE, LB, LE, N, w, h, W, H);
-	if (g_show_results) SaveGreyscaleImage(ImSF, "/TestImages/FilterTransformedImage_" + iter_det + "_03_01_ImSFFSecondFiltration" + g_im_save_format, w, h);
+	res = SecondFiltration(ImSF, ImNE, LB, LE, N, w, h, W, H, min_x, max_x);
+	if (g_show_results) SaveGreyscaleImage(ImSF, "/TestImages/FilterTransformedImage_" + iter_det + "_03_ImSFFSecondFiltration" + g_im_save_format, w, h);
 
-	if (res == 1) RestoreStillExistLines(ImSF, ImRES1, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImSF, "/TestImages/FilterTransformedImage_" + iter_det + "_03_02_ImSFWithRestoredStillExistLines" + g_im_save_format, w, h);
+	if (res == 1)
+	{
+		ImTF.copy_data(ImSF, w * h);
+		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_04_01_ImTF" + g_im_save_format, w, h);
 
-	ImTF.copy_data(ImSF, w * h);
-	ImRES2.copy_data(ImTF, w * h);
-	if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_04_ImTFFThirdFiltration" + g_im_save_format, w, h);
+		RestoreStillExistLines(ImTF, ImRES1, w, h);
+		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_04_02_ImTFWithRestoredStillExistLines" + g_im_save_format, w, h);
 
-	if (res == 1) res = ClearImageFromSmallSymbols(ImTF, w, h, W, H, 255);
-	if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_05_ImTFClearedFromSmallSymbols" + g_im_save_format, w, h);
+		FilterImageByNotIntersectedFiguresWithImMask(ImTF, ImSF, w, h, (u8)255);
+		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_04_03_ImTFFilterImageByNotIntersectedFiguresWithImMask" + g_im_save_format, w, h);
 
-	if (res == 1) RestoreStillExistLines(ImTF, ImRES2, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_08_ImTFWithRestoredStillExistLines" + g_im_save_format, w, h);
+		ImRES2.copy_data(ImTF, w * h);
 
-	if (res == 1) ExtendImFWithDataFromImNF(ImTF, ImRES1, w, h);
-	if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_09_ImTFExtByImFF" + g_im_save_format, w, h);
+		res = ClearImageFromSmallSymbols(ImTF, w, h, W, H, 255);
+		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_05_ImTFClearedFromSmallSymbols" + g_im_save_format, w, h);
+
+		if (res == 1)
+		{
+			RestoreStillExistLines(ImTF, ImRES2, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_08_ImTFWithRestoredStillExistLines" + g_im_save_format, w, h);
+
+			ExtendImFWithDataFromImNF(ImTF, ImRES1, w, h);
+			if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FilterTransformedImage_" + iter_det + "_09_ImTFExtByImFF" + g_im_save_format, w, h);
+		}
+	}
 
 	return res;
 }
 
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int GetTransformedImage(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, simple_buffer<u8>& ImTF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImY, int w, int h, int W, int H)
+int GetTransformedImage(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, simple_buffer<u8>& ImTF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImY, int w, int h, int W, int H, int min_x, int max_x)
 {
 	simple_buffer<int> LB(h, 0), LE(h, 0);
 	int N;
@@ -1338,12 +1440,12 @@ int GetTransformedImage(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simpl
 		if (g_show_results) SaveGreyscaleImage(ImNE, "/TestImages/GetTransformedImage_02_5_ImNE+HE" + g_im_save_format, w, h);
 	}
 
-	res = FilterTransformedImage(ImFF, ImSF, ImTF, ImNE, LB, LE, N, w, h, W, H);
+	res = FilterTransformedImage(ImFF, ImSF, ImTF, ImNE, LB, LE, N, w, h, W, H, min_x, max_x);
 
 	return res;
 }
 
-int FilterImage(simple_buffer<u8>& ImF, simple_buffer<u8>& ImNE, int w, int h, int W, int H, simple_buffer<int>& LB, simple_buffer<int>& LE, int N)
+int FilterImage(simple_buffer<u8>& ImF, simple_buffer<u8>& ImNE, int w, int h, int W, int H, int min_x, int max_x, simple_buffer<int>& LB, simple_buffer<int>& LE, int N)
 {
 	int res;
 	simple_buffer<u8> ImRES1(w * h), ImRES2(w * h);
@@ -1359,7 +1461,7 @@ int FilterImage(simple_buffer<u8>& ImF, simple_buffer<u8>& ImNE, int w, int h, i
 		iter++;
 		ImRES2.copy_data(ImF, w * h);
 
-		res = SecondFiltration(ImF, ImNE, LB, LE, N, w, h, W, H);
+		res = SecondFiltration(ImF, ImNE, LB, LE, N, w, h, W, H, min_x, max_x);
 		if (g_show_results) SaveGreyscaleImage(ImF, "/TestImages/FilterImage_iter" + std::to_string(iter) + "_02_ImSFFSecondFiltration" + g_im_save_format, w, h);
 
 		if (res == 1) res = ClearImageFromSmallSymbols(ImF, w, h, W, H, 255);
@@ -1379,15 +1481,15 @@ int FilterImage(simple_buffer<u8>& ImF, simple_buffer<u8>& ImNE, int w, int h, i
 	return res;
 }
 
-inline bool IsTooRight(int lb, int le, const int dw2, int real_im_x_center)
+inline bool IsTooRight(int lb, int le, const int to_max2, int real_im_x_center)
 {
-	return (((lb + le - real_im_x_center*2) >= dw2 / 2) || (lb >= real_im_x_center));
+	return (((lb + le - (real_im_x_center*2))*2 >= to_max2) || (lb >= real_im_x_center));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
-int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H)
+int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buffer<int>& LB, simple_buffer<int>& LE, int N, int w, int h, int W, int H, int min_x, int max_x)
 {		
 	wxString now;
 	if (g_show_sf_results) now = std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
@@ -1397,9 +1499,11 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 	const int segw = g_segw;
 	const int msegc = g_msegc;
 	const int segh = g_segh;
-	const int w_2 = w/2;
-	const int dw = (int)(g_btd*(double)W);
-	const int dw2 = (int)(g_tco*(double)W*2.0);
+	const int btd_max = (int)(g_btd * (double)W);
+	const int to_max = (int)(g_to * (double)W);
+	const int to_max2 = 2 * to_max;	
+	const int real_im_x_center2 = min_x + max_x;
+	const int real_im_x_center = (min_x + max_x) / 2;
 	const int mpn = g_mpn;
 	const double mpd = g_mpd;
 	const double mpned = g_mpned;
@@ -1412,11 +1516,12 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 		custom_assert(segh > 0, "SecondFiltration: segh > 0");
 
 		const int ie = (LB[k] + (int)((min(LE[k]+segh,h-1)-LB[k])/segh)*segh)*w;
+		int ia = 0;
 
 		// doesn't give difference (work a little longer)
 		//concurrency::parallel_for(LB[k] * w, ie, da, [&](int ia)
 		//{
-		for (int ia = LB[k] * w; ia < ie; ia += da)
+		for (ia = LB[k] * w; ia < ie; ia += da)
 		{
 			simple_buffer<int> lb(w, 0), le(w, 0);
 			int ln, ln_orig;
@@ -1493,35 +1598,282 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 
 				int ln_start;
 
-				do
+				if (g_text_alignment != TextAlignment::Any)
 				{
-					ln_start = ln;
-					l = ln - 2;
-					while ((l >= 0) && (l < (ln - 1)))
+					do
 					{
-						//проверяем расстояние между соседними подстроками
-						if ((lb[l + 1] - le[l]) > dw)
+						ln_start = ln;
+						l = ln - 2;
+						while ((l >= 0) && (l < (ln - 1)))
 						{
-							//определяем подстроку наиболее удаленую от центра
-							val1 = lb[l] + le[l] - w;
-							val2 = lb[l + 1] + le[l + 1] - w;
+							//проверяем расстояние между соседними подстроками
+							if ((lb[l + 1] - le[l]) > btd_max)
+							{
+								if (g_text_alignment == TextAlignment::Center)
+								{
+									//определяем подстроку наиболее удаленую от центра
+									val1 = lb[l] + le[l] - real_im_x_center2;
+									val2 = lb[l + 1] + le[l + 1] - real_im_x_center2;
+									if (val1 < 0) val1 = -val1;
+									if (val2 < 0) val2 = -val2;
+
+									offset = le[l] + lb[l] - real_im_x_center2;
+									if (offset < 0) offset = -offset;
+
+									if (IsTooRight(lb[l + 1], le[l + 1], to_max2, real_im_x_center) ||
+										(
+											(offset <= to_max2) &&
+											((le[l + 1] - lb[l + 1]) < ((le[l] - lb[l])))
+											)
+										)
+									{
+										ll = l + 1;
+									}
+									else if (val1 > val2) ll = l;
+									else ll = l + 1;
+								}
+								else if (g_text_alignment == TextAlignment::Left)
+								{
+									/*if ((lb[l + 1] <= to_max) &&
+										((le[l] - lb[l]) < ((le[l + 1] - lb[l + 1]))))
+									{
+										ll = l;
+									}
+									else*/
+									{
+										ll = l + 1;
+									}
+								}
+								else
+								{
+									/*if ((w - le[l] <= to_max) &&
+										((le[l + 1] - lb[l + 1]) < ((le[l] - lb[l]))))
+									{
+										ll = l + 1;
+									}
+									else*/
+									{
+										ll = l;
+									}
+								}
+
+								//удаляем наиболее удаленую подстроку
+								for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
+								{
+									Im.set_values(0, i, (le[ll] - lb[ll] + 1));
+								}
+
+								for (i = ll; i < ln - 1; i++)
+								{
+									lb[i] = lb[i + 1];
+									le[i] = le[i + 1];
+								}
+
+								ln--;
+
+								if (l == (ln - 1)) l--;
+
+								continue;
+							}
+
+							l--;
+						}
+					} while (ln != ln_start);
+
+					if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_01_ImFBetweenTextDistace" + g_im_save_format, w, h);
+				}
+
+				if (ln == 0)
+				{
+					break;
+				}
+
+				if (g_text_alignment == TextAlignment::Center)
+				{
+					offset = le[ln - 1] + lb[0] - real_im_x_center2;
+					if (offset < 0) offset = -offset;
+
+					// потенциальный текст слишком сильно сдвинут от центра изображения ?
+					if (offset > to_max2)
+					{
+						l = ln - 1;
+						bln = 0;
+						while (l > 0)
+						{
+							val1 = le[l - 1] + lb[0] - real_im_x_center2;
 							if (val1 < 0) val1 = -val1;
+
+							val2 = le[l] + lb[1] - real_im_x_center2;
 							if (val2 < 0) val2 = -val2;
 
-							offset = le[l] + lb[l] - w;
-							if (offset < 0) offset = -offset;
-
-							if (IsTooRight(lb[l + 1], le[l + 1], dw2, w/2) ||
-								(
-								(offset <= dw2) &&
-									((le[l + 1] - lb[l + 1]) < ((le[l] - lb[l])))
-									)
-								)
+							if (val1 > val2)
 							{
-								ll = l + 1;
+								ll = 0;
+								for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
+								{
+									Im.set_values(0, i, (le[ll] - lb[ll] + 1));
+								}
+
+								for (i = 0; i < l; i++)
+								{
+									lb[i] = lb[i + 1];
+									le[i] = le[i + 1];
+								}
 							}
-							else if (val1 > val2) ll = l;
-							else ll = l + 1;
+							else
+							{
+								ll = l;
+								for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
+								{
+									Im.set_values(0, i, (le[ll] - lb[ll] + 1));
+								}
+							}
+
+							l--;
+
+							if (lb[0] >= real_im_x_center)
+							{
+								bln = 0;
+								break;
+							}
+							if (le[l] <= real_im_x_center)
+							{
+								bln = 0;
+								break;
+							}
+
+							offset = le[l] + lb[0] - real_im_x_center2;
+							if (offset < 0) offset = -offset;
+							if (offset <= to_max2)
+							{
+								bln = 1;
+								break;
+							}
+						};
+
+						if (bln == 0)
+						{
+							for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
+							{
+								Im.set_values(0, i, (le[l] - lb[0] + 1));
+							}
+
+							if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_02_1_1_ImFTextCentreOffset" + g_im_save_format, w, h);
+
+							break;
+						}
+
+						ln = l + 1;
+					}
+				}
+				else if(g_text_alignment != TextAlignment::Any)
+				{
+					if (g_text_alignment == TextAlignment::Left)
+					{
+						offset = lb[0] - min_x;
+					}
+					else
+					{
+						offset = max_x - le[ln - 1];
+					}
+					// потенциальный текст слишком сильно сдвинут
+					if (offset > to_max)
+					{
+						for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
+						{
+							Im.set_values(0, i, (le[ln - 1] - lb[0] + 1));
+						}
+
+						if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_02_1_2_ImFTextOffset" + g_im_save_format, w, h);
+
+						break;
+					}
+				}
+
+				if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_02_2_ImFTextOffset" + g_im_save_format, w, h);
+
+				if (g_text_alignment != TextAlignment::Any)
+				{
+					// текст состоит всего из 2-х подстрок растояние между которыми больше их размеров ?
+					if (ln == 2)
+					{
+						val1 = le[0] - lb[0] + 1;
+						val2 = le[1] - lb[1] + 1;
+						if (val1 < val2) val1 = val2;
+
+						val2 = lb[1] - le[0] - 1;
+
+						if (val2 > val1)
+						{
+							//удаляем эти под строки
+							for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
+							{
+								Im.set_values(0, i, (le[1] - lb[0] + 1));
+							}
+
+							if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_03_ImFOnly2SubStrWithBigDist" + g_im_save_format, w, h);
+
+							break;
+						}
+					}
+
+					bln = 0;
+					while ((ln > 1) && (bln == 0))
+					{
+						S = 0;
+						for (ll = 0; ll < ln; ll++)  S += le[ll] - lb[ll] + 1;
+
+						SS = le[ln - 1] - lb[0] + 1;
+
+						if ((double)S < mpd * (double)SS)
+						{
+							if (g_text_alignment == TextAlignment::Center)
+							{
+								//определяем подстроку наиболее удаленую от центра
+								val1 = lb[ln - 1] + le[ln - 1] - real_im_x_center2;
+								val2 = lb[0] + le[0] - real_im_x_center2;
+								if (val1 < 0) val1 = -val1;
+								if (val2 < 0) val2 = -val2;
+
+								offset = le[0] + lb[0] - real_im_x_center2;
+								if (offset < 0) offset = -offset;
+
+								if (IsTooRight(lb[ln - 1], le[ln - 1], to_max2, real_im_x_center) ||
+									(
+										(offset <= to_max2) &&
+										((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0])))
+										)
+									)
+								{
+									ll = ln - 1;
+								}
+								else if (val1 > val2) ll = ln - 1;
+								else ll = 0;
+							}
+							else if (g_text_alignment == TextAlignment::Left)
+							{
+								/*if ((lb[1] <= to_max) &&
+									((le[0] - lb[0]) < ((le[ln - 1] - lb[ln - 1]))))
+								{
+									ll = 0;
+								}
+								else*/
+								{
+									ll = ln - 1;
+								}
+							}
+							else
+							{
+								/*if ((w - le[ln - 2] <= to_max) &&
+									((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0]))))
+								{
+									ll = ln - 1;
+								}
+								else*/
+								{
+									ll = 0;
+								}
+							}
 
 							//удаляем наиболее удаленую подстроку
 							for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
@@ -1536,176 +1888,15 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 							}
 
 							ln--;
-
-							if (l == (ln - 1)) l--;
-
-							continue;
-						}
-
-						l--;
-					}
-				} while (ln != ln_start);
-
-				if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia/w) + "_iter" + std::to_string(iter) + "_01_ImFBetweenTextDistace" + g_im_save_format, w, h);
-
-				if (ln == 0)
-				{
-					break;
-				}
-
-				offset = le[ln - 1] + lb[0] - w;
-				if (offset < 0) offset = -offset;
-
-				// потенциальный текст слишком сильно сдвинут от центра изображения ?
-				if (offset > dw2)
-				{
-					l = ln - 1;
-					bln = 0;
-					while (l > 0)
-					{
-						val1 = le[l - 1] + lb[0] - w;
-						if (val1 < 0) val1 = -val1;
-
-						val2 = le[l] + lb[1] - w;
-						if (val2 < 0) val2 = -val2;
-
-						if (val1 > val2)
-						{
-							ll = 0;
-							for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
-							{
-								Im.set_values(0, i, (le[ll] - lb[ll] + 1));
-							}
-
-							for (i = 0; i < l; i++)
-							{
-								lb[i] = lb[i + 1];
-								le[i] = le[i + 1];
-							}
 						}
 						else
 						{
-							ll = l;
-							for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
-							{
-								Im.set_values(0, i, (le[ll] - lb[ll] + 1));
-							}
-						}
-
-						l--;
-
-						if (lb[0] >= w_2)
-						{
-							bln = 0;
-							break;
-						}
-						if (le[l] <= w_2)
-						{
-							bln = 0;
-							break;
-						}
-
-						offset = le[l] + lb[0] - w;
-						if (offset < 0) offset = -offset;
-						if (offset <= dw2)
-						{
 							bln = 1;
-							break;
 						}
-					};
-
-					if (bln == 0)
-					{
-						for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
-						{
-							Im.set_values(0, i, (le[l] - lb[0] + 1));
-						}
-
-						if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_02_1_ImFTextCentreOffset" + g_im_save_format, w, h);
-
-						break;
 					}
 
-					ln = l + 1;
+					if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_04_ImFMinPointsDensity" + g_im_save_format, w, h);
 				}
-
-				if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_02_2_ImFTextCentreOffset" + g_im_save_format, w, h);
-
-				// текст состоит всего из 2-х подстрок растояние между которыми больше их размеров ?
-				if (ln == 2)
-				{
-					val1 = le[0] - lb[0] + 1;
-					val2 = le[1] - lb[1] + 1;
-					if (val1 < val2) val1 = val2;
-
-					val2 = lb[1] - le[0] - 1;
-
-					if (val2 > val1)
-					{
-						//удаляем эти под строки
-						for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
-						{
-							Im.set_values(0, i, (le[1] - lb[0] + 1));
-						}
-
-						if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_03_ImFOnly2SubStrWithBigDist" + g_im_save_format, w, h);
-
-						break;
-					}
-				}
-
-				bln = 0;
-				while ((ln > 0) && (bln == 0))
-				{
-					S = 0;
-					for (ll = 0; ll < ln; ll++)  S += le[ll] - lb[ll] + 1;
-
-					SS = le[ln - 1] - lb[0] + 1;
-
-					if ((double)S < mpd * (double)SS)
-					{
-						//определяем подстроку наиболее удаленую от центра
-						val1 = lb[ln - 1] + le[ln - 1] - w;
-						val2 = lb[0] + le[0] - w;
-						if (val1 < 0) val1 = -val1;
-						if (val2 < 0) val2 = -val2;
-
-						offset = le[0] + lb[0] - w;
-						if (offset < 0) offset = -offset;
-
-						if (IsTooRight(lb[ln - 1], le[ln - 1], dw2, w/2) ||
-							(
-							(offset <= dw2) &&
-								((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0])))
-								)
-							)
-						{
-							ll = ln - 1;
-						}
-						else if (val1 > val2) ll = ln - 1;
-						else ll = 0;
-
-						//удаляем наиболее удаленую подстроку
-						for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
-						{
-							Im.set_values(0, i, (le[ll] - lb[ll] + 1));
-						}
-
-						for (i = ll; i < ln - 1; i++)
-						{
-							lb[i] = lb[i + 1];
-							le[i] = le[i + 1];
-						}
-
-						ln--;
-					}
-					else
-					{
-						bln = 1;
-					}
-				}
-
-				if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_04_ImFMinPointsDensity" + g_im_save_format, w, h);
 
 				if (ln == 0)
 				{
@@ -1750,25 +1941,63 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 						break;
 					}
 
-					if ((double)nNE < mpned * (double)S)
+					if ( ((double)nNE < mpned * (double)S) && (g_text_alignment != TextAlignment::Any) )
 					{
-						//определяем подстроку наиболее удаленую от центра
-						val1 = lb[ln - 1] + le[ln - 1] - w;
-						val2 = lb[0] + le[0] - w;
-						if (val1 < 0) val1 = -val1;
-						if (val2 < 0) val2 = -val2;
-
-						if (IsTooRight(lb[ln - 1], le[ln - 1], dw2, w/2) ||
-							(
-							(offset <= dw2) &&
-								((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0])))
-								)
-							)
+						if (ln > 1)
 						{
-							ll = ln - 1;
+							if (g_text_alignment == TextAlignment::Center)
+							{
+								//определяем подстроку наиболее удаленую от центра
+								val1 = lb[ln - 1] + le[ln - 1] - real_im_x_center2;
+								val2 = lb[0] + le[0] - real_im_x_center2;
+								if (val1 < 0) val1 = -val1;
+								if (val2 < 0) val2 = -val2;
+
+								offset = le[0] + lb[0] - real_im_x_center2;
+								if (offset < 0) offset = -offset;
+
+
+								if (IsTooRight(lb[ln - 1], le[ln - 1], to_max2, real_im_x_center) ||
+									(
+										(offset <= to_max2) &&
+										((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0])))
+										)
+									)
+								{
+									ll = ln - 1;
+								}
+								else if (val1 > val2) ll = ln - 1;
+								else ll = 0;
+							}
+							else if (g_text_alignment == TextAlignment::Left)
+							{
+								/*if ((lb[1] <= to_max) &&
+									((le[0] - lb[0]) < ((le[ln - 1] - lb[ln - 1]))))
+								{
+									ll = 0;
+								}
+								else*/
+								{
+									ll = ln - 1;
+								}
+							}
+							else
+							{
+								/*if ((w - le[ln - 2] <= to_max) &&
+									((le[ln - 1] - lb[ln - 1]) < ((le[0] - lb[0]))))
+								{
+									ll = ln - 1;
+								}
+								else*/
+								{
+									ll = 0;
+								}
+							}
 						}
-						else if (val1 > val2) ll = ln - 1;
-						else ll = 0;
+						else
+						{
+							ll = 0;
+						}
 
 						//удаляем наиболее удаленую подстроку
 						for (y = 0, i = ia + lb[ll]; y < segh; y++, i += w)
@@ -1790,14 +2019,14 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 					}
 				}
 
-				if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_06_ImFMinNEdgesPointsDensity" + g_im_save_format, w, h);				
+				if (g_show_sf_results) SaveGreyscaleImage(Im, "/TestImages/SecondFiltration_" + now + "_y" + std::to_string(ia / w) + "_iter" + std::to_string(iter) + "_06_ImFMinNEdges" + g_im_save_format, w, h);				
 
 				if (ln == 0)
 				{
 					break;
 				}
 
-				if (lb[0] >= w_2)
+				if ( (g_text_alignment == TextAlignment::Center) && (lb[0] >= real_im_x_center) )
 				{
 					// removing all sub lines
 					for (y = 0, i = ia + lb[0]; y < segh; y++, i += w)
@@ -1821,6 +2050,13 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 				}
 			}
 		}//);
+
+		int cur_y = ia / w;
+		
+		if (cur_y <= LE[k])
+		{
+			Im.set_values(0, ia, (LE[k] - cur_y + 1) * w);
+		}
 	}
 
 	return res;
@@ -2442,12 +2678,21 @@ int FilterImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, simp
 
 	num_main_clusters = clusterCount;
 
-	//Removing all clusters which not exist in left part
+	//Removing all clusters which not exist in left or right part of image
+	if (g_text_alignment != TextAlignment::Any)
 	{
 		simple_buffer<int> tmp_cluster_ids(clusterCount, 0);
 		simple_buffer<int> tmp_cluster_cnts(clusterCount, 0);
 
-		GetClustersData(labels, tmp_cluster_ids, tmp_cluster_cnts, ImMASKF, clusterCount, w, h, min_x, std::min<int>(max_x, real_im_x_center - 1), min_y, max_y);
+		if ( (g_text_alignment == TextAlignment::Center) ||
+			 (g_text_alignment == TextAlignment::Left) )
+		{
+			GetClustersData(labels, tmp_cluster_ids, tmp_cluster_cnts, ImMASKF, clusterCount, w, h, min_x, std::min<int>(max_x, real_im_x_center - 1), min_y, max_y);
+		}
+		else
+		{
+			GetClustersData(labels, tmp_cluster_ids, tmp_cluster_cnts, ImMASKF, clusterCount, w, h, std::max<int>(min_x, real_im_x_center + 1), max_x, min_y, max_y);
+		}
 
 		i = 0;
 		while (i < num_main_clusters)
@@ -4224,7 +4469,7 @@ void ExtendByInsideFigures(simple_buffer<T>& ImRES, int w, int h, T white, bool 
 	}
 }
 
-int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImFRes, int w, int h, int W, int H, int XB, int YB, wxString iter_det)
+int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImFRes, int w, int h, int W, int H, int min_x, int max_x, int XB, int YB, wxString iter_det)
 {
 	simple_buffer<u8> ImTMP;
 	int i, j, x, y, ww, hh, res = 0;
@@ -4264,7 +4509,7 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = hh - 1;
-		res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(YB * W), LB, LE, 1, W, hh, W, H, iter_det);
+		res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(YB * W), LB, LE, 1, W, hh, W, H, min_x, max_x, iter_det);
 
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/CheckOnSubPresence_" + iter_det + "_03_ImFF_F" + g_im_save_format, W, hh);
 
@@ -4299,6 +4544,57 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 	return res;
 }
 
+void GetImXLocation(simple_buffer<u8>& ImBGR, int W, int min_y, int max_y, int& min_x_res, int& max_x_res)
+{
+	int max_diff = 2;
+	int x, y, bln;
+	int res = -1;
+
+	for (x = 0, bln = 0; x < W; x++)
+	{
+		for (y = min_y; y <= max_y; y++)
+		{
+			int offset = (y * W + x) * 3;
+
+			if ((ImBGR[offset] < 255 - max_diff) ||
+				(ImBGR[offset + 1] < 255 - max_diff) ||
+				(ImBGR[offset + 2] < 255 - max_diff))
+			{
+				bln = 1;
+				break;
+			}
+		}
+
+		if (bln == 1)
+		{
+			break;
+		}
+	}
+	min_x_res = x;
+
+	for (x = W - 1, bln = 0; x >= 0; x--)
+	{
+		for (y = min_y; y <= max_y; y++)
+		{
+			int offset = (y * W + x) * 3;
+
+			if ((ImBGR[offset] < 255 - max_diff) ||
+				(ImBGR[offset + 1] < 255 - max_diff) ||
+				(ImBGR[offset + 2] < 255 - max_diff))
+			{
+				bln = 1;
+				break;
+			}
+		}
+
+		if (bln == 1)
+		{
+			break;
+		}
+	}
+	max_x_res = x;
+}
+
 FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, int W, int H)
 {
 	int i, j, l, r, x, y, ib, bln, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, w_orig, h_orig, ww, hh, cnt;
@@ -4308,6 +4604,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	int j1, j2, j3, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, j5_min, j5_max;
 	int mY, mI, mQ;
 	int LH, LMAXY;
+	int real_im_x_center, MIN_X, MAX_X;
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	FindTextRes res;
 	int color, rc, gc, bc, yc, cc, wc, min_h;
@@ -4357,18 +4654,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	int orig_LLEk = LLE[k];
 	int orig_LLk = LL[k];
 	int orig_LRk = LR[k];
-
-	XB = LL[k];
-	XE = LR[k];
-	w = XE - XB + 1;
-	val = (int)((double)w*0.15);
-	if (val < 40) val = 40;
-	XB -= val;
-	XE += val;
-	if (XB < 0) XB = 0;
-	if (XE > W - 1) XE = W - 1;
-	w = XE - XB + 1;
-
+	
 	YB = LLB[k];
 	YE = LLE[k];
 
@@ -4422,66 +4708,69 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 		if (YE > val) YE = val;
 	}
 
-	int max_diff = 20;
-	for (y = YB; y < YE; y++)
 	{
-		bln = 0;
-		for (x = LL[k], val1 = val2 = FullImY[y*W + x]; x <= LR[k]; x++)
+		int max_diff = 20;
+
+		for (y = YB; y < YE; y++)
 		{
-			i = y * W + x;
-			if (FullImY[i] < val1)
+			bln = 0;
+			for (x = LL[k], val1 = val2 = FullImY[y * W + x]; x <= LR[k]; x++)
 			{
-				val1 = FullImY[i];
+				i = y * W + x;
+				if (FullImY[i] < val1)
+				{
+					val1 = FullImY[i];
+				}
+
+				if (FullImY[i] > val2)
+				{
+					val2 = FullImY[i];
+				}
+
+				if (val2 - val1 > max_diff)
+				{
+					bln = 1;
+					break;
+				}
 			}
 
-			if (FullImY[i] > val2)
+			if (bln == 1)
 			{
-				val2 = FullImY[i];
-			}
-
-			if (val2 - val1 > max_diff)
-			{
-				bln = 1;
 				break;
 			}
 		}
+		YB = y;
 
-		if (bln == 1)
+		for (y = YE; y > YB; y--)
 		{
-			break;
-		}
-	}
-	YB = y;
-
-	for (y = YE; y > YB; y--)
-	{
-		bln = 0;
-		for (x = LL[k], val1 = val2 = FullImY[y*W + x]; x <= LR[k]; x++)
-		{
-			i = y * W + x;
-			if (FullImY[i] < val1)
+			bln = 0;
+			for (x = LL[k], val1 = val2 = FullImY[y * W + x]; x <= LR[k]; x++)
 			{
-				val1 = FullImY[i];
+				i = y * W + x;
+				if (FullImY[i] < val1)
+				{
+					val1 = FullImY[i];
+				}
+
+				if (FullImY[i] > val2)
+				{
+					val2 = FullImY[i];
+				}
+
+				if (val2 - val1 > max_diff)
+				{
+					bln = 1;
+					break;
+				}
 			}
 
-			if (FullImY[i] > val2)
+			if (bln == 1)
 			{
-				val2 = FullImY[i];
-			}
-
-			if (val2 - val1 > max_diff)
-			{
-				bln = 1;
 				break;
 			}
 		}
-
-		if (bln == 1)
-		{
-			break;
-		}
+		YE = std::min<int>(y + 2, H - 1);
 	}
-	YE = std::min<int>(y + 2, H - 1);
 
 	if (YE - YB < (2 * min_h) / 3)
 	{
@@ -4505,6 +4794,30 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 	h = YE - YB + 1;
 
+	{		
+		GetImXLocation(ImBGR, W, YB, YE, MIN_X, MAX_X);
+		if (MIN_X > MAX_X)
+		{
+			return res;
+		}
+		real_im_x_center = (MIN_X + MAX_X) / 2;
+	}
+
+	XB = LL[k];
+	XE = LR[k];
+	
+	w = XE - XB + 1;	
+	val = (int)((double)w * 0.15);
+	if (val < 40) val = 40;
+	XB -= val;
+	XE += val;
+	if (XB < 0) XB = 0;
+	if (XE > W - 1) XE = W - 1;	
+	if (XB < MIN_X) XB = MIN_X;
+	if (XE > MAX_X) XE = MAX_X;
+	
+	w = XE - XB + 1;
+
 	w_orig = w;
 	h_orig = h;
 
@@ -4514,8 +4827,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	simple_buffer<u8> ImL((int)(w*g_scale)*(int)(h*g_scale)), ImA((int)(w*g_scale)*(int)(h*g_scale)), ImB((int)(w*g_scale)*(int)(h*g_scale));
 	simple_buffer<u8> ImIL((int)(w*g_scale)*(int)(h*g_scale));
 	simple_buffer<u8> ImTHRMerge((w*g_scale)*(int)(h*g_scale));	
-	simple_buffer<u8> ImSNFS;
-	int real_im_x_center;	
+	simple_buffer<u8> ImSNFS;	
 
 	if (g_show_results)
 	{
@@ -4536,6 +4848,9 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 		HLPC.push_back(std::pair<int, int>{orig_LLEk, yc});
 		VLPC.push_back(std::pair<int, int>{orig_LLk, yc});
 		VLPC.push_back(std::pair<int, int>{orig_LRk, yc});
+
+		VLPC.push_back(std::pair<int, int>{MIN_X, rc});
+		VLPC.push_back(std::pair<int, int>{MAX_X, rc});
 		
 		SaveBGRImageWithLinesInfo(ImBGR, "/TestImages/FindText_" + iter_det + "_03_1_ImBGR_WithLinesInfo" + g_im_save_format, W, H, HLPC, VLPC);
 	}
@@ -4634,7 +4949,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 		w *= g_scale;
 		h *= g_scale;
 
-		real_im_x_center = ((W / 2) - XB) * g_scale;
+		real_im_x_center = (real_im_x_center - XB) * g_scale;
 
 		yb = (orig_LLBk - YB) * g_scale;
 		ye = (orig_LLEk - YB) * g_scale;
@@ -4707,7 +5022,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			IntersectTwoImages(ImTHRMerge, ImMaskWithBorder, w, h);
 			if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindText_" + iter_det + "_11_02_03_ImTHRMergeOrigIntImMaskWithBorder" + g_im_save_format, w, h);
 
-			val = CheckOnSubPresence(ImTHRMerge, ImNE, ImTHRMergeF2, w, h, W, H, XB, YB, iter_det + "_call1");
+			val = CheckOnSubPresence(ImTHRMerge, ImNE, ImTHRMergeF2, w, h, W, H, MIN_X, MAX_X, XB, YB, iter_det + "_call1");
 			if (g_show_results) SaveGreyscaleImage(ImTHRMergeF2, "/TestImages/FindText_" + iter_det + "_11_02_04_ImTHRMergeOrigFWithCheckOnSubPresence" + g_im_save_format, w, h);
 
 			if (val == 0)
@@ -5236,7 +5551,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = res.m_im_h - 1;
-		res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(res.m_YB*W), LB, LE, 1, W, res.m_im_h, W, H, iter_det);
+		res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(res.m_YB*W), LB, LE, 1, W, res.m_im_h, W, H, MIN_X, MAX_X, iter_det);
 
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FindText_" + iter_det + "_78_02_ImTXTF" + g_im_save_format, W, res.m_im_h);
 
@@ -5905,7 +6220,11 @@ int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LM
 	lb = h - 1;
 	le = 0;
 
-	if (real_im_x_center <= 0) return 0;
+	if ( ((real_im_x_center <= 0) && ((g_text_alignment == TextAlignment::Center) || (g_text_alignment == TextAlignment::Left))) ||
+		((real_im_x_center >= w - 1) && (g_text_alignment == TextAlignment::Right)) )
+	{
+		return 0;
+	}
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -6634,7 +6953,7 @@ template <class T>
 int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, int real_im_x_center, T white, wxString iter_det)
 {
 	const int dw = (int)(g_btd*(double)W);
-	const int dw2 = (int)(g_tco*(double)W*2.0);
+	const int dw2 = (int)(g_to*(double)W*2.0);
 
 	CMyClosedFigure *pFigure;
 	int i, j, k, val1, val2, l, ii, N, res = 0, x, y, y2;
@@ -7059,6 +7378,7 @@ int GetImageWithOutsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, in
 	return N;
 }
 
+// can_be_optimized
 // note: both images should be binary type of images (not greyscale) (should have 0 or white values of pixels)
 template <class T>
 void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>& ImIn2, int w, int h, T white)
