@@ -177,6 +177,9 @@ bool g_save_scaled_images = true;
 
 bool g_border_is_darker  = true;
 
+bool g_extend_by_grey_color = false;
+int g_allow_min_luminance = 100;
+
 TextAlignment g_text_alignment = TextAlignment::Center;
 wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
 
@@ -4435,23 +4438,90 @@ void GetMainColorImage(simple_buffer<u8>& ImRES, simple_buffer<u8>* pImMainClust
 
 		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_01_MainTXTCluster" + g_im_save_format, w, h);
 
-		for (i = 0; i < w*h; i++)
+		if (!g_extend_by_grey_color)
 		{
-			val1 = ImY[i];
-			val2 = ImU[i];
-			val3 = ImV[i];
-
-			if ((ImMainCluster[i] != 0) &&
-				!((val1 >= j1_min) && (val1 <= j1_max) &&
-				(val2 >= j2_min) && (val2 <= j2_max) &&
-					(val3 >= j3_min) && (val3 <= j3_max))
-				)
+			for (i = 0; i < w * h; i++)
 			{
-				ImMainCluster[i] = 0;
-			}
-		}
+				val1 = ImY[i];
+				val2 = ImU[i];
+				val3 = ImV[i];
 
-		if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_02_MainTXTClusterFilteredByColor" + g_im_save_format, w, h);
+				if ((ImMainCluster[i] != 0) &&
+					!((val1 >= j1_min) && (val1 <= j1_max) &&
+						(val2 >= j2_min) && (val2 <= j2_max) &&
+						(val3 >= j3_min) && (val3 <= j3_max))
+					)
+				{
+					ImMainCluster[i] = 0;
+				}
+			}
+
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_02_MainTXTClusterFilteredByColor" + g_im_save_format, w, h);
+		}
+		else
+		{
+			simple_buffer<u8> ImMainClusterOrig(ImMainCluster);
+
+			j1_min = std::min<int>(g_allow_min_luminance, j1_min);
+
+			for (i = 0; i < w * h; i++)
+			{
+				val1 = ImY[i];
+				val2 = ImU[i];
+				val3 = ImV[i];
+
+				if ( (val1 >= j1_min) && (val1 <= j1_max) &&
+					 (val2 >= j2_min) && (val2 <= j2_max) &&
+					 (val3 >= j3_min) && (val3 <= j3_max) )
+				{
+					ImMainCluster[i] = 255;
+				}
+				else
+				{
+					ImMainCluster[i] = 0;
+				}
+			}
+
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_03_MainColor" + g_im_save_format, w, h);
+
+			MergeImagesByIntersectedFigures(ImMainCluster, ImMainClusterOrig, w, h, (u8)255);
+
+			/*{
+				CMyClosedFigure* pFigure;
+				int i, j, k, l, ii;
+				clock_t t;
+
+				custom_buffer<CMyClosedFigure> pFigures;
+
+				t = SearchClosedFigures(ImMainCluster, w, h, (u8)255, pFigures);
+				for (i = 0; i < pFigures.size(); i++)
+				{
+					pFigure = &(pFigures[i]);
+
+					bool found = false;
+					for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+					{
+						ii = pFigure->m_PointsArray[l];
+						if (ImMainClusterOrig[ii] != 0)
+						{
+							found = true;
+							break;
+						}
+					}
+
+					if (!found)
+					{
+						for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+						{
+							ii = pFigure->m_PointsArray[l];
+							ImMainCluster[ii] = 0;
+						}
+					}
+				}
+			}*/
+
+			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_04_MainTXTClusterExtByMainColor" + g_im_save_format, w, h);
+		}
 	}
 }
 
@@ -5467,9 +5537,15 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 					if (g_show_results) SaveGreyscaleImage(ImMainClusterF, "/TestImages/FindText_" + iter_det + "_14_04_ImMainClusterFByColor" + g_im_save_format, w, h);
 
-					ClearImageByMask(ImMainCluster, ImMainClusterF, w, h, 255, 2.0 / 3.0);
-
-					if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_15_ImMainClusterClearByMASKImMainClusterFByColor" + g_im_save_format, w, h);
+					if (!g_extend_by_grey_color)
+					{
+						ClearImageByMask(ImMainCluster, ImMainClusterF, w, h, 255, 2.0 / 3.0);
+						if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_15_ImMainClusterClearByMASKImMainClusterFByColor" + g_im_save_format, w, h);
+					}
+					else
+					{
+						ImMainCluster.copy_data(ImMainClusterF, w* h);
+					}
 				}
 
 				val = GetSubParams(ImMainCluster, w, h, 255, LH, LMAXY, lb, le, min_h * g_scale, real_im_x_center, yb, ye, iter_det);

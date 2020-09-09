@@ -120,6 +120,8 @@ void FFMPEGVideo::ShowFrame(void *dc)
 					img_data[i * 3 + 1] = dst_data[0][i * 3 + 1]; //G
 					img_data[i * 3 + 2] = dst_data[0][i * 3]; //B
 				}
+				UpdateImageColor(img_data, img_w, img_h);
+
 				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
 			}
 		}
@@ -730,6 +732,8 @@ int FFMPEGVideo::ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin
 				i += m_Width;
 			}
 		}
+
+		UpdateImageColor(ImBGR, w, h);
 	}
 
 	if (dst_data[0]) av_freep(&dst_data[0]);

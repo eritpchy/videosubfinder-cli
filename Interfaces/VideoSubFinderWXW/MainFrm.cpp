@@ -698,6 +698,9 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_tp, "text_percent");
 	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_percent");
 	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");	
+
+	ReadProperty(m_general_settings, g_video_contrast, "video_contrast");
+	ReadProperty(m_general_settings, g_video_gamma, "video_gamma");
 	
 	ReadProperty(m_general_settings, g_clear_image_logical, "clear_image_logical");
 
@@ -734,6 +737,9 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_general_settings, g_text_alignment_string, "text_alignment");
 
+	ReadProperty(m_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
+	ReadProperty(m_general_settings, g_allow_min_luminance, "allow_min_luminance");
+
 	//------------------------------------------------
 
 	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
@@ -754,6 +760,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
+	ReadProperty(m_locale_settings, m_cfg.m_extend_by_grey_color, "label_extend_by_grey_color");
+	ReadProperty(m_locale_settings, m_cfg.m_allow_min_luminance, "label_allow_min_luminance");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
@@ -809,7 +817,11 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_text_percent, "ssp_oim_property_text_percent");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");	
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");
+
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, "ssp_oim_sub_group_settings_for_update_video_color");
+	ReadProperty(m_locale_settings, m_cfg.m_label_video_contrast, "label_video_contrast");
+	ReadProperty(m_locale_settings, m_cfg.m_label_video_gamma, "label_video_gamma");
 
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, "ssp_oim_property_use_ILA_images_for_search_subtitles");
@@ -883,6 +895,9 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_mtpl, "min_text_len_in_percent");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
 
+	WriteProperty(fout, g_video_contrast, "video_contrast");
+	WriteProperty(fout, g_video_gamma, "video_gamma");
+
 	WriteProperty(fout, g_clear_txt_folders, "clear_txt_folders");
 	WriteProperty(fout, g_join_subs_and_correct_time, "join_subs_and_correct_time");
 
@@ -918,6 +933,9 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_playback_sound, "playback_sound");
 
 	WriteProperty(fout, g_border_is_darker, "border_is_darker");
+
+	WriteProperty(fout, g_extend_by_grey_color, "extend_by_grey_color");
+	WriteProperty(fout, g_allow_min_luminance, "allow_min_luminance");
 
 	fout.Flush();
 	ffout.Close();

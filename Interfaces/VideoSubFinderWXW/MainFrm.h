@@ -74,6 +74,8 @@ public:
 	wxString	m_ssp_oi_property_use_ocl;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
 	wxString	m_border_is_darker;
+	wxString	m_extend_by_grey_color;
+	wxString	m_allow_min_luminance;
 	wxString	m_ssp_ocr_threads;
 	wxString	m_ssp_oi_property_image_scale_for_clear_image;
 	wxString	m_ssp_oi_property_moderate_threshold_for_scaled_image;
@@ -124,6 +126,7 @@ public:
 	wxString	m_ssp_oim_property_sub_frames_length;
 	//wxString	m_ssp_oim_property_sub_square_error;
 	wxString	m_ssp_oim_sub_group_settings_for_comparing_subs;
+	wxString	m_ssp_oim_sub_group_settings_for_update_video_color;
 	wxString	m_ssp_oim_property_vedges_points_line_error;
 	wxString	m_ssp_oim_sub_group_settings_for_checking_sub;
 	wxString	m_ssp_oim_property_text_percent;
@@ -138,6 +141,9 @@ public:
 	wxString	m_ssp_oim_property_remove_wide_symbols;
 	wxString	m_ssp_oim_property_use_ILA_images_for_clear_txt_images;	
 	wxString	m_label_settings_file;
+	wxString	m_label_video_contrast;
+	wxString	m_label_video_gamma;
+
 };
 
 class CMainFrame : public wxMDIParentFrame

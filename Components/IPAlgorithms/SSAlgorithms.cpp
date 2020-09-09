@@ -54,6 +54,9 @@ bool g_replace_ISA_by_filtered_version = true;
 int g_max_dl_down = 20;
 int g_max_dl_up = 40;
 
+double	g_video_contrast = 1.0; //1.0 default without change
+double	g_video_gamma = 1.0; //1.0 default without change
+
 CVideo *g_pV;
 
 inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImISA, simple_buffer<u16> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H, int min_x, int max_x)

@@ -19,6 +19,7 @@
 #include <memory.h>
 #include <wx/wx.h>
 #include <ppl.h>
+#include "opencv2/imgcodecs.hpp"
 
 typedef unsigned char		u8;
 typedef unsigned short		u16;
@@ -48,6 +49,9 @@ wxString get_add_info();
 //#define cvMAT cv::Mat
 
 extern bool g_use_ocl;
+
+extern double g_video_contrast;
+extern double g_video_gamma;
 
 enum TextAlignment {
 	Center,
@@ -613,3 +617,50 @@ public:
 	}
 };
 
+inline void UpdateImageColor(u8 *pImBGR, int w, int h)
+{
+	if (g_video_contrast != 1.0)
+	{
+		if (g_video_gamma != 1.0)
+		{
+			simple_buffer<u8> p(256);
+
+			for (int i = 0; i < 256; ++i)
+			{
+				p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, g_video_gamma) * 255.0);
+			}
+
+			for (int i = 0; i < w * h * 3; i++)
+			{
+				pImBGR[i] = p[cv::saturate_cast<uchar>(g_video_contrast * pImBGR[i])];
+			}
+		}
+		else
+		{
+			for (int i = 0; i < w * h * 3; i++)
+			{
+				pImBGR[i] = cv::saturate_cast<uchar>(g_video_contrast * pImBGR[i]);
+			}
+		}
+	}
+	else if (g_video_gamma != 1.0)
+	{
+		simple_buffer<u8> p(256);
+
+		for (int i = 0; i < 256; ++i)
+		{
+			p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, g_video_gamma) * 255.0);
+		}
+
+		for (int i = 0; i < w * h * 3; i++)
+		{
+			pImBGR[i] = p[pImBGR[i]];
+		}
+	}
+}
+
+inline void UpdateImageColor(simple_buffer<u8>& ImBGR, int w, int h)
+{
+	custom_assert(ImBGR.m_size >= w * h * 3, "UpdateImageColor not: ImBGR.m_size >= w * h * 3");
+	UpdateImageColor(ImBGR.m_pData, w, h);
+}

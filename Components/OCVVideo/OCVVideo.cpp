@@ -81,6 +81,8 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 				img_data[i * 3 + 2] = img.data[i * 3];
 			}
 
+			UpdateImageColor(img_data, img_w, img_h);
+
 			((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
 		}
 	}
@@ -340,6 +342,8 @@ int OCVVideo::ConvertToBGR(u8* frame_data, simple_buffer<u8>& ImBGR, int xmin, i
 			i += m_Width;
 		}
 	}
+
+	UpdateImageColor(ImBGR, w, h);
 
 	return 1;
 }

@@ -82,11 +82,11 @@ In VideoSubFinder:
 2_1_2. Click "Run Search" and get images (in the first tab page: "Search").
 2_1_3. Click "Create Cleared TXTImages" (in the last tab page: "Search").
 2_1_4. [Note: This step can be skipped] Open "TXTImages" folder and remove images without text.
-2_1_5. Click "Create Empty Sub From Cleared TXTImages" which will generate "sub.srt" file with timing only in root directory of program (in the last tab page: "Search").
+2_1_5. Click "Create Empty Sub From Cleared TXTImages" which will generate "sub.srt" file with timing only (in the last tab page: "Search").
 In Subtitle Edit:
 2_2_1. Click in menu "File->Open" and select sub.srt file
 2_2_2. Click in menu "File->Import images.." + Click "..." in top right and select all files in "TXTImages" (CTRL+A)
-2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree, right mouse click, select "Image preprocessing...",
+2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree (select any record and press CTRL+A), right mouse click, select "Image preprocessing...",
 select check box with "Invert colors", press "OK"
 2_2_4. Select "OCR Method" (any Tesseract method works good on English Text)
 2_2_5. Select Right "Language" also as it in Dictionary and download it by pressing "..." and "Download"

@@ -97,6 +97,9 @@ extern bool		g_border_is_darker;
 extern TextAlignment g_text_alignment;
 extern wxString g_text_alignment_string;
 
+extern bool g_extend_by_grey_color;
+extern int g_allow_min_luminance;
+
 wxArrayString GetAvailableTextAlignments();
 wxString ConvertTextAlignmentToString(TextAlignment val);
 TextAlignment ConvertStringToTextAlignment(wxString val);

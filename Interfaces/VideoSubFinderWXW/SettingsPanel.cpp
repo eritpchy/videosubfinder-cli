@@ -251,6 +251,8 @@ void CSettingsPanel::Init()
 
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_border_is_darker, m_CL2, m_CL4, m_LBLFont, &g_border_is_darker);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_extend_by_grey_color, m_CL2, m_CL4, m_LBLFont, &g_extend_by_grey_color);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_allow_min_luminance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_allow_min_luminance, 0, 255);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ocr_threads, -1, 100);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scale, 1, 4);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smthr, 0.0, 1.0);
@@ -297,6 +299,10 @@ void CSettingsPanel::Init()
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_percent, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);
+
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, m_CL1, m_LBLFont);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_contrast, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_contrast, 0.0, 10.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_gamma, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_gamma, 0.0, 10.0);
 
 	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.75);
 	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.25);
