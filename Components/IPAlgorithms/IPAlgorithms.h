@@ -20,6 +20,7 @@
 #include "DataTypes.h"
 #include "MyClosedFigure.h"
 #include <wx/string.h>
+#include <wx/wfstream.h>
 #include <fstream>
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
@@ -155,6 +156,9 @@ bool InitCUDADevice();
 
 void RestoreStillExistLines(simple_buffer<u8> &Im, simple_buffer<u8> &ImOrig, int w, int h);
 
+void ReadFile(cv::Mat& res_data, wxString name);
+void WriteFile(std::vector<uchar>& write_data, wxString name);
+
 //-----------------------------------------------------------
 
 template <class T1, class T2>
@@ -226,7 +230,9 @@ void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int qual
 	}
 
 	try {
-		cv::imwrite(cv::String((g_work_dir + name).ToUTF8()), im, compression_params);
+		std::vector<uchar> write_data;
+		cv::imencode(cv::String(g_im_save_format), im, write_data, compression_params);
+		WriteFile(write_data, g_work_dir + name);
 	}
 	catch (runtime_error& ex) {
 		wxString msg;
@@ -238,7 +244,9 @@ void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int qual
 template <class T>
 void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white)
 {
-	cv::Mat im = cv::imread(cv::String(name.ToUTF8()), cv::IMREAD_COLOR); // load in BGR format
+	cv::Mat data;
+	ReadFile(data, name);
+	cv::Mat im = cv::imdecode(data, cv::IMREAD_COLOR); // load in BGR format
 	w = im.cols;
 	h = im.rows;
 

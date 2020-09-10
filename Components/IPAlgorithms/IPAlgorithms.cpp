@@ -8149,16 +8149,35 @@ void FindMaxStr(simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &max_i,
 	max_val = ys;
 }
 
+void ReadFile(cv::Mat& res_data, wxString name)
+{
+	wxFileInputStream ffin(name);
+	size_t size = ffin.GetSize();
+	res_data.reserveBuffer(size);
+	ffin.ReadAll(res_data.data, size);
+}
+
+void WriteFile(std::vector<uchar>& write_data, wxString name)
+{
+	wxFileOutputStream fout(name);
+	fout.WriteAll(write_data.data(), write_data.size());
+	fout.Close();
+}
+
 void GetImageSize(wxString name, int &w, int &h)
 {
-	cv::Mat im = cv::imread(cv::String(name.ToUTF8()), 1);
+	cv::Mat data;
+	ReadFile(data, name);
+	cv::Mat im = cv::imdecode(data, 1);
 	w = im.cols;
 	h = im.rows;
 }
 
 void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name)
 {
-	cv::Mat im = cv::imread(cv::String(name.ToUTF8()), cv::IMREAD_COLOR); // load in BGR format
+	cv::Mat data;
+	ReadFile(data, name);
+	cv::Mat im = cv::imdecode(data, cv::IMREAD_COLOR); // load in BGR format
 	int w = im.cols;
 	int h = im.rows;
 
@@ -8185,7 +8204,9 @@ void SaveBGRImage(simple_buffer<u8>& ImBGR, wxString name, int w, int h)
 	}
 
 	try {
-		cv::imwrite(cv::String((g_work_dir + name).ToUTF8()), im, compression_params);
+		std::vector<uchar> write_data;
+		cv::imencode(cv::String(g_im_save_format), im, write_data, compression_params);
+		WriteFile(write_data, g_work_dir + name);
 	}
 	catch (runtime_error& ex) {
 		wxString msg;
@@ -8235,7 +8256,9 @@ void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int 
 	}
 
 	try {
-		cv::imwrite(cv::String((g_work_dir + name).ToUTF8()), im, compression_params);
+		std::vector<uchar> write_data;
+		cv::imencode(cv::String(g_im_save_format), im, write_data, compression_params);
+		WriteFile(write_data, g_work_dir + name);
 	}
 	catch (runtime_error& ex) {
 		wxString msg;
