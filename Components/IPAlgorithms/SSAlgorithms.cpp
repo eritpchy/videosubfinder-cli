@@ -470,21 +470,19 @@ public:
 
 		m_thrs_save_images.emplace_back(concurrency::create_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax]() mutable {
 					{
-						simple_buffer<u8> ImTMP_BGR(W * H * 3, 0);
+						simple_buffer<u8> ImTMP_BGR(W * H * 3);
 						ImBGRToNativeSize(ImBGR, ImTMP_BGR, w, h, W, H, xmin, xmax, ymin, ymax);
 						g_pViewBGRImage[0](ImTMP_BGR, W, H);
-						SaveBGRImage(ImTMP_BGR, wxT("/RGBImages/") + name + g_im_save_format, W, H);
+						SaveBGRImage(ImBGR, wxT("/RGBImages/") + name + g_im_save_format, w, h);
 					}
 					{
-						simple_buffer<u8> ImTMP_U8(W * H, 0);
+						simple_buffer<u8> ImTMP_U8(W * H);
 						ImToNativeSize(ImISA, ImTMP_U8, w, h, W, H, xmin, xmax, ymin, ymax);
 						g_pViewGreyscaleImage[1](ImTMP_U8, W, H);
-						SaveGreyscaleImage(ImTMP_U8, wxT("/ISAImages/") + name + g_im_save_format, W, H);
+						SaveGreyscaleImage(ImISA, wxT("/ISAImages/") + name + g_im_save_format, w, h);
 					}
 					{
-						simple_buffer<u16> ImTMP_U16(W * H, 0);
-						ImToNativeSize(ImILA, ImTMP_U16, w, h, W, H, xmin, xmax, ymin, ymax);
-						SaveBinaryImage(ImTMP_U16, wxT("/ILAImages/") + name + g_im_save_format, W, H);
+						SaveBinaryImage(ImILA, wxT("/ILAImages/") + name + g_im_save_format, w, h);
 					}
 				}
 			)
@@ -956,7 +954,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	s64 CurPos, prevPos;
 	int fn; //cur frame num
 	int max_rgb_fn; //max rgb frame num which will be obtained
-	int w, h, W, H, real_im_x_center, xmin, xmax /*, ymin, ymax*/, size;
+	int w, h, W, H, real_im_x_center, xmin, xmax , ymin, ymax, size;
 	int DL, threads;
 
 	int bf, ef; // begin, end frame
@@ -983,8 +981,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	H = g_pV->m_Height;
 	xmin = g_pV->m_xmin;
 	xmax = g_pV->m_xmax;
-	/*ymin = g_pV->m_ymin;
-	ymax = g_pV->m_ymax;*/
+	ymin = g_pV->m_ymin;
+	ymax = g_pV->m_ymax;
 	real_im_x_center = w / 2;
 
 #ifdef CUSTOM_DEBUG
@@ -1388,7 +1386,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 								if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
 								{
-									Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet);
+									Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin);
 									rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
 								}
 
@@ -1498,7 +1496,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
 						{
-							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet);
+							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin);
 							rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
 						}
 					}
@@ -1575,7 +1573,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, xmin, xmax) == 1)
 						{
-							Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et);
+							Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin);
 							rs.AddSaveImagesTask(ImFS, ImIntS, ImYS, Str);
 						}
 					}
@@ -2332,7 +2330,7 @@ void ImBGRToNativeSize(simple_buffer<u8>& ImBGROrig, simple_buffer<u8>& ImBGRRes
 {
 	int i, j, x, y;
 
-	custom_assert(ImBGRRes.m_size >= W * H * 3, "ImToNativeSize: Im.m_size >= W*H");
+	custom_assert(ImBGRRes.m_size >= W * H * 3, "ImBGRToNativeSize: Im.m_size >= W*H");
 
 	ImBGRRes.set_values(255, W * H * 3);
 

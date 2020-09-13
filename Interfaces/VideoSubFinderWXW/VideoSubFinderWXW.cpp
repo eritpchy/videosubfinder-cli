@@ -30,14 +30,14 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_SWITCH, "uc", "use_cuda", "use cuda" },
 	{ wxCMD_LINE_OPTION, "s", "start_time", "start time, default = 0:00:00:000 (in format hour:min:sec:milisec)" },
 	{ wxCMD_LINE_OPTION, "e", "end_time", "end time, default = video length" },
-	{ wxCMD_LINE_OPTION, "be", "bottom_video_image_percent_end", "bottom video image percent end, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
-	{ wxCMD_LINE_OPTION, "te", "top_video_image_percent_end", "top video image percent end, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },	
+	{ wxCMD_LINE_OPTION, "te", "top_video_image_percent_end", "top video image percent offset from image bottom, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
+	{ wxCMD_LINE_OPTION, "be", "bottom_video_image_percent_end", "bottom video image percent offset from image bottom, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },	
 	{ wxCMD_LINE_OPTION, "le", "left_video_image_percent_end", "left video image percent end, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "re", "right_video_image_percent_end", "right video image percent end, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "o", "output_dir",  "output dir (root directory where results will be stored)" },
 	{ wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_OPTION, "nocrthr", "num_ocr_threads", "number of threads used for Create Cleared TXT Images", wxCMD_LINE_VAL_NUMBER },
-	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -cscti -i \"C:\\test_video.mp4\" -o \"C:\\ResultsDir\" -be 0.1 -te 0.5 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
+	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -cscti -i \"C:\\test_video.mp4\" -o \"C:\\ResultsDir\" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
 	{ wxCMD_LINE_NONE }
 };
 

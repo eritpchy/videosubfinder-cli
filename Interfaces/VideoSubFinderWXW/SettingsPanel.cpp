@@ -42,8 +42,6 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 	StrFN[3] = wxT("NEdges Points Image");
 	StrFN[4] = wxT("Cleared Text Image");
 	m_cn = 4;
-	m_W = 0;
-	m_H = 0;
 }
 
 CSettingsPanel::~CSettingsPanel()
@@ -328,10 +326,10 @@ void CSettingsPanel::Init()
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 {
 	simple_buffer<u8> ImBGR;
-	int i, j, k, w, h, W, H, xmin, xmax, ymin, ymax, S=0;	
+	int i, j, k, S=0;	
 	char str[30];
 	clock_t t;
-	wxString ImgName;
+	wxString BaseImgName;
 	
 	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 
@@ -342,51 +340,43 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-		m_W = W = w = m_pMF->m_pVideo->m_Width;
-		m_H = H = h = m_pMF->m_pVideo->m_Height;
-		xmin = m_pMF->m_pVideo->m_xmin;
-		xmax = m_pMF->m_pVideo->m_xmax;
-		ymin = m_pMF->m_pVideo->m_ymin;
-		ymax = m_pMF->m_pVideo->m_ymax;
-		ImBGR.set_size(W*H*3);
+		m_w = m_pMF->m_pVideo->m_w;
+		m_h = m_pMF->m_pVideo->m_h;
+		m_W = m_pMF->m_pVideo->m_Width;
+		m_H = m_pMF->m_pVideo->m_Height;
+		m_xmin = m_pMF->m_pVideo->m_xmin;
+		m_ymin = m_pMF->m_pVideo->m_ymin;
+		m_xmax = m_pMF->m_pVideo->m_xmax;
+		m_ymax = m_pMF->m_pVideo->m_ymax;
 
-		{
-			simple_buffer<u8> ImTMP_BGR(m_pMF->m_pVideo->m_w * m_pMF->m_pVideo->m_h * 3);
-			m_pMF->m_pVideo->GetBGRImage(ImTMP_BGR, xmin, xmax, ymin, ymax);			
-			ImBGRToNativeSize(ImTMP_BGR, ImBGR, m_pMF->m_pVideo->m_w, m_pMF->m_pVideo->m_h, W, H, xmin, xmax, ymin, ymax);
-		}
+		ImBGR.set_size(m_w*m_h*3);
+		m_pMF->m_pVideo->GetBGRImage(ImBGR, m_xmin, m_xmax, m_ymin, m_ymax);		
 
 		s64 CurPos = m_pMF->m_pVideo->GetPos();
-		ImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
-		ImgName += " -- " + VideoTimeToStr(CurPos);
+		BaseImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
+		BaseImgName += " -- " + VideoTimeToStr(CurPos);
 	}
 	else
 	{
 		wxDir dir(g_work_dir + "/RGBImages");
-		wxString filename;
+		wxString filename, ImgName;
 
 		if (dir.GetFirst(&filename))
 		{
+			ImgName = GetFileName(filename);
+
 			wxString filepath = g_work_dir + "/RGBImages/" + filename;
 
-			GetImageSize(filepath, w, h);
-			
-			m_W = W = w;
-			m_H = H = h;
-
-			xmin = 0;
-			xmax = w - 1;
-			ymin = 0;
-			ymax = h - 1;
-
-			ImBGR.set_size(W * H * 3);			
+			GetImageSize(filepath, m_w, m_h);
+			GetImInfo(ImgName, m_w, m_h, &m_W, &m_H, &m_xmin, &m_xmax, &m_ymin, &m_ymax, &BaseImgName);
+			ImBGR.set_size(m_w * m_h * 3);
 			LoadBGRImage(ImBGR, filepath);
 
-			GetImXLocation(ImBGR, W, ymin, ymax, xmin, xmax);
-
-			g_pViewBGRImage[0](ImBGR, W, H);
-
-			ImgName = GetFileName(filename);
+			{
+				simple_buffer<u8> ImTMP_BGR(m_W * m_H * 3);				
+				ImBGRToNativeSize(ImBGR, ImTMP_BGR, m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax);
+				g_pViewBGRImage[0](ImTMP_BGR, m_W, m_H);
+			}
 		}
 	}
 
@@ -397,26 +387,35 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	
 	m_pMF->m_pPanel->Disable();	
 
-	m_ImF = custom_buffer<simple_buffer<u8>> (m_n, simple_buffer<u8>(W*H, 0));
+	m_ImF = custom_buffer<simple_buffer<u8>> (m_n, simple_buffer<u8>(m_w*m_h, 0));
 	
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
-	S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], w, h, W, H, xmin, xmax);
+	S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], m_w, m_h, m_W, m_H, 0, m_w - 1);
 	
 	if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
 	{
 		vector<wxString> SavedFiles;
-		SavedFiles.push_back(ImgName);
+		SavedFiles.push_back(BaseImgName);
 		simple_buffer<u8> ImIL;
 
-		FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, w, h);
+		FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, m_w, m_h, m_W, m_H, m_xmin, m_ymin);
 	}
 	
-	m_plblIF->SetLabel(StrFN[m_cn]);
-	m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], W, H);
+	ViewCurImF();
 
 	m_pMF->m_pPanel->Enable();
 }
+
+void CSettingsPanel::ViewCurImF()
+{
+	m_plblIF->SetLabel(StrFN[m_cn]);
+
+	simple_buffer<u8> ImTMP_F(m_W * m_H);
+	ImToNativeSize(m_ImF[m_cn], ImTMP_F, m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax);
+	m_pMF->m_pImageBox->ViewGrayscaleImage(ImTMP_F, m_W, m_H);
+}
+
 
 void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 {
@@ -425,8 +424,7 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 	
 	if (m_ImF.m_size > 0)
 	{
-		m_plblIF->SetLabel(StrFN[m_cn]);	
-		m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], m_W, m_H);
+		ViewCurImF();
 	}
 }
 
@@ -437,8 +435,7 @@ void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 
 	if (m_ImF.m_size > 0)
 	{
-		m_plblIF->SetLabel(StrFN[m_cn]);
-		m_pMF->m_pImageBox->ViewGrayscaleImage(m_ImF[m_cn], m_W, m_H);
+		ViewCurImF();
 	}
 }
 

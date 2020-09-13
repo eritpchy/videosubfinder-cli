@@ -52,9 +52,15 @@ public:
 
 	int		m_cn;
 	int		m_n;
-
-	int		m_W;
-	int		m_H;
+	
+	int		m_W = 0;
+	int		m_H = 0;
+	int		m_w = 0;
+	int		m_h = 0;
+	int		m_xmin = 0;
+	int		m_ymin = 0;
+	int		m_xmax = 0;
+	int		m_ymax = 0;
 
 	wxColour   m_CLDBG;
 	wxColour   m_CLSP;
@@ -78,6 +84,7 @@ public:
 	void OnBnClickedTest(wxCommandEvent& event);
 	void OnBnClickedLeft(wxCommandEvent& event);
 	void OnBnClickedRight(wxCommandEvent& event);
+	void ViewCurImF();
 	//afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
 	//afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	//afx_msg void OnPaint();

@@ -974,18 +974,22 @@ ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wx
 class FindTextLinesRes
 {
 public:
-	int m_res;
-	int m_w;
-	int m_h;
+	int m_res = 0;
+	int m_w = 0;
+	int m_h = 0;
+	int	m_W = 0;
+	int	m_H = 0;
+	int	m_xmin = 0;
+	int	m_ymin = 0;
+	int	m_xmax = 0;
+	int	m_ymax = 0;
+
 	vector<wxString> m_SavedFiles;
 	simple_buffer<u8> m_ImBGR;
 	simple_buffer<u8> m_ImClearedText;	
 
 	FindTextLinesRes()
 	{
-		m_res = 0;
-		m_w = 0;
-		m_h = 0;
 	}
 };
 
@@ -993,7 +997,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, 
 {
 	__try
 	{		
-		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h);
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
 	{
@@ -1005,31 +1009,30 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 {
 	try
 	{
-		wxString Str;
-		int w, h, w2, h2;
+		wxString Str, BaseImgName;
+		int w, h, W, H, w2, h2, xmin, xmax, ymin, ymax;
 
-		GetImageSize(wxString(FileName), w, h);
+		GetImageSize(FileName, w, h);
+		GetImInfo(GetFileName(FileName), w, h, &W, &H, &xmin, &xmax, &ymin, &ymax, &BaseImgName);
+
 		res.m_w = w;
 		res.m_h = h;
+		res.m_W = W;
+		res.m_H = H;
+		res.m_xmin = xmin;
+		res.m_ymin = ymin;
+		res.m_xmax = xmax;
+		res.m_ymax = ymax;
 		res.m_ImBGR = simple_buffer<u8>(w * h * 3, 0);
-		res.m_ImClearedText = simple_buffer<u8>(w * h, 0);		
+		res.m_ImClearedText = simple_buffer<u8>(w * h, 0);
 
-		LoadBGRImage(res.m_ImBGR, wxString(FileName));
+		LoadBGRImage(res.m_ImBGR, FileName);
 
 		simple_buffer<u8> ImFF(w * h)/*3*/, ImTF(w * h)/*5*/, ImNE(w * h)/*1*/, ImIL/*0*/;
 
 		{
-			simple_buffer<u8> ImSF(w * h)/*4*/, ImY(w * h)/*2*/;
-
-			int min_x, max_x;
-
-			GetImXLocation(res.m_ImBGR, w, 0, h-1, min_x, max_x);
-
-			if (min_x > max_x)
-			{
-				return;
-			}
-			res.m_res = GetTransformedImage(res.m_ImBGR, ImFF, ImSF, ImTF, ImNE, ImY, w, h, w, h, min_x, max_x);
+			simple_buffer<u8> ImSF(w * h)/*4*/, ImY(w * h)/*2*/;			
+			res.m_res = GetTransformedImage(res.m_ImBGR, ImFF, ImSF, ImTF, ImNE, ImY, w, h, W, H, 0, w - 1);
 		}
 
 		if (g_show_transformed_images_only)
@@ -1095,8 +1098,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 			}			
 		}		
 
-		Str = GetFileName(FileName);
-		res.m_SavedFiles.push_back(Str);
+		res.m_SavedFiles.push_back(BaseImgName);
 
 		FindTextLinesWithExcFilter(&res, &ImTF, &ImFF, &ImNE, &ImIL);
 
@@ -1317,8 +1319,17 @@ void *ThreadCreateClearedTextImages::Entry()
 
 				if (!(m_pMF->m_blnNoGUI))
 				{
-					g_pViewBGRImage[0](p_task_res->m_ImBGR, p_task_res->m_w, p_task_res->m_h);
-					g_pViewGreyscaleImage[1](p_task_res->m_ImClearedText, p_task_res->m_w, p_task_res->m_h);
+					{
+						simple_buffer<u8> ImTMP_BGR(p_task_res->m_W * p_task_res->m_H * 3);
+						ImBGRToNativeSize(p_task_res->m_ImBGR, ImTMP_BGR, p_task_res->m_w, p_task_res->m_h, p_task_res->m_W, p_task_res->m_H, p_task_res->m_xmin, p_task_res->m_xmax, p_task_res->m_ymin, p_task_res->m_ymax);
+						g_pViewBGRImage[0](ImTMP_BGR, p_task_res->m_W, p_task_res->m_H);
+					}
+
+					{
+						simple_buffer<u8> ImTMP_ClearedText(p_task_res->m_W * p_task_res->m_H);
+						ImToNativeSize(p_task_res->m_ImClearedText, ImTMP_ClearedText, p_task_res->m_w, p_task_res->m_h, p_task_res->m_W, p_task_res->m_H, p_task_res->m_xmin, p_task_res->m_xmax, p_task_res->m_ymin, p_task_res->m_ymax);
+						g_pViewGreyscaleImage[1](ImTMP_ClearedText, p_task_res->m_W, p_task_res->m_H);
+					}
 
 					clock_t cur_time = clock();
 					double progress = ((double)(k + 1) / (double)NImages) * 100.0;

@@ -41,21 +41,39 @@ it is recommended to disable all options related to use ILAImages:
 Recommended Settings And Some Solutions For "Create Cleared TXTImages"
 #########################################################################################################
 
-1) Correct results during "Create Cleared TXTImages":
+1) Correct results during "Run Search" and "Create Cleared TXTImages":
+Before starting "Run Search":
+After opening video:
+Check boundary box in "Video Box" where most subs will appear (you can move split lines for that in it): by default it is whole video.
+Check what horizontal alignment subtitles has on video relatively to selected boundary box: Center/Left/Right/Any.
+alignment: Center - is in most case, so it set by default.
+alignment: Any - currently supported but not so good as other types.
+Test all setting in "Settings" tab by pressing "Test" button.
+
+2) Correct results during "Create Cleared TXTImages":
 Before starting "Create Cleared TXTImages":
 Check does subtitles has darker border color then subtitles text color (in most case it is so,
 if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated,
 in such cases decision will be applied according this setting.
 
-2) "Create Cleared TXTImages" from subs with bad quality:
-In this case sometimes really help to improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
+3) "Create Cleared TXTImages" from subs with bad quality:
+3-1)
+In case of subs with bad quality, especially in case of not too stable luminance in text color:
+You can try to turn on "Extend By Grey Color" in "Settings" tab, which turn on usage of "Allow Min Luminance" setting.
+In this case you should manually specify optimal value in "Allow Min Luminance" for you video.
+"Extend By Grey Color" merge clustered result and extend text area by pixels whose chroma color is same as automatically detected but luminance is in range: [min("Allow Min Luminance", min_text_lum_auto_detected), max_text_lum_auto_detected]
+Also you can change "Video Gamma" or/and "Video Contrast" in "Settings" tab, which can also very improve results.
+In some cases setting "Video Gamma" == 0.7 and setting "Allow Min Luminance" == 100 with turned on "Extend By Grey Color" produce more better results.
+For find optimal values for your video you can use "Test" button in "Settings" tab.
+3-2)
+In case of subs with bad quality sometimes help if improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
 Take into the note that most settings for "Create Cleared TXTImages" are aligned with RGBImages resolution 480-720p.
 So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
 Also you will need to align images sizes in "ILAImages" and "ISAImages" with "RGBImages" sizes after that, or just
 remove or disable them during "Create Cleared TXTImages" run.
 
-3) Performance during "Create Cleared TXTImages":
+4) Performance during "Create Cleared TXTImages":
 Currently program use:
 "CPU kmeans initial loop iterations" == 20
 CPU kmeans loop iterations" = 30
