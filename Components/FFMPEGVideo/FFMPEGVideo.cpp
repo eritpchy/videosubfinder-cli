@@ -33,7 +33,19 @@ wxArrayString GetAvailableHWDeviceTypes()
 	type = AV_HWDEVICE_TYPE_NONE;
 	while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
 	{
-		res.Add(av_hwdevice_get_type_name(type));
+		AVBufferRef* hw_device_ctx = NULL;
+		int err = 0;
+
+		if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
+			NULL, NULL, 0)) < 0) {
+			//"Failed to create specified HW device."
+		}
+		else
+		{
+			res.Add(av_hwdevice_get_type_name(type));
+		}
+
+		if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
 	}
 	if (res.size() == 0)
 	{
@@ -327,7 +339,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	if (g_hw_device == "none")
 	{
-		wxMessageBox("No one FFMPEG HW Device found", "FFMPEGVideo::OpenMovie");
+		wxMessageBox("No one supported FFMPEG HW Device found", "FFMPEGVideo::OpenMovie");
 		return false;
 	}
 
@@ -396,7 +408,9 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	if (!(decoder_ctx = avcodec_alloc_context3(decoder)))
 	{
-		wxMessageBox("avcodec_alloc_context3 faled", "FFMPEGVideo::OpenMovie");
+		wxString msg;
+		msg.Printf(wxT("avcodec_alloc_context3 faled with device type %s"), wxString(av_hwdevice_get_type_name(type)));
+		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 		CloseMovie();
 		return false;
 	}
@@ -404,7 +418,9 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	video = input_ctx->streams[video_stream];
 	if (avcodec_parameters_to_context(decoder_ctx, video->codecpar) < 0)
 	{
-		wxMessageBox("avcodec_parameters_to_context(decoder_ctx, video->codecpar) faled", "FFMPEGVideo::OpenMovie");
+		wxString msg;
+		msg.Printf(wxT("avcodec_parameters_to_context(decoder_ctx, video->codecpar) faled with device type %s"), wxString(av_hwdevice_get_type_name(type)));
+		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 		CloseMovie();
 		return false;
 	}
@@ -413,14 +429,16 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 
 	if (hw_decoder_init(decoder_ctx, type) < 0)
 	{
-		wxMessageBox("hw_decoder_init(decoder_ctx, type) faled", "FFMPEGVideo::OpenMovie");
+		wxString msg;
+		msg.Printf(wxT("hw_decoder_init(decoder_ctx, type) faled with device type %s"), wxString(av_hwdevice_get_type_name(type)));
+		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 		CloseMovie();
 		return false;
 	}
 
 	if ((ret = avcodec_open2(decoder_ctx, decoder, NULL)) < 0) {
 		wxString msg;
-		msg.Printf(wxT("Failed to open codec for stream #%u\n"), video_stream);
+		msg.Printf(wxT("Failed to open codec for stream #%u with device type %s"), video_stream, wxString(av_hwdevice_get_type_name(type)));
 		wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
 		CloseMovie();
 		return false;
@@ -456,7 +474,9 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	OneStep();
 
 	if (!g_bln_get_hw_format) {
-		wxMessageBox("Failed to get HW surface format.", "FFMPEGVideo::get_hw_format");
+		wxString msg;
+		msg.Printf(wxT("Failed to get HW surface format with device type %s"), wxString(av_hwdevice_get_type_name(type)));
+		wxMessageBox(msg, "FFMPEGVideo::get_hw_format");
 		CloseMovie();
 		return false;
 	}
