@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <emmintrin.h>
 #include <wx/wx.h>
+#include <wx/regex.h>
 #include <chrono>
 #include <iostream>
 #include <algorithm>
@@ -4649,19 +4650,32 @@ void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, i
 	
 	wxString str_ymin, str_xmin, str_H, str_W;
 
-	if (pBaseName) *pBaseName = FileName.Mid(0, 24);
-	str_ymin = FileName.Mid(25, 5);
-	str_xmin = FileName.Mid(30, 5);
-	str_H = FileName.Mid(35, 5);
-	str_W = FileName.Mid(40, 5);
+	wxRegEx re = "^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$";
+	if (re.Matches(FileName))
+	{		
+		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
+		str_ymin = re.GetMatch(FileName, 2);
+		str_xmin = re.GetMatch(FileName, 3);
+		str_H = re.GetMatch(FileName, 4);
+		str_W = re.GetMatch(FileName, 5);
 
-	if (pW) *pW = wxAtoi(str_W);
-	if (pH) *pH = wxAtoi(str_H);
-	if (pmin_x) *pmin_x = wxAtoi(str_xmin);
-	if (pmin_y) *pmin_y = wxAtoi(str_ymin);
-
-	if (pmax_x) *pmax_x = wxAtoi(str_xmin) + w - 1;
-	if (pmax_y) *pmax_y = wxAtoi(str_ymin) + h - 1;	
+		if (pW) *pW = wxAtoi(str_W);
+		if (pH) *pH = wxAtoi(str_H);
+		if (pmin_x) *pmin_x = wxAtoi(str_xmin);
+		if (pmin_y) *pmin_y = wxAtoi(str_ymin);
+		if (pmax_x) *pmax_x = wxAtoi(str_xmin) + w - 1;
+		if (pmax_y) *pmax_y = wxAtoi(str_ymin) + h - 1;
+	}
+	else
+	{
+		if (pBaseName) *pBaseName = FileName;
+		if (pW) *pW = w;
+		if (pH) *pH = h;
+		if (pmin_x) *pmin_x = 0;
+		if (pmin_y) *pmin_y = 0;
+		if (pmax_x) *pmax_x = w - 1;
+		if (pmax_y) *pmax_y = h - 1;
+	}
 }
 
 FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
@@ -5518,7 +5532,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			{
 				simple_buffer<u8> ImMainMASKF(w * h);
 
-				if (g_clear_txt_images_by_main_color)
+				if (g_clear_txt_images_by_main_color || g_extend_by_grey_color)
 				{
 					simple_buffer<u8> ImMainMASK(w * h), ImMainClusterF(w * h);
 
@@ -5546,14 +5560,23 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 					}
 					else
 					{
+						ImFF.copy_data(ImMainCluster, w* h);
 						ImMainCluster.copy_data(ImMainClusterF, w* h);
 					}
 				}
 
 				val = GetSubParams(ImMainCluster, w, h, 255, LH, LMAXY, lb, le, min_h * g_scale, real_im_x_center, yb, ye, iter_det);
-				if ((val == 0) && g_clear_txt_images_by_main_color)
+				if (val == 0)
 				{
-					val = GetSubParams(ImMainMASKF, w, h, 255, LH, LMAXY, lb, le, min_h * g_scale, real_im_x_center, yb, ye, iter_det);
+					if (g_extend_by_grey_color)
+					{
+						val = GetSubParams(ImFF, w, h, 255, LH, LMAXY, lb, le, min_h * g_scale, real_im_x_center, yb, ye, iter_det);
+					}
+
+					if (val == 0)
+					{
+						val = GetSubParams(ImMainMASKF, w, h, 255, LH, LMAXY, lb, le, min_h * g_scale, real_im_x_center, yb, ye, iter_det);
+					}
 				}
 			}
 
@@ -5562,6 +5585,14 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 				if (g_show_results) SaveGreyscaleImageWithSubParams(ImMainCluster, "/TestImages/FindText_" + iter_det + "_16_ImMainCluster_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
 				ClearImageOpt5(ImMainCluster, w, h, LH, LMAXY, real_im_x_center, 255);
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_17_ImMainClusterFOpt5" + g_im_save_format, w, h);
+			}
+
+			if ((val != 0) && g_extend_by_grey_color)
+			{
+				CombineTwoImages(ImMainCluster, ImFF, w, h, (u8)255);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_18_ImMainClusterRestoredByImMainClusterOrig" + g_im_save_format, w, h);
+				ClearImageOpt5(ImMainCluster, w, h, LH, LMAXY, real_im_x_center, 255);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_19_ImMainClusterFOpt5" + g_im_save_format, w, h);
 			}
 
 			ImFF.copy_data(ImMainCluster, w * h);
