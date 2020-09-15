@@ -238,7 +238,7 @@ void CMainFrame::Init()
 
 	wxMenu *pMenu1 = new wxMenu;	
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, _T("Open Video (OpenCV)"));
-	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, _T("Open Video (FFMPEG with GPU Acceleration)"));
+	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, _T("Open Video (FFMPEG)"));
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
 	pMenu1->AppendSeparator();
 	pMenu1->AppendSubMenu( pMenu5, _T("Set Priority"));
