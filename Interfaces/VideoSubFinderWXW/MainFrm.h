@@ -272,10 +272,10 @@ void WriteProperty(wxTextOutputStream& fout, int val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, double val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name);
-void ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name);
-void ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name);
-void ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name);
-void ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name);
 
 bool IsMMX_and_SSE();
 bool IsSSE2();

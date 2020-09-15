@@ -220,9 +220,7 @@ void CMainFrame::Init()
 
 	m_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
 
-	m_ErrorFileName = g_work_dir + wxT("/error.log");
-
-	LoadSettings();
+	m_ErrorFileName = g_work_dir + wxT("/error.log");	
 
 	if (!InitCUDADevice())
 	{
@@ -267,11 +265,6 @@ void CMainFrame::Init()
 
 	cnt = pMenuBar->GetMenuCount();			
 
-	m_pPanel = new CSSOWnd(this);
-	m_pPanel->Init();
-
-	this->SetMenuBar(pMenuBar);
-
 	m_pImageBox = new CImageBox(this);
 	m_pImageBox->Init();
 
@@ -283,6 +276,13 @@ void CMainFrame::Init()
 	m_pVideoBox = new CVideoBox(this);
 	m_pVideoBox->Init();
 	m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
+
+	LoadSettings();
+
+	m_pPanel = new CSSOWnd(this);
+	m_pPanel->Init();
+
+	this->SetMenuBar(pMenuBar);
 
 	this->SetSize(0, 0, w, h - 50);
 
@@ -740,6 +740,20 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
 	ReadProperty(m_general_settings, g_allow_min_luminance, "allow_min_luminance");
 
+	double double_val;
+	
+	if (ReadProperty(m_general_settings, double_val, "bottom_video_image_percent_end"))
+	{
+		m_pVideoBox->m_pVBox->m_pHSL2->m_pos = 1 - double_val;
+	}
+	if (ReadProperty(m_general_settings, double_val, "top_video_image_percent_end"))
+	{
+		m_pVideoBox->m_pVBox->m_pHSL1->m_pos = 1 - double_val;
+	}
+
+	ReadProperty(m_general_settings, m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
+	ReadProperty(m_general_settings, m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
+
 	//------------------------------------------------
 
 	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
@@ -936,6 +950,16 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, g_extend_by_grey_color, "extend_by_grey_color");
 	WriteProperty(fout, g_allow_min_luminance, "allow_min_luminance");
+
+	double double_val;
+
+	double_val = 1 - m_pVideoBox->m_pVBox->m_pHSL2->m_pos;
+	WriteProperty(fout, double_val, "bottom_video_image_percent_end");
+	double_val = 1 - m_pVideoBox->m_pVBox->m_pHSL1->m_pos;
+	WriteProperty(fout, double_val, "top_video_image_percent_end");
+	
+	WriteProperty(fout, m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
+	WriteProperty(fout, m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
 
 	fout.Flush();
 	ffout.Close();
@@ -1388,18 +1412,23 @@ void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name)
 	fout << Name << " = " << val << '\n';
 }
 
-void ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
+bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
 {
+	bool res = false;
 	auto search = settings.find(Name);
 
 	if (search != settings.end()) {
 		wxString _val = search->second;
 		val = wxAtoi(_val);
+		res = true;
 	}
+
+	return res;
 }
 
-void ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name)
+bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name)
 {
+	bool res = false;
 	auto search = settings.find(Name);
 
 	if (search != settings.end()) {
@@ -1413,24 +1442,35 @@ void ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Na
 		{
 			val = false;
 		}
+		res = true;
 	}
+
+	return res;
 }
 
-void ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name)
+bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name)
 {
+	bool res = false;
 	auto search = settings.find(Name);
 
 	if (search != settings.end()) {
 		wxString _val = search->second;
 		_val.ToDouble(&val);
+		res = true;
 	}
+
+	return res;
 }
 
-void ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name)
+bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name)
 {
+	bool res = false;
 	auto search = settings.find(Name);
 
 	if (search != settings.end()) {
 		val = search->second;
+		res = true;
 	}
+
+	return res;
 }
