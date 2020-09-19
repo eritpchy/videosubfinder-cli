@@ -46,15 +46,27 @@ alignment: Center - is in most case, so it set by default.
 alignment: Any - currently supported but not so good as other types.
 Test all setting in "Settings" tab by pressing "Test" button.
 
-3) Correct results during "Create Cleared TXTImages":
+3) Add Video Filters during "Run Search"
+In case of logo present or some other issues program now support also AviSynth+ scripts by opening video
+with FFPMEG CPU decoding: https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
+NOTE: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use 
+FFmpegSource or LSMASHSource plugin usage in which it was tested and worked without issues.
+Examples of avs scripts for DeLogo purpose you can find in: https://sourceforge.net/p/videosubfinder/discussion/684990/thread/bddff843f5/?page=2
+Tested with AviSynth plugins:
+FFmpegSource plugin v2.40: https://github.com/FFMS/ffms2/releases/tag/2.40
+LSMASHSource plugin 20200728 : https://github.com/HolyWu/L-SMASH-Works/releases/tag/20200728
+MaskTools2 v2.2.26: https://github.com/pinterf/masktools/releases/tag/2.2.26
+All AviSynth plugins can be found in: http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+
+4) Correct results during "Create Cleared TXTImages":
 Before starting "Create Cleared TXTImages":
 Check does subtitles has darker border color then subtitles text color (in most case it is so,
 if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated,
 in such cases decision will be applied according this setting.
 
-4) "Create Cleared TXTImages" from subs with bad quality:
-4-1)
+5) "Create Cleared TXTImages" from subs with bad quality:
+5-1)
 In case of subs with bad quality, especially in case of not too stable luminance in text color:
 You can try to turn on "Extend By Grey Color" in "Settings" tab, which turn on usage of "Allow Min Luminance" setting.
 In this case you should manually specify optimal value in "Allow Min Luminance" for you video.
@@ -62,14 +74,14 @@ In this case you should manually specify optimal value in "Allow Min Luminance" 
 Also you can change "Video Gamma" or/and "Video Contrast" in "Settings" tab, which can also very improve results.
 In some cases setting "Video Gamma" == 0.7 and setting "Allow Min Luminance" == 100 with turned on "Extend By Grey Color" produce more better results.
 For find optimal values for your video you can use "Test" button in "Settings" tab.
-4-2)
+5-2)
 In case of subs with bad quality sometimes help if improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
 Take into the note that most settings for "Create Cleared TXTImages" are aligned with RGBImages resolution 480-720p.
 So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
 Also you will need to align images sizes in "ILAImages" and "ISAImages" with "RGBImages" sizes after that, or just
 remove or disable them during "Create Cleared TXTImages" run.
 
-5) Performance during "Create Cleared TXTImages":
+6) Performance during "Create Cleared TXTImages":
 Currently program use:
 "CPU kmeans initial loop iterations" == 20
 CPU kmeans loop iterations" = 30
