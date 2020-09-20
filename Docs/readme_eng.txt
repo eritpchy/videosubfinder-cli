@@ -87,8 +87,6 @@ For find optimal values for your video you can use "Test" button in "Settings" t
 In case of subs with bad quality sometimes help if improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
 Take into the note that most settings for "Create Cleared TXTImages" are aligned with RGBImages resolution 480-720p.
 So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
-Also you will need to align images sizes in "ILAImages" and "ISAImages" with "RGBImages" sizes after that, or just
-remove or disable them during "Create Cleared TXTImages" run.
 
 6) Performance during "Create Cleared TXTImages":
 Currently program use:

@@ -69,9 +69,6 @@ int GetImageWithInsideFigures(simple_buffer<T> &Im, simple_buffer<T> &ImRes, int
 template <class T>
 void InvertBinaryImage(simple_buffer<T> &Im, int w, int h);
 
-void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::Mat& res);
-void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::UMat& res);
-
 void GreyscaleMatToImage(cv::Mat& ImGR, int w, int h, simple_buffer<u8>& res);
 void GreyscaleMatToImage(cv::UMat& ImGR, int w, int h, simple_buffer<u8>& res);
 
@@ -79,11 +76,6 @@ template <class T>
 void BinaryImageToMat(simple_buffer<T> &ImBinary, int w, int h, cv::Mat &res, T white = 255);
 template <class T>
 void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::UMat& res, T white = 255);
-
-template <class T>
-void BinaryMatToImage(cv::Mat &ImBinary, int w, int h, simple_buffer<T> &res, T white = 255);
-template <class T>
-void BinaryMatToImage(cv::UMat& ImBinary, int w, int h, simple_buffer<T>& res, T white = 255);
 
 void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::Mat& res);
 void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::UMat& res);
@@ -4635,35 +4627,39 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 	return res;
 }
 
-wxString FormatImInfoAddData(int W, int H, int xmin, int ymin)
+wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h)
 {
-	return wxString::Format(wxT("%.5d%.5d%.5d%.5d"), ymin, xmin, H, W);
+	return wxString::Format(wxT("%.5d%.5d%.5d%.5d%.5d"), ymin, xmin, w, H, W);
 }
 
 void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, int* pmax_x, int* pmin_y, int* pmax_y, wxString* pBaseName)
 {
 	// Note:
-	//FileName = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin)
+	//FileName = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h)
 	//Example:
 	//0_00_05_000__0_00_07_959_00503000000072001280
 	
-	wxString str_ymin, str_xmin, str_H, str_W;
+	wxString str_ymin, str_xmin, str_H, str_W, str_saved_w;
 
-	wxRegEx re = "^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$";
+	wxRegEx re = "^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$";
 	if (re.Matches(FileName))
 	{		
 		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
 		str_ymin = re.GetMatch(FileName, 2);
 		str_xmin = re.GetMatch(FileName, 3);
-		str_H = re.GetMatch(FileName, 4);
-		str_W = re.GetMatch(FileName, 5);
+		str_saved_w = re.GetMatch(FileName, 4);
+		str_H = re.GetMatch(FileName, 5);
+		str_W = re.GetMatch(FileName, 6);
 
-		if (pW) *pW = wxAtoi(str_W);
-		if (pH) *pH = wxAtoi(str_H);
-		if (pmin_x) *pmin_x = wxAtoi(str_xmin);
-		if (pmin_y) *pmin_y = wxAtoi(str_ymin);
-		if (pmax_x) *pmax_x = wxAtoi(str_xmin) + w - 1;
-		if (pmax_y) *pmax_y = wxAtoi(str_ymin) + h - 1;
+		int saved_w = wxAtoi(str_saved_w);
+		double scaler = (double)w / (double)saved_w;
+
+		if (pW) *pW = scaler * wxAtoi(str_W);
+		if (pH) *pH = scaler * wxAtoi(str_H);
+		if (pmin_x) *pmin_x = scaler * wxAtoi(str_xmin);
+		if (pmin_y) *pmin_y = scaler * wxAtoi(str_ymin);
+		if (pmax_x) *pmax_x = (scaler * wxAtoi(str_xmin)) + w - 1;
+		if (pmax_y) *pmax_y = (scaler * wxAtoi(str_ymin)) + h - 1;
 	}
 	else
 	{
@@ -5678,7 +5674,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			res.m_mI = mI;
 			res.m_mQ = mQ;
 
-			wxString FullName = wxT("/TXTImages/") + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + res.m_LY) + g_im_save_format;
+			wxString FullName = wxT("/TXTImages/") + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + res.m_LY, w_orig, res.m_im_h) + g_im_save_format;
 			res.m_ImageName = FullName;
 
 			if (g_save_each_substring_separately)
@@ -5994,7 +5990,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 
 	if (res == 1)
 	{
-		FullName = wxT("/TXTImages/") + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig) + g_im_save_format;
+		FullName = wxT("/TXTImages/") + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig, w_orig, h_orig) + g_im_save_format;
 
 		if (!g_save_each_substring_separately)
 		{
@@ -8572,43 +8568,6 @@ void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::UMat& res, T
 	}
 
 	im.copyTo(res);
-}
-
-// ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255)
-template <class T>
-void BinaryMatToImage(cv::Mat& ImBinary, int w, int h, simple_buffer<T>& res, T white)
-{
-	for (int i = 0; i < w*h; i++)
-	{
-		if (ImBinary.data[i] != 0)
-		{
-			res[i] = white;
-		}
-		else
-		{
-			res[i] = 0;
-		}
-	}
-}
-
-// ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255) 
-template <class T>
-void BinaryMatToImage(cv::UMat& ImBinary, int w, int h, simple_buffer<T>& res, T white)
-{
-	cv::Mat im;
-	ImBinary.copyTo(im);
-
-	for (int i = 0; i < w*h; i++)
-	{
-		if (im.data[i] != 0)
-		{
-			res[i] = white;
-		}
-		else
-		{
-			res[i] = 0;
-		}
-	}
 }
 
 void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::Mat& res)

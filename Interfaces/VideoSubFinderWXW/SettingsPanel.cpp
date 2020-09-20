@@ -358,7 +358,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		BaseImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
 		BaseImgName += " -- " + VideoTimeToStr(CurPos);
 
-		SaveBGRImage(ImBGR, wxT("/RGBImages/") + BaseImgName + wxT("_") + FormatImInfoAddData(m_W, m_H, m_xmin, m_ymin) + g_im_save_format, m_w, m_h);
+		SaveBGRImage(ImBGR, wxT("/RGBImages/") + BaseImgName + wxT("_") + FormatImInfoAddData(m_W, m_H, m_xmin, m_ymin, m_w, m_h) + g_im_save_format, m_w, m_h);
 	}
 	else
 	{

@@ -1053,10 +1053,20 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 			{
 				GetImageSize(Str, w2, h2);
 
-				if ((w2 == w) && (h2 == h))
+				if ( (h2 == ((h*w2)/w)) && (h2 <= h) )
 				{
-					LoadBinaryImage(ImTF, wxString(Str), w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_ISAImage" + g_im_save_format, w, h);
+					LoadBinaryImage(ImTF, wxString(Str), w2, h2);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_01_ISAImage" + g_im_save_format, w2, h2);
+
+					if (h2 != h)
+					{
+						cv::Mat cv_ImGROrig, cv_ImGR;
+						GreyscaleImageToMat(ImTF, w2, h2, cv_ImGROrig);
+						cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), (double)w/w2, (double)h/h2);
+						BinaryMatToImage(cv_ImGR, w, h, ImTF, (u8)255);
+						if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_01_02_ISAImageScaled" + g_im_save_format, w, h);
+					}
+
 					RestoreStillExistLines(ImTF, ImFF, w, h);
 					ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
 					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_02_ISAImageExtImNF" + g_im_save_format, w, h);
@@ -1064,6 +1074,13 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 				else
 				{
 					g_pMF->ShowErrorMessage(wxString::Format(wxT("ISA Image \"%s\" has wrong size"), GetFileName(FileName) + g_im_save_format));
+
+					if (g_RunCreateClearedTextImages)
+					{
+						g_pMF->m_pPanel->m_pOCRPanel->Disable();
+						g_RunCreateClearedTextImages = 0;
+					}
+					return;
 				}
 			}
 		}
@@ -1077,11 +1094,20 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 			{
 				GetImageSize(Str, w2, h2);
 				
-				if ((w2 == w) && (h2 == h))
+				if ((h2 == ((h * w2) / w)) && (h2 <= h))
 				{
 					ImIL.set_size(w * h);
-					LoadBinaryImage(ImIL, wxString(Str), w, h);
-					if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_ILAImage" + g_im_save_format, w, h);
+					LoadBinaryImage(ImIL, wxString(Str), w2, h2);
+					if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_01_ILAImage" + g_im_save_format, w2, h2);
+
+					if (h2 != h)
+					{
+						cv::Mat cv_ImGROrig, cv_ImGR;
+						GreyscaleImageToMat(ImIL, w2, h2, cv_ImGROrig);
+						cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), (double)w / w2, (double)h / h2);
+						BinaryMatToImage(cv_ImGR, w, h, ImIL, (u8)255);
+						if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/ThreadCreateClearedTextImages_03_02_ILAImageScaled" + g_im_save_format, w, h);
+					}
 
 					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/ThreadCreateClearedTextImages_04_ISAImage" + g_im_save_format, w, h);
 					IntersectTwoImages(ImTF, ImIL, w, h);
@@ -1094,6 +1120,12 @@ void FindTextLines(wxString FileName, FindTextLinesRes &res)
 				else
 				{
 					g_pMF->ShowErrorMessage(wxString::Format(wxT("ILA Image \"%s\" has wrong size"), GetFileName(FileName) + g_im_save_format));
+					if (g_RunCreateClearedTextImages)
+					{
+						g_pMF->m_pPanel->m_pOCRPanel->Disable();
+						g_RunCreateClearedTextImages = 0;
+					}
+					return;
 				}
 			}			
 		}		

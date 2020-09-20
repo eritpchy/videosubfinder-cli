@@ -125,7 +125,7 @@ int GetTransformedImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simpl
 int FilterTransformedImage(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
 int FilterImage(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, int w, int h, int W, int H, int min_x, int max_x, simple_buffer<int> &LB, simple_buffer<int> &LE, int N);
 
-wxString FormatImInfoAddData(int W, int H, int xmin, int ymin);
+wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h);
 
 void GetImInfo(wxString FileName, int w, int h, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmax_x = NULL, int* pmin_y = NULL, int* pmax_y = NULL, wxString* pBaseName = NULL);
 
@@ -161,6 +161,9 @@ void RestoreStillExistLines(simple_buffer<u8> &Im, simple_buffer<u8> &ImOrig, in
 
 void ReadFile(cv::Mat& res_data, wxString name);
 void WriteFile(std::vector<uchar>& write_data, wxString name);
+
+void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::Mat& res);
+void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::UMat& res);
 
 //-----------------------------------------------------------
 
@@ -268,3 +271,40 @@ void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T whit
 	}
 }
 
+
+// ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255)
+template <class T>
+void BinaryMatToImage(cv::Mat& ImBinary, int w, int h, simple_buffer<T>& res, T white)
+{
+	for (int i = 0; i < w * h; i++)
+	{
+		if (ImBinary.data[i] != 0)
+		{
+			res[i] = white;
+		}
+		else
+		{
+			res[i] = 0;
+		}
+	}
+}
+
+// ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255) 
+template <class T>
+void BinaryMatToImage(cv::UMat& ImBinary, int w, int h, simple_buffer<T>& res, T white)
+{
+	cv::Mat im;
+	ImBinary.copyTo(im);
+
+	for (int i = 0; i < w * h; i++)
+	{
+		if (im.data[i] != 0)
+		{
+			res[i] = white;
+		}
+		else
+		{
+			res[i] = 0;
+		}
+	}
+}

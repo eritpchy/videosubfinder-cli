@@ -1386,7 +1386,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 								if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
 								{
-									Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin);
+									Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
 									rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
 								}
 
@@ -1496,7 +1496,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
 						{
-							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin);
+							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
 							rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
 						}
 					}
@@ -1573,7 +1573,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, xmin, xmax) == 1)
 						{
-							Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin);
+							Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
 							rs.AddSaveImagesTask(ImFS, ImIntS, ImYS, Str);
 						}
 					}
