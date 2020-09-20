@@ -75,6 +75,8 @@ public:
 
 	FFMPEGThreadRunVideo *m_pThreadRunVideo;
 	
+	int64_t m_start_pts = 0;
+
 	AVFilterGraph *filter_graph = NULL;
 	AVFilterContext *buffersink_ctx = NULL;
 	AVFilterContext *buffersrc_ctx = NULL;	

@@ -1262,6 +1262,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 		if (!(m_pMF->m_blnNoGUI))
 		{
+			m_pMF->m_pVideoBox->m_pSB->Enable(true);
 			m_pMF->m_pVideoBox->m_pSB->SetScrollPos(0);
 			m_pMF->m_pVideoBox->m_pSB->SetScrollRange(0, NImages);
 

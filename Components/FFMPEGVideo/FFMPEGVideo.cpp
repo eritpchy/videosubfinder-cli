@@ -204,9 +204,11 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		return ret;
 	}
 
-	//frame->pts = frame->best_effort_timestamp;
+	frame->pts = frame->best_effort_timestamp;
 
-	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
+	int64_t cur_pts = frame->pts;
+
+	frame_pos = av_rescale(cur_pts - m_start_pts, video->time_base.num * 1000, video->time_base.den);
 
 	if (g_use_hw_acceleration && (frame->format == hw_pix_fmt)) {
 
@@ -263,6 +265,13 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 			double zoum = (double)1280 / (double)m_origWidth;
 			m_Width = 1280;
 			m_Height = (double)m_origHeight * zoum;
+		}
+
+		if ( frame_pos > ( (m_Duration > 0) ? std::min<s64>(10000, m_Duration/10) : 10000 ) )
+		{
+			wxMessageBox(wxString::Format(wxT("WARNING: First video frame has too big time: %s\nAll frames times will be corrected on it"), ConvertVideoTime(frame_pos)), "FFMPEGVideo::decode_frame");
+			m_start_pts = cur_pts;
+			frame_pos = 0;
 		}
 	}
 	
@@ -465,6 +474,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	enum AVHWDeviceType type;
 	int i;
 
+	m_start_pts = 0;
 	m_frame_buffer_size = -1;
 	m_origWidth = 0;
 	m_origHeight = 0;
@@ -483,7 +493,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 			wxMessageBox(wxT("Cannot open input file: ") + csMovieName, wxT("FFMPEGVideo::OpenMovie"));
 			CloseMovie();
 			return false;
-		}
+		}		
 
 		if ((ret = avformat_find_stream_info(input_ctx, NULL)) < 0) {
 			wxMessageBox(wxT("Cannot find input stream information."), wxT("FFMPEGVideo::OpenMovie"));
@@ -729,6 +739,7 @@ bool FFMPEGVideo::CloseMovie()
 	sw_frame = NULL;
 	filt_frame = NULL;
 
+	m_start_pts = 0;
 	m_frame_buffer_size = -1;
 	m_origWidth = 0;
 	m_origHeight = 0;
@@ -751,7 +762,7 @@ void FFMPEGVideo::SetPos(s64 Pos)
 			Pause();
 		}
 
-		s64 tm = av_rescale(Pos, video->time_base.den, video->time_base.num * 1000);
+		s64 tm = av_rescale(Pos, video->time_base.den, video->time_base.num * 1000) + m_start_pts;
 
 		int num_tries = 0, res;
 		int64_t min_ts, ts, max_ts;

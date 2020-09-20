@@ -1058,26 +1058,26 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	fn_start = fn = 0;
 	max_rgb_fn = -1;
 
-	while ((CurPos < End) && (g_RunSubSearch == 1) && (CurPos != prevPos))
+	while (((CurPos < End) || (End < 0)) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
 		int create_new_threads = threads;		
 
 #ifdef CUSTOM_TA
 		if (fn >= 1000)
 		{
-			CurPos = End;
+			CurPos = prevPos;
 			break;
 		}
 #endif
 
-		while ((found_sub == 0) && (CurPos < End) && (CurPos != prevPos) && (g_RunSubSearch == 1))
+		while ((found_sub == 0) && ((CurPos < End) || (End < 0)) && (CurPos != prevPos) && (g_RunSubSearch == 1))
 		{
 			prevPos = CurPos;
 
 #ifdef CUSTOM_TA
 			if (fn >= 1000)
 			{
-				CurPos = End;
+				CurPos = prevPos;
 				break;
 			}
 #endif
@@ -1223,7 +1223,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			}			
 		}		
 
-		if ((g_RunSubSearch == 0) || (found_sub == 0) || (CurPos >= End) || (CurPos == prevPos))
+		if ((g_RunSubSearch == 0) || (found_sub == 0) || ((CurPos >= End) && (End >= 0)) || (CurPos == prevPos))
 		{
 			break;
 		}
@@ -2367,8 +2367,16 @@ s64 GetVideoTime(wxString time)
 {
 	s64 res;
 	int hour, min, sec, msec;
-	wxASSERT_MSG(sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) == 4, wxString::Format(wxT("Wrong video time format '%s'"), time.c_str()));
-	res = (s64)(((hour * 60 + min) * 60 + sec) * 1000 + msec);
+
+	if (time == wxT("N/A"))
+	{
+		res = -1;
+	}
+	else
+	{
+		wxASSERT_MSG(sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) == 4, wxString::Format(wxT("Wrong video time format '%s'"), time.c_str()));
+		res = (s64)(((hour * 60 + min) * 60 + sec) * 1000 + msec);
+	}
 	return res;
 }
 

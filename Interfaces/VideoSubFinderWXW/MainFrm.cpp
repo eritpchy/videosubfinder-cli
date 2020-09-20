@@ -421,8 +421,16 @@ void CMainFrame::OnFileOpenVideo(int type)
 		return;
 	}
 
-	m_pVideoBox->m_pSB->SetScrollPos(0);
-	m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration));
+	if (m_pVideo->m_Duration > 0)
+	{
+		m_pVideoBox->m_pSB->Enable(true);
+		m_pVideoBox->m_pSB->SetScrollPos(0);
+		m_pVideoBox->m_pSB->SetScrollRange(0, (int)(m_pVideo->m_Duration));
+	}
+	else
+	{
+		m_pVideoBox->m_pSB->Disable();
+	}
 
 	m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + GetFileName(csFileName) + "\"");
 
@@ -1093,13 +1101,26 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 		{
 			if (Cur > m_BegTime)
 			{
-				clock_t cur_time = clock();
-				double progress = std::min<double>(((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0, 100.0);
+				clock_t cur_time = clock();				
 				clock_t run_time = cur_time - g_StartTimeRunSubSearch;
-				clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+				
+				wxString str_progress, str_eta;
+
+				if (m_EndTime >= 0)
+				{
+					double progress = std::min<double>(((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0, 100.0);
+					clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+					str_progress.Printf(wxT("%%%2.2f"), progress);
+					str_eta = ConvertClockTime(eta);
+				}
+				else				
+				{
+					str_progress = wxT("%%N/A");
+					str_eta = wxT("N/A");
+				}
 
 				wxString str;
-				str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   "), progress, ConvertClockTime(eta), ConvertClockTime(run_time));
+				str.Printf(wxT("progress: %s eta : %s run_time : %s   |   "), str_progress, str_eta, ConvertClockTime(run_time));
 
 				m_pVideoBox->m_plblTIME->SetLabel(str + ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
 			}
@@ -1160,17 +1181,24 @@ wxString ConvertVideoTime(s64 pos)
 {
 	wxString str;
 	int hour, min, sec, msec, val;
-	
-	val = (int)(pos / 1000); // seconds
-	msec = pos - (s64)val * 1000;
-	hour = val / 3600;
-	val -= hour * 3600;
-	min = val / 60;
-	val -= min * 60;
-	sec = val;
 
-	str.Printf(wxT("%02d:%02d:%02d:%03d"), hour, min, sec, msec);
-	
+	if (pos >= 0)
+	{
+		val = (int)(pos / 1000); // seconds
+		msec = pos - (s64)val * 1000;
+		hour = val / 3600;
+		val -= hour * 3600;
+		min = val / 60;
+		val -= min * 60;
+		sec = val;
+
+		str.Printf(wxT("%02d:%02d:%02d:%03d"), hour, min, sec, msec);
+	}
+	else
+	{
+		str = wxT("N/A");
+	}
+
 	return str;
 }
 

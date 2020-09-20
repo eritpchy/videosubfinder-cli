@@ -174,3 +174,5 @@ public:
 };
 
 extern CVideo *g_pV;
+
+extern wxString ConvertVideoTime(s64 pos);
