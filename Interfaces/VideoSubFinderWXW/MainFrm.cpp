@@ -354,8 +354,11 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	if (m_blnReopenVideo == false)
 	{
+		// https://en.wikipedia.org/wiki/Video_file_format
+		wxString all_video_formats("*.3g2; *.3gp; *.amv; *.asf; *.avi; *.drc; *.flv; *.f4v; *.f4p; *.f4a; *.f4b; *.gif; *.gifv; *.m4p; *.m4v; *.m4v; *.mkv; *.mng; *.mov; *.qt; *.mp4; *.mpg; *.mp2; *.mpeg; *.mpe; *.mpv; *.mpg; *.mpeg; *.m2v; *.mts; *.m2ts; *.ts; *.mxf; *.nsv; *.ogv; *.ogg; *.rm; *.rmvb; *.roq; *.svi; *.viv; *.vob; *.webm; *.wmv; *.yuv");
+
 		wxFileDialog fd(this, wxT("Open Video File"),
-						wxEmptyString, wxEmptyString, wxT("Video Files (*.avi;*.mp4;*.mpg;*.mpeg;*.mpv;*.m1v;*.dat;*.avs;*.vdr;*.asf;*.asx;*.wmv;*.mkv;*.ogm)|*.avi;*.mp4;*.mpg;*.mpeg;*.mpv;*.m1v;*.dat;*.avs;*.vdr;*.asf;*.asx;*.wmv;*.mkv;*.ogm|All Files (*.*)|*.*"), wxFD_OPEN);
+						wxEmptyString, wxEmptyString, wxString::Format(wxT("Video Files (%s)|%s|All Files (*.*)|*.*"), all_video_formats, all_video_formats), wxFD_OPEN);
 
 		if(fd.ShowModal() != wxID_OK)
 		{
@@ -728,6 +731,14 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_general_settings, g_hw_device, "hw_device");
 
+	if (ReadProperty(m_general_settings, g_filter_descr, "filter_descr"))
+	{
+		if (g_filter_descr == wxT("none"))
+		{
+			g_filter_descr = wxT("");
+		}
+	}
+
 	ReadProperty(m_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
 	ReadProperty(m_general_settings, g_save_scaled_images, "save_scaled_images");
 
@@ -771,6 +782,7 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_locale_settings, m_cfg.m_label_text_alignment, "label_text_alignment");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_hw_device, "ssp_hw_device");
+	ReadProperty(m_locale_settings, m_cfg.m_label_filter_descr, "label_filter_descr");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
@@ -938,6 +950,10 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_remove_wide_symbols, "remove_wide_symbols");
 
 	WriteProperty(fout, g_hw_device, "hw_device");
+
+	wxString wxstr_val;
+	(g_filter_descr == wxT("")) ? wxstr_val = wxT("none") : wxstr_val = g_filter_descr;
+	WriteProperty(fout, wxstr_val, "filter_descr");
 
 	WriteProperty(fout, g_text_alignment_string, "text_alignment");
 

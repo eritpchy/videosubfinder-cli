@@ -22,8 +22,12 @@
 #endif
 
 wxString g_hw_device = wxT("cpu");
+wxString g_filter_descr;
+
 bool g_use_hw_acceleration = false;
 bool g_bln_get_hw_format = true;
+bool g_use_filter = false;
+AVPixelFormat dest_fmt = AV_PIX_FMT_BGR24;
 
 wxArrayString GetAvailableHWDeviceTypes()
 {
@@ -101,8 +105,7 @@ void FFMPEGVideo::ShowFrame(void *dc)
 {
 	if ((m_show_video) && (dc != NULL))
 	{
-		int ret;
-		AVPixelFormat dest_fmt = AV_PIX_FMT_BGR24;
+		int ret;		
 		uint8_t* dst_data[4] = { NULL };
 		int dst_linesize[4];
 
@@ -201,6 +204,8 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		return ret;
 	}
 
+	//frame->pts = frame->best_effort_timestamp;
+
 	frame_pos = av_rescale(frame->pts, video->time_base.num * 1000, video->time_base.den);
 
 	if (g_use_hw_acceleration && (frame->format == hw_pix_fmt)) {
@@ -215,19 +220,56 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		av_frame_unref(frame);
 	}
 	else
-		cur_frame = frame;
+		cur_frame = frame;	
 	
+	if (g_use_filter)
+	{
+		/* push the decoded frame into the filtergraph */
+		if (ret = av_buffersrc_add_frame_flags(buffersrc_ctx, cur_frame, AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
+			av_frame_unref(cur_frame);
+			return ret;
+		}
+
+		/* pull filtered frames from the filtergraph */
+		ret = av_buffersink_get_frame(buffersink_ctx, filt_frame);
+		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+		{
+			av_frame_unref(cur_frame);
+			return 0;
+		}
+		if (ret < 0)
+		{
+			av_frame_unref(cur_frame);
+			return ret;
+		}
+		
+		av_frame_unref(cur_frame);
+		cur_frame = filt_frame;
+	}
+
 	if (m_frame_buffer_size == -1)
 	{	
 		src_fmt = (AVPixelFormat)cur_frame->format;
 		m_frame_buffer_size = av_image_get_buffer_size(src_fmt, cur_frame->width, cur_frame->height, 1);
 		m_frame_buffer.set_size(m_frame_buffer_size);
+		m_origWidth = cur_frame->width;
+		m_origHeight = cur_frame->height;
+
+		m_Width = m_origWidth;
+		m_Height = m_origHeight;
+
+		if (m_origWidth > 1280)
+		{
+			double zoum = (double)1280 / (double)m_origWidth;
+			m_Width = 1280;
+			m_Height = (double)m_origHeight * zoum;
+		}
 	}
 	
-	assert(m_origWidth == cur_frame->width, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origWidth == cur_frame->width");
-	assert(m_origHeight == cur_frame->height, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origHeight == cur_frame->height");
-	assert(src_fmt == (AVPixelFormat)cur_frame->format, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: src_fmt == (AVPixelFormat)cur_frame->format");
-	assert(m_frame_buffer_size == av_image_get_buffer_size(src_fmt, cur_frame->width, cur_frame->height, 1), "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_frame_buffer_size == av_image_get_buffer_size(src_fmt, cur_frame->width, cur_frame->height, 1)");
+	custom_assert(m_origWidth == cur_frame->width, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origWidth == cur_frame->width");
+	custom_assert(m_origHeight == cur_frame->height, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origHeight == cur_frame->height");
+	custom_assert(src_fmt == (AVPixelFormat)cur_frame->format, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: src_fmt == (AVPixelFormat)cur_frame->format");
+	custom_assert(m_frame_buffer_size == av_image_get_buffer_size((AVPixelFormat)cur_frame->format, cur_frame->width, cur_frame->height, 1), "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_frame_buffer_size == av_image_get_buffer_size((AVPixelFormat)cur_frame->format, cur_frame->width, cur_frame->height, 1)");
 
 	ret = av_image_copy_to_buffer(&m_frame_buffer[0], m_frame_buffer_size, cur_frame->data, cur_frame->linesize, src_fmt, cur_frame->width, cur_frame->height, 1);
 	
@@ -329,6 +371,93 @@ s64 FFMPEGVideo::OneStepWithTimeout()
 	return GetPos();
 }
 
+int FFMPEGVideo::init_filters()
+{
+	char args[512];
+	int ret = 0;
+	const AVFilter* buffersrc = avfilter_get_by_name("buffer");
+	const AVFilter* buffersink = avfilter_get_by_name("buffersink");
+	AVFilterInOut* outputs = avfilter_inout_alloc();
+	AVFilterInOut* inputs = avfilter_inout_alloc();
+	AVRational time_base = video->time_base;
+	enum AVPixelFormat pix_fmts[] = { dest_fmt, AV_PIX_FMT_NONE };
+
+	filter_graph = avfilter_graph_alloc();
+	if (!outputs || !inputs || !filter_graph) {
+		ret = AVERROR(ENOMEM);
+		goto end;
+	}
+
+	/* buffer video source: the decoded frames from the decoder will be inserted here. */
+	snprintf(args, sizeof(args),
+		"video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+		decoder_ctx->width, decoder_ctx->height, decoder_ctx->pix_fmt,
+		time_base.num, time_base.den,
+		decoder_ctx->sample_aspect_ratio.num, decoder_ctx->sample_aspect_ratio.den);
+
+	ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
+		args, NULL, filter_graph);
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot create buffer source\n");
+		goto end;
+	}
+
+	/* buffer video sink: to terminate the filter chain. */
+	ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
+		NULL, NULL, filter_graph);
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot create buffer sink\n");
+		goto end;
+	}
+
+	ret = av_opt_set_int_list(buffersink_ctx, "pix_fmts", pix_fmts,
+		AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+	if (ret < 0) {
+		av_log(NULL, AV_LOG_ERROR, "Cannot set output pixel format\n");
+		goto end;
+	}
+
+	/*
+	 * Set the endpoints for the filter graph. The filter_graph will
+	 * be linked to the graph described by filters_descr.
+	 */
+
+	 /*
+	  * The buffer source output must be connected to the input pad of
+	  * the first filter described by filters_descr; since the first
+	  * filter input label is not specified, it is set to "in" by
+	  * default.
+	  */
+	outputs->name = av_strdup("in");
+	outputs->filter_ctx = buffersrc_ctx;
+	outputs->pad_idx = 0;
+	outputs->next = NULL;
+
+	/*
+	 * The buffer sink input must be connected to the output pad of
+	 * the last filter described by filters_descr; since the last
+	 * filter output label is not specified, it is set to "out" by
+	 * default.
+	 */
+	inputs->name = av_strdup("out");
+	inputs->filter_ctx = buffersink_ctx;
+	inputs->pad_idx = 0;
+	inputs->next = NULL;
+
+	if ((ret = avfilter_graph_parse_ptr(filter_graph, g_filter_descr.ToUTF8(),
+		&inputs, &outputs, NULL)) < 0)
+		goto end;
+
+	if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0)
+		goto end;
+
+end:
+	avfilter_inout_free(&inputs);
+	avfilter_inout_free(&outputs);
+
+	return ret;
+}
+
 bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device_type)
 {
 	bool res = false;
@@ -337,10 +466,14 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	int i;
 
 	m_frame_buffer_size = -1;
+	m_origWidth = 0;
+	m_origHeight = 0;
+	m_Width = 0;
+	m_Height = 0;
 
 	if (input_ctx) {
 		CloseMovie();
-	}
+	}	
 
 	if (g_hw_device == wxT("cpu"))
 	{	
@@ -385,11 +518,6 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		}
 
 		// init the video decoder
-		if ((ret = avcodec_open2(decoder_ctx, decoder, NULL)) < 0) {
-			av_log(NULL, AV_LOG_ERROR, "Cannot open video decoder\n");
-			return false;
-		}
-
 		if ((ret = avcodec_open2(decoder_ctx, decoder, NULL)) < 0) {
 			wxString msg;
 			msg.Printf(wxT("Failed to open codec for stream #%u"), video_stream);
@@ -504,29 +632,48 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		}
 	}
 
-	m_origWidth = video->codecpar->width;
-	m_origHeight = video->codecpar->height;
-
-	m_Width = m_origWidth;
-	m_Height = m_origHeight;
-
-	if (m_origWidth > 1280)
+	if (g_filter_descr.Len() > 0)
 	{
-		double zoum = (double)1280 / (double)m_origWidth;
-		m_Width = 1280;
-		m_Height = (double)m_origHeight*zoum;
-	}	
+		g_use_filter = true;
+		if ((ret = init_filters()) < 0) {
+			wxString msg;
+			msg.Printf(wxT("init_filters \"%s\" failed"), g_filter_descr);
+			wxMessageBox(msg, "FFMPEGVideo::OpenMovie");
+			CloseMovie();
+			return false;
+		}
+	}
+	else
+	{
+		g_use_filter = false;
+	}
 
-	m_Duration = input_ctx->duration / (AV_TIME_BASE / 1000);
-
-	m_pVideoWindow = pVideoWindow;
-	m_pVideoWindow ? m_show_video = true : m_show_video = false;	
-
-	if (!(frame = av_frame_alloc()) || !(sw_frame = av_frame_alloc())) {
+	if (!(frame = av_frame_alloc())) {
 		wxMessageBox("Can not alloc frame");
 		CloseMovie();
 		return false;
 	}
+
+	if (g_use_hw_acceleration) {
+		if (!(sw_frame = av_frame_alloc())) {
+			wxMessageBox("Can not alloc sw_frame");
+			CloseMovie();
+			return false;
+		}
+	}
+
+	if (g_use_filter) {
+		if (!(filt_frame = av_frame_alloc())) {
+			wxMessageBox("Can not alloc filt_frame");
+			CloseMovie();
+			return false;
+		}
+	}		
+
+	m_Duration = input_ctx->duration / (AV_TIME_BASE / 1000);
+
+	m_pVideoWindow = pVideoWindow;
+	m_pVideoWindow ? m_show_video = true : m_show_video = false;
 
 	m_Pos = -2;
 
@@ -565,18 +712,28 @@ bool FFMPEGVideo::CloseMovie()
 		Pause();
 	}
 
+	if (filter_graph) avfilter_graph_free(&filter_graph);
 	if (decoder_ctx) avcodec_free_context(&decoder_ctx);
 	if (input_ctx) avformat_close_input(&input_ctx);
 	if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);	
 	if (frame) av_frame_free(&frame);
 	if (sw_frame) av_frame_free(&sw_frame);
+	if (filt_frame) av_frame_free(&filt_frame);	
 	av_packet_unref(&packet);
 
+	filter_graph = NULL;
 	decoder_ctx = NULL;
 	input_ctx = NULL;
 	hw_device_ctx = NULL;
 	frame = NULL;
 	sw_frame = NULL;
+	filt_frame = NULL;
+
+	m_frame_buffer_size = -1;
+	m_origWidth = 0;
+	m_origHeight = 0;
+	m_Width = 0;
+	m_Height = 0;
 
 	m_play_video = false;
 

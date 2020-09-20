@@ -20,6 +20,7 @@
 #include <wx/wx.h>
 
 extern wxString g_hw_device;
+extern wxString g_filter_descr;
 
 wxArrayString GetAvailableHWDeviceTypes();
 CVideo* GetFFMPEGVideoObject();

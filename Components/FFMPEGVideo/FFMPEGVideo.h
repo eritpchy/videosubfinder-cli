@@ -31,6 +31,8 @@ extern "C"
 	#include <libavutil/avassert.h>
 	#include <libavutil/imgutils.h>
 	#include <libswscale/swscale.h>
+	#include <libavfilter/buffersink.h>
+	#include <libavfilter/buffersrc.h>
 }
 
 class FFMPEGVideo;
@@ -72,6 +74,10 @@ public:
 	long		m_origHeight;
 
 	FFMPEGThreadRunVideo *m_pThreadRunVideo;
+	
+	AVFilterGraph *filter_graph = NULL;
+	AVFilterContext *buffersink_ctx = NULL;
+	AVFilterContext *buffersrc_ctx = NULL;	
 
 	AVFormatContext *input_ctx = NULL;
 	AVBufferRef *hw_device_ctx = NULL;		
@@ -80,12 +86,13 @@ public:
 	AVCodec *decoder = NULL;
 	AVFrame *frame = NULL;
 	AVFrame *sw_frame = NULL;
+	AVFrame* filt_frame = NULL;
 	int video_stream;
 
 	int m_frame_buffer_size = -1;
 	simple_buffer<u8> m_frame_buffer;
 
-	AVPacket packet;
+	AVPacket packet;	
 
 	bool need_to_read_packet = true;
 	bool cuda_memory_is_initialized = false;
@@ -137,4 +144,5 @@ public:
 
 	int hw_decoder_init(AVCodecContext *ctx, const enum AVHWDeviceType type);
 	int decode_frame(s64& frame_pos);
+	int init_filters();
 };

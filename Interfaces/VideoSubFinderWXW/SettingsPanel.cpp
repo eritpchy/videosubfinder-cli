@@ -201,6 +201,8 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, m_LBLFont, &g_playback_sound);
 
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_hw_device, GetAvailableHWDeviceTypes());
+	
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_filter_descr);
 
 #ifdef WIN64
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, m_LBLFont, &g_use_cuda_gpu);

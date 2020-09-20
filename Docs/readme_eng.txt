@@ -47,16 +47,25 @@ alignment: Any - currently supported but not so good as other types.
 Test all setting in "Settings" tab by pressing "Test" button.
 
 3) Add Video Filters during "Run Search"
-In case of logo present or some other issues program now support also AviSynth+ scripts by opening video
-with FFPMEG CPU decoding: https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
-NOTE: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use 
+3-1)
+In case of logo present or some other issues program now support also AviSynth+ scripts by opening video with FFPMEG CPU device video decoding:
+https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
+NOTE1: HW Acceleration (GPU) doesn't support AviSynth. So you need to set CPU device in "FFMPEG HW Devices" in "Settings" tab (which is by default).
+NOTE2: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use 
 FFmpegSource or LSMASHSource plugin usage in which it was tested and worked without issues.
-Examples of avs scripts for DeLogo purpose you can find in: https://sourceforge.net/p/videosubfinder/discussion/684990/thread/bddff843f5/?page=2
+Examples of avs scripts for DeLogo purpose you can find in:
+https://sourceforge.net/p/videosubfinder/discussion/684990/thread/bddff843f5/?page=2
 Tested with AviSynth plugins:
 FFmpegSource plugin v2.40: https://github.com/FFMS/ffms2/releases/tag/2.40
 LSMASHSource plugin 20200728 : https://github.com/HolyWu/L-SMASH-Works/releases/tag/20200728
 MaskTools2 v2.2.26: https://github.com/pinterf/masktools/releases/tag/2.2.26
 All AviSynth plugins can be found in: http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+3-2)
+You can also use FFMPEG Video Filters by opening video with FFMPEG video decoding.
+https://ffmpeg.org/ffmpeg-filters.html#Video-Filters
+You can set them in "Settings" tab by setting "FFMPEG Video Filters" record.
+For example you can set it to: curves=psfile='curves.acv'
+for using Photoshop curves file (.acv) for specify color settings changes.
 
 4) Correct results during "Create Cleared TXTImages":
 Before starting "Create Cleared TXTImages":
