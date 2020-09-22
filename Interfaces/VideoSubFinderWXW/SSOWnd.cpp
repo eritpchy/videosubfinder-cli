@@ -64,15 +64,24 @@ void CSSOWnd::Init()
 	//	DEFAULT_PITCH | FF_SWISS,  // nPitchAndFamily
 	//	"Microsoft Sans Serif");   // lpszFacename
 
+	SaveToReportLog("CSSOWnd::Init(): starting...\n");
 
+	SaveToReportLog("CSSOWnd::Init(): new CSearchPanel(this)...\n");
 	m_pSHPanel = new CSearchPanel(this);
+	SaveToReportLog("CSSOWnd::Init(): new CSettingsPanel(this)...\n");
 	m_pSSPanel = new CSettingsPanel(this);
+	SaveToReportLog("CSSOWnd::Init(): new COCRPanel(this)...\n");
 	m_pOCRPanel = new COCRPanel(this);
+	SaveToReportLog("CSSOWnd::Init(): m_pSHPanel->Init()...\n");
 	m_pSHPanel->Init();
+	SaveToReportLog("CSSOWnd::Init(): m_pSSPanel->Init()...\n");
 	m_pSSPanel->Init();
+	SaveToReportLog("CSSOWnd::Init(): m_pOCRPanel->Init()...\n");
 	m_pOCRPanel->Init();
 
 	wxBitmap page_bmp = wxArtProvider::GetBitmap(wxART_NORMAL_FILE, wxART_OTHER, wxSize(16,16));
+
+	SaveToReportLog("CSSOWnd::Init(): AddPage's...\n");
 
 	this->AddPage(m_pSHPanel, wxT("Search"), false, page_bmp );
 	this->AddPage(m_pSSPanel, wxT("Settings"), false, page_bmp );
@@ -104,6 +113,8 @@ void CSSOWnd::Init()
 	//ResizeControls();
 
 	m_WasInited = true;
+
+	SaveToReportLog("CSSOWnd::Init(): finished.\n");
 }
 
 void CSSOWnd::ResizeControls()

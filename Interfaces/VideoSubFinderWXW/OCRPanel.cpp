@@ -193,15 +193,19 @@ COCRPanel::~COCRPanel()
 
 void COCRPanel::Init()
 {
+	SaveToReportLog("COCRPanel::Init(): starting...\n");
+
 	m_CL1 = wxColour(255, 215, 0);
 	m_CLOCR = wxColour(170, 170, 170);
 
 	//"Times New Roman"
+	SaveToReportLog("COCRPanel::Init(): init m_BTNFont...\n");
 	m_BTNFont = wxFont(m_pMF->m_cfg.m_fount_size_ocr_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
                     wxFONTWEIGHT_BOLD, false /* !underlined */,
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
 	//"Microsoft Sans Serif"
+	SaveToReportLog("COCRPanel::Init(): init m_LBLFont...\n");
 	m_LBLFont = wxFont(m_pMF->m_cfg.m_fount_size_ocr_lbl, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
                     wxFONTWEIGHT_NORMAL, false /* !underlined */,
                     wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
@@ -292,53 +296,65 @@ void COCRPanel::Init()
 	rcP3.width = w2 + dw;
 	rcP3.height = rcCES.GetBottom() + 20 + dh;
 
+	SaveToReportLog("COCRPanel::Init(): this->SetSize(rcP3)...\n");
 	this->SetSize(rcP3);	
 
+	SaveToReportLog("COCRPanel::Init(): init m_pP3...\n");
 	m_pP3 = new wxPanel( this, wxID_ANY, rcP3.GetPosition(), rcP3.GetSize() );
 	m_pP3->SetMinSize(rcP3.GetSize());
 	m_pP3->SetBackgroundColour( m_CLOCR );
 
+	SaveToReportLog("COCRPanel::Init(): init m_plblMSD...\n");
 	m_plblMSD = new wxStaticText( m_pP3, wxID_ANY,
 		m_pMF->m_cfg.m_ocr_label_msd_text, rlMSD.GetPosition(), rlMSD.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_plblMSD->SetFont(m_LBLFont);
 	m_plblMSD->SetBackgroundColour( m_CL1 );
 
+	SaveToReportLog("COCRPanel::Init(): init m_pMSD...\n");
 	m_pMSD = new CTextCtrl(m_pP3, wxID_ANY,
 		&(m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_LBLFont);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pcbJSACT...\n");
 	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
 		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbJSACT->SetFont(m_LBLFont);
 	m_pcbJSACT->SetBackgroundColour(m_CL1);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pcbCTXTF...\n");
 	m_pcbCTXTF = new CCheckBox(m_pP3, wxID_ANY, &g_clear_txt_folders,
 		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbCTXTF->SetFont(m_LBLFont);
 	m_pcbCTXTF->SetBackgroundColour(m_CL1);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pcbSESS...\n");
 	m_pcbSESS = new CCheckBox(m_pP3, wxID_ANY, &g_save_each_substring_separately,
 		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbSESS->SetFont(m_LBLFont);
 	m_pcbSESS->SetBackgroundColour(m_CL1);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pcbSSI...\n");
 	m_pcbSSI = new CCheckBox(m_pP3, wxID_ANY, &g_save_scaled_images,
 		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_pcbSSI->SetFont(m_LBLFont);
 	m_pcbSSI->SetBackgroundColour(m_CL1);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
 	m_pCES = new wxButton( m_pP3, ID_BTN_CES,
 		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
 	m_pCES->SetFont(m_BTNFont);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pCCTI...\n");
 	m_pCCTI = new wxButton( m_pP3, ID_BTN_CCTI,
 		m_pMF->m_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
 	m_pCCTI->SetFont(m_BTNFont);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pCSTXT...\n");
 	m_pCSTXT = new wxButton( m_pP3, ID_BTN_CSTXT,
 		m_pMF->m_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
 	m_pCSTXT->SetFont(m_BTNFont);
 
+	SaveToReportLog("COCRPanel::Init(): init m_pCSCTI...\n");
 	m_pCSCTI = new wxButton( m_pP3, ID_BTN_CSCTI,
 		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_BTNFont);
@@ -351,7 +367,10 @@ void COCRPanel::Init()
 
 	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
 
+	SaveToReportLog("COCRPanel::Init(): this->SetSizer(top_sizer)...\n");
 	this->SetSizer(top_sizer);
+
+	SaveToReportLog("COCRPanel::Init(): finished.\n");
 }
 
 void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)

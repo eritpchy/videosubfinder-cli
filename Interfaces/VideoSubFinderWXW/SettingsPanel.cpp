@@ -50,6 +50,8 @@ CSettingsPanel::~CSettingsPanel()
 
 void CSettingsPanel::Init()
 {
+	SaveToReportLog("CSettingsPanel::Init(): starting...\n");
+
 	int bbw, bbh, w, h, dw, dh;
 	wxRect rcP2, rcClP2, rcGB1, rcGB2, rcGB3; 
 	wxRect rcTEST, rcLeft, rcRight, rlIF;
@@ -141,33 +143,39 @@ void CSettingsPanel::Init()
 
 	this->SetSize(rcP2);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pP2...\n");
 	m_pP2 = new wxPanel( this, wxID_ANY, rcP2.GetPosition(), rcP2.GetSize() );
 	m_pP2->SetMinSize(rcP2.GetSize());
 	m_pP2->SetBackgroundColour( m_CLSP );
 
+	SaveToReportLog("CSettingsPanel::Init(): init top_sizer...\n");
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 
+	SaveToReportLog("CSettingsPanel::Init(): init button_sizer...\n");
 	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
 
 	button_sizer->Add(m_pP2, 1, wxALIGN_CENTER, 0 );
 
 	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
-
+	
 	this->SetSizer(top_sizer);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pGB1...\n");
 	m_pGB1 = new wxStaticBox( m_pP2, wxID_ANY,
 		m_pMF->m_cfg.m_ssp_label_parameters_influencing_image_processing, rcGB1.GetPosition(), rcGB1.GetSize() );
 	m_pGB1->SetFont(m_LBLFont);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pGB2...\n");
 	m_pGB2 = new wxStaticBox( m_pP2, wxID_ANY,
 		m_pMF->m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, rcGB2.GetPosition(), rcGB2.GetSize() );
 	m_pGB2->SetFont(m_LBLFont);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pGB3...\n");
 	m_pGB3 = new wxStaticBox( m_pP2, wxID_ANY,
 		wxT(""), rcGB3.GetPosition(), rcGB3.GetSize() );
 	m_pGB3->SetFont(m_LBLFont);
 	
-	
+	SaveToReportLog("CSettingsPanel::Init(): init m_pTest...\n");
 	m_pTest = new wxButton( m_pP2, ID_TEST,
 		wxT("Test"), rcTEST.GetPosition(), rcTEST.GetSize() );
 	m_pTest->SetFont(m_BTNFont);
@@ -175,6 +183,7 @@ void CSettingsPanel::Init()
 	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_na.bmp"));
 	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_od.bmp"));
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pLeft...\n");
 	m_pLeft = new wxBitmapButton( m_pP2, ID_SP_LEFT,
 		bmp_na, rcLeft.GetPosition(), rcLeft.GetSize() );
 	m_pLeft->SetBitmapSelected(bmp_od);
@@ -182,24 +191,28 @@ void CSettingsPanel::Init()
 	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/right_na.bmp"));
 	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/right_od.bmp"));
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pRight...\n");
 	m_pRight = new wxBitmapButton( m_pP2, ID_SP_RIGHT,
 		bmp_na, rcRight.GetPosition(), rcRight.GetSize() );
 	m_pRight->SetBitmapSelected(bmp_od);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_plblIF...\n");
 	m_plblIF = new CStaticText( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
 	m_plblIF->SetFont(m_LBLFont);
 	m_plblIF->SetBackgroundColour( m_CL3 );
 	m_plblIF->SetSize(rlIF);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOI...\n");
 	m_pOI = new CDataGrid( m_pP2, ID_OI,
                            rcOI.GetPosition(), rcOI.GetSize() );
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_global_image_processing_settings...\n");
     m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);	
 	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_text_alignment, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_text_alignment_string, GetAvailableTextAlignments());
 
 	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, m_LBLFont, &g_playback_sound);
-
+		
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_hw_device, GetAvailableHWDeviceTypes());
 	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_filter_descr);
@@ -217,6 +230,7 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CLDBG, m_CLDBG, m_LBLFont, &g_clear_test_images_folder);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_transformed_images_only);
 	
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_initial_image_processing...\n");
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mthr, 0.0, 1.0);
@@ -237,6 +251,7 @@ void CSettingsPanel::Init()
 
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpned, 0.0, 1.0);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_tertiary_image_processing...\n");
 	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG, m_LBLFont);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msh, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msd, 0.0, 1.0);
@@ -246,9 +261,11 @@ void CSettingsPanel::Init()
 
 	////////////////////////////////////////////////////////////////////////
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM...\n");
 	m_pOIM = new CDataGrid( m_pP2, ID_OIM,
                            rcOIM.GetPosition(), rcOIM.GetSize() );
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_ocr_settings...\n");
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_border_is_darker, m_CL2, m_CL4, m_LBLFont, &g_border_is_darker);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_extend_by_grey_color, m_CL2, m_CL4, m_LBLFont, &g_extend_by_grey_color);
@@ -283,6 +300,7 @@ void CSettingsPanel::Init()
 
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, m_LBLFont, &g_remove_wide_symbols);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_settings_for_multiframe_image_processing...\n");
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, -1, 100);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1, m_LBLFont);		
@@ -314,15 +332,19 @@ void CSettingsPanel::Init()
 	rcGSFN = rlGSFN;
 	rcGSFN.y = rlGSFN.GetBottom() + 4;
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
 	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_settings_file);
 	m_plblGSFN->SetFont(m_LBLFont);
 	m_plblGSFN->SetBackgroundColour(m_CL1);
 	m_plblGSFN->SetSize(rlGSFN);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_pGSFN...\n");
 	m_pGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_GeneralSettingsFileName + wxT(" "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);	
 	m_pGSFN->SetFont(m_LBLFont);
 	m_pGSFN->SetBackgroundColour(wxColour(255, 255, 255));
 	m_pGSFN->SetSize(rcGSFN);
+
+	SaveToReportLog("CSettingsPanel::Init(): finished.\n");
 }
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)

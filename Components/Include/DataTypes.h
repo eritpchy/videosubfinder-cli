@@ -29,6 +29,9 @@ typedef __int64	            s64;
 
 wxString get_add_info();
 
+extern void SaveToReportLog(wxString msg, wxString mode = wxT("ab"));
+extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, char* det);
+
 // NOTE: for debugging!!!
 //#define CUSTOM_DEBUG
 //#define CUSTOM_DEBUG2

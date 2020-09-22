@@ -192,7 +192,7 @@ public:
 	s64			m_EndTime;
 
 	wxString		m_GeneralSettingsFileName;
-	wxString		m_ErrorFileName;
+	wxString		m_ErrorFileName;	
 
 	bool		m_blnReopenVideo;
 
@@ -282,7 +282,5 @@ bool IsMMX_and_SSE();
 bool IsSSE2();
 
 void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColor& BColor);
-
-int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det);
 
 extern CMainFrame *g_pMF;

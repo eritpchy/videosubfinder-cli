@@ -15,6 +15,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "VideoSubFinderWXW.h"
+#include <wx/stdpaths.h>
+#include <wx/wfstream.h>
+#include <wx/txtstrm.h>
 
 static const wxCmdLineEntryDesc cmdLineDesc[] =
 {
@@ -41,9 +44,32 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_NONE }
 };
 
+wxString g_ReportFileName;
+
+void SaveToReportLog(wxString msg, wxString mode)
+{
+	wxFFileOutputStream ffout(g_ReportFileName, mode);
+	wxTextOutputStream fout(ffout);
+	fout << msg;
+	fout.Flush();
+	ffout.Close();
+}
+
 bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 {
+	wxString Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
+	Str.Replace("\\", "/");
+	g_app_dir = Str;
+	g_work_dir = g_app_dir;
+
+	g_ReportFileName = g_app_dir + wxT("/report.log");
+
+	SaveToReportLog("Starting program...\n", wxT("wb"));
+	SaveToReportLog("CVideoSubFinderApp::Initialize...\n");
+
+	SaveToReportLog("new CMainFrame...\n");
 	m_pMainWnd = new CMainFrame("VideoSubFinder " VSF_VERSION " Version");
+	SaveToReportLog("CMainFrame was created.\n");
 
 	m_pMainWnd->m_parser.SetDesc(cmdLineDesc);
 	m_pMainWnd->m_parser.SetCmdLine(argc, argv);
@@ -53,6 +79,7 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 		return false;
 	}
 
+	SaveToReportLog("wxApp::Initialize...\n");
 	return wxApp::Initialize(argc, argv);
 }
 
@@ -61,7 +88,9 @@ bool CVideoSubFinderApp::OnInit()
 	wxString wxStr;
 	bool blnNeedToExit = false;	
 	
+	SaveToReportLog("m_pMainWnd->Init...\n");
 	m_pMainWnd->Init();	
+	SaveToReportLog("m_pMainWnd->Init was finished.\n");
 
 	long threads;
 	if (m_pMainWnd->m_parser.Found("nthr", &threads))

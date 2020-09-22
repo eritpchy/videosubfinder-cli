@@ -31,6 +31,8 @@ AVPixelFormat dest_fmt = AV_PIX_FMT_BGR24;
 
 wxArrayString GetAvailableHWDeviceTypes()
 {
+	SaveToReportLog("GetAvailableHWDeviceTypes: starting...\n");
+
 	wxArrayString res;
 	enum AVHWDeviceType type;
 
@@ -38,21 +40,11 @@ wxArrayString GetAvailableHWDeviceTypes()
 
 	type = AV_HWDEVICE_TYPE_NONE;
 	while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
-	{
-		AVBufferRef* hw_device_ctx = NULL;
-		int err = 0;
-
-		if ((err = av_hwdevice_ctx_create(&hw_device_ctx, type,
-			NULL, NULL, 0)) < 0) {
-			//"Failed to create specified HW device."
-		}
-		else
-		{
-			res.Add(av_hwdevice_get_type_name(type));
-		}
-
-		if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
+	{		
+		res.Add(av_hwdevice_get_type_name(type));
 	}
+
+	SaveToReportLog("GetAvailableHWDeviceTypes: finished.\n");
 	
 	return res;
 }

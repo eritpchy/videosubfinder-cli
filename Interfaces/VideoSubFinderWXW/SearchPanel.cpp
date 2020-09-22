@@ -39,6 +39,8 @@ CSearchPanel::~CSearchPanel()
 
 void CSearchPanel::Init()
 {
+	SaveToReportLog("CSearchPanel::Init(): starting...\n");
+
 	m_CLP = wxColour(125,125,125);
 	m_CL1 = wxColour(255, 215, 0);
 	m_CL2 = wxColour(127, 255, 0);
@@ -88,24 +90,31 @@ void CSearchPanel::Init()
 	rcP1.width = rcBTA1.GetRight() + rcBT1.x;
 	rcP1.height = rcRun.GetBottom() + rcBT1.y;
 
+	SaveToReportLog("CSearchPanel::Init(): init m_pP1...\n");
 	m_pP1 = new wxPanel( this, wxID_ANY, rcP1.GetPosition(), rcP1.GetSize() );
 	m_pP1->SetMinSize(rcP1.GetSize());
 
+	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
 	m_plblBT1 = new wxStaticText( m_pP1, wxID_ANY,
 		wxT("  Begin Time:"), rcBT1.GetPosition(), rcBT1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
+	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
 	m_plblBT2 = new wxStaticText( m_pP1, wxID_ANY,
 		wxT("  End Time:"), rcBT2.GetPosition(), rcBT2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
+	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
 	m_plblBTA1 = new wxTextCtrl(m_pP1, wxID_ANY,
 		wxT(""), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 
+	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA2...\n");
 	m_plblBTA2 = new wxTextCtrl( m_pP1, wxID_ANY,
 		wxT(""), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
+	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
 	m_pClear = new wxButton( m_pP1, ID_BTN_CLEAR,
 		wxT("Clear Folders"), rcClear.GetPosition(), rcClear.GetSize() );
 
+	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
 	m_pRun = new wxButton( m_pP1, ID_BTN_RUN,
 		wxT("Run Search"), rcRun.GetPosition(), rcRun.GetSize() );
 	
@@ -131,6 +140,8 @@ void CSearchPanel::Init()
 	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
 
 	this->SetSizer(top_sizer);
+
+	SaveToReportLog("CSearchPanel::Init(): finished.\n");
 }
 
 void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)

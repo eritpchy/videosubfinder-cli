@@ -168,8 +168,6 @@ CMainFrame::CMainFrame(const wxString& title)
 							wxDEFAULT_FRAME_STYLE | wxFRAME_NO_WINDOW_MENU )
 		, m_timer(this, TIMER_ID)
 {
-	wxString Str;
-
 	m_WasInited = false;
 	m_VIsOpen = false;
 
@@ -181,11 +179,6 @@ CMainFrame::CMainFrame(const wxString& title)
 	// set frame icon
 	this->SetIcon(wxIcon("vsf_ico"));
 	
-	Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
-	Str.Replace("\\", "/");
-	g_app_dir = Str;
-	g_work_dir = g_app_dir;
-
 	g_pV = NULL;
 
 	g_pMF = this;
@@ -214,18 +207,24 @@ void CMainFrame::Init()
 {
 	int cnt;	
 
+	SaveToReportLog("CMainFrame::Init(): starting...\n");
+
 	m_blnNoGUI = false;
 
 	wxMenuBar *pMenuBar = new wxMenuBar;
 
 	m_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
 
-	m_ErrorFileName = g_work_dir + wxT("/error.log");	
+	m_ErrorFileName = g_work_dir + wxT("/error.log");
+
+	SaveToReportLog("CMainFrame::Init(): InitCUDADevice...\n");
 
 	if (!InitCUDADevice())
 	{
 		g_use_cuda_gpu = false;
 	}
+
+	SaveToReportLog("CMainFrame::Init(): Init Menu Bar...\n");
 
 	cnt = pMenuBar->GetMenuCount();
 
@@ -265,7 +264,10 @@ void CMainFrame::Init()
 
 	cnt = pMenuBar->GetMenuCount();			
 
+	SaveToReportLog("CMainFrame::Init(): new CImageBox(this)...\n");
 	m_pImageBox = new CImageBox(this);
+
+	SaveToReportLog("CMainFrame::Init(): m_pImageBox->Init()...\n");
 	m_pImageBox->Init();
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
@@ -273,29 +275,44 @@ void CMainFrame::Init()
 	int dx = 20, dy = 20;
 	m_ph = 250;
 	
+	SaveToReportLog("CMainFrame::Init(): new CVideoBox(this)...\n");
 	m_pVideoBox = new CVideoBox(this);
+
+	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Init()...\n");
 	m_pVideoBox->Init();
+	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Bind...\n");
 	m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
 
+	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
 	LoadSettings();
 
+	SaveToReportLog("CMainFrame::Init(): new CSSOWnd(this)...\n");
 	m_pPanel = new CSSOWnd(this);
+	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
 	m_pPanel->Init();
 
+	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");
 	this->SetMenuBar(pMenuBar);
 
+	SaveToReportLog("CMainFrame::Init(): this->SetSize(..)...\n");
 	this->SetSize(0, 0, w, h - 50);
 
 	int cw, ch;
 	this->GetClientSize(&cw, &ch);
 
+	SaveToReportLog("CMainFrame::Init(): m_pImageBox->SetSize(..)...\n");
 	m_pImageBox->SetSize(cw / 2 + dx, dy, cw / 2 - 2 * dx, ch - m_ph - 2 * dy);
+	SaveToReportLog("CMainFrame::Init(): m_pImageBox->Show(true)...\n");
 	m_pImageBox->Show(true);
 
+	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->SetSize(..)...\n");
 	m_pVideoBox->SetSize(dx, dy, cw / 2 - 2 * dx, ch - m_ph - 2 * dy);
-	m_pVideoBox->Show(true);
+	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Show(true)...\n");
+	m_pVideoBox->Show(true);	
 
 	m_WasInited = true;
+
+	SaveToReportLog("CMainFrame::Init(): finished.\n");
 }
 
 void CMainFrame::OnSize(wxSizeEvent& event)
@@ -401,13 +418,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 		m_blnOpenVideoResult = m_pVideo->OpenMovie(m_FileName, (void*)m_pVideoBox->m_pVBox, 0);
 	}
 
-	wxString rpl_path = g_work_dir + wxT("/report.log");
-	wxFFileOutputStream ffout(rpl_path);
-	wxTextOutputStream fout(ffout);
-
-	fout << wxT("Filename: ") << m_FileName << wxT("\n") << m_pVideo->m_log;
-	fout.Flush();
-	ffout.Close();
+	SaveToReportLog(wxString::Format(wxT("Video was opened \"%s\" with log:\n%s\n"), m_FileName, m_pVideo->m_log));
 
 	if (m_blnOpenVideoResult == false) 
 	{
@@ -659,8 +670,13 @@ void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& 
 
 void CMainFrame::LoadSettings()
 {
+	SaveToReportLog("CMainFrame::LoadSettings(): starting...\n");
+
+	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(m_GeneralSettingsFileName, m_general_settings)...\n");
 	ReadSettings(m_GeneralSettingsFileName, m_general_settings);
 	
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_general_settings...\n");
+
 	ReadProperty(m_general_settings, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
 	ReadProperty(m_general_settings, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
 
@@ -773,9 +789,15 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
 	ReadProperty(m_general_settings, m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
 
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_general_settings end.\n");
+
 	//------------------------------------------------
 
+	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(.., m_locale_settings)...\n");
+
 	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
+
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_locale_settings...\n");
 
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
@@ -871,6 +893,10 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_locale_settings, m_cfg.m_label_settings_file, "label_settings_file");
 	ReadProperty(m_locale_settings, m_cfg.m_playback_sound, "label_playback_sound");
+
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_locale_settings end.\n");
+
+	SaveToReportLog("CMainFrame::LoadSettings(): finished.\n");
 }
 
 void CMainFrame::SaveSettings()
