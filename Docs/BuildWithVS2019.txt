@@ -68,13 +68,13 @@ https://ffmpeg.zeranoe.com/builds/
 Docs:
 https://www.ffmpeg.org/doxygen/trunk/hwcontext_8c.html
 https://ffmpeg.org/ffmpeg.html
-ffmpeg-4.2.3-win64-shared.zip
-ffmpeg-4.2.3-win32-dev.zip
-ffmpeg-4.2.3-win32-shared.zip
-ffmpeg-4.2.3-win64-dev.zip
+ffmpeg-4.3-win32-dev.zip
+ffmpeg-4.3-win32-shared.zip
+ffmpeg-4.3-win64-dev.zip
+ffmpeg-4.3-win64-shared.zip
 Setup Env:
-FFMPEG_PATH_X64=C:\ffmpeg-4.2.3-win64-dev
-FFMPEG_PATH_X86=C:\ffmpeg-4.2.3-win32-dev
+FFMPEG_PATH_X64=C:\ffmpeg-4.3-win64-dev
+FFMPEG_PATH_X86=C:\ffmpeg-4.3-win32-dev
 
 6)
 #old: Setup Env: WinSDKVersion=10.0.18362.0

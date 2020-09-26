@@ -86,9 +86,6 @@ void GetClustersImage(simple_buffer<u8>& ImRES, simple_buffer<char>& labels, int
 
 void SaveBGRImageWithLinesInfo(simple_buffer<u8>& ImBGR, wxString name, simple_buffer<int>& LB, simple_buffer<int>& LE, int& N, int w, int h, int k = -1);
 
-void SaveGreyscaleImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int h, std::vector<std::pair<int, int>> HLPC, std::vector<std::pair<int, int>> VLPC);
-void SaveBGRImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int h, std::vector<std::pair<int, int>> HLPC, std::vector<std::pair<int, int>> VLPC);
-
 wxString  g_work_dir;
 wxString  g_app_dir;
 
@@ -253,9 +250,7 @@ inline int GetBGRColor(simple_buffer<u8>& ImBGR, int pixel_id)
 	return bgra_color;
 }
 
-enum ColorName { Red, Green, Blue, Yellow, Purple, White };
-
-inline int GetBGRColor(ColorName cn)
+int GetBGRColor(ColorName cn)
 {
 	int color = 0;
 	u8* pClr = (u8*)(&color);
@@ -8251,7 +8246,7 @@ void SaveBGRImage(simple_buffer<u8>& ImBGR, wxString name, int w, int h)
 	catch (runtime_error& ex) {
 		wxString msg;
 		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
-		wxMessageBox(msg, "ERROR: SaveRGBImage");
+		wxMessageBox(msg, "ERROR: SaveBGRImage");
 	}
 }
 
@@ -8303,7 +8298,7 @@ void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int 
 	catch (runtime_error& ex) {
 		wxString msg;
 		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
-		wxMessageBox(msg, "ERROR: SaveRGBImage");
+		wxMessageBox(msg, "ERROR: SaveGreyscaleImage");
 	}
 }
 

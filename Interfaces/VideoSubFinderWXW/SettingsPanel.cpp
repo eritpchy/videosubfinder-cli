@@ -313,7 +313,8 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_up, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_max_dl_up, 0, 255);
 
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 1.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 10.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_ila_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ilaple, 0.0, 10.0);
 	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_percent, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);

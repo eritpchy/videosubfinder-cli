@@ -129,6 +129,7 @@ public:
 	wxString	m_ssp_oim_sub_group_settings_for_comparing_subs;
 	wxString	m_ssp_oim_sub_group_settings_for_update_video_color;
 	wxString	m_ssp_oim_property_vedges_points_line_error;
+	wxString	m_ssp_oim_property_ila_points_line_error;
 	wxString	m_ssp_oim_sub_group_settings_for_checking_sub;
 	wxString	m_ssp_oim_property_text_percent;
 	wxString	m_ssp_oim_property_min_text_length;

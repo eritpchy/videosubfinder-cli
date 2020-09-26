@@ -724,7 +724,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_DL, "sub_frame_length");
 	ReadProperty(m_general_settings, g_tp, "text_percent");
 	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_percent");
-	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");	
+	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");
+	ReadProperty(m_general_settings, g_ilaple, "ila_points_line_error");
 
 	ReadProperty(m_general_settings, g_video_contrast, "video_contrast");
 	ReadProperty(m_general_settings, g_video_gamma, "video_gamma");
@@ -871,6 +872,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
+	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_ila_points_line_error, "ssp_oim_property_ila_points_line_error");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_text_percent, "ssp_oim_property_text_percent");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");
@@ -954,6 +956,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_tp, "text_percent");
 	WriteProperty(fout, g_mtpl, "min_text_len_in_percent");
 	WriteProperty(fout, g_veple, "vedges_points_line_error");
+	WriteProperty(fout, g_ilaple, "ila_points_line_error");
 
 	WriteProperty(fout, g_video_contrast, "video_contrast");
 	WriteProperty(fout, g_video_gamma, "video_gamma");

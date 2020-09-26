@@ -56,6 +56,13 @@ extern bool g_use_ocl;
 extern double g_video_contrast;
 extern double g_video_gamma;
 
+
+#ifdef CUSTOM_DEBUG
+#define wxDEBUG_DET(det) det
+#else
+#define wxDEBUG_DET(det) wxT("")
+#endif
+
 enum TextAlignment {
 	Center,
 	Left,

@@ -32,6 +32,7 @@ extern int		g_DL;	 //sub frame length
 extern double	g_tp;	 //text percent
 extern double	g_mtpl;  //min text len (in percent)
 extern double	g_veple; //vedges points line error
+extern double	g_ilaple; //ILA points line error
 
 extern bool g_use_ISA_images_for_search_subtitles;
 extern bool g_use_ILA_images_for_search_subtitles;
@@ -43,11 +44,11 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
 int AnalyseImage(simple_buffer<u8> &Im, simple_buffer<u16> *pImILA, int w, int h);
 
-int CompareTwoSubs(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H);
+int CompareTwoSubs(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, wxString iter_det);
 
-int DifficultCompareTwoSubs2(simple_buffer<u8> &ImF1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImNE11, simple_buffer<u8> &ImNE12, simple_buffer<u8> &ImF2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImNE2, int w, int h, int W, int H, int min_x, int max_x);
+int DifficultCompareTwoSubs2(simple_buffer<u8> &ImF1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImNE11, simple_buffer<u8> &ImNE12, simple_buffer<u8> &ImF2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImNE2, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
 
-int CompareTwoSubsOptimal(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, int min_x, int max_x);
+int CompareTwoSubsOptimal(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
 
 template <class T>
 void AddTwoImages(simple_buffer<T> &Im1, simple_buffer<T> &Im2, simple_buffer<T> &ImRES, int size);

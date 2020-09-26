@@ -165,6 +165,14 @@ void WriteFile(std::vector<uchar>& write_data, wxString name);
 void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::Mat& res);
 void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::UMat& res);
 
+void SaveGreyscaleImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int h, std::vector<std::pair<int, int>> HLPC, std::vector<std::pair<int, int>> VLPC);
+void SaveBGRImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int h, std::vector<std::pair<int, int>> HLPC, std::vector<std::pair<int, int>> VLPC);
+
+enum ColorName { Red, Green, Blue, Yellow, Purple, White };
+
+int GetBGRColor(ColorName cn);
+
+
 //-----------------------------------------------------------
 
 template <class T1, class T2>
@@ -243,7 +251,7 @@ void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int qual
 	catch (runtime_error& ex) {
 		wxString msg;
 		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
-		wxMessageBox(msg, "ERROR: SaveRGBImage");
+		wxMessageBox(msg, "ERROR: SaveBinaryImage");
 	}
 }
 
