@@ -332,9 +332,9 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 	return offset;
 }
 
-inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H, int min_x, int max_x, int &res)
+inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H, int &res)
 {
-	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, w, h, W, H, min_x, max_x, &res]
+	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, w, h, W, H, &res]
 	{
 		simple_buffer<u8> ImFF(w*h, 0), ImSF(w*h, 0);
 		evt_rgb.wait();
@@ -346,7 +346,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 #ifdef CUSTOM_TA
 			__itt_task_begin(domain, __itt_null, __itt_null, shGetTransformedImage);
 #endif
-			res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H, min_x, max_x);
+			res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H, 0, w - 1);
 #ifdef CUSTOM_TA 
 			__itt_task_end(domain);
 #endif
@@ -790,7 +790,7 @@ public:
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			*(m_pthrs_res[fdn]) = 0;
-			m_thrs[fdn] = TaskConvertImage(fn, *(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImBGR[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, m_xmin, m_xmax, *(m_pthrs_res[fdn]));
+			m_thrs[fdn] = TaskConvertImage(fn, *(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImBGR[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
 		}
 	}
 
@@ -994,7 +994,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	s64 CurPos, prevPos;
 	int fn; //cur frame num
 	int max_rgb_fn; //max rgb frame num which will be obtained
-	int w, h, W, H, real_im_x_center, xmin, xmax , ymin, ymax, size;
+	int w, h, W, H, xmin, xmax , ymin, ymax, size;
 	int DL, threads;
 
 	int bf, ef; // begin, end frame
@@ -1023,7 +1023,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	xmax = g_pV->m_xmax;
 	ymin = g_pV->m_ymin;
 	ymax = g_pV->m_ymax;
-	real_im_x_center = w / 2;
 
 #ifdef CUSTOM_DEBUG
 	{		
@@ -1403,7 +1402,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (bln(GetIntersectImages) > 0) && bf(%d) != -2\n", (int)__LINE__, fn, bf));
 #endif
 
-					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, pImYInt, *pImNE, w, h, W, H, xmin, xmax, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, pImYInt, *pImNE, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
 					
 					if ((bln > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL)))
 					{
@@ -1451,7 +1450,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (bln(GetIntersectImages) > 0) && bf != -2 && bln(CompareTwoSubsOptimal(ImIntS..pImInt)) == 0 && finded_prev == 1\n", (int)__LINE__, fn));
 #endif
 
-							cmp_prev = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, xmin, xmax, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+							cmp_prev = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
 
 #ifdef CUSTOM_DEBUG
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): cmp_prev(%d)(CompareTwoSubsOptimal(ImIntSP..ImIntS))  (bln(GetIntersectImages) > 0) && bf != -2 && bln(CompareTwoSubsOptimal(ImIntS..pImInt)) == 0 && finded_prev == 1\n", (int)__LINE__, fn, cmp_prev));
@@ -1471,7 +1470,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								}
 #endif
 
-								if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
+								if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, 0, w - 1) == 1)
 								{
 #ifdef CUSTOM_DEBUG
 									SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFSP [(bln(GetIntersectImages) > 0) && bf != -2 && bln(CompareTwoSubsOptimal(ImIntS..pImInt)) == 0 && finded_prev == 1 &&  cmp_prev(CompareTwoSubsOptimal(ImIntSP..ImIntS)) == 0 && AnalizeImageForSubPresence(ImIntSP) == 1]\n", (int)__LINE__, fn));
@@ -1509,7 +1508,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #endif
 						if (fn > bf + 1)
 						{
-							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, xmin, xmax, fn);
+							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, 0, w - 1, fn);
 
 							pef = fn + offset - 1;
 							pet = PosForward[offset] - 1;
@@ -1598,7 +1597,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 					SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && finded_prev == 1\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
 #endif
 
-					bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, xmin, xmax, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+					bln = CompareTwoSubsOptimal(ImIntSP, &ImYSP, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
 
 					if (bln == 1)
 					{
@@ -1633,7 +1632,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 #endif
 
-						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, xmin, xmax) == 1)
+						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, 0, w - 1) == 1)
 						{
 #ifdef CUSTOM_DEBUG
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFSP [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && finded_prev == 1 && bln(CompareTwoSubsOptimal(ImIntSP..ImIntS) != 1 && AnalizeImageForSubPresence(ImIntSP) == 1]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
@@ -1668,7 +1667,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #endif
 							for (offset = 0; offset < DL - 1; offset++)
 							{
-								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, xmin, xmax, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
 
 								if (bln == 0)
 								{
@@ -1686,7 +1685,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && CurPos != prevPos && AnalyseImage(*(ImForward[DL - 1]), NULL, w, h) != 0\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
 #endif
 
-							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, xmin, xmax, fn);
+							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, 0, w - 1, fn);
 
 							if (offset > 0)
 							{
@@ -1726,7 +1725,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 < DL(%d) && finded_prev == 1\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
 #endif
 
-							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, xmin, xmax, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
 
 							if (bln == 1)
 							{
@@ -1755,7 +1754,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						}
 #endif
 
-						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, xmin, xmax) == 1)
+						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, 0, w - 1) == 1)
 						{
 #ifdef CUSTOM_DEBUG
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFS [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d) && AnalizeImageForSubPresence(ImIntS) == 1]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
