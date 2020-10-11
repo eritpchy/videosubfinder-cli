@@ -33,20 +33,16 @@ extern void SaveToReportLog(wxString msg, wxString mode = wxT("ab"));
 extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, char* det);
 
 // NOTE: for debugging!!!
+//----------------------------------
 //#define CUSTOM_DEBUG
 //#define CUSTOM_DEBUG2
-//#define custom_assert(cond, msg)  if(!(cond)) { wxASSERT_MSG(cond, wxString(msg) + get_add_info()); }
-//#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
+
+//#define CUSTOM_ASSERT
 
 //#define CUSTOM_TA
+//----------------------------------
 
 #define my_event custom_event
-//#define custom_set_started(pevent) (pevent)->set_started()
-
-// for final release build
-#define custom_assert(cond, msg)
-//#define my_event concurrency::event
-#define custom_set_started(pevent)
 
 #define cvMAT cv::UMat
 //#define cvMAT cv::Mat
@@ -56,11 +52,19 @@ extern bool g_use_ocl;
 extern double g_video_contrast;
 extern double g_video_gamma;
 
-
 #ifdef CUSTOM_DEBUG
 #define wxDEBUG_DET(det) det
 #else
 #define wxDEBUG_DET(det) wxT("")
+#endif
+
+#ifdef CUSTOM_ASSERT
+//#define custom_assert(cond, msg)  if(!(cond)) { wxASSERT_MSG(cond, wxString(msg) + get_add_info()); }
+#define custom_assert(cond, msg) wxASSERT_MSG(cond, msg)
+#define custom_set_started(pevent) (pevent)->set_started()
+#else
+#define custom_assert(cond, msg)
+#define custom_set_started(pevent)
 #endif
 
 enum TextAlignment {

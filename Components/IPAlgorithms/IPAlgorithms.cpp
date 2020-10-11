@@ -72,11 +72,6 @@ void InvertBinaryImage(simple_buffer<T> &Im, int w, int h);
 void GreyscaleMatToImage(cv::Mat& ImGR, int w, int h, simple_buffer<u8>& res);
 void GreyscaleMatToImage(cv::UMat& ImGR, int w, int h, simple_buffer<u8>& res);
 
-template <class T>
-void BinaryImageToMat(simple_buffer<T> &ImBinary, int w, int h, cv::Mat &res, T white = 255);
-template <class T>
-void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::UMat& res, T white = 255);
-
 void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::Mat& res);
 void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::UMat& res);
 
@@ -8523,46 +8518,6 @@ void GreyscaleMatToImage(cv::UMat& ImGR, int w, int h, simple_buffer<u8>& res)
 	cv::Mat im;
 	ImGR.copyTo(im);
 	res.copy_data(im.data, w * h);
-}
-
-// ImBinary - 0 or some_color!=0 (like 0 and 1) 
-template <class T>
-void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::Mat& res, T white)
-{
-	res = cv::Mat(h, w, CV_8UC1);
-
-	for (int i = 0; i < w*h; i++)
-	{
-		if (ImBinary[i] != 0)
-		{
-			res.data[i] = white;
-		}
-		else
-		{
-			res.data[i] = 0;
-		}
-	}
-}
-
-// ImBinary - 0 or some_color!=0 (like 0 and 1) 
-template <class T>
-void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::UMat& res, T white)
-{
-	cv::Mat im(h, w, CV_8UC1);
-
-	for (int i = 0; i < w*h; i++)
-	{
-		if (ImBinary[i] != 0)
-		{
-			im.data[i] = white;
-		}
-		else
-		{
-			im.data[i] = 0;
-		}
-	}
-
-	im.copyTo(res);
 }
 
 void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::Mat& res)

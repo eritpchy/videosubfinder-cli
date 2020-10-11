@@ -279,6 +279,50 @@ void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T whit
 	}
 }
 
+template <class T>
+void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::Mat& res, T white = 255);
+template <class T>
+void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::UMat& res, T white = 255);
+
+// ImBinary - 0 or some_color!=0 (like 0 and 1) 
+template <class T>
+void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::Mat& res, T white)
+{
+	res = cv::Mat(h, w, CV_8UC1);
+
+	for (int i = 0; i < w * h; i++)
+	{
+		if (ImBinary[i] != 0)
+		{
+			res.data[i] = white;
+		}
+		else
+		{
+			res.data[i] = 0;
+		}
+	}
+}
+
+// ImBinary - 0 or some_color!=0 (like 0 and 1) 
+template <class T>
+void BinaryImageToMat(simple_buffer<T>& ImBinary, int w, int h, cv::UMat& res, T white)
+{
+	cv::Mat im(h, w, CV_8UC1);
+
+	for (int i = 0; i < w * h; i++)
+	{
+		if (ImBinary[i] != 0)
+		{
+			im.data[i] = white;
+		}
+		else
+		{
+			im.data[i] = 0;
+		}
+	}
+
+	im.copyTo(res);
+}
 
 // ImBinary - 0 or some_color!=0 (like 0 and 1 or 0 and 255)
 template <class T>

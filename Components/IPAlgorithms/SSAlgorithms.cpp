@@ -163,56 +163,37 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_
 			simple_buffer<u8> &ImIntS, simple_buffer<u16> &ImYS, simple_buffer<u8> &ImNES, simple_buffer<u8> &prevImNE,
 			int w, int h, int W, int H, int min_x, int max_x, int offset, int fn)
 {
-	simple_buffer<u8> ImInt2(w*h, 0);
-	simple_buffer<u16> ImYInt2(w*h, 0);
-	int bln = 0;
-	int DL = g_DL;
-
-	concurrency::parallel_invoke(
-		[&ImInt2, &ImForward, DL, offset, w, h] {
-			ImInt2 = *(ImForward[offset]);
-
-			IntersectImages(ImInt2, ImForward, offset + 1, DL - 2, w, h);
-		},
-			[&ImYInt2, &ImYForward, DL, offset, w, h] {
-			if (g_use_ILA_images_for_search_subtitles)
-			{
-				for (int i = 0; i < w*h; i++)
-				{
-					ImYInt2[i] = (u16)((*(ImYForward[offset]))[i]) + (u16)255;
-				}
-
-				IntersectYImages(ImYInt2, ImYForward, offset + 1, DL - 2, w, h, 255);
-			}
-		}
-	);
-
 	simple_buffer<u8>* pImNE12 = (offset == 0) ? &prevImNE : ImNEForward[offset - 1];
+	int bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pImNE12, *(ImForward[offset]), NULL, *(ImNEForward[offset]), w, h, W, H, min_x, max_x, wxDEBUG_DET("CompareTwoSubsByOffset_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_line" + std::to_string(__LINE__)));
 
-#ifdef CUSTOM_DEBUG
+	if (bln == 0)
 	{
-		if ((fn == 127) && (offset == 1))
-		{
-			fn = fn;
-		}
+		simple_buffer<u8> ImInt2(w*h, 0);
+		simple_buffer<u16> ImYInt2(w*h, 0);
+	
+		int DL = g_DL;
+
+		concurrency::parallel_invoke(
+			[&ImInt2, &ImForward, DL, offset, w, h] {
+				ImInt2 = *(ImForward[offset]);
+
+				IntersectImages(ImInt2, ImForward, offset + 1, DL - 2, w, h);
+			},
+				[&ImYInt2, &ImYForward, DL, offset, w, h] {
+				if (g_use_ILA_images_for_search_subtitles)
+				{
+					for (int i = 0; i < w*h; i++)
+					{
+						ImYInt2[i] = (u16)((*(ImYForward[offset]))[i]) + (u16)255;
+					}
+
+					IntersectYImages(ImYInt2, ImYForward, offset + 1, DL - 2, w, h, 255);
+				}
+			}
+		);
+
+		bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pImNE12, ImInt2, &ImYInt2, *(ImNEForward[offset]), w, h, W, H, min_x, max_x, wxDEBUG_DET("CompareTwoSubsByOffset_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_line" + std::to_string(__LINE__)));
 	}
-#endif
-
-	bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pImNE12, ImInt2, &ImYInt2, *(ImNEForward[offset]), w, h, W, H, min_x, max_x, wxDEBUG_DET("CompareTwoSubsByOffset_fn" + std::to_string(fn) + "_offset" + std::to_string(offset)));
-
-#ifdef CUSTOM_DEBUG
-	{
-		SaveGreyscaleImage(ImIntS, wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_ImIntS" + g_im_save_format, w, h);
-		SaveGreyscaleImage(ImInt2, wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_ImInt2" + g_im_save_format, w, h);
-
-		SaveBinaryImage(ImYS, wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_ImYS" + g_im_save_format, w, h);
-		SaveBinaryImage(ImYInt2, wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_ImYInt2" + g_im_save_format, w, h);
-
-		SaveGreyscaleImage(ImNES, wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_ImNES" + g_im_save_format, w, h);
-		SaveGreyscaleImage(*pImNE12, wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_pImNE12" + g_im_save_format, w, h);
-		SaveGreyscaleImage(*(ImNEForward[offset]), wxString("/TestImages/CompareTwoSubsByOffset") + "_fn" + std::to_string(fn) + "_offset" + std::to_string(offset) + "_bln" + std::to_string(bln) + "_line" + std::to_string(__LINE__) + "_ImNEForward[offset]" + g_im_save_format, w, h);
-	}
-#endif
 
 	return bln;
 }
@@ -347,6 +328,13 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 			__itt_task_begin(domain, __itt_null, __itt_null, shGetTransformedImage);
 #endif
 			res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H, 0, w - 1);
+			if (res == 0)
+			{
+				ImF.set_values(0, w * h);
+				ImNE.set_values(0, w * h);
+				ImY.set_values(0, w * h);
+			}
+
 #ifdef CUSTOM_TA 
 			__itt_task_end(domain);
 #endif
@@ -1339,10 +1327,12 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		if (fn == bf)
 		{
 			ImIntS = *pImInt;
+			ImNES = *pImNE;
 			ImYS = *pImYInt;
+			ImFS = *pImBGR;
 			
 #ifdef CUSTOM_DEBUG
-			SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d) == bf(%d)\n", (int)__LINE__, fn, bf));
+			SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): CurPos(%lld): fn(%d) == bf(%d)\n", (int)__LINE__, fn, CurPos, fn, bf));
 #endif
 
 #ifdef CUSTOM_DEBUG
@@ -1605,42 +1595,10 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && finded_prev == 1 && bln(CompareTwoSubsOptimal(ImIntSP..ImIntS) == 1\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
 #endif
 
-						ImFS = ImFSP;
 						bf = pbf;
 						ef = bf;
 						bt = pbt;
 						finded_prev = 0;
-					}
-					else
-					{
-#ifdef CUSTOM_DEBUG
-						SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && finded_prev == 1 && bln(CompareTwoSubsOptimal(ImIntSP..ImIntS) != 1\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
-#endif
-
-#ifdef CUSTOM_DEBUG
-						{
-							SaveBGRImage(*pImBGR, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pImBGR" + g_im_save_format, w, h);
-							SaveGreyscaleImage(*pImInt, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pIm" + g_im_save_format, w, h);
-
-							SaveBGRImage(ImFS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFS" + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImIntS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImS" + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImNES, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNES" + g_im_save_format, w, h);
-
-							SaveBGRImage(ImFSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFSP" + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImIntSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImSP" + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImNESP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNESP" + g_im_save_format, w, h);
-						}
-#endif
-
-						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, 0, w - 1) == 1)
-						{
-#ifdef CUSTOM_DEBUG
-							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFSP [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && finded_prev == 1 && bln(CompareTwoSubsOptimal(ImIntSP..ImIntS) != 1 && AnalizeImageForSubPresence(ImIntSP) == 1]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
-#endif
-
-							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
-							rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
-						}
 					}
 				}
 
@@ -1658,44 +1616,27 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 						int offset = 0;
 						simple_buffer<u8> *pPrevImNE = &prevImNE;
-						simple_buffer<u8> *pPrevIm = &prevIm;
 
-						if (AnalyseImage(*(ImForward[DL - 1]), NULL, w, h) == 0)
+						for (offset = 0; offset < DL - 1; offset++)
 						{
-#ifdef CUSTOM_DEBUG
-							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && CurPos != prevPos && AnalyseImage(*(ImForward[DL - 1]), NULL, w, h) == 0\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
-#endif
-							for (offset = 0; offset < DL - 1; offset++)
+							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_offset" + std::to_string(offset)));
+
+							if (bln == 0)
 							{
-								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, *(ImNEForward[offset]), w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
-
-								if (bln == 0)
-								{
-									break;
-								}
-
-								// note: don't intersect fist DL and last DL frames in ImIL
-
-								pPrevImNE = ImNEForward[offset];
+								simple_buffer<u8> ImNEFF(*(ImNEForward[offset]));
+								IntersectTwoImages(ImNEFF, ImNES, w, h);
+								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, *pPrevImNE, ImIntS, &ImYS, ImNEFF, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_offset" + std::to_string(offset)));
 							}
+
+							if (bln == 0)
+							{
+								break;
+							}
+
+							// note: don't intersect fist DL and last DL frames in ImIL
+
+							pPrevImNE = ImNEForward[offset];
 						}
-						else
-						{			
-#ifdef CUSTOM_DEBUG
-							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && CurPos != prevPos && AnalyseImage(*(ImForward[DL - 1]), NULL, w, h) != 0\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos));
-#endif
-
-							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, 0, w - 1, fn);
-
-							if (offset > 0)
-							{
-								pPrevImNE = ImNEForward[offset - 1];
-
-#ifdef CUSTOM_DEBUG
-								SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): seting: pPrevImNE = ImNEForward[offset(%d) - 1] [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && CurPos != prevPos && AnalyseImage(*(ImForward[DL - 1]), NULL, w, h) != 0 && offset(%d) > 0]\n", (int)__LINE__, fn, offset, CurPos, prevPos, CurPos, prevPos, offset));
-#endif
-							}
-						}						
 
 						ef = fn + offset - 1;
 						et = PosForward[offset] - 1; // using 0 instead of offset (there can be intersected sequential subs)
@@ -1724,8 +1665,21 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #ifdef CUSTOM_DEBUG
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 < DL(%d) && finded_prev == 1\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
 #endif
-
 							bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNES, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+
+							if (bln == 0)
+							{
+								simple_buffer<u8> ImNESF(ImNES);
+								IntersectTwoImages(ImNESF, ImNESP, w, h);
+								bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESP, ImNESP, ImIntS, &ImYS, ImNESF, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+
+								if (bln == 0)
+								{
+									simple_buffer<u8> ImNESPF(ImNESP);
+									IntersectTwoImages(ImNESPF, ImNES, w, h);									
+									bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNESPF, ImNESPF, ImIntS, &ImYS, ImNES, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
+								}
+							}
 
 							if (bln == 1)
 							{
@@ -1734,34 +1688,90 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #endif
 
 								bf = pbf;
+								bt = pbt;
 							}
+						}
+					}
+
+					if ((finded_prev == 1) && (bf != pbf))
+					{
+#ifdef CUSTOM_DEBUG
+						SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ((finded_prev == 1) && (bf(%d) != pbf(%d)))]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, bf, pbf));
+#endif
+
+#ifdef CUSTOM_DEBUG
+						{
+							SaveBGRImage(ImFSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFSP" + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImIntSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntSP" + g_im_save_format, w, h);
+							SaveGreyscaleImage(ImNESP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNESP" + g_im_save_format, w, h);
+							SaveBinaryImage(ImYSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYSP" + g_im_save_format, w, h);
+						}
+#endif
+
+						if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, pbf, w, h, W, H, 0, w - 1) == 1)
+						{
+#ifdef CUSTOM_DEBUG
+							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFSP pbt:(%lld) pet:(%lld) [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && finded_prev == 1 && (bf(%d) != pbf(%d))) && AnalizeImageForSubPresence(ImIntSP) == 1]\n", (int)__LINE__, fn, pbt, pet, CurPos, prevPos, CurPos, prevPos));
+#endif
+
+							Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
+							rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
 						}
 					}
 
 					if (ef - bf + 1 >= DL)
 					{
+						if (bf != pbf)
+						{
 #ifdef CUSTOM_DEBUG
-						SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d)\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
+							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d) && bf != pbf\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
 #endif
 #ifdef CUSTOM_DEBUG
-						{
-							SaveBGRImage(ImFS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFS" + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImNES, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNES" + g_im_save_format, w, h);
-							SaveGreyscaleImage(ImIntS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntS" + g_im_save_format, w, h);
-							SaveBinaryImage(ImYS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYS" + g_im_save_format, w, h);
-							SaveBGRImage(*pImBGR, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pImBGR" + g_im_save_format, w, h);
-							SaveGreyscaleImage(*pImInt, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pIm" + g_im_save_format, w, h);
+							{
+								SaveBGRImage(ImFS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFS" + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImNES, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNES" + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImIntS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntS" + g_im_save_format, w, h);
+								SaveBinaryImage(ImYS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYS" + g_im_save_format, w, h);
+								SaveBGRImage(*pImBGR, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pImBGR" + g_im_save_format, w, h);
+								SaveGreyscaleImage(*pImInt, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pIm" + g_im_save_format, w, h);
+							}
+#endif
+
+							if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, 0, w - 1) == 1)
+							{
+#ifdef CUSTOM_DEBUG
+								SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFS [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d) && bf != pbf && AnalizeImageForSubPresence(ImIntS) == 1]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
+#endif
+
+								Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
+								rs.AddSaveImagesTask(ImFS, ImIntS, ImYS, Str);
+							}
 						}
-#endif
-
-						if (AnalizeImageForSubPresence(ImNES, ImIntS, ImYS, bt, bf, w, h, W, H, 0, w - 1) == 1)
+						else
 						{
 #ifdef CUSTOM_DEBUG
-							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFS [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d) && AnalizeImageForSubPresence(ImIntS) == 1]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
+							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d) && bf == pbf\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
+#endif
+#ifdef CUSTOM_DEBUG
+							{
+								SaveBGRImage(ImFSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFSP" + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImNESP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNESP" + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImIntSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntSP" + g_im_save_format, w, h);
+								SaveBinaryImage(ImYSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYSP" + g_im_save_format, w, h);
+								SaveBGRImage(*pImBGR, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pImBGR" + g_im_save_format, w, h);
+								SaveGreyscaleImage(*pImInt, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_pIm" + g_im_save_format, w, h);
+							}
 #endif
 
-							Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
-							rs.AddSaveImagesTask(ImFS, ImIntS, ImYS, Str);
+							if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, bt, bf, w, h, W, H, 0, w - 1) == 1)
+							{
+#ifdef CUSTOM_DEBUG
+								SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): saving: ImFSP [(((bln(GetIntersectImages) == 0) && (CurPos(%lld) != prevPos(%lld))) || ((bln(GetIntersectImages) == 1) && (CurPos(%lld) == prevPos(%lld)))) && bf != -2 && ef(%d) - bf(%d) + 1 >= DL(%d) && bf == pbf && AnalizeImageForSubPresence(ImIntSP) == 1]\n", (int)__LINE__, fn, CurPos, prevPos, CurPos, prevPos, ef, bf, DL));
+#endif
+
+								Str = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
+								rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
+							}
 						}
 					}
 				}
@@ -2173,7 +2183,7 @@ int DifficultCompareTwoSubs2(simple_buffer<u8>& ImF1, simple_buffer<u16>* pImILA
 
 int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_buffer<u8>& ImVE11, simple_buffer<u8>& ImVE12, simple_buffer<u8>& Im2, simple_buffer<u16>* pImILA2, simple_buffer<u8>& ImVE2, int w, int h, int W, int H, wxString iter_det)
 {
-	simple_buffer<u8> ImRES(w * h, 0), ImVE11R(ImVE11), ImVE12R(ImVE12), ImVE2R(ImVE2);
+	simple_buffer<u8> ImRES(w * h, 0);
 	simple_buffer<u8> ImFF1, ImFF2;
 	simple_buffer<int> lb(h, 0), le(h, 0);
 	int i, ib, ie, k, y, l, ln, bln, val1, val2, val3, segh, dn;	
@@ -2232,32 +2242,7 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 				}
 #endif
 			}
-		}
-			/*[&ImVE11R, pImILA1, w, h] {
-			if (pImILA1 != NULL)
-			{
-				if (g_show_results) SaveGreyscaleImage(ImVE11R, "/TestImages/CompareTwoSubs_01_01_04_ImVE11R" + g_im_save_format, w, h);
-				IntersectTwoImages(ImVE11R, *pImILA1, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImVE11R, "/TestImages/CompareTwoSubs_01_01_05_ImVE11RIntImILA1" + g_im_save_format, w, h);
-			}
-		},
-			[&ImVE12R, &ImVE11, &ImVE12, pImILA1, w, h] {
-			if ((pImILA2 != NULL) && (ImVE11.m_pData != ImVE12.m_pData))
-			{
-				if (g_show_results) SaveGreyscaleImage(ImVE12R, "/TestImages/CompareTwoSubs_01_02_01_ImVE12R" + g_im_save_format, w, h);
-				IntersectTwoImages(ImVE12R, *pImILA1, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImVE12R, "/TestImages/CompareTwoSubs_01_02_01_ImVE12RIntImILA1" + g_im_save_format, w, h);
-			}
-		},
-			[&ImVE2R, pImILA2, w, h] {
-			if (pImILA2 != NULL)
-			{
-				if (g_show_results) SaveGreyscaleImage(ImVE2R, "/TestImages/CompareTwoSubs_01_02_04_ImVE2R" + g_im_save_format, w, h);
-				IntersectTwoImages(ImVE2R, *pImILA2, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImVE2R, "/TestImages/CompareTwoSubs_01_02_05_ImVE2RIntImILA2" + g_im_save_format, w, h);
-			}
-		}*/
-		);		
+		} );
 
 		AddTwoImages(ImFF1, ImFF2, ImRES, w*h);
 		if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/CompareTwoSubs_01_03_ImRES" + g_im_save_format, w, h);
@@ -2426,65 +2411,6 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 				break;
 			}
 
-			cur_dif = (double)dif / (double)cmb;			
-
-			if (cur_dif <= veple)
-			{
-				max_dif = std::max<double>(max_dif, cur_dif);
-				continue;
-			}
-
-			dif1 = 0;
-			dif2 = 0;
-			cmb = 0;
-
-			for (i = ib; i < ie; i++)
-			{
-				if (ImRES[i] == 255)
-				{
-					if ((ImRES[i - w] == 255) && (ImRES[i + w] == 255))
-					{
-						val1 = ImVE1[i] | ImVE1[i - w] | ImVE1[i + w];
-						val2 = ImVE2[i] | ImVE2[i - w] | ImVE2[i + w];
-					}
-					else if (ImRES[i - w] == 255)
-					{
-						val1 = ImVE1[i] | ImVE1[i - w];
-						val2 = ImVE2[i] | ImVE2[i - w];
-					}
-					else if (ImRES[i + w] == 255)
-					{
-						val1 = ImVE1[i] | ImVE1[i + w];
-						val2 = ImVE2[i] | ImVE2[i + w];
-					}
-					else
-					{
-						val1 = ImVE1[i];
-						val2 = ImVE2[i];
-					}
-
-					if (val1 != val2)
-					{
-						if (val1 == 255) dif1++;
-						else dif2++;
-					}
-					else
-					{
-						if (val1 == 255) cmb++;
-					}
-				}
-			}
-
-			if (dif2 > dif1) dif = dif2;
-			else dif = dif1;
-
-			if (cmb == 0)
-			{
-				max_dif = 10;
-				bln = 0;
-				break;
-			}
-
 			cur_dif = (double)dif / (double)cmb;
 			max_dif = std::max<double>(max_dif, cur_dif);
 
@@ -2499,7 +2425,7 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 	};
 
 	auto compare2 = [&lb, &le, ln, w, ilaple](simple_buffer<u8>& Im1, simple_buffer<u8>& Im2, double& max_dif) {
-		int bln = 1, k, i, ib, ie, val1 = 0, val2 = 0;
+		int bln = 1, k, i, ib, ie, val1 = 0, val2 = 0, dif1, dif2, cmb;
 		double dif;
 		
 		max_dif = 0;
@@ -2509,19 +2435,37 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 			ib = (lb[k] + 1) * w;
 			ie = (le[k] - 1) * w;
 
+			dif1 = 0;
+			dif2 = 0;
+			cmb = 0;
+
 			for (i = ib; i < ie; i++)
 			{
-				if (Im1[i])
+				val1 = Im1[i];
+				val2 = Im2[i];
+
+				if (val1 != val2)
 				{
-					val1++;
+					if (val1 == 255) dif1++;
+					else dif2++;
 				}
-				if (Im2[i])
+				else
 				{
-					val2++;
+					if (val1 == 255) cmb++;
 				}
 			}
 
-			dif = (double)(std::abs<int>(val2 - val1)) / (double)(std::max<int>(val1, val2));
+			if (dif2 > dif1) dif = dif2;
+			else dif = dif1;
+
+			if (cmb == 0)
+			{
+				max_dif = 10;
+				bln = 0;
+				break;
+			}
+
+			dif = (double)dif / (double)cmb;
 			max_dif = std::max<double>(max_dif, dif);
 
 			if (dif > ilaple)
@@ -2537,20 +2481,20 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 	double min_dif, dif1, dif2;
 
 	concurrency::parallel_invoke(
-		[&ImVE11R, &ImVE2R, &val1, &dif1, &compare] {
-		val1 = compare(ImVE11R, ImVE2R, dif1);
+		[&ImVE11, &ImVE2, &val1, &dif1, &compare] {
+		val1 = compare(ImVE11, ImVE2, dif1);
 	},
-		[&ImVE11, &ImVE12, &ImVE12R, &ImVE2R, &val2, &dif2, &compare] {
+		[&ImVE11, &ImVE12, &ImVE2, &val2, &dif2, &compare] {
 		if (ImVE11.m_pData != ImVE12.m_pData)
 		{
-			val2 = compare(ImVE12R, ImVE2R, dif2);
+			val2 = compare(ImVE12, ImVE2, dif2);
 		}
 		else
 		{
 			val2 = 0;
 		}
 	},
-		[&ImFF1, pImILA1, pImILA2, &ImVE11, &ImVE12, &val3, w, h, &compare2, &iter_det] {
+		[&ImFF1, pImILA1, pImILA2, &ImVE11, &ImVE12, &ImVE2, &val3, w, h, &compare2, &iter_det] {
 		if (g_use_ILA_images_for_search_subtitles && (pImILA1 != NULL) && (pImILA2 != NULL))
 		{
 			simple_buffer<u8> Im1(ImFF1), Im2;
@@ -2565,17 +2509,40 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 			}
 			
 			Im2 = Im1;
-
+			
 			IntersectYImages(ImILAInt, *pImILA2, w, h, 0);
-			IntersectTwoImages(Im2, ImILAInt, w, h);			
+
+			IntersectTwoImages(Im2, ImILAInt, w, h);
+			
+#ifdef CUSTOM_DEBUG
+			{
+				SaveBinaryImage(ImILAInt, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_ImILAInt" + g_im_save_format, w, h);
+				SaveGreyscaleImage(Im2, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_Im1IntILA1VE11VE12ILAInt" + g_im_save_format, w, h);
+			}
+#endif
+
+			{
+				cv::Mat cv_im_gr;
+				BinaryImageToMat(Im2, w, h, cv_im_gr);
+				cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 1);
+				BinaryMatToImage(cv_im_gr, w, h, Im2, (u8)255);
+				IntersectTwoImages(Im2, Im1, w, h);
+			}
+
+#ifdef CUSTOM_DEBUG
+			{
+				SaveGreyscaleImage(Im2, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_Im1IntILA1VE11VE12ILAIntExt" + g_im_save_format, w, h);
+			}
+#endif
+
+			IntersectTwoImages(Im2, ImVE2, w, h);
 
 			val3 = compare2(Im2, Im1, dif3);
 
 #ifdef CUSTOM_DEBUG
 			{
-				SaveBinaryImage(ImILAInt, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_ImILAInt_cmp_maxdif" + std::to_string(dif3) + "_res" + std::to_string(val3) + g_im_save_format, w, h);
 				SaveGreyscaleImage(Im1, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_Im1IntILA1VE11VE12_cmp_maxdif" + std::to_string(dif3) + "_res" + std::to_string(val3) + g_im_save_format, w, h);
-				SaveGreyscaleImage(Im2, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_Im1IntILA1VE11VE12ILAInt_cmp_maxdif" + std::to_string(dif3) + "_res" + std::to_string(val3) + g_im_save_format, w, h);
+				SaveGreyscaleImage(Im2, wxString("/TestImages/CompareTwoSubs_") + iter_det + "_Im1IntILA1VE11VE12ILAIntExtVE2_cmp_maxdif" + std::to_string(dif3) + "_res" + std::to_string(val3) + g_im_save_format, w, h);
 			}
 #endif
 		}
