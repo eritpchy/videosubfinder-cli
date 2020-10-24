@@ -1,3 +1,4 @@
+
 #########################################################################################################
 ABOUT
 #########################################################################################################
@@ -30,6 +31,30 @@ https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
 #########################################################################################################
 
+For decrease amount of wrong timing splits during Run Search you can do next in general.cfg (all same can be made through GUI in Settings Panel):
+1) adopt: moderate_threshold = 0.25-0.6 by Tests Button (need to find optimal value when subtitles symbols in 'After First/Second/Third Filtration' images will have not broken edgings and filled with white (not empty) but most part of background disappear, it very depends from video and also from concrete frame, so try on too bright and dark scenes and so on)
+0.25 - are working on most videos but can produce too much of garbage.
+then higher value than more pixels will be filtered/removed as not related to subtitle.
+2) use not too strong color filtering if subtitles are mostly stable and have same colors: 
+use_filter_color = Lab: l:220-255 a:118-138 b:118-138 (working in most case of white subtitles)
+use_filter_color = Lab: l:200-255 a:118-138 b:118-138 (working in most case of white subtitles)
+Lab - is color space https://en.wikipedia.org/wiki/CIELAB_color_space
+This option available in last beta drop Release_x64_2020.11.10.zip:
+https://drive.google.com/file/d/12eSN4x2KXkkFyi8VuqRkECqwJYcB9nTe/view?usp=sharing
+Use Y button in Video Box for find optimal value (press left/right/space for check that during video symbols are shown stable (not broken), check on different scenes)
+
+Also on splits affects two parameters:
+vedges_points_line_error = 0.3
+ila_points_line_error = 0.3
+0.3 is like 30% allowed difference in other case nearest by time two subtitles treated as different.
+Then higher values than more rarely time code will be splitted.
+Then lover values than more often time code will be splitted.
+I don't recommend to change them. Only if you sure that there is not sequential subtitles in video (which come without pause between them) you can try to increase them.
+
+During clear TXT images also don't forget to set:
+moderate_threshold_for_scaled_image = 0.1-0.5
+0.25 will be working in most case, if some symbols are removed try to use lover values or else.
+
 1) If subtitles has too unstable color, old video with bad quality, with distortions and flickering of image,
 or you try to get subs which gradually become visible than invisible (like on some openings of films),
 it is recommended to disable all options related to use ILAImages:
@@ -60,6 +85,8 @@ FFmpegSource plugin v2.40: https://github.com/FFMS/ffms2/releases/tag/2.40
 LSMASHSource plugin 20200728 : https://github.com/HolyWu/L-SMASH-Works/releases/tag/20200728
 MaskTools2 v2.2.26: https://github.com/pinterf/masktools/releases/tag/2.2.26
 All AviSynth plugins can be found in: http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+NOTE3: Plugins dll should be placed to "C:\Program Files (x86)\AviSynth+\plugins64+"
+NOTE4: LSmashVideoSource failed to open mkv but FFVideoSource open it successfully in my case.
 3-2)
 You can also use FFMPEG Video Filters by opening video with FFMPEG video decoding.
 https://ffmpeg.org/ffmpeg-filters.html#Video-Filters
@@ -101,6 +128,16 @@ Dependently from what CPU and Nvidia GPU you have, if speed is important it is r
 this can also increase performance ~x2.
 
 #########################################################################################################
+Used terms:
+#########################################################################################################
+
+*) ISAImages - Intersected Subtitles Areas (by multiframe usage)
+*) ILAImages - Intersected Luminance Areas (by multiframe usage), the areas where pixels are not change too much in luminance in range:
+"Max luminance diff from down for IL image generation"
+"Max luminance diff from up for IL image generation"
+First image of DL sequence (~12 nearest frames in video) are taked as reference, all next images in DL sequence are compared with it by luminance change.
+
+#########################################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:
 #########################################################################################################
 
@@ -135,8 +172,10 @@ https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line
 #-----------------------------------------------------
 
 #########################################################################################################
+OUTDATED OLD INFORMATION:
+#########################################################################################################
 
-How to use in details (OLD):
+How to use in details:
 1) Run VideoSubFinder.exe
 
 2) In the menu select File-> Open Video, select the video file in which

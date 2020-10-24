@@ -54,6 +54,9 @@ public:
 
 	double		m_ocr_min_sub_duration;
 
+	wxString	m_pixel_color_bgr;
+	wxString	m_pixel_color_lab;
+
 	wxString	m_ocr_label_msd_text;
 	wxString	m_ocr_label_jsact_text;
 	wxString	m_ocr_label_clear_txt_folders;
@@ -74,6 +77,7 @@ public:
 	wxString	m_ssp_oi_group_global_image_processing_settings;
 	wxString	m_ssp_oi_property_use_ocl;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
+	wxString	m_label_use_filter_color;
 	wxString	m_border_is_darker;
 	wxString	m_extend_by_grey_color;
 	wxString	m_allow_min_luminance;
@@ -117,6 +121,8 @@ public:
 	wxString	m_ssp_oim_property_using_hard_algorithm_for_text_mining;
 	wxString	m_ssp_oim_property_using_isaimages_for_getting_txt_areas;
 	wxString	m_ssp_oim_property_using_ilaimages_for_getting_txt_areas;
+	wxString	m_label_ILA_images_for_getting_txt_symbols_areas;
+	wxString	m_label_use_ILA_images_before_clear_txt_images_from_borders;
 	wxString	m_ssp_oim_property_validate_and_compare_cleared_txt_images;
 	wxString	m_ssp_oim_property_dont_delete_unrecognized_images_first;
 	wxString	m_ssp_oim_property_dont_delete_unrecognized_images_second;
@@ -143,6 +149,7 @@ public:
 	wxString	m_ssp_oim_property_remove_wide_symbols;
 	wxString	m_ssp_oim_property_use_ILA_images_for_clear_txt_images;	
 	wxString	m_label_settings_file;
+	wxString	m_label_pixel_color;
 	wxString	m_label_video_contrast;
 	wxString	m_label_video_gamma;
 
@@ -274,10 +281,12 @@ void WriteProperty(wxTextOutputStream& fout, int val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, double val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name);
+void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, wxArrayString& val, wxString Name);
 
 bool IsMMX_and_SSE();
 bool IsSSE2();

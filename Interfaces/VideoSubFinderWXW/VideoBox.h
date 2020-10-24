@@ -37,10 +37,15 @@ public:
 	CVideoWindow	*m_pVW;
 	CVideoBox		*m_pVB;
 
+	bool			m_filter_image;
+
 public:
-	void	OnPaint( wxPaintEvent &event );
-	void	OnSetFocus( wxFocusEvent &event );
-	void	OnEraseBackGround(wxEraseEvent& event);
+	void OnPaint( wxPaintEvent &event );
+	void OnSetFocus( wxFocusEvent &event );
+	void OnEraseBackGround(wxEraseEvent& event);
+	void OnLeftDown(wxMouseEvent& event);
+	bool CheckFilterImage();
+	void DrawImage(simple_buffer<u8>& ImBGR, const int w, const int h);
 
 private:
    DECLARE_EVENT_TABLE()
@@ -64,10 +69,12 @@ public:
 public:
 	void Init();
 	void Update();
+	void Refresh(bool eraseBackground = true,
+		const wxRect* rect = (const wxRect*)NULL);
 
 public:
-	void OnSize( wxSizeEvent& event );
-	void OnPaint( wxPaintEvent &event );
+	void OnSize(wxSizeEvent& event);
+	void OnPaint(wxPaintEvent &event);
 
 private:
    DECLARE_EVENT_TABLE()
@@ -110,6 +117,7 @@ public:
 	void OnBnClickedPause(wxCommandEvent& event);
 	void OnBnClickedStop(wxCommandEvent& event);
 	void OnKeyDown(wxKeyEvent& event);
+	void OnKeyUp(wxKeyEvent& event);
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnHScroll(wxScrollEvent& event);
 

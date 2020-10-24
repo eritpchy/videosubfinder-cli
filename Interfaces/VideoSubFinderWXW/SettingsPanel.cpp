@@ -16,6 +16,7 @@
 
 #include "MyResource.h"
 #include "SettingsPanel.h"
+#include "OCRPanel.h"
 
 vector<wxString> StrFN;
 
@@ -90,8 +91,8 @@ void CSettingsPanel::Init()
 
 	rcGB1.x = 10;
 	rcGB1.y = 2;
-	rcGB1.width = 400;
-	rcGB1.height = 200;
+	rcGB1.width = 550;
+	rcGB1.height = 238;
 
 	rcOI.x = rcGB1.x + 3;
 	rcOI.y = rcGB1.y + 15;
@@ -109,14 +110,14 @@ void CSettingsPanel::Init()
 	rcOIM.height = rcGB2.height - 15 - 3;
 
 	rcTEST.x = rcGB2.GetRight() + 70;
-	rcTEST.y = 70;
-	rcTEST.width = 100;
+	rcTEST.y = 50;
+	rcTEST.width = 170;
 	rcTEST.height = 30;
 
 	bbw = 23;
 	bbh = 22;
 
-	rcLeft.x = rcTEST.x - 50;
+	rcLeft.x = rcTEST.x - 56;
 	rcLeft.y = rcTEST.y - 30;
 	rcLeft.width = bbw;
 	rcLeft.height = bbh;
@@ -224,6 +225,10 @@ void CSettingsPanel::Init()
 	//m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
 #endif
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, m_LBLFont, &g_use_ocl);
+
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_filter_color);
+
+	// debug settings
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, m_LBLFont, &g_generate_cleared_text_images_on_test);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_results);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_sf_results);
@@ -256,8 +261,8 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msh, 0.0, 1.0);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msd, 0.0, 1.0);
 
-	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.75);
-	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.25);
+	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.65);
+	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.35);
 
 	////////////////////////////////////////////////////////////////////////
 
@@ -287,19 +292,21 @@ void CSettingsPanel::Init()
 	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_get_txt_area);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, m_LBLFont, &g_ValidateAndCompareTXTImages);
-	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_gradient_images_for_clear_txt_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);	
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_getting_txt_symbols_areas);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_before_clear_txt_images_from_borders);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_clear_txt_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, m_LBLFont, &g_clear_txt_images_by_main_color);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, m_LBLFont, &g_remove_wide_symbols);
+
+	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, m_LBLFont, &g_ValidateAndCompareTXTImages);
+	//m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
+
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages2);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DefStringForEmptySub);
 	
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_gradient_images_for_clear_txt_images);	
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_clear_txt_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, m_LBLFont, &g_clear_txt_images_by_main_color);
-
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, m_LBLFont, &g_remove_wide_symbols);
-
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_settings_for_multiframe_image_processing...\n");
 	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, -1, 100);
@@ -323,15 +330,30 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_contrast, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_contrast, 0.0, 10.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_gamma, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_gamma, 0.0, 10.0);
 
-	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.75);
-	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.25);
+	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.65);
+	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.35);
 
-	wxRect rlGSFN, rcGSFN;
+	wxRect rlGSFN, rcGSFN, rlPixelColor, rcPixelColorRGB, rcPixelColorLab, rcPixelColorExample;
 	rlGSFN = rlIF;
 	rlGSFN.y = rcTEST.GetBottom() + 8;
 
-	rcGSFN = rlGSFN;
+	rcGSFN = rlIF;
 	rcGSFN.y = rlGSFN.GetBottom() + 4;
+
+	rlPixelColor = rlIF;
+	rlPixelColor.y = rcGSFN.GetBottom() + 8;
+
+	rcPixelColorRGB = rlIF;
+	rcPixelColorRGB.width = ((2 * rlIF.width) / 3) - 1;
+	rcPixelColorRGB.y = rlPixelColor.GetBottom() + 4;
+
+	rcPixelColorLab = rcPixelColorRGB;
+	rcPixelColorLab.y = rcPixelColorRGB.GetBottom() + 4;
+	
+	rcPixelColorExample.x = rcPixelColorRGB.GetRight() + 2;
+	rcPixelColorExample.y = rcPixelColorRGB.y;
+	rcPixelColorExample.width = (rlIF.width / 3) - 1;
+	rcPixelColorExample.height = rcPixelColorLab.GetBottom() - rcPixelColorRGB.y + 1;	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
 	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_settings_file);
@@ -345,6 +367,28 @@ void CSettingsPanel::Init()
 	m_pGSFN->SetBackgroundColour(wxColour(255, 255, 255));
 	m_pGSFN->SetSize(rcGSFN);
 
+	SaveToReportLog("CSettingsPanel::Init(): init m_plblPixelColor...\n");
+	m_plblPixelColor = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_pixel_color);
+	m_plblPixelColor->SetFont(m_LBLFont);
+	m_plblPixelColor->SetBackgroundColour(m_CL1);
+	m_plblPixelColor->SetSize(rlPixelColor);
+
+	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorRGB...\n");
+	m_pPixelColorRGB = new CTextCtrl(m_pP2, wxID_ANY,
+		&(m_pMF->m_cfg.m_pixel_color_bgr), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
+	m_pPixelColorRGB->SetFont(m_LBLFont);
+	
+	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorLab...\n");
+	m_pPixelColorLab = new CTextCtrl(m_pP2, wxID_ANY,
+		&(m_pMF->m_cfg.m_pixel_color_lab), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
+	m_pPixelColorLab->SetFont(m_LBLFont);
+
+	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorExample...\n");
+	m_pPixelColorExample = new CStaticText(m_pP2, wxID_ANY, wxT(""));
+	m_pPixelColorExample->SetFont(m_LBLFont);
+	m_pPixelColorExample->SetBackgroundColour(wxColour(255, 255, 255));
+	m_pPixelColorExample->SetSize(rcPixelColorExample);
+
 	SaveToReportLog("CSettingsPanel::Init(): finished.\n");
 }
 
@@ -354,12 +398,23 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	int i, j, k, S=0;	
 	char str[30];
 	clock_t t;
-	wxString BaseImgName;
-	
+	wxString BaseImgName;	
+
+	if (g_use_color_filters_in_ccti)
+	{
+		g_color_ranges = GetColorRanges(g_use_filter_color);
+	}
+	else
+	{
+		g_color_ranges.clear();
+	}
+
 	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 
 	if (m_pMF->m_VIsOpen)
 	{
+		m_pMF->m_pPanel->Disable();
+
 		m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
 			m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
@@ -382,6 +437,26 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		BaseImgName += " -- " + VideoTimeToStr(CurPos);
 
 		SaveBGRImage(ImBGR, wxT("/RGBImages/") + BaseImgName + wxT("_") + FormatImInfoAddData(m_W, m_H, m_xmin, m_ymin, m_w, m_h) + g_im_save_format, m_w, m_h);
+
+		if (ImBGR.size() == 0)
+		{
+			return;
+		}		
+
+		m_ImF = custom_buffer<simple_buffer<u8>>(m_n, simple_buffer<u8>(m_w * m_h, 0));
+
+		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+
+		S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], m_w, m_h, m_W, m_H, 0, m_w - 1);
+
+		if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
+		{
+			vector<wxString> SavedFiles;
+			SavedFiles.push_back(BaseImgName);
+			simple_buffer<u8> ImIL;
+
+			FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, m_w, m_h, m_W, m_H, m_xmin, m_ymin);
+		}
 	}
 	else
 	{
@@ -390,9 +465,11 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 		if (dir.GetFirst(&filename))
 		{
+			m_pMF->m_pPanel->Disable();
+
 			ImgName = GetFileName(filename);
 
-			wxString filepath = g_work_dir + "/RGBImages/" + filename;
+			wxString filepath = g_work_dir + "/RGBImages/" + filename;			
 
 			GetImageSize(filepath, m_w, m_h);
 			GetImInfo(ImgName, m_w, m_h, &m_W, &m_H, &m_xmin, &m_xmax, &m_ymin, &m_ymax, &BaseImgName);
@@ -404,30 +481,26 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 				ImBGRToNativeSize(ImBGR, ImTMP_BGR, m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax);
 				g_pViewBGRImage[0](ImTMP_BGR, m_W, m_H);
 			}
+
+			m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + ImgName + "\"");
+
+			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+
+			FindTextLinesRes res;
+			m_ImF = custom_buffer<simple_buffer<u8>>(m_n, simple_buffer<u8>(m_w * m_h, 0));
+			res.m_pImFF = &m_ImF[0];
+			res.m_pImSF = &m_ImF[1];
+			res.m_pImTF = &m_ImF[2];
+			res.m_pImNE = &m_ImF[3];
+			res.m_pImY = &m_ImF[4];
+			FindTextLines(filepath, res);
+			
+			if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
+			{
+				m_ImF[4].copy_data(res.m_ImClearedText, res.m_ImClearedText.m_size);
+			}
 		}
-	}
-
-	if (ImBGR.size() == 0)
-	{
-		return;
-	}
-	
-	m_pMF->m_pPanel->Disable();	
-
-	m_ImF = custom_buffer<simple_buffer<u8>> (m_n, simple_buffer<u8>(m_w*m_h, 0));
-	
-	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
-
-	S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], m_w, m_h, m_W, m_H, 0, m_w - 1);
-	
-	if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
-	{
-		vector<wxString> SavedFiles;
-		SavedFiles.push_back(BaseImgName);
-		simple_buffer<u8> ImIL;
-
-		FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, m_w, m_h, m_W, m_H, m_xmin, m_ymin);
-	}
+	}	
 	
 	ViewCurImF();
 

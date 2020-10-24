@@ -104,14 +104,14 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		m_origHeight = m_VC.get(cv::CAP_PROP_FRAME_HEIGHT);
 
 		m_Width = m_origWidth;
-		m_Height = m_origHeight;		
+		m_Height = m_origHeight;
 
-		if (m_origWidth > 1280)
+		/*if (m_origWidth > 1280)
 		{
 			double zoum = (double)1280 / (double)m_origWidth;
 			m_Width = 1280;
 			m_Height = (double)m_origHeight*zoum;
-		}
+		}*/
 
 		m_pVideoWindow = pVideoWindow;
 		m_pVideoWindow ? m_show_video = true : m_show_video = false;

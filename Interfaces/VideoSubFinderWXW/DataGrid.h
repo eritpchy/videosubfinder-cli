@@ -63,6 +63,11 @@ public:
 		wxFont font1, wxFont font2,
 		wxString *pstr, wxArrayString vals);
 
+	void AddProperty(wxString label,
+		wxColour colour1, wxColour colour2,
+		wxFont font1, wxFont font2,
+		wxArrayString* pstr);
+
 	void AddProperty( wxString label, 
 					  wxColour colour1, wxColour colour2,
 		              wxFont font1, wxFont font2, 

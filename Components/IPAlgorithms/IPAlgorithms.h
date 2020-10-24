@@ -74,6 +74,10 @@ extern int		g_dmaxy;
 
 extern bool		g_use_ocl;
 extern bool		g_use_cuda_gpu;
+
+extern wxArrayString g_use_filter_color;
+extern std::vector<color_range> g_color_ranges;
+
 extern int		g_cuda_kmeans_initial_loop_iterations;
 extern int		g_cuda_kmeans_loop_iterations;
 
@@ -85,6 +89,8 @@ extern int		g_min_alpha_color;
 extern bool		g_use_gradient_images_for_clear_txt_images;
 extern bool		g_clear_txt_images_by_main_color;
 extern bool		g_use_ILA_images_for_clear_txt_images;
+extern bool		g_use_ILA_images_before_clear_txt_images_from_borders;
+extern bool		g_use_ILA_images_for_getting_txt_symbols_areas;
 
 // Settings for logical filtering
 extern bool g_remove_wide_symbols;
@@ -100,6 +106,18 @@ extern wxString g_text_alignment_string;
 
 extern bool g_extend_by_grey_color;
 extern int g_allow_min_luminance;
+
+extern bool g_use_color_filters_in_ccti;
+
+std::vector<color_range> GetColorRanges(wxArrayString& filter_colors);
+
+bool PixelColorIsInRange(simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, int p_id);
+
+void BGRToYUV(u8 b, u8 g, u8 r, u8* py, u8* pu = NULL, u8* pv = NULL);
+void YUVToBGR(u8 y, u8 u, u8 v, u8& b, u8& g, u8& r);
+
+void BGRToLab(u8 b, u8 g, u8 r, u8* p_l_lab, u8* p_a_lab, u8* p_b_lab);
+void LabToBGR(u8 l_lab, u8 a_lab, u8 b_lab, u8& b, u8& g, u8& r);
 
 wxArrayString GetAvailableTextAlignments();
 wxString ConvertTextAlignmentToString(TextAlignment val);
@@ -150,8 +168,10 @@ template <class T>
 void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white = 255);
 template <class T>
 void SaveBinaryImage(simple_buffer<T> &Im, wxString name, int w, int h, int quality = -1, int dpi = -1);
+template <class T>
+void CombineTwoImages(simple_buffer<T>& ImRes, simple_buffer<T>& Im2, int w, int h, T white = 255);
 template <class T1, class T2>
-void IntersectTwoImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, int w, int h);
+void IntersectTwoImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, int w, int h, T1 zero_val = 0);
 template <class T1, class T2>
 void IntersectImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buffer<T2>*>& ImIn, int min_id_im_in, int max_id_im_in, int w, int h);
 
@@ -165,6 +185,14 @@ void WriteFile(std::vector<uchar>& write_data, wxString name);
 void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::Mat& res);
 void GreyscaleImageToMat(simple_buffer<u8>& ImGR, int w, int h, cv::UMat& res);
 
+void GreyscaleMatToImage(cv::Mat& ImGR, int w, int h, simple_buffer<u8>& res);
+void GreyscaleMatToImage(cv::UMat& ImGR, int w, int h, simple_buffer<u8>& res);
+
+void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::Mat& res);
+void BGRImageToMat(simple_buffer<u8>& ImBGR, int w, int h, cv::UMat& res);
+
+void BGRMatToImage(cv::Mat& ImBGR, int w, int h, simple_buffer<u8>& res);
+
 void SaveGreyscaleImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int h, std::vector<std::pair<int, int>> HLPC, std::vector<std::pair<int, int>> VLPC);
 void SaveBGRImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int h, std::vector<std::pair<int, int>> HLPC, std::vector<std::pair<int, int>> VLPC);
 
@@ -172,11 +200,28 @@ enum ColorName { Red, Green, Blue, Yellow, Purple, White };
 
 int GetBGRColor(ColorName cn);
 
-
 //-----------------------------------------------------------
 
+template <class T>
+void CombineTwoImages(simple_buffer<T>& ImRes, simple_buffer<T>& Im2, int w, int h, T white)
+{
+	int i, size;
+
+	size = w * h;
+	for (i = 0; i < size; i++)
+	{
+		if (ImRes[i] == 0)
+		{
+			if (Im2[i] != 0)
+			{
+				ImRes[i] = white;
+			}
+		}
+	}
+}
+
 template <class T1, class T2>
-void IntersectTwoImages(simple_buffer<T1>& ImRes, simple_buffer<T2>& Im2, int w, int h)
+void IntersectTwoImages(simple_buffer<T1>& ImRes, simple_buffer<T2>& Im2, int w, int h, T1 zero_val)
 {
 	int i, size;
 
@@ -185,7 +230,7 @@ void IntersectTwoImages(simple_buffer<T1>& ImRes, simple_buffer<T2>& Im2, int w,
 	{
 		if (Im2[i] == 0)
 		{
-			ImRes[i] = 0;
+			ImRes[i] = zero_val;
 		}
 	}
 }
@@ -268,7 +313,7 @@ void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T whit
 
 	for (int i = 0; i < w * h; i++)
 	{
-		if (im.data[i * 3] != 0)
+		if (im.data[i * 3] > 10)
 		{
 			Im[i] = white;
 		}

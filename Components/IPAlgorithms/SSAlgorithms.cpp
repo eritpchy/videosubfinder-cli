@@ -58,6 +58,8 @@ int g_max_dl_up = 40;
 double	g_video_contrast = 1.0; //1.0 default without change
 double	g_video_gamma = 1.0; //1.0 default without change
 
+bool g_use_color_filters_in_run_search = true;
+
 CVideo *g_pV;
 
 inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImISA, simple_buffer<u16> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H, int min_x, int max_x)
@@ -115,7 +117,7 @@ inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8>
 }
 
 template <class T1, class T2>
-inline void IntersectYImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, int w, int h, int offset_for_im2)
+inline void IntersectYImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, int w, int h)
 {
 	int i, size;
 
@@ -124,11 +126,11 @@ inline void IntersectYImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, i
 	{
 		if (ImRes[i])
 		{
-			if ((int)Im2[i] + offset_for_im2 < (int)ImRes[i] - g_max_dl_down)
+			if ((int)Im2[i]  < (int)ImRes[i] - g_max_dl_down)
 			{
 				ImRes[i] = 0;
 			}
-			else if ((int)Im2[i] + offset_for_im2 > (int)ImRes[i] + g_max_dl_up)
+			else if ((int)Im2[i] > (int)ImRes[i] + g_max_dl_up)
 			{
 				ImRes[i] = 0;
 			}
@@ -137,7 +139,7 @@ inline void IntersectYImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, i
 }
 
 template <class T1, class T2>
-inline void IntersectYImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buffer<T2>*>& ImIn, int min_id_im_in, int max_id_im_in, int w, int h, int offset_for_im2)
+inline void IntersectYImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buffer<T2>*>& ImIn, int min_id_im_in, int max_id_im_in, int w, int h)
 {
 	int i, size, im_id;
 
@@ -146,11 +148,11 @@ inline void IntersectYImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buff
 	{	
 		for (im_id = min_id_im_in; (im_id <= max_id_im_in) && ImRes[i]; im_id++)
 		{
-			if ((int)(*(ImIn[im_id]))[i] + offset_for_im2 < (int)ImRes[i] - g_max_dl_down)
+			if ((int)(*(ImIn[im_id]))[i] < (int)ImRes[i] - g_max_dl_down)
 			{
 				ImRes[i] = 0;
 			}
-			else if ((int)(*(ImIn[im_id]))[i] + offset_for_im2 > (int)ImRes[i] + g_max_dl_up)
+			else if ((int)(*(ImIn[im_id]))[i] > (int)ImRes[i] + g_max_dl_up)
 			{
 				ImRes[i] = 0;
 			}
@@ -159,7 +161,7 @@ inline void IntersectYImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buff
 }
 
 
-int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buffer<simple_buffer<u8>*> &ImYForward, simple_buffer<simple_buffer<u8>*> &ImNEForward,
+int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buffer<simple_buffer<u16>*> &ImYForward, simple_buffer<simple_buffer<u8>*> &ImNEForward,
 			simple_buffer<u8> &ImIntS, simple_buffer<u16> &ImYS, simple_buffer<u8> &ImNES, simple_buffer<u8> &prevImNE,
 			int w, int h, int W, int H, int min_x, int max_x, int offset, int fn)
 {
@@ -182,12 +184,8 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_
 				[&ImYInt2, &ImYForward, DL, offset, w, h] {
 				if (g_use_ILA_images_for_search_subtitles)
 				{
-					for (int i = 0; i < w*h; i++)
-					{
-						ImYInt2[i] = (u16)((*(ImYForward[offset]))[i]) + (u16)255;
-					}
-
-					IntersectYImages(ImYInt2, ImYForward, offset + 1, DL - 2, w, h, 255);
+					ImYInt2 = *(ImYForward[offset]);
+					IntersectYImages(ImYInt2, ImYForward, offset + 1, DL - 2, w, h);
 				}
 			}
 		);
@@ -198,7 +196,7 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_
 	return bln;
 }
 
-int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buffer<simple_buffer<u8>*> &ImYForward, simple_buffer<simple_buffer<u8>*> &ImNEForward,
+int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buffer<simple_buffer<u16>*> &ImYForward, simple_buffer<simple_buffer<u8>*> &ImNEForward,
 	simple_buffer<u8> &ImIntS, simple_buffer<u16> &ImYS, simple_buffer<u8> &ImNES, simple_buffer<u8> &prevImNE,
 	int w, int h, int W, int H, int min_x, int max_x, int fn)
 {	
@@ -210,7 +208,7 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 		for (int i = 0; i < DL; i++)
 		{
 			SaveGreyscaleImage(*(ImForward[i]), wxString("/TestImages/FindOffsetForNewSub") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImForward" + std::to_string(i) + g_im_save_format, w, h);			
-			SaveGreyscaleImage(*(ImYForward[i]), wxString("/TestImages/FindOffsetForNewSub") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImForward" + std::to_string(i) + g_im_save_format, w, h);
+			SaveBinaryImage(*(ImYForward[i]), wxString("/TestImages/FindOffsetForNewSub") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImForward" + std::to_string(i) + g_im_save_format, w, h);
 			SaveGreyscaleImage(*(ImNEForward[i]), wxString("/TestImages/FindOffsetForNewSub") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImForward" + std::to_string(i) + g_im_save_format, w, h);
 		}		
 		SaveGreyscaleImage(ImIntS, wxString("/TestImages/FindOffsetForNewSub") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntS" + g_im_save_format, w, h);
@@ -313,11 +311,10 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 	return offset;
 }
 
-inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, int w, int h, int W, int H, int &res)
+inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u16> &ImY, simple_buffer<u8>* pImLab, int w, int h, int W, int H, int &res)
 {
-	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, w, h, W, H, &res]
-	{
-		simple_buffer<u8> ImFF(w*h, 0), ImSF(w*h, 0);
+	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, pImLab, w, h, W, H, &res]
+	{		
 		evt_rgb.wait();
 
 		custom_set_started(&evt);
@@ -327,12 +324,67 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 #ifdef CUSTOM_TA
 			__itt_task_begin(domain, __itt_null, __itt_null, shGetTransformedImage);
 #endif
-			res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImY, w, h, W, H, 0, w - 1);
-			if (res == 0)
+			if (pImLab != NULL)
 			{
-				ImF.set_values(0, w * h);
-				ImNE.set_values(0, w * h);
-				ImY.set_values(0, w * h);
+				concurrency::parallel_invoke(
+					[&ImBGR, &ImF, &ImNE, &ImY, w, h, W, H, &res] {
+						simple_buffer<u8> ImFF(w * h, 0), ImSF(w * h, 0), ImYOrig(w * h, 0);
+						res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImYOrig, w, h, W, H, 0, w - 1);
+						if (res == 0)
+						{
+							ImF.set_values(0, w * h);
+							ImNE.set_values(0, w * h);
+							ImY.set_values(0, w * h);
+						}
+						else
+						{
+							for (int i = 0; i < w * h; i++)
+							{
+								ImY[i] = (u16)(ImYOrig[i]) + (u16)255;
+							}
+						}
+					},
+					[&ImBGR, pImLab, w, h, &res] {
+						cv::Mat cv_ImBGR, cv_ImLab;
+						BGRImageToMat(ImBGR, w, h, cv_ImBGR);
+						cv::cvtColor(cv_ImBGR, cv_ImLab, cv::COLOR_BGR2Lab);
+						BGRMatToImage(cv_ImLab, w, h, *pImLab);
+					} );
+			}
+			else
+			{
+				simple_buffer<u8> ImFF(w * h, 0), ImSF(w * h, 0), ImYOrig(w * h, 0);
+				res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImYOrig, w, h, W, H, 0, w - 1);
+				if (res == 0)
+				{
+					ImF.set_values(0, w * h);
+					ImNE.set_values(0, w * h);
+					ImY.set_values(0, w * h);
+				}
+				else
+				{
+					for (int i = 0; i < w * h; i++)
+					{
+						ImY[i] = (u16)(ImYOrig[i]) + (u16)255;
+					}
+				}
+			}
+
+			if (res != 0)
+			{
+				if (g_color_ranges.size() > 0)
+				{
+					for (int i = 0; i < w * h; i++)
+					{
+						if (ImY[i] != 0)
+						{
+							if (!PixelColorIsInRange(&ImBGR, pImLab, w, h, i))
+							{
+								ImY[i] = 0;
+							}
+						}
+					}
+				}
 			}
 
 #ifdef CUSTOM_TA 
@@ -364,10 +416,12 @@ class RunSearch
 	simple_buffer<simple_buffer<u8>*> m_pImBGR;
 	custom_buffer<simple_buffer<u8>> m_ImNE;
 	simple_buffer<simple_buffer<u8>*> m_pImNE;
-	custom_buffer<simple_buffer<u8>> m_ImY;
-	simple_buffer<simple_buffer<u8>*> m_pImY;
+	custom_buffer<simple_buffer<u16>> m_ImY;
+	simple_buffer<simple_buffer<u16>*> m_pImY;
 	custom_buffer<simple_buffer<u8>> m_Im;
 	simple_buffer<simple_buffer<u8>*> m_pIm;
+	custom_buffer<simple_buffer<u8>> m_ImLab;
+	simple_buffer<simple_buffer<u8>*> m_pImLab;
 
 	custom_buffer<simple_buffer<u8>> m_ImInt;
 	simple_buffer<simple_buffer<u8>*> m_pImInt;
@@ -394,6 +448,8 @@ class RunSearch
 
 	simple_buffer<int> m_thrs_int_res;
 	simple_buffer<int*> m_pthrs_int_res;
+	
+	bool m_convert_to_lab;
 
 public:
 	int m_N;
@@ -415,6 +471,19 @@ public:
 		m_fn_start = 0;
 		m_prevPos = -2;
 
+		m_convert_to_lab = false;
+		if (g_color_ranges.size() > 0)
+		{
+			for (int i = 0; i < g_color_ranges.size(); i++)
+			{
+				if (g_color_ranges[i].m_color_space == ColorSpace::Lab)
+				{
+					m_convert_to_lab = true;
+					break;
+				}
+			}
+		}
+
 		m_N = std::max<int>(g_DL + threads, (g_DL / 2) * threads);
 		m_Pos = simple_buffer<s64>(m_N, -1);
 		m_pPos = simple_buffer<s64*>(m_N, NULL);
@@ -424,10 +493,10 @@ public:
 		m_pImBGR = simple_buffer<simple_buffer<u8>*>(m_N);
 		m_ImNE = custom_buffer<simple_buffer<u8>>(m_N, simple_buffer<u8>(m_size, 0));
 		m_pImNE = simple_buffer<simple_buffer<u8>*>(m_N);
-		m_ImY = custom_buffer<simple_buffer<u8>>(m_N, simple_buffer<u8>(m_size, 0));
-		m_pImY = simple_buffer<simple_buffer<u8>*>(m_N);
+		m_ImY = custom_buffer<simple_buffer<u16>>(m_N, simple_buffer<u16>(m_size, 0));
+		m_pImY = simple_buffer<simple_buffer<u16>*>(m_N);
 		m_Im = custom_buffer<simple_buffer<u8>>(m_N, simple_buffer<u8>(m_size, 0));
-		m_pIm = simple_buffer<simple_buffer<u8>*>(m_N);
+		m_pIm = simple_buffer<simple_buffer<u8>*>(m_N);		
 
 		m_ImInt = custom_buffer<simple_buffer<u8>>(m_threads, simple_buffer<u8>(m_size, 0));
 		m_pImInt = simple_buffer<simple_buffer<u8>*>(m_threads);
@@ -468,6 +537,17 @@ public:
 			m_pImInt[i] = &(m_ImInt[i]);
 			m_pImYInt[i] = &(m_ImYInt[i]);
 			m_pthrs_int_res[i] = &(m_thrs_int_res[i]);
+		}
+
+		if (m_convert_to_lab)
+		{
+			m_ImLab = custom_buffer<simple_buffer<u8>>(m_N, simple_buffer<u8>(m_size * 3, 0));
+			m_pImLab = simple_buffer<simple_buffer<u8>*>(m_N);
+
+			for (int i = 0; i < m_N; i++)
+			{
+				m_pImLab[i] = &(m_ImLab[i]);
+			}
 		}
 
 		m_thrs_one_step = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
@@ -652,7 +732,7 @@ public:
 			*pthrs_int_res = 0;
 
 			simple_buffer<simple_buffer<u8>*> pIm(m_pIm);
-			simple_buffer<simple_buffer<u8>*> pImY(m_pImY);
+			simple_buffer<simple_buffer<u16>*> pImY(m_pImY);
 			simple_buffer<my_event*> p_events(m_p_events);
 			simple_buffer<int*> pthrs_res(m_pthrs_res);
 			simple_buffer<u8>* pImInt = m_pImInt[fdn];
@@ -700,11 +780,8 @@ public:
 							[&pImYInt, &pImY, fdn, DL, w, h] {
 							if (g_use_ILA_images_for_search_subtitles)
 							{
-								for (int i = 0; i < w*h; i++)
-								{
-									(*pImYInt)[i] = (u16)(*pImY[fdn])[i] + (u16)255;
-								}
-								IntersectYImages(*(pImYInt), pImY, fdn + 1, fdn + DL - 1, w, h, 255);
+								*pImYInt = *(pImY[fdn]);
+								IntersectYImages(*pImYInt, pImY, fdn + 1, fdn + DL - 1, w, h);
 							}
 						}
 					);
@@ -738,10 +815,7 @@ public:
 					__itt_task_begin(domain, __itt_null, __itt_null, shAddIntersectImagesTaskV2);
 #endif
 					*pImInt = *pIm[fdn];
-					for (int i = 0; i < w*h; i++)
-					{
-						(*pImYInt)[i] = (u16)(*pImY[fdn])[i] + (u16)255;
-					}
+					*pImYInt = *pImY[fdn];					
 #ifdef CUSTOM_TA
 					__itt_task_end(domain);
 #endif
@@ -778,11 +852,13 @@ public:
 		if (*(m_pthrs_res[fdn]) == -1)
 		{
 			*(m_pthrs_res[fdn]) = 0;
-			m_thrs[fdn] = TaskConvertImage(fn, *(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImBGR[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
+
+			simple_buffer<u8>* pImLab = (m_convert_to_lab) ? m_pImLab[fdn] : NULL;
+			m_thrs[fdn] = TaskConvertImage(fn, *(m_p_events_rgb[fdn]), *(m_p_events[fdn]), *(m_pImBGR[fdn]), *(m_pIm[fdn]), *(m_pImNE[fdn]), *(m_pImY[fdn]), pImLab, m_w, m_h, m_W, m_H, *(m_pthrs_res[fdn]));
 		}
 	}
 
-	int GetConvertImageCopy(int fn, simple_buffer<u8> *pImBGR = NULL, simple_buffer<u8> *pIm = NULL, simple_buffer<u8> *pImNE = NULL, simple_buffer<u8> *pImY = NULL)
+	int GetConvertImageCopy(int fn, simple_buffer<u8> *pImBGR = NULL, simple_buffer<u8> *pIm = NULL, simple_buffer<u8> *pImNE = NULL, simple_buffer<u16> *pImY = NULL)
 	{
 		int fdn = fn - m_fn_start;
 		
@@ -812,7 +888,7 @@ public:
 		return *(m_pthrs_res[fdn]);
 	}
 
-	int GetConvertImage(int fn, simple_buffer<u8> *&pImBGR, simple_buffer<u8> *&pIm, simple_buffer<u8> *&pImNE, simple_buffer<u8> *&pImY, s64 &pos)
+	int GetConvertImage(int fn, simple_buffer<u8> *&pImBGR, simple_buffer<u8> *&pIm, simple_buffer<u8> *&pImNE, simple_buffer<u16> *&pImY, s64 &pos)
 	{
 		int fdn = fn - m_fn_start;
 
@@ -885,7 +961,7 @@ public:
 			simple_buffer<simple_buffer<u8>*>  pFrameData(m_pFrameData);
 			simple_buffer<simple_buffer<u8>*> pImBGR(m_pImBGR);
 			simple_buffer<simple_buffer<u8>*> pImNE(m_pImNE);
-			simple_buffer<simple_buffer<u8>*> pImY(m_pImY);
+			simple_buffer<simple_buffer<u16>*> pImY(m_pImY);
 			simple_buffer<simple_buffer<u8>*> pIm(m_pIm);
 			simple_buffer<s64*> pPos(m_pPos);
 			simple_buffer<int*> pthrs_res(m_pthrs_res);
@@ -933,6 +1009,21 @@ public:
 				(m_p_events[i])->reset();
 				*(m_pPos[i]) = -1;
 				*(m_pthrs_res[i]) = -1;
+			}
+
+			if (m_convert_to_lab)
+			{
+				simple_buffer<simple_buffer<u8>*> pImLab(m_pImLab);
+
+				for (i = 0; i < (m_N - fdn); i++)
+				{
+					m_pImLab[i] = pImLab[i + fdn];
+				}
+
+				for (i = m_N - fdn, j = 0; i < m_N; i++, j++)
+				{
+					m_pImLab[i] = pImLab[j];
+				}
 			}
 
 			if (fdn < m_threads)
@@ -1058,15 +1149,15 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	simple_buffer<u8> ImFS(size * 3, 0); //image for save
 	simple_buffer<u8> ImFSP(size * 3, 0); //image for save prev
 	simple_buffer<u8> ImNES(size, 0), ImNESP(size, 0);
-	simple_buffer<u16> ImYInt(size, 0), ImYS(size, 0), ImYSP(size, 0), * pImYInt;
+	simple_buffer<u16> ImYInt(size, 0), ImYS(size, 0), ImYSP(size, 0), * pImYInt, * pImY;
 	simple_buffer<u8>* pImBGR;
-	simple_buffer<u8> *pIm, *pImInt, *pImNE, *pImY;
+	simple_buffer<u8> *pIm, *pImInt, *pImNE;
 	simple_buffer<u8> prevImBGR(size * 3, 0);
 	simple_buffer<u8> prevImNE(size, 0), prevIm(size, 0);
 
 	simple_buffer<simple_buffer<u8>*> ImBGRForward(DL, NULL);
 	simple_buffer<simple_buffer<u8>*> ImNEForward(DL, NULL);
-	simple_buffer<simple_buffer<u8>*> ImYForward(DL, NULL);
+	simple_buffer<simple_buffer<u16>*> ImYForward(DL, NULL);
 	simple_buffer<simple_buffer<u8>*> ImForward(DL, NULL);
 	simple_buffer<s64> PosForward(DL, 0);
 
@@ -1154,11 +1245,8 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						[&rs, &ImYInt, &ImYForward, fn_start, ddl1_ofset, w, h] {
 							if (g_use_ILA_images_for_search_subtitles)
 							{
-								for (int i = 0; i < w * h; i++)
-								{
-									ImYInt[i] = (u16)((*ImYForward[0])[i]) + (u16)255;
-								}
-								IntersectYImages(ImYInt, *(ImYForward[1]), w, h, 255);
+								ImYInt = *(ImYForward[0]);
+								IntersectYImages(ImYInt, *(ImYForward[1]), w, h);
 							}
 						}
 					);
@@ -1198,7 +1286,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								[&ImYInt, &ImYForward, ddl1_ofset, ddl2_ofset, w, h] {
 									if (g_use_ILA_images_for_search_subtitles)
 									{
-										IntersectYImages(ImYInt, ImYForward, ddl1_ofset + 1, ddl2_ofset - 1, w, h, 255);
+										IntersectYImages(ImYInt, ImYForward, ddl1_ofset + 1, ddl2_ofset - 1, w, h);
 									}
 								});
 
@@ -1571,7 +1659,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #ifdef CUSTOM_DEBUG
 						SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (bln(GetIntersectImages) > 0) && bf != -2 && bln(CompareTwoSubsOptimal(ImIntS..pImInt)) != 0\n", (int)__LINE__, fn));
 #endif
-						IntersectYImages(ImYS, *pImY, w, h, 255);
+						IntersectYImages(ImYS, *pImY, w, h);
 					}
 				}
 			}
@@ -2510,7 +2598,7 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 			
 			Im2 = Im1;
 			
-			IntersectYImages(ImILAInt, *pImILA2, w, h, 0);
+			IntersectYImages(ImILAInt, *pImILA2, w, h);
 
 			IntersectTwoImages(Im2, ImILAInt, w, h);
 			

@@ -67,6 +67,18 @@ extern double g_video_gamma;
 #define custom_set_started(pevent)
 #endif
 
+enum ColorSpace {
+	RGB,
+	Lab
+};
+
+struct color_range
+{
+	int m_min_data[3];
+	int m_max_data[3];
+	ColorSpace m_color_space;
+};
+
 enum TextAlignment {
 	Center,
 	Left,

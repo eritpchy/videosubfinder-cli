@@ -19,6 +19,7 @@
 #include "StaticText.h"
 #include "DataGrid.h"
 #include "DataTypes.h"
+#include "TextCtrl.h"
 #include <wx/panel.h>
 #include <wx/bmpbuttn.h>
 
@@ -49,6 +50,11 @@ public:
 
 	CStaticText* m_plblGSFN;
 	CStaticText* m_pGSFN;
+
+	CStaticText* m_plblPixelColor;
+	CTextCtrl* m_pPixelColorRGB;
+	CTextCtrl* m_pPixelColorLab;
+	CStaticText* m_pPixelColorExample;
 
 	int		m_cn;
 	int		m_n;

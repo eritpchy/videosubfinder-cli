@@ -57,6 +57,47 @@ public:
 	wxString *m_pstr;
 };
 
+class CGridCellAutoWrapStringEditor : public wxGridCellAutoWrapStringEditor, public CControl
+{
+public:
+	CGridCellAutoWrapStringEditor(int row, int col, wxGrid* grid, wxArrayString* pstr)
+	{
+		m_row = row;
+		m_col = col;
+		m_grid = grid;
+
+		m_pstr = pstr;
+
+		m_grid->SetCellValue(m_row, m_col, wxJoin(*m_pstr, '\n'));
+	}
+
+
+	bool EndEdit(int row, int col, const wxGrid* grid, const wxString& oldval, wxString* newval)
+	{
+		bool res;
+
+		res = wxGridCellTextEditor::EndEdit(row, col, grid, oldval, newval);
+
+		if (res == true)
+		{
+			*m_pstr = wxSplit(*newval, '\n');
+		}
+
+		return res;
+	}
+
+	void RefreshData()
+	{
+		m_grid->SetCellValue(m_row, m_col, wxJoin(*m_pstr, '\n'));
+	}
+
+	int m_row;
+	int m_col;
+	wxGrid* m_grid;
+
+	wxArrayString* m_pstr;
+};
+
 class CGridCellChoiceEditor : public wxGridCellChoiceEditor, public CControl
 {
 public:
@@ -317,7 +358,7 @@ CDataGrid::CDataGrid( wxWindow* parent,
 		:wxGrid( parent, id, pos, size )
 {
 	m_w = 0;
-	m_h = 0;
+	m_h = 0;	
 	this->CreateGrid( 0, 2 );
 	this->SetRowLabelSize(0);
 
@@ -426,6 +467,33 @@ void CDataGrid::AddProperty(wxString label,
 	this->SetCellBackgroundColour(index, 1, colour2);
 	this->SetCellEditor(index, 1, new CGridCellChoiceEditor(index, 1, this, pstr, vals));
 }
+
+void CDataGrid::AddProperty(wxString label,
+	wxColour colour1, wxColour colour2,
+	wxFont font1, wxFont font2,
+	wxArrayString* pstr)
+{
+	int index;
+	wxString Str;
+	this->AppendRows(1);
+
+	index = this->GetNumberRows() - 1;	
+
+	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);
+	this->SetCellValue(index, 0, label);
+	this->SetReadOnly(index, 0);
+	this->SetCellFont(index, 0, font1);
+	this->SetCellBackgroundColour(index, 0, colour1);
+
+	this->SetRowSize(index, 16 * 3);
+
+	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_TOP);
+	this->SetCellFont(index, 1, font2);
+	this->SetCellBackgroundColour(index, 1, colour2);
+	this->SetCellRenderer(index, 1, new wxGridCellAutoWrapStringRenderer);
+	this->SetCellEditor(index, 1, new CGridCellAutoWrapStringEditor(index, 1, this, pstr));
+}
+
 
 void CDataGrid::AddProperty( wxString label, 
 							 wxColour colour1, wxColour colour2,

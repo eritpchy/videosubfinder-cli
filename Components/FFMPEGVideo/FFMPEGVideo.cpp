@@ -252,12 +252,12 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		m_Width = m_origWidth;
 		m_Height = m_origHeight;
 
-		if (m_origWidth > 1280)
+		/*if (m_origWidth > 1280)
 		{
 			double zoum = (double)1280 / (double)m_origWidth;
 			m_Width = 1280;
 			m_Height = (double)m_origHeight * zoum;
-		}
+		}*/
 
 		if ( frame_pos > ( (m_Duration > 0) ? std::min<s64>(10000, m_Duration/10) : 10000 ) )
 		{

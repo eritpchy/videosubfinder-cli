@@ -254,7 +254,7 @@ void CMainFrame::Init()
 	pMenuBar->Append(pMenu2, _T("&Edit"));
 
 	wxMenu *pMenu3 = new wxMenu;
-	pMenu3->Append(ID_PLAY_PAUSE, _T("Play/Pause\tSpace"));
+	pMenu3->Append(ID_PLAY_PAUSE, _T("Play/Pause   Space"));
 	pMenu3->Append(ID_PLAY_STOP, _T("Stop"));
 	pMenuBar->Append(pMenu3, _T("&Play"));
 
@@ -273,7 +273,7 @@ void CMainFrame::Init()
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 	int dx = 20, dy = 20;
-	m_ph = 250;
+	m_ph = 288;
 	
 	SaveToReportLog("CMainFrame::Init(): new CVideoBox(this)...\n");
 	m_pVideoBox = new CVideoBox(this);
@@ -281,7 +281,9 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Init()...\n");
 	m_pVideoBox->Init();
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Bind...\n");
-	m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
+	//m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
+	m_pVideoBox->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, m_pVideoBox);
+	m_pVideoBox->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, m_pVideoBox);
 
 	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
 	LoadSettings();
@@ -372,7 +374,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	if (m_blnReopenVideo == false)
 	{
 		// https://en.wikipedia.org/wiki/Video_file_format
-		wxString all_video_formats("*.3g2; *.3gp; *.amv; *.asf; *.avi; *.drc; *.flv; *.f4v; *.f4p; *.f4a; *.f4b; *.gif; *.gifv; *.m4p; *.m4v; *.m4v; *.mkv; *.mng; *.mov; *.qt; *.mp4; *.mpg; *.mp2; *.mpeg; *.mpe; *.mpv; *.mpg; *.mpeg; *.m2v; *.mts; *.m2ts; *.ts; *.mxf; *.nsv; *.ogv; *.ogg; *.rm; *.rmvb; *.roq; *.svi; *.viv; *.vob; *.webm; *.wmv; *.yuv");
+		wxString all_video_formats("*.3g2; *.3gp; *.amv; *.asf; *.avi; *.drc; *.flv; *.f4v; *.f4p; *.f4a; *.f4b; *.gif; *.gifv; *.m4p; *.m4v; *.m4v; *.mkv; *.mng; *.mov; *.qt; *.mp4; *.mpg; *.mp2; *.mpeg; *.mpe; *.mpv; *.mpg; *.mpeg; *.m2v; *.mts; *.m2ts; *.ts; *.mxf; *.nsv; *.ogv; *.ogg; *.rm; *.rmvb; *.roq; *.svi; *.viv; *.vob; *.webm; *.wmv; *.yuv; *.avs");
 
 		wxFileDialog fd(this, wxT("Open Video File"),
 						wxEmptyString, wxEmptyString, wxString::Format(wxT("Video Files (%s)|%s|All Files (*.*)|*.*"), all_video_formats, all_video_formats), wxFD_OPEN);
@@ -687,6 +689,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
 	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
 	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
+	ReadProperty(m_general_settings, g_use_filter_color, "use_filter_color");
 	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
 	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
@@ -705,6 +708,9 @@ void CMainFrame::LoadSettings()
 	
 	ReadProperty(m_general_settings, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
 	ReadProperty(m_general_settings, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
+
+	ReadProperty(m_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
+	ReadProperty(m_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
 
 	ReadProperty(m_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
 	ReadProperty(m_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
@@ -816,6 +822,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_label_filter_descr, "label_filter_descr");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+	ReadProperty(m_locale_settings, m_cfg.m_label_use_filter_color, "label_use_filter_color");
 	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
 	ReadProperty(m_locale_settings, m_cfg.m_extend_by_grey_color, "label_extend_by_grey_color");
 	ReadProperty(m_locale_settings, m_cfg.m_allow_min_luminance, "label_allow_min_luminance");
@@ -862,6 +869,10 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, "ssp_oim_property_using_ilaimages_for_getting_txt_areas");
+	
+	ReadProperty(m_locale_settings, m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, "label_ILA_images_for_getting_txt_symbols_areas");
+	ReadProperty(m_locale_settings, m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, "label_use_ILA_images_before_clear_txt_images_from_borders");
+	
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
@@ -894,6 +905,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
 
 	ReadProperty(m_locale_settings, m_cfg.m_label_settings_file, "label_settings_file");
+	ReadProperty(m_locale_settings, m_cfg.m_label_pixel_color, "label_pixel_color");
+
 	ReadProperty(m_locale_settings, m_cfg.m_playback_sound, "label_playback_sound");
 
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_locale_settings end.\n");
@@ -921,6 +934,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
 	WriteProperty(fout, g_use_ocl, "use_ocl");
 	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
+	WriteProperty(fout, g_use_filter_color, "use_filter_color");
 	WriteProperty(fout, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");	
 	WriteProperty(fout, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
@@ -939,6 +953,9 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
 	WriteProperty(fout, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
+
+	WriteProperty(fout, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
+	WriteProperty(fout, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
 
 	WriteProperty(fout, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
 	WriteProperty(fout, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
@@ -1482,7 +1499,20 @@ void WriteProperty(wxTextOutputStream& fout, double val, wxString Name)
 
 void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name)
 {
+	val = wxJoin(wxSplit(val, '\n'), ';');
 	fout << Name << " = " << val << '\n';
+}
+
+void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name)
+{
+	if (val.size() > 0)
+	{
+		fout << Name << " = " << wxJoin(val, ';') << '\n';
+	}
+	else
+	{
+		fout << Name << " = none\n";
+	}
 }
 
 bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
@@ -1542,6 +1572,25 @@ bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxStrin
 
 	if (search != settings.end()) {
 		val = search->second;
+		val = wxJoin(wxSplit(val, ';'), '\n');		
+		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, wxArrayString& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		if (search->second == "none") {
+			val.clear();
+		}
+		else {
+			val = wxSplit(search->second, ';');
+		}
 		res = true;
 	}
 

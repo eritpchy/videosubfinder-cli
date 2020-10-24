@@ -42,10 +42,39 @@ extern int  g_ocr_threads;
 extern bool g_join_subs_and_correct_time;
 extern bool g_clear_txt_folders;
 
-
+class FindTextLinesRes;
 class CMainFrame;
 class CSSOWnd;
 class AssTXTStyle;
+
+void FindTextLines(wxString FileName, FindTextLinesRes& res);
+
+class FindTextLinesRes
+{
+public:
+	int m_res = 0;
+	int m_w = 0;
+	int m_h = 0;
+	int	m_W = 0;
+	int	m_H = 0;
+	int	m_xmin = 0;
+	int	m_ymin = 0;
+	int	m_xmax = 0;
+	int	m_ymax = 0;
+
+	vector<wxString> m_SavedFiles;
+	simple_buffer<u8> m_ImBGR;
+	simple_buffer<u8> m_ImClearedText;
+	simple_buffer<u8>* m_pImFF = NULL;
+	simple_buffer<u8>* m_pImSF = NULL;
+	simple_buffer<u8>* m_pImTF = NULL;
+	simple_buffer<u8>* m_pImNE = NULL;
+	simple_buffer<u8>* m_pImY = NULL;
+
+	FindTextLinesRes()
+	{
+	}
+};
 
 class AssTXTLine
 {

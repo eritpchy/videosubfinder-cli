@@ -20,6 +20,7 @@ BEGIN_EVENT_TABLE(CVideoWnd, wxWindow)
 	EVT_PAINT(CVideoWnd::OnPaint)
 	EVT_SET_FOCUS(CVideoWnd::OnSetFocus)
 	EVT_ERASE_BACKGROUND(CVideoWnd::OnEraseBackGround)
+	EVT_LEFT_DOWN(CVideoWnd::OnLeftDown)
 END_EVENT_TABLE()
 
 CVideoWnd::CVideoWnd(CVideoWindow *pVW)
@@ -29,6 +30,7 @@ CVideoWnd::CVideoWnd(CVideoWindow *pVW)
 
 	m_pVW = pVW;
 	m_pVB = pVW->m_pVB;
+	m_filter_image = false;
 }
 
 CVideoWnd::~CVideoWnd()
@@ -56,30 +58,241 @@ void CVideoWnd::OnEraseBackGround(wxEraseEvent& event)
 	}
 }
 
-void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
+bool CVideoWnd::CheckFilterImage()
 {
-	wxPaintDC dc(this);	
+	bool filter_image = false;
 
+	if ((m_pVB->m_pMF->m_VIsOpen) || (m_pVB->m_pImage != NULL))
+	{
+
+		if (wxGetKeyState(wxKeyCode('U')) || wxGetKeyState(wxKeyCode('u')))
+		{
+			filter_image = true;
+		}
+		else if (g_use_filter_color.size() > 0)
+		{
+			if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
+				wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')))
+			{
+				filter_image = true;
+				/*int mx = wxGetMousePosition().x - this->GetScreenPosition().x;
+				int my = wxGetMousePosition().y - this->GetScreenPosition().y;
+				int w, h;
+				this->GetSize(&w, &h);
+
+				if (((mx >= 0) && (mx <= w - 1)) &&
+					((my >= 0) && (my <= h - 1)))
+				{
+					filter_image = true;
+				}*/
+			}
+		}
+	}
+
+	return filter_image;
+}
+
+inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, const int w, const int h)
+{
+	g_color_ranges = GetColorRanges(g_use_filter_color);
+
+	if (g_color_ranges.size() > 0)
+	{
+		int offset;
+		int num_pixels = w * h;
+
+		for (int p_id = 0; p_id < num_pixels; p_id++)
+		{
+			if (!PixelColorIsInRange(&ImBGR, &ImLab, w, h, p_id))
+			{
+				offset = p_id * 3;
+
+				ImBGR[offset] = 0;
+				ImBGR[offset + 1] = 0;
+				ImBGR[offset + 2] = 0;
+			}
+		}
+	}
+}
+
+void CVideoWnd::DrawImage(simple_buffer<u8>& ImBGR, const int w, const int h)
+{
+	wxPaintDC dc(this);
+	{
+		int num_pixels = w * h;
+		u8* img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
+
+		for (int i = 0; i < num_pixels; i++)
+		{
+			img_data[(i * 3)] = ImBGR[(i * 3) + 2];
+			img_data[(i * 3) + 1] = ImBGR[(i * 3) + 1];
+			img_data[(i * 3) + 2] = ImBGR[(i * 3)];
+		}
+
+		wxImage Im(w, h, img_data);
+
+		int cw, ch;
+		this->GetClientSize(&cw, &ch);
+
+		if ((cw != w) || (ch != h))
+		{
+			dc.DrawBitmap(Im.Scale(cw, ch, wxIMAGE_QUALITY_HIGH), 0, 0);
+		}
+		else
+		{
+			dc.DrawBitmap(Im, 0, 0);
+		}
+	}
+}
+
+void wxImageToBGR(wxImage& wxIm, simple_buffer<u8>& ImBGRRes)
+{
+	int num_pixels = wxIm.GetWidth() * wxIm.GetHeight();
+	u8* img_data = wxIm.GetData();
+
+	ImBGRRes.set_size(num_pixels * 3);
+
+	for (int i = 0; i < num_pixels; i++)
+	{
+		ImBGRRes[(i * 3)] = img_data[(i * 3) + 2];
+		ImBGRRes[(i * 3) + 1] = img_data[(i * 3) + 1];
+		ImBGRRes[(i * 3) + 2] = img_data[(i * 3)];
+	}
+}
+
+void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
+{	
 	if (m_pVB != NULL) 
 	{		
 		if (m_pVB->m_pMF->m_VIsOpen)
 		{
-			int w, h;
-			this->GetClientSize(&w, &h);
-			m_pVB->m_pMF->m_pVideo->SetVideoWindowPosition(0, 0, w, h, &dc);
+			bool filter_image = CheckFilterImage();
+			
+			if (filter_image)
+			{
+				m_filter_image = true;
+				int vw = m_pVB->m_pMF->m_pVideo->m_Width;
+				int vh = m_pVB->m_pMF->m_pVideo->m_Height;
+				int imw = vw;
+				int imh = vh;
+				simple_buffer<u8> ImBGR(imw * imh * 3), ImLab;
+				m_pVB->m_pMF->m_pVideo->GetBGRImage(ImBGR, 0, imw - 1, 0, imh - 1);
+
+				{
+					cv::Mat cv_ImBGR, cv_ImLab;
+					BGRImageToMat(ImBGR, imw, imh, cv_ImBGR);
+					//cv::resize(cv_ImBGROrig, cv_ImBGR, cv::Size(0, 0), g_scale, g_scale);
+					cv::cvtColor(cv_ImBGR, cv_ImLab, cv::COLOR_BGR2Lab);
+					//imw *= g_scale;
+					//imh *= g_scale;
+					//ImBGR.set_size(imw * imh * 3);
+					ImLab.set_size(imw * imh * 3);
+					//BGRMatToImage(cv_ImBGR, imw, imh, ImBGR);
+					BGRMatToImage(cv_ImLab, imw, imh, ImLab);
+				}
+
+				if ( !wxGetKeyState(wxKeyCode('U')) && !wxGetKeyState(wxKeyCode('u')) )
+				{
+					FilterImage(ImBGR, ImLab, imw, imh);
+				}
+				DrawImage(ImBGR, imw, imh);
+			}
+			else
+			{
+				m_filter_image = false;
+				wxPaintDC dc(this);
+				int cw, ch;
+				this->GetClientSize(&cw, &ch);
+				m_pVB->m_pMF->m_pVideo->SetVideoWindowPosition(0, 0, cw, ch, &dc);
+			}
 		}
 		else if (m_pVB->m_pImage != NULL)
 		{
-			int w, h;
-			this->GetClientSize(&w, &h);
-			dc.DrawBitmap(m_pVB->m_pImage->Scale(w, h), 0, 0);
+			bool filter_image = CheckFilterImage();
+
+			if (filter_image)
+			{
+				m_filter_image = true;
+				int w = m_pVB->m_pImage->GetWidth();
+				int h = m_pVB->m_pImage->GetHeight();
+				simple_buffer<u8> ImBGR, ImLab;
+				wxImageToBGR(*(m_pVB->m_pImage), ImBGR);
+
+				{
+					cv::Mat cv_ImBGR, cv_ImLab;
+					BGRImageToMat(ImBGR, w, h, cv_ImBGR);
+					//cv::resize(cv_ImBGROrig, cv_ImBGR, cv::Size(0, 0), g_scale, g_scale);
+					cv::cvtColor(cv_ImBGR, cv_ImLab, cv::COLOR_BGR2Lab);
+					//w *= g_scale;
+					//h *= g_scale;
+					//ImBGR.set_size(w * h * 3);
+					ImLab.set_size(w * h * 3);
+					//BGRMatToImage(cv_ImBGR, w, h, ImBGR);
+					BGRMatToImage(cv_ImLab, w, h, ImLab);
+				}
+
+				if (!wxGetKeyState(wxKeyCode('U')) && !wxGetKeyState(wxKeyCode('u')))
+				{
+					FilterImage(ImBGR, ImLab, w, h);
+				}
+				DrawImage(ImBGR, w, h);
+			}
+			else
+			{
+				m_filter_image = false;
+				wxPaintDC dc(this);
+				int cw, ch;
+				this->GetClientSize(&cw, &ch);
+				dc.DrawBitmap(m_pVB->m_pImage->Scale(cw, ch), 0, 0);
+			}
 		}
 		else
 		{
+			wxPaintDC dc(this);
 			dc.Clear();
 		}
 	}
 }
+
+void CVideoWnd::OnLeftDown(wxMouseEvent& event)
+{
+	if (m_pVB != NULL)
+	{
+		int cw, ch, mx, my;
+		this->GetClientSize(&cw, &ch);
+		event.GetPosition(&mx, &my);
+
+		if (((mx >= 0) && (mx < cw)) &&
+			((my >= 0) && (my < ch)))
+		{
+			if ((m_pVB->m_pMF->m_VIsOpen) || (m_pVB->m_pImage != NULL))
+			{
+				wxClientDC dc(this);
+				wxColor clr;
+				dc.GetPixel(wxPoint(mx, my), &clr);
+
+				u8 bgr[3], lab[3], y;
+
+				bgr[0] = clr.Blue();
+				bgr[1] = clr.Green();
+				bgr[2] = clr.Red();
+
+				BGRToYUV(bgr[0], bgr[1], bgr[2], &y);
+				BGRToLab(bgr[0], bgr[1], bgr[2], &(lab[0]), &(lab[1]), &(lab[2]));
+
+				m_pVB->m_pMF->m_cfg.m_pixel_color_bgr = wxString::Format(wxT("RGB: r:%d g:%d b:%d L:%d"), (int)(bgr[2]), (int)(bgr[1]), (int)(bgr[0]), (int)y);
+				m_pVB->m_pMF->m_cfg.m_pixel_color_lab = wxString::Format(wxT("Lab: l:%d a:%d b:%d"), (int)(lab[0]), (int)(lab[1]), (int)(lab[2]));
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorRGB->SetLabel(m_pVB->m_pMF->m_cfg.m_pixel_color_bgr);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorLab->SetLabel(m_pVB->m_pMF->m_cfg.m_pixel_color_lab);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->SetBackgroundColour(wxColour(bgr[2], bgr[1], bgr[0]));
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->Refresh();
+			}
+		}
+	}
+
+	event.Skip();
+}
+
 
 BEGIN_EVENT_TABLE(CVideoWindow, wxPanel)
 	EVT_PAINT(CVideoWindow::OnPaint)
@@ -91,6 +304,7 @@ CVideoWindow::CVideoWindow(CVideoBox *pVB)
 {
 	m_pVB = pVB;
 	m_WasInited = false;
+	m_pVideoWnd = NULL;
 }
 
 CVideoWindow::~CVideoWindow()
@@ -133,6 +347,26 @@ void CVideoWindow::Update()
 			Cur = m_pVB->m_pMF->m_pVideo->GetPos();
 			m_pVB->m_pMF->m_pVideo->SetPos(Cur);
 		}
+	}
+}
+
+void CVideoWindow::Refresh(bool eraseBackground,
+	const wxRect* rect)
+{
+	bool need_to_refresh = true;
+
+	if (m_pVideoWnd)
+	{
+		if (m_pVideoWnd->GetParent() == NULL)
+		{
+			m_pVideoWnd->Refresh(true);
+			need_to_refresh = false;
+		}
+	}
+	
+	if (need_to_refresh)
+	{
+		wxWindow::Refresh(eraseBackground, rect);
 	}
 }
 
@@ -191,6 +425,7 @@ BEGIN_EVENT_TABLE(CVideoBox, wxMDIChildFrame)
 	EVT_MENU(ID_TB_PAUSE, CVideoBox::OnBnClickedPause)
 	EVT_MENU(ID_TB_STOP, CVideoBox::OnBnClickedStop)
 	EVT_KEY_DOWN(CVideoBox::OnKeyDown)
+	EVT_KEY_UP(CVideoBox::OnKeyUp)
 	EVT_MOUSEWHEEL(CVideoBox::OnMouseWheel)
 	EVT_SCROLL_THUMBTRACK(CVideoBox::OnHScroll)
 END_EVENT_TABLE()
@@ -261,7 +496,7 @@ void CVideoBox::Init()
 	m_plblTIME->SetBackgroundColour( m_CL2 );
 
 	m_pVBox = new CVideoWindow(this);
-	m_pVBox->Init();
+	m_pVBox->Init();	
 
 	this->SetBackgroundColour(m_CLVBar);
 
@@ -381,14 +616,41 @@ void CVideoBox::OnBnClickedStop(wxCommandEvent& event)
 void CVideoBox::OnKeyDown(wxKeyEvent& event)
 {
 	s64 Cur;
+	int key_code = event.GetKeyCode();
 
-	if ( !m_pMF->m_VIsOpen )
+	switch (key_code)
 	{
-		event.Skip();
+		case 'T':
+		case 't':
+			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
+			{
+				m_pVBox->Refresh(false);
+				m_pVBox->Update();
+				break;
+			}
+			break;
+
+		case 'Y':
+		case 'y':
+		case 'U':
+		case 'u':
+			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
+			{
+				m_pVBox->m_pVideoWnd->Reparent(NULL);
+				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+				m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
+
+				m_pVBox->m_pVideoWnd->Refresh(false);
+				m_pVBox->m_pVideoWnd->Update();
+				break;
+			}
+			break;
 	}
-	else
+
+	if (m_pMF->m_VIsOpen)
 	{
-		int key_code = event.GetKeyCode();
+		wxCommandEvent evt;
 
 		switch ( key_code )
 		{
@@ -418,9 +680,44 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 				m_pMF->m_pVideo->SetPosFast(Cur);
 				break;
 
-			default:
-				event.Skip();
+			case WXK_SPACE:				
+ 				m_pMF->OnPlayPause(evt);
+				break;
 		}
+	}
+}
+
+void CVideoBox::OnKeyUp(wxKeyEvent& event)
+{
+	int key_code = event.GetKeyCode();
+
+	switch (key_code)
+	{
+		case 'T':
+		case 't':
+			if (m_pVBox->m_pVideoWnd->m_filter_image)
+			{
+				m_pVBox->Refresh(false);
+				m_pVBox->Update();
+				break;
+			}
+			break;
+		case 'Y':
+		case 'y':
+		case 'U':
+		case 'u':
+			if (m_pVBox->m_pVideoWnd->m_filter_image)
+			{
+				if (!wxGetKeyState(wxKeyCode('Y')) && !wxGetKeyState(wxKeyCode('y')) &&
+					!wxGetKeyState(wxKeyCode('U')) && !wxGetKeyState(wxKeyCode('u')))
+				{
+					m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+
+					wxSizeEvent event;
+					m_pVBox->OnSize(event);
+				}
+			}
+			break;
 	}
 }
 
