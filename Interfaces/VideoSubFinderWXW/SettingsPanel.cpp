@@ -212,8 +212,9 @@ void CSettingsPanel::Init()
 	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_text_alignment, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_text_alignment_string, GetAvailableTextAlignments());
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, m_LBLFont, &g_playback_sound);
-		
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_filter_color);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_outline_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_outline_filter_color);
+	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_hw_device, GetAvailableHWDeviceTypes());
 	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_filter_descr);
@@ -226,7 +227,7 @@ void CSettingsPanel::Init()
 #endif
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, m_LBLFont, &g_use_ocl);
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_filter_color);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, m_LBLFont, &g_playback_sound);
 
 	// debug settings
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, m_LBLFont, &g_generate_cleared_text_images_on_test);
@@ -400,14 +401,8 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	clock_t t;
 	wxString BaseImgName;	
 
-	if (g_use_color_filters_in_ccti)
-	{
-		g_color_ranges = GetColorRanges(g_use_filter_color);
-	}
-	else
-	{
-		g_color_ranges.clear();
-	}
+	g_color_ranges = GetColorRanges(g_use_filter_color);
+	g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
 	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 

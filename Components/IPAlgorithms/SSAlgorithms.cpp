@@ -58,8 +58,6 @@ int g_max_dl_up = 40;
 double	g_video_contrast = 1.0; //1.0 default without change
 double	g_video_gamma = 1.0; //1.0 default without change
 
-bool g_use_color_filters_in_run_search = true;
-
 CVideo *g_pV;
 
 inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImISA, simple_buffer<u16> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H, int min_x, int max_x)
@@ -372,18 +370,13 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 
 			if (res != 0)
 			{
-				if (g_color_ranges.size() > 0)
+				FilterImageByPixelColorIsInRange(ImY, &ImBGR, pImLab, w, h);
+				res = FilterImageByPixelColorIsInRange(ImY, &ImBGR, pImLab, w, h);
+
+				if (res == 0)
 				{
-					for (int i = 0; i < w * h; i++)
-					{
-						if (ImY[i] != 0)
-						{
-							if (!PixelColorIsInRange(&ImBGR, pImLab, w, h, i))
-							{
-								ImY[i] = 0;
-							}
-						}
-					}
+					ImF.set_values(0, w * h);
+					ImNE.set_values(0, w * h);
 				}
 			}
 
@@ -404,7 +397,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 class RunSearch
 {
 	int m_threads;
-	int m_w, m_h, m_W, m_H, /*m_real_im_x_center,*/ m_xmin, m_xmax, m_ymin, m_ymax, m_size;
+	int m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax, m_size;
 	CVideo *m_pV;
 	int m_fn_start;
 	s64 m_prevPos;
@@ -462,7 +455,6 @@ public:
 		m_h = pV->m_h;
 		m_W = pV->m_Width;
 		m_H = pV->m_Height;
-		//m_real_im_x_center = (m_xmin + m_xmax) / 2;
 		m_xmin = pV->m_xmin;
 		m_xmax = pV->m_xmax;
 		m_ymin = pV->m_ymin;
@@ -480,6 +472,20 @@ public:
 				{
 					m_convert_to_lab = true;
 					break;
+				}
+			}
+		}
+		if (!m_convert_to_lab)
+		{
+			if (g_outline_color_ranges.size() > 0)
+			{
+				for (int i = 0; i < g_outline_color_ranges.size(); i++)
+				{
+					if (g_outline_color_ranges[i].m_color_space == ColorSpace::Lab)
+					{
+						m_convert_to_lab = true;
+						break;
+					}
 				}
 			}
 		}
@@ -796,7 +802,7 @@ public:
 							for (int i = 0; i < DL; i++)
 							{
 								SaveGreyscaleImage(*(pIm[fdn + i]), wxString("/TestImages/AddIntersectImagesTask_Im_") + "_fn" + std::to_string(fn + i) + g_im_save_format, w, h);
-								SaveGreyscaleImage(*(pImY[fdn + i]), wxString("/TestImages/AddIntersectImagesTask_ImY_") + "_fn" + std::to_string(fn + i) + g_im_save_format, w, h);
+								SaveBinaryImage(*(pImY[fdn + i]), wxString("/TestImages/AddIntersectImagesTask_ImY_") + "_fn" + std::to_string(fn + i) + g_im_save_format, w, h);
 							}
 
 							fn = fn;
@@ -1396,7 +1402,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 			{					
 				SaveGreyscaleImage(*(ImForward[i]), wxString("/TestImages/FastSearchSubtitles_ImForward_") + VideoTimeToStr(PosForward[i]) + "_fn" + std::to_string(fn + i) + "_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 				SaveGreyscaleImage(*(ImNEForward[i]), wxString("/TestImages/FastSearchSubtitles_ImNEForward_") + VideoTimeToStr(PosForward[i]) + "_fn" + std::to_string(fn + i) + "_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
-				SaveGreyscaleImage(*(ImYForward[i]), wxString("/TestImages/FastSearchSubtitles_ImYForward_") + VideoTimeToStr(PosForward[i]) + "_fn" + std::to_string(fn + i) + "_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+				SaveBinaryImage(*(ImYForward[i]), wxString("/TestImages/FastSearchSubtitles_ImYForward_") + VideoTimeToStr(PosForward[i]) + "_fn" + std::to_string(fn + i) + "_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 				SaveBGRImage(*(ImBGRForward[i]), wxString("/TestImages/FastSearchSubtitles_ImBGRForward_") + VideoTimeToStr(PosForward[i]) + "_fn" + std::to_string(fn + i) + "_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
 			}
 			

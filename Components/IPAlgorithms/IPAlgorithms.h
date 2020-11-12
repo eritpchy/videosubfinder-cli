@@ -76,7 +76,9 @@ extern bool		g_use_ocl;
 extern bool		g_use_cuda_gpu;
 
 extern wxArrayString g_use_filter_color;
+extern wxArrayString g_use_outline_filter_color;
 extern std::vector<color_range> g_color_ranges;
+extern std::vector<color_range> g_outline_color_ranges;
 
 extern int		g_cuda_kmeans_initial_loop_iterations;
 extern int		g_cuda_kmeans_loop_iterations;
@@ -107,11 +109,9 @@ extern wxString g_text_alignment_string;
 extern bool g_extend_by_grey_color;
 extern int g_allow_min_luminance;
 
-extern bool g_use_color_filters_in_ccti;
-
 std::vector<color_range> GetColorRanges(wxArrayString& filter_colors);
 
-bool PixelColorIsInRange(simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, int p_id);
+bool PixelColorIsInRange(std::vector<color_range> &color_ranges, simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, int p_id);
 
 void BGRToYUV(u8 b, u8 g, u8 r, u8* py, u8* pu = NULL, u8* pv = NULL);
 void YUVToBGR(u8 y, u8 u, u8 v, u8& b, u8& g, u8& r);
@@ -167,8 +167,6 @@ void SaveGreyscaleImage(simple_buffer<int>& Im, wxString name, int w, int h, int
 template <class T>
 void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white = 255);
 template <class T>
-void SaveBinaryImage(simple_buffer<T> &Im, wxString name, int w, int h, int quality = -1, int dpi = -1);
-template <class T>
 void CombineTwoImages(simple_buffer<T>& ImRes, simple_buffer<T>& Im2, int w, int h, T white = 255);
 template <class T1, class T2>
 void IntersectTwoImages(simple_buffer<T1> &ImRes, simple_buffer<T2> &Im2, int w, int h, T1 zero_val = 0);
@@ -199,6 +197,8 @@ void SaveBGRImageWithLinesInfo(simple_buffer<u8>& Im, wxString name, int w, int 
 enum ColorName { Red, Green, Blue, Yellow, Purple, White };
 
 int GetBGRColor(ColorName cn);
+
+void SetBGRColor(simple_buffer<u8>& ImBGR, int pixel_id, int bgra_color);
 
 //-----------------------------------------------------------
 
@@ -254,7 +254,7 @@ void IntersectImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buffer<T2>*>
 }
 
 template <class T>
-void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int quality, int dpi)
+void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int quality = -1, int dpi = -1, T zero_value = 0)
 {
 	if (g_disable_save_images) return;
 
@@ -263,7 +263,7 @@ void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int qual
 
 	for (int i = 0; i < w * h; i++)
 	{
-		if (Im[i] == 0)
+		if (Im[i] == zero_value)
 		{
 			color = 0;
 		}
@@ -404,4 +404,248 @@ void BinaryMatToImage(cv::UMat& ImBinary, int w, int h, simple_buffer<T>& res, T
 			res[i] = 0;
 		}
 	}
+}
+
+template <class T>
+int GetAllInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, custom_buffer<CMyClosedFigure>& pFigures, simple_buffer<CMyClosedFigure*>& ppFigures, int& N, int w, int h, T white, bool im_is_white)
+{
+	CMyClosedFigure* pFigure;
+	int i, j, l, x, y, ii, cnt;
+
+	ImRes.set_values(0, w * h);
+
+	if (im_is_white)
+	{
+		SearchClosedFigures(Im, w, h, (T)0, pFigures, false);
+		N = pFigures.size();
+	}
+	else
+	{
+		simple_buffer<T> ImTMP(w * h, 0);
+
+		for (i = 0; i < w * h; i++)
+		{
+			if (Im[i] == white)
+			{
+				ImTMP[i] = white;
+			}
+		}
+
+		SearchClosedFigures(ImTMP, w, h, (T)0, pFigures, false);
+		N = pFigures.size();
+	}
+
+	if (N == 0)	return 0;
+
+	ppFigures.set_size(N);
+
+	for (i = 0; i < N; i++)
+	{
+		ppFigures[i] = &(pFigures[i]);
+	}
+
+	i = 0;
+	while (i < N)
+	{
+		pFigure = ppFigures[i];
+
+		if ((pFigure->m_minX == 0) || (pFigure->m_maxX == w - 1) || (pFigure->m_minY == 0) || (pFigure->m_maxY == h - 1))
+		{
+			ppFigures[i] = ppFigures[N - 1];
+			N--;
+			continue;
+		}
+		else
+		{
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+			{
+				ii = pFigure->m_PointsArray[l];
+				ImRes[ii] = white;
+			}
+		}
+		i++;
+	}
+
+	return N;
+}
+
+template <class T>
+void ConvertCMyClosedFigureToSubImage(CMyClosedFigure* pFigure, simple_buffer<T>& ImRes, int w, int h, int ww, int hh, int min_x, int min_y, T white)
+{
+	int ii, l, x, y;
+
+	for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+	{
+		custom_assert(w > 0, "ConvertCMyClosedFigureToSubImage: w > 0");
+		y = pFigure->m_PointsArray[l] / w;
+		x = pFigure->m_PointsArray[l] - (y * w);
+
+		ii = (y - min_y) * ww + x - min_x;
+		ImRes[ii] = white;
+	}
+}
+
+template <class T>
+void AddSubImageToImage(simple_buffer<T>& ImRes, simple_buffer<T>& ImSub, int w, int h, int ww, int hh, int min_x, int min_y, T white)
+{
+	int i, ii, x, y;
+
+	for (y = 0, i = 0; y < hh; y++)
+	{
+		for (x = 0; x < ww; x++, i++)
+		{
+			if (ImSub[i] != 0)
+			{
+				ii = (y + min_y) * w + x + min_x;
+				ImRes[ii] = white;
+			}
+		}
+	}
+}
+
+template <class T>
+int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int w, int h, T white, bool simple, bool im_is_white = false)
+{
+	CMyClosedFigure* pFigure;
+	int i, j, l, x, y, ii, cnt, N;
+	custom_buffer<CMyClosedFigure> pFigures;
+	simple_buffer<CMyClosedFigure*> ppFigures;	
+
+	GetAllInsideFigures(Im, ImRes, pFigures, ppFigures, N, w, h, white, im_is_white);
+
+	if (simple)
+	{
+		return N;
+	}
+
+	// Removing all inside figures which are inside others
+
+	simple_buffer<T> ImIntRes(w * h, 0);
+
+	concurrency::parallel_for(0, N, [&ImIntRes, &ppFigures, N, w, h, white, im_is_white](int i)
+		//for (i = 0; i < N; i++)
+		{
+			bool found = false;
+
+			for (int j = 0; j < N; j++)
+			{
+				if (i != j)
+				{
+					if ((ppFigures[i]->m_minX < ppFigures[j]->m_minX) &&
+						(ppFigures[i]->m_maxX > ppFigures[j]->m_maxX) &&
+						(ppFigures[i]->m_minY < ppFigures[j]->m_minY) &&
+						(ppFigures[i]->m_maxY > ppFigures[j]->m_maxY))
+					{
+						found = true;
+						break;
+					}
+				}
+			}			
+
+			if (found)
+			{
+				// 'j' is inside 'i'
+
+				int N1, ww = ppFigures[i]->width(), hh = ppFigures[i]->height(), x, y, min_x = ppFigures[i]->m_minX, min_y = ppFigures[i]->m_minY;
+				simple_buffer<T> Im1(ww * hh, 0), ImInt1(ww * hh, 0);
+				custom_buffer<CMyClosedFigure> pFigures1;
+				simple_buffer<CMyClosedFigure*> ppFigures1;
+
+				ConvertCMyClosedFigureToSubImage(ppFigures[i], Im1, w, h, ww, hh, min_x, min_y, white);
+				if (GetAllInsideFigures(Im1, ImInt1, pFigures1, ppFigures1, N1, ww, hh, white, true) > 0)
+				{
+					AddSubImageToImage(ImIntRes, ImInt1, w, h, ww, hh, min_x, min_y, white);
+				}
+			}
+		});
+
+	for (i = 0; i < w * h; i++)
+	{
+		if (ImRes[i] != 0)
+		{
+			if (ImIntRes[i] != 0)
+			{
+				ImRes[i] = 0;
+			}
+		}
+	}
+
+	return N;
+}
+
+template <class T>
+void GetMaskByPixelColorIsInRange(std::vector<color_range>& color_ranges, simple_buffer<T>& ImRes, simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, T white = 255, T black = 0)
+{
+	if (color_ranges.size() > 0)
+	{
+		for (int i = 0; i < w * h; i++)
+		{
+			if (PixelColorIsInRange(color_ranges, pImBGR, pImLab, w, h, i))
+			{
+				ImRes[i] = white;
+			}
+			else
+			{
+				ImRes[i] = black;
+			}
+		}
+	}
+}
+
+template <class T>
+int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, wxString iter_det = wxT(""), T zero_value = 0)
+{
+	int res = 1;
+	bool show_results = g_show_results && (iter_det.size() > 0);
+
+	if (g_outline_color_ranges.size() > 0)
+	{
+		simple_buffer<u8> ImMASK(w * h), ImInside(w * h);
+		GetMaskByPixelColorIsInRange(g_outline_color_ranges, ImMASK, pImBGR, pImLab, w, h);
+
+		if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_ImMASK" + g_im_save_format, w, h);
+
+		if (GetImageWithInsideFigures(ImMASK, ImInside, w, h, (u8)255, true, true) > 0)
+		{
+			if (show_results) SaveGreyscaleImage(ImInside, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_02_ImInside" + g_im_save_format, w, h);
+			if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+			IntersectTwoImages(ImRes, ImInside, w, h, zero_value);
+			if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_04_ImResIntImInside" + g_im_save_format, w, h, -1, -1, zero_value);
+		}
+		else
+		{
+			ImRes.set_values(zero_value, w * h);
+			res = 0;
+		}
+	}
+
+	if (res != 0)
+	{
+		if (g_color_ranges.size() > 0)
+		{
+			int cnt = 0;
+			for (int i = 0; i < w * h; i++)
+			{
+				if (ImRes[i] != zero_value)
+				{
+					if (PixelColorIsInRange(g_color_ranges, pImBGR, pImLab, w, h, i))
+					{
+						cnt++;
+					}
+					else
+					{
+						ImRes[i] = zero_value;
+					}
+				}
+			}
+			if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_05_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+
+			if (cnt == 0)
+			{
+				res = 0;
+			}
+		}
+	}
+
+	return res;
 }

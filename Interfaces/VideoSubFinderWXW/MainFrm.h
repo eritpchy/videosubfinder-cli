@@ -78,6 +78,7 @@ public:
 	wxString	m_ssp_oi_property_use_ocl;
 	wxString	m_ssp_oi_property_use_cuda_gpu;
 	wxString	m_label_use_filter_color;
+	wxString	m_label_use_outline_filter_color;
 	wxString	m_border_is_darker;
 	wxString	m_extend_by_grey_color;
 	wxString	m_allow_min_luminance;

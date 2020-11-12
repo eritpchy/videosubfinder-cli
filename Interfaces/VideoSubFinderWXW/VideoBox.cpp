@@ -69,24 +69,29 @@ bool CVideoWnd::CheckFilterImage()
 		{
 			filter_image = true;
 		}
-		else if (g_use_filter_color.size() > 0)
+		else 
 		{
-			if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
-				wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')))
+			if (g_use_filter_color.size() > 0)
 			{
-				filter_image = true;
-				/*int mx = wxGetMousePosition().x - this->GetScreenPosition().x;
-				int my = wxGetMousePosition().y - this->GetScreenPosition().y;
-				int w, h;
-				this->GetSize(&w, &h);
-
-				if (((mx >= 0) && (mx <= w - 1)) &&
-					((my >= 0) && (my <= h - 1)))
+				if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
+					wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')))
 				{
 					filter_image = true;
-				}*/
+				}
 			}
-		}
+
+			if (!filter_image)
+			{
+				if (g_use_outline_filter_color.size() > 0)
+				{
+					if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
+						wxGetKeyState(wxKeyCode('I')) || wxGetKeyState(wxKeyCode('i')))
+					{
+						filter_image = true;
+					}
+				}
+			}
+		}		
 	}
 
 	return filter_image;
@@ -95,21 +100,99 @@ bool CVideoWnd::CheckFilterImage()
 inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, const int w, const int h)
 {
 	g_color_ranges = GetColorRanges(g_use_filter_color);
+	g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+	bool bln_color_ranges = (g_color_ranges.size() > 0) ? true : false;
+	bool bln_outline_color_ranges = (g_outline_color_ranges.size() > 0) ? true : false;	
+	bool bln_t_pressed = (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')));
+	bool bln_y_pressed = (wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')));
+	bool bln_i_pressed = (wxGetKeyState(wxKeyCode('I')) || wxGetKeyState(wxKeyCode('i')));
+	int rc = GetBGRColor(ColorName::Red);
+	int gc = GetBGRColor(ColorName::Green);
+	int yc = GetBGRColor(ColorName::Green);
+	int bc = 0;
+	int pc;
 
-	if (g_color_ranges.size() > 0)
+	if (bln_y_pressed)
+	{
+		if (!bln_t_pressed)
+		{
+			if (!bln_color_ranges)
+			{
+				return;
+			}
+		}
+	}
+
+	if (bln_i_pressed)
+	{
+		if ((!bln_t_pressed) && (!bln_y_pressed))
+		{
+			if (!bln_outline_color_ranges)
+			{
+				return;
+			}
+		}
+	}
+
+	if (bln_color_ranges || bln_outline_color_ranges)
 	{
 		int offset;
 		int num_pixels = w * h;
+		bool bln_in_color_ranges;
+		bool bln_in_outline_color_ranges;
 
 		for (int p_id = 0; p_id < num_pixels; p_id++)
 		{
-			if (!PixelColorIsInRange(&ImBGR, &ImLab, w, h, p_id))
-			{
-				offset = p_id * 3;
+			bln_in_color_ranges = false;
+			bln_in_outline_color_ranges = false;
+			pc = -1;
 
-				ImBGR[offset] = 0;
-				ImBGR[offset + 1] = 0;
-				ImBGR[offset + 2] = 0;
+			if (bln_color_ranges) bln_in_color_ranges = PixelColorIsInRange(g_color_ranges, &ImBGR, &ImLab, w, h, p_id);
+			if (bln_outline_color_ranges) bln_in_outline_color_ranges = PixelColorIsInRange(g_outline_color_ranges, &ImBGR, &ImLab, w, h, p_id);
+
+			if (bln_t_pressed)
+			{
+				if (bln_in_color_ranges)
+				{
+					if (bln_in_outline_color_ranges)
+					{
+						pc = yc;
+					}
+					else
+					{
+						pc = rc;
+					}
+				}
+				else
+				{
+					if (bln_in_outline_color_ranges)
+					{
+						pc = gc;
+					}
+					else
+					{
+						pc = bc;
+					}
+				}
+			}
+			else if (bln_y_pressed)
+			{
+				if (!bln_in_color_ranges)
+				{
+					pc = bc;
+				}
+			}
+			else if (bln_i_pressed)
+			{
+				if (!bln_in_outline_color_ranges)
+				{
+					pc = bc;
+				}
+			}
+
+			if (pc != -1)
+			{
+				SetBGRColor(ImBGR, p_id, pc);
 			}
 		}
 	}
@@ -622,18 +705,12 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 	{
 		case 'T':
 		case 't':
-			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
-			{
-				m_pVBox->Refresh(false);
-				m_pVBox->Update();
-				break;
-			}
-			break;
-
 		case 'Y':
 		case 'y':
 		case 'U':
 		case 'u':
+		case 'I':
+		case 'i':
 			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
 			{
 				m_pVBox->m_pVideoWnd->Reparent(NULL);
@@ -695,27 +772,23 @@ void CVideoBox::OnKeyUp(wxKeyEvent& event)
 	{
 		case 'T':
 		case 't':
-			if (m_pVBox->m_pVideoWnd->m_filter_image)
-			{
-				m_pVBox->Refresh(false);
-				m_pVBox->Update();
-				break;
-			}
-			break;
 		case 'Y':
 		case 'y':
 		case 'U':
 		case 'u':
-			if (m_pVBox->m_pVideoWnd->m_filter_image)
+		case 'I':
+		case 'i':
+			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
 			{
-				if (!wxGetKeyState(wxKeyCode('Y')) && !wxGetKeyState(wxKeyCode('y')) &&
-					!wxGetKeyState(wxKeyCode('U')) && !wxGetKeyState(wxKeyCode('u')))
-				{
-					m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+				m_pVBox->m_pVideoWnd->Refresh(false);
+				m_pVBox->m_pVideoWnd->Update();
+			}
+			else
+			{
+				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
 
-					wxSizeEvent event;
-					m_pVBox->OnSize(event);
-				}
+				wxSizeEvent event;
+				m_pVBox->OnSize(event);
 			}
 			break;
 	}

@@ -1258,14 +1258,8 @@ void *ThreadCreateClearedTextImages::Entry()
 {
 	g_IsCreateClearedTextImages = 1;
 	
-	if (g_use_color_filters_in_ccti)
-	{
-		g_color_ranges = GetColorRanges(g_use_filter_color);
-	}
-	else
-	{
-		g_color_ranges.clear();
-	}
+	g_color_ranges = GetColorRanges(g_use_filter_color);
+	g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
 	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 

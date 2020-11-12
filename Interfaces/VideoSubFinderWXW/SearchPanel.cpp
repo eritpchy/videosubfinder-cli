@@ -241,14 +241,8 @@ void ThreadSearchSubtitlesRun()
 
 	if (g_pMF->m_pVideo->SetNullRender())
 	{
-		if (g_use_color_filters_in_run_search)
-		{
-			g_color_ranges = GetColorRanges(g_use_filter_color);
-		}
-		else
-		{
-			g_color_ranges.clear();
-		}
+		g_color_ranges = GetColorRanges(g_use_filter_color);
+		g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
 		g_pMF->m_pVideo->SetVideoWindowSettins(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
 			g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,

@@ -65,8 +65,6 @@ int ClearImageFromSmallSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H
 int SecondFiltration(simple_buffer<u8> &Im, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, int min_x, int max_x);
 
 template <class T>
-int GetImageWithInsideFigures(simple_buffer<T> &Im, simple_buffer<T> &ImRes, int w, int h, T white, bool simple = false);
-template <class T>
 void InvertBinaryImage(simple_buffer<T> &Im, int w, int h);
 
 void GreyscaleImageToBGR(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImGR, int w, int h);
@@ -140,7 +138,9 @@ bool g_use_ocl = true;
 bool g_use_cuda_gpu = true;
 
 wxArrayString g_use_filter_color;
+wxArrayString g_use_outline_filter_color;
 std::vector<color_range> g_color_ranges;
+std::vector<color_range> g_outline_color_ranges;
 
 int g_cuda_kmeans_initial_loop_iterations = 10;
 int g_cuda_kmeans_loop_iterations = 30;
@@ -160,8 +160,6 @@ bool g_border_is_darker  = true;
 
 bool g_extend_by_grey_color = false;
 int g_allow_min_luminance = 100;
-
-bool g_use_color_filters_in_ccti = true;
 
 TextAlignment g_text_alignment = TextAlignment::Center;
 wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
@@ -361,22 +359,22 @@ std::vector<color_range> GetColorRanges(wxArrayString& filter_colors)
 	return color_ranges;
 }
 
-bool PixelColorIsInRange(simple_buffer<u8> *pImBGR, simple_buffer<u8> *pImLab, int w, int h, int p_id)
+bool PixelColorIsInRange(std::vector<color_range>& color_ranges, simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, int p_id)
 {
 	int offset = p_id * 3;
 	bool res = false;
 
-	for (int cr_id = 0; cr_id < g_color_ranges.size(); cr_id++)
+	for (int cr_id = 0; cr_id < color_ranges.size(); cr_id++)
 	{
 		bool bln_lab = false;
 
-		if (g_color_ranges[cr_id].m_color_space == ColorSpace::RGB)
+		if (color_ranges[cr_id].m_color_space == ColorSpace::RGB)
 		{
 			custom_assert(pImBGR != NULL, "PixelColorIsInRange: not: pImBGR != NULL");
 
-			if (((*pImBGR)[offset] >= g_color_ranges[cr_id].m_min_data[2]) && ((*pImBGR)[offset] <= g_color_ranges[cr_id].m_max_data[2]) &&
-				((*pImBGR)[offset + 1] >= g_color_ranges[cr_id].m_min_data[1]) && ((*pImBGR)[offset + 1] <= g_color_ranges[cr_id].m_max_data[1]) &&
-				((*pImBGR)[offset + 2] >= g_color_ranges[cr_id].m_min_data[0]) && ((*pImBGR)[offset + 2] <= g_color_ranges[cr_id].m_max_data[0]))
+			if (((*pImBGR)[offset] >= color_ranges[cr_id].m_min_data[2]) && ((*pImBGR)[offset] <= color_ranges[cr_id].m_max_data[2]) &&
+				((*pImBGR)[offset + 1] >= color_ranges[cr_id].m_min_data[1]) && ((*pImBGR)[offset + 1] <= color_ranges[cr_id].m_max_data[1]) &&
+				((*pImBGR)[offset + 2] >= color_ranges[cr_id].m_min_data[0]) && ((*pImBGR)[offset + 2] <= color_ranges[cr_id].m_max_data[0]))
 			{
 				res = true;
 				break;
@@ -386,9 +384,9 @@ bool PixelColorIsInRange(simple_buffer<u8> *pImBGR, simple_buffer<u8> *pImLab, i
 		{
 			custom_assert(pImLab != NULL, "PixelColorIsInRange: not: pImLab != NULL");
 
-			if (((*pImLab)[offset] >= g_color_ranges[cr_id].m_min_data[0]) && ((*pImLab)[offset] <= g_color_ranges[cr_id].m_max_data[0]) &&
-				((*pImLab)[offset + 1] >= g_color_ranges[cr_id].m_min_data[1]) && ((*pImLab)[offset + 1] <= g_color_ranges[cr_id].m_max_data[1]) &&
-				((*pImLab)[offset + 2] >= g_color_ranges[cr_id].m_min_data[2]) && ((*pImLab)[offset + 2] <= g_color_ranges[cr_id].m_max_data[2]))
+			if (((*pImLab)[offset] >= color_ranges[cr_id].m_min_data[0]) && ((*pImLab)[offset] <= color_ranges[cr_id].m_max_data[0]) &&
+				((*pImLab)[offset + 1] >= color_ranges[cr_id].m_min_data[1]) && ((*pImLab)[offset + 1] <= color_ranges[cr_id].m_max_data[1]) &&
+				((*pImLab)[offset + 2] >= color_ranges[cr_id].m_min_data[2]) && ((*pImLab)[offset + 2] <= color_ranges[cr_id].m_max_data[2]))
 			{
 				res = true;
 				break;
@@ -453,7 +451,7 @@ TextAlignment ConvertStringToTextAlignment(wxString val)
 	return res;
 }
 
-inline void SetBGRColor(simple_buffer<u8>& ImBGR, int pixel_id, int bgra_color)
+void SetBGRColor(simple_buffer<u8>& ImBGR, int pixel_id, int bgra_color)
 {
 	custom_assert((pixel_id * 3) + 2 <= ImBGR.m_size - 1, "SetBGRColor: not: (pixel_id * 3) + 2 <= ImBGR.m_size - 1");
 	memcpy(ImBGR.m_pData + (pixel_id * 3), &bgra_color, 3);
@@ -3183,40 +3181,6 @@ int FilterImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, simp
 	return num_main_clusters;
 }
 
-void FilterLabelsByPixelColorIsInRange(simple_buffer<char>& labels, simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab, int w, int h)
-{
-	if (g_color_ranges.size() > 0)
-	{
-		for (int i = 0; i < w * h; i++)
-		{
-			if (labels[i] != -1)
-			{
-				if (!PixelColorIsInRange(&ImBGR, &ImLab, w, h, i))
-				{
-					labels[i] = -1;
-				}
-			}
-		}
-	}
-}
-
-void FilterMaskByPixelColorIsInRange(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab, int w, int h)
-{
-	if (g_color_ranges.size() > 0)
-	{
-		for (int i = 0; i < w * h; i++)
-		{
-			if (ImMASK[i] != 0)
-			{
-				if (!PixelColorIsInRange(&ImBGR, &ImLab, w, h, i))
-				{
-					ImMASK[i] = 0;
-				}
-			}
-		}
-	}
-}
-
 int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab, simple_buffer<u8>& ImIL, simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImMASK2, simple_buffer<u8>& ImMaskWithBorder, simple_buffer<u8>& ImMaskWithBorderF, simple_buffer<u8>& ImClusters2, simple_buffer<char>& labels2, int clusterCount2, int w, int h, wxString iter_det)
 {
 	int min_x, max_x, min_y, max_y;
@@ -3252,7 +3216,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 
 	if (g_use_ILA_images_before_clear_txt_images_from_borders)
 	{		
-		if (g_color_ranges.size() > 0)
+		if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 		{
 			if (ImIL.m_size)
 			{
@@ -3265,7 +3229,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 				}
 			}
 
-			FilterLabelsByPixelColorIsInRange(labels2, ImBGR, ImLab, w, h);
+			FilterImageByPixelColorIsInRange(labels2, &ImBGR, &ImLab, w, h, iter_det + "_GetFirstFilteredClusters_line" + wxString::Format(wxT("%i"), __LINE__), (char)-1);
 
 			if (g_show_results)
 			{
@@ -3291,7 +3255,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 
 	if (g_use_ILA_images_for_getting_txt_symbols_areas)
 	{
-		if (g_color_ranges.size() > 0)
+		if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 		{
 			if (ImIL.m_size)
 			{
@@ -3314,7 +3278,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 
 	if (!g_use_ILA_images_before_clear_txt_images_from_borders)
 	{		
-		if (g_color_ranges.size() > 0)
+		if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 		{
 			if (ImIL.m_size)
 			{
@@ -3323,7 +3287,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_04_01_ImMaskWithBorderIntImIL" + g_im_save_format, w, h);
 			}
 
-			FilterMaskByPixelColorIsInRange(ImMaskWithBorder, ImBGR, ImLab, w, h);
+			FilterImageByPixelColorIsInRange(ImMaskWithBorder, &ImBGR, &ImLab, w, h, iter_det + "_GetFirstFilteredClusters_line" + wxString::Format(wxT("%i"), __LINE__));
 			if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_04_02_ImMaskWithBorderFByPixelColorIsInRange" + g_im_save_format, w, h);
 
 			IntersectTwoImages(ImClusters2, ImMaskWithBorder, w, h);
@@ -4063,7 +4027,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 
 			if (g_use_ILA_images_before_clear_txt_images_from_borders)
 			{				
-				if (g_color_ranges.size() > 0)
+				if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 				{
 					if (ImIL.m_size)
 					{
@@ -4078,7 +4042,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 						}
 					}
 
-					FilterLabelsByPixelColorIsInRange(labels3, ImBGR, ImLab, w, h);
+					FilterImageByPixelColorIsInRange(labels3, &ImBGR, &ImLab, w, h, iter_det + "_GetMainClusterImage_" + wxString::Format(wxT("%i"), __LINE__), (char)-1);
 
 					if (g_show_results)
 					{
@@ -4121,7 +4085,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 
 			if (!g_use_ILA_images_before_clear_txt_images_from_borders)
 			{
-				if (g_color_ranges.size() > 0)
+				if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 				{
 					if (ImIL.m_size)
 					{
@@ -4129,7 +4093,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 						if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_01_02_ImClusters3IntImIL" + g_im_save_format, w, h);
 					}
 
-					FilterMaskByPixelColorIsInRange(ImClusters3, ImBGR, ImLab, w, h);
+					FilterImageByPixelColorIsInRange(ImClusters3, &ImBGR, &ImLab, w, h, iter_det + "_GetMainClusterImage_" + wxString::Format(wxT("%i"), __LINE__));
 					if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_04_01_03_ImClusters3FByPixelColorIsInRange" + g_im_save_format, w, h);
 				}
 			}
@@ -4523,10 +4487,10 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 				ClearImageOptimal(ImMainCluster, w, h, 255);
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainClusterFOptimal" + g_im_save_format, w, h);				
 
-				if (g_color_ranges.size() > 0)
+				if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 				{
 					simple_buffer<u8> ImMainClusterFOptimal(ImMainCluster);
-					FilterMaskByPixelColorIsInRange(ImMainCluster, ImBGR, ImLab, w, h);
+					FilterImageByPixelColorIsInRange(ImMainCluster, &ImBGR, &ImLab, w, h, iter_det + "_GetMainClusterImage_" + wxString::Format(wxT("%i"), __LINE__));
 					if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainClusterFByPixelColorIsInRange" + g_im_save_format, w, h);
 					simple_buffer<u8> ImTMP(ImMainCluster);
 					IntersectTwoImages(ImMainCluster, ImMaskWithBorder, w, h);
@@ -4558,10 +4522,10 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 				ClearImageOptimal(ImMainCluster2, w, h, 255);
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainCluster2FOptimal" + g_im_save_format, w, h);
 				
-				if (g_color_ranges.size() > 0)
+				if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 				{
 					simple_buffer<u8> ImMainCluster2FOptimal(ImMainCluster2);
-					FilterMaskByPixelColorIsInRange(ImMainCluster2, ImBGR, ImLab, w, h);
+					FilterImageByPixelColorIsInRange(ImMainCluster2, &ImBGR, &ImLab, w, h, iter_det + "_GetMainClusterImage_" + wxString::Format(wxT("%i"), __LINE__));
 					if (g_show_results) SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainCluster2FByPixelColorIsInRange" + g_im_save_format, w, h);
 					simple_buffer<u8> ImTMP(ImMainCluster2);
 					IntersectTwoImages(ImMainCluster2, ImMaskWithBorder, w, h);
@@ -5522,9 +5486,9 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 		if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindText_" + iter_det + "_06_7_01_SNFIntImIL" + g_im_save_format, w, h);
 	}
 
-	if (g_color_ranges.size() > 0)
+	if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 	{
-		FilterMaskByPixelColorIsInRange(ImSNF, ImBGRScaled, ImLab, w, h);
+		FilterImageByPixelColorIsInRange(ImSNF, &ImBGRScaled, &ImLab, w, h, iter_det + "_FindText_" + wxString::Format(wxT("%i"), __LINE__));
 		if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindText_" + iter_det + "_06_7_02_SNFFByPixelColorIsInRange" + g_im_save_format, w, h);
 	}
 
@@ -5990,7 +5954,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 				SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_13_05_ImMainClusterFByImSNFSAndImIL" + g_im_save_format, w, h);				
 			}
 
-			if (g_color_ranges.size() > 0)
+			if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
 			{
 				IntersectTwoImages(ImMainCluster, ImMaskWithBorder, w, h);
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_13_06_ImMainClusterIntImMaskWithBorder" + g_im_save_format, w, h);
@@ -7750,168 +7714,6 @@ void RestoreStillExistLines(simple_buffer<u8>& Im, simple_buffer<u8>& ImOrig, in
 	}
 
 	if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/RestoreStillExistLines_01" + g_im_save_format, w, h);
-}
-
-template <class T>
-int GetAllInsideFigures(simple_buffer<T> &Im, simple_buffer<T> &ImRes, custom_buffer<CMyClosedFigure> &pFigures, simple_buffer<CMyClosedFigure*> &ppFigures, int &N, int w, int h, T white)
-{
-	CMyClosedFigure *pFigure;
-	int i, j, l, x, y, ii, cnt;
-
-	ImRes.set_values(0, w * h);
-
-	{
-		simple_buffer<T> ImTMP(w * h, 0);
-
-		for (i = 0; i < w*h; i++)
-		{
-			if (Im[i] == white)
-			{
-				ImTMP[i] = white;
-			}
-		}
-
-		SearchClosedFigures(ImTMP, w, h, (T)0, pFigures, false);
-		N = pFigures.size();
-	}
-
-	if (N == 0)	return 0;
-
-	ppFigures.set_size(N);
-
-	for (i = 0; i < N; i++)
-	{
-		ppFigures[i] = &(pFigures[i]);
-	}
-
-	i = 0;
-	while (i < N)
-	{
-		pFigure = ppFigures[i];
-
-		if ((pFigure->m_minX == 0) ||
-			(pFigure->m_maxX == w - 1) ||
-			(pFigure->m_minY == 0) ||
-			(pFigure->m_maxY == h - 1)
-			)
-		{
-			ppFigures[i] = ppFigures[N - 1];
-			N--;
-			continue;
-		}
-		else
-		{
-			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
-			{
-				ii = pFigure->m_PointsArray[l];
-				ImRes[ii] = white;
-			}
-		}
-		i++;
-	}	
-
-	return N;
-}
-
-template <class T>
-void ConvertCMyClosedFigureToSubImage(CMyClosedFigure *pFigure, simple_buffer<T> &ImRes, int w, int h, int ww, int hh, int min_x, int min_y, T white)
-{
-	int ii, l, x, y;
-
-	for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
-	{
-		custom_assert(w > 0, "ConvertCMyClosedFigureToSubImage: w > 0");
-		y = pFigure->m_PointsArray[l] / w;
-		x = pFigure->m_PointsArray[l] - (y * w);		
-
-		ii = (y - min_y)*ww + x - min_x;
-		ImRes[ii] = white;
-	}
-}
-
-template <class T>
-void AddSubImageToImage(simple_buffer<T> &ImRes, simple_buffer<T> &ImSub, int w, int h, int ww, int hh, int min_x, int min_y, T white)
-{
-	int i, ii, x, y;
-
-	for (y = 0, i = 0; y < hh; y++)
-	{
-		for (x = 0; x < ww; x++, i++)
-		{
-			if (ImSub[i] != 0)
-			{
-				ii = (y + min_y)*w + x + min_x;
-				ImRes[ii] = white;
-			}
-		}
-	}
-}
-
-template <class T>
-int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int w, int h, T white, bool simple)
-{
-	CMyClosedFigure *pFigure;
-	int i, j, l, x, y, ii, cnt, N;
-	custom_buffer<CMyClosedFigure> pFigures;
-	simple_buffer<CMyClosedFigure*> ppFigures;
-	simple_buffer<T> ImIntRes(w * h, 0);
-
-	GetAllInsideFigures(Im, ImRes, pFigures, ppFigures, N, w, h, white);		
-
-	if (simple)
-	{
-		return N;
-	}
-
-	// Removing all inside figures which are inside others
-
-	concurrency::parallel_for(0, N, [&ImIntRes, &ppFigures, N, w, h, white](int i)
-	//for (i = 0; i < N; i++)
-	{
-		bool found = false;
-
-		for (int j = 0; j < N; j++)
-		{
-			if (i != j)
-			{
-				if ((ppFigures[i]->m_minX < ppFigures[j]->m_minX) &&
-					(ppFigures[i]->m_maxX > ppFigures[j]->m_maxX) &&
-					(ppFigures[i]->m_minY < ppFigures[j]->m_minY) &&
-					(ppFigures[i]->m_maxY > ppFigures[j]->m_maxY))
-				{
-					found = true;
-					break;
-				}
-			}
-		}
-		
-		if (found)
-		{
-			int N1, ww = ppFigures[i]->width(), hh = ppFigures[i]->height(), x, y, min_x = ppFigures[i]->m_minX, min_y = ppFigures[i]->m_minY;
-			simple_buffer<T> Im1(ww * hh, 0), ImInt1(ww * hh, 0);
-			custom_buffer<CMyClosedFigure> pFigures1;
-			simple_buffer<CMyClosedFigure*> ppFigures1;
-
-			ConvertCMyClosedFigureToSubImage(ppFigures[i], Im1, w, h, ww, hh, min_x, min_y, white);
-			if (GetAllInsideFigures(Im1, ImInt1, pFigures1, ppFigures1, N1, ww, hh, white) > 0)
-			{
-				AddSubImageToImage(ImIntRes, ImInt1, w, h, ww, hh, min_x, min_y, white);
-			}
-		}
-	});
-
-	for (i = 0; i < w*h; i++)
-	{
-		if (ImRes[i] != 0)
-		{
-			if (ImIntRes[i] != 0)
-			{
-				ImRes[i] = 0;
-			}
-		}
-	}
-
-	return N;
 }
 
 template <class T>

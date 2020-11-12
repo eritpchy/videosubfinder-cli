@@ -690,6 +690,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
 	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
 	ReadProperty(m_general_settings, g_use_filter_color, "use_filter_color");
+	ReadProperty(m_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
 	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
 	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
@@ -823,6 +824,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
 	ReadProperty(m_locale_settings, m_cfg.m_label_use_filter_color, "label_use_filter_color");
+	ReadProperty(m_locale_settings, m_cfg.m_label_use_outline_filter_color, "label_use_outline_filter_color");
 	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
 	ReadProperty(m_locale_settings, m_cfg.m_extend_by_grey_color, "label_extend_by_grey_color");
 	ReadProperty(m_locale_settings, m_cfg.m_allow_min_luminance, "label_allow_min_luminance");
@@ -935,6 +937,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_use_ocl, "use_ocl");
 	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
 	WriteProperty(fout, g_use_filter_color, "use_filter_color");
+	WriteProperty(fout, g_use_outline_filter_color, "use_outline_filter_color");
 	WriteProperty(fout, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");	
 	WriteProperty(fout, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
