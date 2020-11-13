@@ -164,6 +164,264 @@ int g_allow_min_luminance = 100;
 TextAlignment g_text_alignment = TextAlignment::Center;
 wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
 
+int ClearImageLogical(simple_buffer<u8>& Im, int w, int h, int W, int H, int real_im_x_center, int yb, int ye, u8 white, wxString iter_det)
+{
+	CMyClosedFigure *pFigure, *pFigure2;
+	int i, j, l, ii, N;
+	int val, lb, le, LH, LMAXY;
+	int min_h = g_min_h * H;
+	bool bln;
+	clock_t t;
+
+	custom_buffer<CMyClosedFigure> pFigures;
+	t = SearchClosedFigures(Im, w, h, white, pFigures);
+	N = pFigures.size();
+
+	if (N == 0)	return 0;
+
+	if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/ClearImageLogical_" + iter_det + "_1_Im" + g_im_save_format, w, h);
+
+	simple_buffer<CMyClosedFigure*> ppFigures(N);
+	for (i = 0; i < N; i++)
+	{
+		ppFigures[i] = &(pFigures[i]);
+	}
+
+	for (i = 0; i < N - 1; i++)
+	{
+		for (j = i + 1; j < N; j++)
+		{
+			if (ppFigures[j]->m_minX < ppFigures[i]->m_minX)
+			{
+				pFigure = ppFigures[i];
+				ppFigures[i] = ppFigures[j];
+				ppFigures[j] = pFigure;
+			}
+		}
+	}
+
+	i = 1;
+	while (i < N)
+	{		
+		bln = false;
+
+		for (j = 0; j < i; j++)
+		{
+			// figure 'i' is inside figure 'j'
+			if ((ppFigures[i]->m_maxX <= ppFigures[j]->m_maxX) &&
+				(ppFigures[i]->m_minX > ppFigures[j]->m_minX) &&
+				(ppFigures[i]->m_maxY < ppFigures[j]->m_maxY) &&
+				(ppFigures[i]->m_minY > ppFigures[j]->m_minY))
+			{				
+				bln = true;
+				break;
+			}
+		}		
+
+		if (bln)
+		{
+			//removing figure 'i'
+			pFigure = ppFigures[i];
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+			{
+				ii = pFigure->m_PointsArray[l];
+				Im[ii] = 0;
+			}
+
+			for (l = i; l < N - 1; l++)
+			{
+				ppFigures[l] = ppFigures[l + 1];
+			}
+			
+			N--;
+		}
+		else
+		{
+			i++;
+		}
+	}
+	if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/ClearImageLogical_" + iter_det + "_2_ImFByInsideFigures" + g_im_save_format, w, h);
+
+	simple_buffer<CMyClosedFigure*> ImInfo(w * h, NULL);
+
+	for (i = 0; i < N; i++)
+	{
+		pFigure = ppFigures[i];
+		for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+		{
+			ii = pFigure->m_PointsArray[l];
+			ImInfo[ii] = pFigure;
+		}
+	}
+
+	i = 1;
+	while (i < N)
+	{
+		bln = false;
+
+		for (j = 0; j < i; j++)
+		{
+			bool bln_fi = false;
+			bool bln_fj = false;
+
+			// checking is not 'i' figure are partially on top of 'j' from right side and partially insdide of 'j' at same time
+
+			if ((ppFigures[i]->m_minX <= ppFigures[j]->m_maxX) &&
+				(ppFigures[i]->m_minX > ppFigures[j]->m_minX) &&
+				(ppFigures[i]->m_maxY < ppFigures[j]->m_maxY) &&
+				(ppFigures[i]->m_maxY > ppFigures[j]->m_minY))
+			{
+				for (int x = ppFigures[i]->m_minX; x <= std::min<int>(ppFigures[i]->m_maxX, ppFigures[j]->m_maxX); x++)
+				{
+					bln_fi = false;
+					bln_fj = false;
+
+					for (int y = ppFigures[j]->m_maxY; y >= std::max<int>(ppFigures[i]->m_minY, ppFigures[j]->m_minY); y--)
+					{
+						ii = (y * w) + x;
+
+						if (ImInfo[ii] == ppFigures[i])
+						{
+							bln_fi = true;
+							break;
+						}
+
+						if (ImInfo[ii] == ppFigures[j])
+						{
+							bln_fj = true;
+						}
+					}
+
+					if (bln_fi == true)
+					{
+						break;
+					}
+				}
+			}
+
+			if (bln_fi && bln_fj)
+			{
+				bln = true;
+				break;
+			}
+		}
+
+		if (bln)
+		{
+			//removing figure 'i'
+			pFigure = ppFigures[i];
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+			{
+				ii = pFigure->m_PointsArray[l];
+				Im[ii] = 0;
+			}
+
+			for (l = i; l < N - 1; l++)
+			{
+				ppFigures[l] = ppFigures[l + 1];
+			}
+
+			N--;
+		}
+		else
+		{
+			i++;
+		}
+	}
+	if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/ClearImageLogical_" + iter_det + "_3_ImFByPartiallyTopInsideFigures" + g_im_save_format, w, h);
+
+
+	i = 1;
+	while (i < N)
+	{
+		bln = false;
+
+		for (j = 0; j < N; j++)
+		{
+			bool bln_fi = false;
+			bool bln_fj = false;
+
+			if (i == j)
+			{
+				continue;
+			}
+
+			// checking is not 'i' figure are partially below of 'j' from left side and partially insdide of 'j' at same time
+
+			if ((ppFigures[i]->m_maxX < ppFigures[j]->m_maxX) &&
+				(ppFigures[i]->m_maxX >= ppFigures[j]->m_minX) &&
+				(ppFigures[i]->m_minY > ppFigures[j]->m_minY) &&
+				(ppFigures[i]->m_minY < ppFigures[j]->m_maxY))
+			{
+				for (int x = ppFigures[i]->m_maxX; x >= std::max<int>(ppFigures[i]->m_minX, ppFigures[j]->m_minX); x--)
+				{
+					bln_fi = false;
+					bln_fj = false;
+
+					for (int y = ppFigures[j]->m_minY; y <= std::min<int>(ppFigures[i]->m_maxY, ppFigures[j]->m_maxY); y++)
+					{
+						ii = (y * w) + x;
+
+						if (ImInfo[ii] == ppFigures[i])
+						{
+							bln_fi = true;
+							break;
+						}
+
+						if (ImInfo[ii] == ppFigures[j])
+						{
+							bln_fj = true;
+						}
+					}
+
+					if (bln_fi == true)
+					{
+						break;
+					}
+				}
+			}
+
+			if (bln_fi && bln_fj)
+			{
+				bln = true;
+				break;
+			}
+		}
+
+		if (bln)
+		{
+			//removing figure 'i'
+			pFigure = ppFigures[i];
+			for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
+			{
+				ii = pFigure->m_PointsArray[l];
+				Im[ii] = 0;
+			}
+
+			for (l = i; l < N - 1; l++)
+			{
+				ppFigures[l] = ppFigures[l + 1];
+			}
+
+			N--;
+		}
+		else
+		{
+			i++;
+		}
+	}
+	if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/ClearImageLogical_" + iter_det + "_4_ImFByPartiallyBelowInsideFigures" + g_im_save_format, w, h);
+
+	/*val = GetSubParams(Im, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, yb, ye, iter_det);
+
+	if (val == 1)
+	{
+		if (g_show_results) SaveGreyscaleImageWithSubParams(Im, "/TestImages/ClearImageLogical_" + iter_det + "_2_Im_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
+	}*/
+
+	return N;
+}
+
 void ConvertToRange(wxString& val, int& res_min, int& res_max)
 {
 	wxRegEx re1 = "^([[:digit:]]+)$";
@@ -3263,15 +3521,18 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_01_ImIL" + g_im_save_format, w, h);
 				ClearImageOptimal(ImTMP, w, h, (u8)255);
 				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_02_ImILClearImageOptimal" + g_im_save_format, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_03_ImMaskWithBorder" + g_im_save_format, w, h);
+				FilterImageByPixelColorIsInRange(ImTMP, &ImBGR, &ImLab, w, h, iter_det + "_GetFirstFilteredClusters_line" + wxString::Format(wxT("%i"), __LINE__));
+				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_03_ImILFByPixelColorIsInRange" + g_im_save_format, w, h);
+
+				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_04_ImMaskWithBorder" + g_im_save_format, w, h);
 				IntersectTwoImages(ImMaskWithBorder, ImTMP, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_04_ImMaskWithBorderIntImILClearImageOptimal" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_05_ImMaskWithBorderIntImILF" + g_im_save_format, w, h);
 				ClearImageByMask(ImTMP, ImMaskWithBorder, w, h, (u8)255);
-				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_05_ImILClearImageOptimalFClearImageByMask" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImTMP, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_06_ImILFClearImageByMaskImMaskWithBorder" + g_im_save_format, w, h);
 				IntersectTwoImages(ImMaskWithBorder, ImTMP, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_06_ImMaskWithBorderIntImILCleared" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImMaskWithBorder, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_07_ImMaskWithBorderIntImILCleared" + g_im_save_format, w, h);
 				IntersectTwoImages(ImClusters2, ImMaskWithBorder, w, h);
-				if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_07_ImClustersF" + g_im_save_format, w, h);
+				if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_03_08_ImClustersF" + g_im_save_format, w, h);
 			}
 		}
 	}
@@ -6025,6 +6286,12 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_19_ImMainClusterRestoredByImMainClusterOrig" + g_im_save_format, w, h);
 				ClearImageOpt5(ImMainCluster, w, h, LH, LMAXY, real_im_x_center, 255);
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_20_ImMainClusterFOpt5" + g_im_save_format, w, h);
+			}
+
+			if (g_clear_image_logical)
+			{
+				ClearImageLogical(ImMainCluster, w, h, W_orig * g_scale, H_orig * g_scale, real_im_x_center, yb, ye, (u8)255, iter_det);
+				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_21_ImMainClusterClearImageLogical" + g_im_save_format, w, h);
 			}
 
 			ImFF.copy_data(ImMainCluster, w * h);

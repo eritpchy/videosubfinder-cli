@@ -290,11 +290,11 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CLSP, m_CLSP, m_LBLFont, m_LBLFont, &g_cuda_kmeans_loop_iterations, 1, 1000);
 	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 #endif
-	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_get_txt_area);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_gradient_images_for_clear_txt_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);	
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_getting_txt_symbols_areas);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_before_clear_txt_images_from_borders);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_clear_txt_images);
