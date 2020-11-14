@@ -91,7 +91,7 @@ void CSettingsPanel::Init()
 
 	rcGB1.x = 10;
 	rcGB1.y = 2;
-	rcGB1.width = 550;
+	rcGB1.width = 580;
 	rcGB1.height = 238;
 
 	rcOI.x = rcGB1.x + 3;
@@ -331,8 +331,8 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_contrast, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_contrast, 0.0, 10.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_gamma, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_gamma, 0.0, 10.0);
 
-	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x*0.65);
-	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x*0.35);
+	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x * 0.65);
+	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x * 0.35);
 
 	wxRect rlGSFN, rcGSFN, rlPixelColor, rcPixelColorRGB, rcPixelColorLab, rcPixelColorExample;
 	rlGSFN = rlIF;

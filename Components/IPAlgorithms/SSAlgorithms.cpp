@@ -370,7 +370,6 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 
 			if (res != 0)
 			{
-				FilterImageByPixelColorIsInRange(ImY, &ImBGR, pImLab, w, h);
 				res = FilterImageByPixelColorIsInRange(ImY, &ImBGR, pImLab, w, h);
 
 				if (res == 0)
