@@ -1,15 +1,18 @@
 
 #########################################################################################################
-ABOUT
+About Program
 #########################################################################################################
 
-This program provides two main functionality:
-1) Auto-detect frames with hard-coded text (hardsub) on video (by using digital image processing algorithms) and generate by them empty subtitle with timing.
-2) Generate cleared images with text from images with hardsub (by using text mining algorithms) for further recognition by other softwares (like FineReader or Subtitle Edit) and generation subtitle with timing and text.
+The main purpose of this program is to provide functionality for extract hardcoded text (hardsub) from video.
+
+It provides two main features:
+1) Autodetection of frames with hardcoded text (hardsub) on video with saving info about timing positions.
+2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader or Subtitle Edit) to generate complete subtitle with original text and timing.
+
 For working of this program will be required "Microsoft Visual C++ Redistributable for Visual Studio 2015, 2017 and 2019": https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 x64: https://aka.ms/vs/16/release/vc_redist.x64.exe
 x86: https://aka.ms/vs/16/release/vc_redist.x86.exe
-Latest versions were tested on: Windows 10
+Latest versions were built and tested on: Windows 10
 
 #########################################################################################################
 Quick Start Guide
@@ -26,6 +29,13 @@ There are many instructions which can be found in youtube and was made by this p
 One of most recommended by them are:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
+
+#########################################################################################################
+Known Issues
+#########################################################################################################
+
+Different timing in OpenCV vs FFMPEG video open.
+
 
 #########################################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -51,7 +61,8 @@ filled with white (not empty) but most part of background disappear, it very dep
 so try on too bright and dark scenes and so on.
 0.25 or 0.3 - are working on most videos but can produce too much of garbage.
 then higher value than more pixels will be filtered/removed as not related to subtitle.
-*) If subtitles has mostly same color during the video you can set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results (read below in separate topic).
+*) It is recommended to set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results:
+more accurate produced timing, less wrong splits and better cleared TXT images results (read below in separate topic).
 *) Also on splits affects two parameters:
 vedges_points_line_error = 0.3
 ila_points_line_error = 0.3
@@ -74,7 +85,8 @@ It should be not higher then optimal value for moderate_threshold.
 In some cases when subtitles have bad/missed borders (outline color) and have mostly same color as background
 (can be difficultly separated from background) it need to be set to 0.1 or 0.15, also in such cases is recommended
 to turn on "Use ILAImages before clear TXT images from borders", it can improve results.
-*) If subtitles has mostly same color during the video you can set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results (read below in separate topic).
+*) It is recommended to set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results:
+more accurate produced timing, less wrong splits and better cleared TXT images results (read below in separate topic).
 *) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
 *) For decrease amount of garbage on cleaned TXT images you can try to turn on "Clear Images Logical" (located in "Settings" tab in right panel) which is turned off by default.
@@ -84,27 +96,36 @@ It try to remove figures which mostly appear inside other figures and so on.
 Don't use it for Arabic or handwritten subs which can have very long symbols or can be written not separately.
 
 2) "Use Filter Colors" and/or "Use Outline Filter Colors"
-If subtitles has mostly same color during the video you can set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results.
-Color filters are used in both cases "Run Search" and "Clear TXT Images" so use them acurately.
+It is recommended to set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results:
+more accurate produced timing, less wrong splits and better cleared TXT images results.
+Color filters are used in both cases "Run Search" and "Clear TXT Images" so use them accurately.
+You can define multiple colors ranges if subtitles has different colors during video (by usage "Ctrl+Enter" for adding new line record)
 *) Use not too strong color filtering if subtitles are mostly stable and have same colors: 
 "Use Filter Colors" - inline color - color of subtitles symbols, located in "Settings" tab in left panel.
 Example of values which are working in most case of white subtitles:
-Lab: l:220-255 a:118-138 b:118-138
+Lab: l:180-255 a:108-148 b:108-148  (mostly working in all cases)
 Lab: l:200-255 a:118-138 b:118-138
-Lab: l:180-255 a:108-148 b:108-148
+Lab: l:220-255 a:118-138 b:118-138 (strong color filter, mostly useful only in case if subs which has very good quality)
 Format of data:
-Lab: l:min_l_val-max_l_val a:min_a_val-max_a_val b:min_b_val-max_b_val
+Lab: l:l_val a:a_val b:b_lab_val
+Lab: l:min_l_val-max_l_val a:min_a_val-max_a_val b:min_b_lab_val-max_b_lab_val
 RGB: r:min_r_val-max_r_val g:min_g_val-max_g_val b:min_b_val-max_b_val
-RGB: r:r_val g:g_val b:b_val L:min_luminance_val-max_luminance_val
+RGB: r:r_val g:g_val b:b_val L:l_val
+RGB: r:r_val g:g_val b:b_val L:min_l_val-max_l_val
+-----
 Lab - is color space https://en.wikipedia.org/wiki/CIELAB_color_space
 Lab is most preferred color filtering format (CIELAB is designed to approximate human vision)
 L - is more like luminance.
 when 'a' and 'b' like chroma components.
+-----
+if min_l_val==max_l_val or only l_val is specified then will be used dL value from settings for define 'L'/'l' range: [l_val-dL, l_val+dL]
+if min_a_val==max_a_val or only a_val is specified then will be used dA value from settings for define 'a' range: [a_val-dA, a_val+dA]
+if min_b_lab_val==max_b_lab_val or only b_lab_val is specified then will be used dB value from settings for define 'b' range: [b_lab_val-dB, b_lab_val+dB]
 *) Use not too strong outline color filters only if all symbols are contained inside borders (in inside figures produced by pixels which are in outline color filters range).
 "Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
 Example in case if borders are mostly black color.
 Lab: l:0-30 a:0-255 b:0-255
-*) Fin optimal values for color filters by using 'T' button in Video Box
+*) Find optimal values for color filters by using 'T' button in Video Box
 Press left/right/space for check that during video symbols are shown stable (not broken), check on different scenes.
 * - all pixels which are in inline color filters will be shown as 'red' (pixels related to searched symbols)
 * - all pixels which are in outline color filters will be shown as 'green' (pixels related to searched symbols borders)

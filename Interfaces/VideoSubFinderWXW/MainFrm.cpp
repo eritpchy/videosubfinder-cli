@@ -689,8 +689,14 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
 	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
 	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
+
 	ReadProperty(m_general_settings, g_use_filter_color, "use_filter_color");
 	ReadProperty(m_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
+	ReadProperty(m_general_settings, g_dL_color, "dL_color");
+	ReadProperty(m_general_settings, g_dA_color, "dA_color");
+	ReadProperty(m_general_settings, g_dB_color, "dB_color");
+	ReadProperty(m_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
+
 	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
 	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
@@ -823,8 +829,13 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_label_filter_descr, "label_filter_descr");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+
 	ReadProperty(m_locale_settings, m_cfg.m_label_use_filter_color, "label_use_filter_color");
 	ReadProperty(m_locale_settings, m_cfg.m_label_use_outline_filter_color, "label_use_outline_filter_color");
+	ReadProperty(m_locale_settings, m_cfg.m_label_dL_color, "label_dL_color");
+	ReadProperty(m_locale_settings, m_cfg.m_label_dA_color, "label_dA_color");
+	ReadProperty(m_locale_settings, m_cfg.m_label_dB_color, "label_dB_color");
+
 	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
 	ReadProperty(m_locale_settings, m_cfg.m_extend_by_grey_color, "label_extend_by_grey_color");
 	ReadProperty(m_locale_settings, m_cfg.m_allow_min_luminance, "label_allow_min_luminance");
@@ -867,6 +878,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_tertiary_image_processing, "ssp_oi_group_tertiary_image_processing");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_group_ocr_settings, "ssp_oim_group_ocr_settings");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
+	ReadProperty(m_locale_settings, m_cfg.m_label_combine_to_single_cluster, "label_combine_to_single_cluster");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
 	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
@@ -936,8 +948,14 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_show_transformed_images_only, "show_transformed_images_only");
 	WriteProperty(fout, g_use_ocl, "use_ocl");
 	WriteProperty(fout, g_use_cuda_gpu, "use_cuda_gpu");
+	
 	WriteProperty(fout, g_use_filter_color, "use_filter_color");
 	WriteProperty(fout, g_use_outline_filter_color, "use_outline_filter_color");
+	WriteProperty(fout, g_dL_color, "dL_color");
+	WriteProperty(fout, g_dA_color, "dA_color");
+	WriteProperty(fout, g_dB_color, "dB_color");
+	WriteProperty(fout, g_combine_to_single_cluster, "combine_to_single_cluster");
+
 	WriteProperty(fout, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
 	WriteProperty(fout, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");	
 	WriteProperty(fout, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");

@@ -1283,7 +1283,7 @@ void *ThreadCreateClearedTextImages::Entry()
 #endif
 	}
 
-#ifdef WIN32
+#ifdef WINX86
 	// Create a scheduler policy that allows up to g_ocr_threads simultaneous tasks.
 	concurrency::CurrentScheduler::Create(concurrency::SchedulerPolicy(2, Concurrency::MinConcurrency, 1, Concurrency::MaxConcurrency, g_ocr_threads));
 #endif

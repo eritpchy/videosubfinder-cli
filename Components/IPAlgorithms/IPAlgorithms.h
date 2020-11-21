@@ -80,6 +80,12 @@ extern wxArrayString g_use_outline_filter_color;
 extern std::vector<color_range> g_color_ranges;
 extern std::vector<color_range> g_outline_color_ranges;
 
+extern int g_dL_color;
+extern int g_dA_color;
+extern int g_dB_color;
+
+extern bool g_combine_to_single_cluster;
+
 extern int		g_cuda_kmeans_initial_loop_iterations;
 extern int		g_cuda_kmeans_loop_iterations;
 

@@ -90,6 +90,8 @@ public:
 	AVFrame *sw_frame = NULL;
 	AVFrame* filt_frame = NULL;
 	int video_stream;
+	int64_t m_cur_pts;
+	s64	m_dt_search;
 
 	int m_frame_buffer_size = -1;
 	simple_buffer<u8> m_frame_buffer;

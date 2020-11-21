@@ -79,6 +79,9 @@ public:
 	wxString	m_ssp_oi_property_use_cuda_gpu;
 	wxString	m_label_use_filter_color;
 	wxString	m_label_use_outline_filter_color;
+	wxString	m_label_dL_color;
+	wxString	m_label_dA_color;
+	wxString	m_label_dB_color;
 	wxString	m_border_is_darker;
 	wxString	m_extend_by_grey_color;
 	wxString	m_allow_min_luminance;
@@ -118,6 +121,7 @@ public:
 	wxString	m_ssp_oi_group_tertiary_image_processing;	
 	wxString	m_ssp_oim_group_ocr_settings;
 	wxString	m_ssp_oim_property_clear_images_logical;
+	wxString	m_label_combine_to_single_cluster;
 	wxString	m_ssp_oim_property_clear_rgbimages_after_search_subtitles;
 	wxString	m_ssp_oim_property_using_hard_algorithm_for_text_mining;
 	wxString	m_ssp_oim_property_using_isaimages_for_getting_txt_areas;

@@ -214,6 +214,9 @@ void CSettingsPanel::Init()
 
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_filter_color);
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_outline_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_outline_filter_color);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dL_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_dL_color, 0, 255);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dA_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_dA_color, 0, 255);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dB_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_dB_color, 0, 255);	
 	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_hw_device, GetAvailableHWDeviceTypes());
 	
@@ -292,6 +295,7 @@ void CSettingsPanel::Init()
 #endif
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_combine_to_single_cluster, m_CL2, m_CL4, m_LBLFont, &g_combine_to_single_cluster);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_get_txt_area);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_gradient_images_for_clear_txt_images);

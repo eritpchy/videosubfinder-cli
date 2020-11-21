@@ -86,7 +86,26 @@ inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8>
 			}
 #endif
 
-			IntersectTwoImages(ImFF, ImIL, w, h);
+			if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
+			{
+				cv::Mat cv_im_gr;
+				simple_buffer<u8> ImTMP(w * h);
+				BinaryImageToMat(ImIL, w, h, cv_im_gr);
+				cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 4);
+				BinaryMatToImage(cv_im_gr, w, h, ImTMP, (u8)255);
+
+#ifdef CUSTOM_DEBUG
+				{
+					SaveBinaryImage(ImTMP, wxString("/TestImages/AnalizeImageForSubPresence_") + VideoTimeToStr(CurPos) + "_fn" + std::to_string(fn) + "_02_ImILDilate_line" + std::to_string(__LINE__) + g_im_save_format, w, h);
+				}
+#endif
+
+				IntersectTwoImages(ImFF, ImTMP, w, h);
+			}
+			else
+			{
+				IntersectTwoImages(ImFF, ImIL, w, h);
+			}
 
 #ifdef CUSTOM_DEBUG
 			{
@@ -1127,7 +1146,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	{
 		g_threads = std::thread::hardware_concurrency();
 
-#ifdef WIN32
+#ifdef WINX86
 		if (g_threads > 12)
 		{
 			g_threads = 12;

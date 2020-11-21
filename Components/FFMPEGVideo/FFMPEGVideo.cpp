@@ -198,10 +198,10 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 
 	frame->pts = frame->best_effort_timestamp;
 
-	int64_t cur_pts = frame->pts;
+	m_cur_pts = frame->pts;
 
-	frame_pos = av_rescale(cur_pts - m_start_pts, video->time_base.num * 1000, video->time_base.den);
-
+	frame_pos = av_rescale(m_cur_pts - m_start_pts, video->time_base.num * 1000, video->time_base.den);
+	
 	if (g_use_hw_acceleration && (frame->format == hw_pix_fmt)) {
 
 		/* retrieve data from GPU to CPU */			
@@ -252,19 +252,8 @@ int FFMPEGVideo::decode_frame(s64 &frame_pos)
 		m_Width = m_origWidth;
 		m_Height = m_origHeight;
 
-		/*if (m_origWidth > 1280)
-		{
-			double zoum = (double)1280 / (double)m_origWidth;
-			m_Width = 1280;
-			m_Height = (double)m_origHeight * zoum;
-		}*/
-
-		if ( frame_pos > ( (m_Duration > 0) ? std::min<s64>(10000, m_Duration/10) : 10000 ) )
-		{
-			wxMessageBox(wxString::Format(wxT("WARNING: First video frame has too big time: %s\nAll frames times will be corrected on it"), ConvertVideoTime(frame_pos)), "FFMPEGVideo::decode_frame");
-			m_start_pts = cur_pts;
-			frame_pos = 0;
-		}
+		m_start_pts = m_cur_pts;
+		frame_pos = 0;
 	}
 	
 	custom_assert(m_origWidth == cur_frame->width, "int FFMPEGVideo::decode_frame(s64 &frame_pos)\nnot: m_origWidth == cur_frame->width");
@@ -472,6 +461,8 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	m_origHeight = 0;
 	m_Width = 0;
 	m_Height = 0;
+
+	m_dt_search = 1000;
 
 	if (input_ctx) {
 		CloseMovie();
@@ -728,7 +719,8 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		SaveToReportLog(wxT("FFMPEGVideo::OpenMovie(): filt_frame = av_frame_alloc() passed\n"));
 	}		
 
-	m_Duration = input_ctx->duration / (AV_TIME_BASE / 1000);
+	//m_Duration = input_ctx->duration / (AV_TIME_BASE / 1000);
+	m_Duration = av_rescale(video->duration, video->time_base.num * 1000, video->time_base.den);
 
 	m_pVideoWindow = pVideoWindow;
 	m_pVideoWindow ? m_show_video = true : m_show_video = false;
@@ -814,48 +806,50 @@ void FFMPEGVideo::SetPos(s64 Pos)
 			Pause();
 		}
 
-		s64 tm = av_rescale(Pos, video->time_base.den, video->time_base.num * 1000) + m_start_pts;
+		s64 dt = av_rescale(1000, decoder_ctx->framerate.den, decoder_ctx->framerate.num);
+		s64 setPos, minPos, maxPos;
+		int num_tries, res;
+		int64_t min_ts, ts, max_ts;		
 
-		int num_tries = 0, res;
-		int64_t min_ts, ts, max_ts;
-		s64 dPos;
-		min_ts = std::max<int64_t>(0, tm - 100000);
-		ts = std::max<int64_t>(0, tm);
-		max_ts = std::max<int64_t>(0, tm);
-
+		num_tries = 0;
 		do
 		{
-			res = avformat_seek_file(input_ctx, video_stream, min_ts, ts, max_ts, AVSEEK_FLAG_FRAME);
+			setPos = Pos - m_dt_search;
+			minPos = Pos - m_dt_search*10;
+			maxPos = Pos - dt;
 
-			need_to_read_packet = true;
-			OneStep();
-			num_tries++;
+			min_ts = std::max<int64_t>(0, av_rescale(minPos, video->time_base.den, video->time_base.num * 1000) + m_start_pts);
+			ts = std::max<int64_t>(0, av_rescale(setPos, video->time_base.den, video->time_base.num * 1000) + m_start_pts);
+			max_ts = std::max<int64_t>(0, av_rescale(maxPos, video->time_base.den, video->time_base.num * 1000) + m_start_pts);
 
-			min_ts = (tm + min_ts) / 2;
-			dPos = std::abs(Pos - m_Pos);
-		}
-		while ((dPos > 1000) && (num_tries < 10));
-
-		num_tries = num_tries;
-
-		/*if (dPos > 1000)
-		{
-			if (m_Pos < Pos - 100)
-
-			num_tries = 0;
+			do
 			{
+
+
+				res = avformat_seek_file(input_ctx, video_stream, min_ts, ts, max_ts, AVSEEK_FLAG_FRAME);
+				need_to_read_packet = true;
 				OneStep();
 				num_tries++;
+			} while (((m_Pos > Pos) || (Pos < minPos)) && (num_tries < 10));
+
+			if ((m_Pos > Pos) || (Pos < minPos))
+			{
+				if (m_dt_search < 60000)
+				{
+					m_dt_search += 1000;
+				}
 			}
-			while ((m_Pos < Pos - 100) && (num_tries < 1000));
+		} while (((m_Pos > Pos) || (Pos < minPos)) && (num_tries < 100));
+
+		while (m_Pos < maxPos)
+		{
+			OneStep();
 		}
 
-		num_tries = num_tries;*/
-
-		/*if (num_tries > 1)
+		if (m_Pos < Pos - (9*dt / 10))
 		{
-			wxMessageBox("num_tries: " + std::to_string(num_tries), "FFMPEGVideo::SetPos");
-		}*/
+			OneStep();
+		}
 	}
 }
 
