@@ -86,15 +86,10 @@ void CImageBox::Init()
 
 	m_CL1Color = wxColour(255, 255, 225);
 
-	m_LBLFont = wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_NORMAL, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-
 	m_plblIB = new CStaticText( this, ID_LBL_IB, wxT("Image Box") );
 	m_IBColor = m_plblIB->GetBackgroundColour();
 	m_plblIB->SetSize(0, 0, 390, 30);
-	m_plblIB->SetFont(m_LBLFont);
+	m_plblIB->SetFont(m_pMF->m_LBLFont);
 	m_plblIB->SetBackgroundColour( m_CL1Color );
 
 	m_pIW = new CImageWnd(this);

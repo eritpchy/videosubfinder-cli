@@ -86,8 +86,6 @@ public:
 	CVideoBox(CMainFrame* pMF);
 	~CVideoBox();
 
-	wxFont    m_LBLFont;
-
 	wxToolBar		*m_pVBar;
 	CStaticText		*m_plblVB;
 	CStaticText		*m_plblTIME;

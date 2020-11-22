@@ -20,6 +20,7 @@
 #include "MyResource.h"
 #include "CheckBox.h"
 #include "TextCtrl.h"
+#include "Button.h"
 #include <wx/panel.h>
 #include <wx/textctrl.h>
 #include <vector>
@@ -171,19 +172,16 @@ public:
 
 	wxString m_sub_path;
 
-	wxFont    m_BTNFont;
-	wxFont    m_LBLFont;
-
-	wxStaticText *m_plblMSD;
+	CStaticText *m_plblMSD;
 	CCheckBox    *m_pcbJSACT;
 	CCheckBox    *m_pcbCTXTF;
 	CCheckBox    *m_pcbSESS;
 	CCheckBox    *m_pcbSSI;
 	CTextCtrl	 *m_pMSD;
-	wxButton	 *m_pCCTI;
-	wxButton	 *m_pCES;
-	wxButton	 *m_pCSCTI;
-	wxButton	 *m_pCSTXT;
+	CButton	 *m_pCCTI;
+	CButton	 *m_pCES;
+	CButton	 *m_pCSCTI;
+	CButton	 *m_pCSTXT;
 	wxPanel		 *m_pP3;
 
 	wxColour   m_CLOCR;

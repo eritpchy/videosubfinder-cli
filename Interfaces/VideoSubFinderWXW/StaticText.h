@@ -17,8 +17,9 @@
 #pragma once
 #include <wx/panel.h>
 #include <wx/stattext.h>
+#include "Control.h"
 
-class CStaticText : public wxPanel
+class CStaticText : public wxPanel, public CControl
 {
 public:
 	CStaticText (wxWindow* parent,
@@ -36,12 +37,14 @@ public:
 	long			m_text_style;
 
 public:
-	bool SetFont(const wxFont& font);
+	void SetFont(wxFont& font);
 	void SetLabel(const wxString& label);
 	bool SetBackgroundColour(const wxColour& colour);
 	void SetTextColour(const wxColour& colour);
 	void OnSize(wxSizeEvent& event);
+	void RefreshData();
 
 private:
-   DECLARE_EVENT_TABLE()
+	wxFont *m_pFont;
+	DECLARE_EVENT_TABLE()
 };

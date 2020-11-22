@@ -1,4 +1,4 @@
-                              //DataGrid.h//                                
+                              //StaticBox.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -15,45 +15,25 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "CheckBox.h"
+#include "StaticBox.h"
 
-BEGIN_EVENT_TABLE(CCheckBox, wxCheckBox)
-	EVT_CHECKBOX(wxID_ANY, CCheckBox::OnCheckBoxEvent)
-END_EVENT_TABLE()
-
-CCheckBox::CCheckBox(wxWindow* parent,
-	wxWindowID id,
-	bool* p_val,
-	const wxString& label,		
-	const wxPoint& pos,
-	const wxSize& size,
-	long style) : wxCheckBox(parent, id, label, pos, size, style)
+CStaticBox::CStaticBox(wxWindow* parent, wxWindowID id,
+    const wxString& label,
+    const wxPoint& pos,
+    const wxSize& size,
+    long style,
+    const wxString& name) : wxStaticBox(parent, id, label, pos, size, style, name)
 {
-	m_p_val = p_val;
 	m_pFont = NULL;
-	this->SetValue(*m_p_val);
 }
 
-void CCheckBox::SetFont(wxFont& font)
+void CStaticBox::SetFont(wxFont& font)
 {
 	m_pFont = &font;
-	wxCheckBox::SetFont(*m_pFont);
+	wxStaticBox::SetFont(*m_pFont);
 }
 
-void CCheckBox::OnCheckBoxEvent(wxCommandEvent& evt)
+void CStaticBox::RefreshData()
 {
-	if (evt.IsChecked())
-	{
-		*m_p_val = true;
-	}
-	else
-	{
-		*m_p_val = false;
-	}
-}
-
-void CCheckBox::RefreshData()
-{
-	if (m_pFont) wxCheckBox::SetFont(*m_pFont);
-	this->SetValue(*m_p_val);
+	if (m_pFont) wxStaticBox::SetFont(*m_pFont);
 }

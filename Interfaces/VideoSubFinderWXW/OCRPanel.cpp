@@ -198,61 +198,45 @@ void COCRPanel::Init()
 	m_CL1 = wxColour(255, 215, 0);
 	m_CLOCR = wxColour(170, 170, 170);
 
-	//"Times New Roman"
-	SaveToReportLog("COCRPanel::Init(): init m_BTNFont...\n");
-	m_BTNFont = wxFont(m_pMF->m_cfg.m_fount_size_ocr_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_BOLD, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-	//"Microsoft Sans Serif"
-	SaveToReportLog("COCRPanel::Init(): init m_LBLFont...\n");
-	m_LBLFont = wxFont(m_pMF->m_cfg.m_fount_size_ocr_lbl, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_NORMAL, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT;
-	int w, w2, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
+	int w, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
+	const int dx = 20;
+	const int dy = 20;
+	const int BTNW = 410;
+	const int LBLW = 250;
+	const int PW = BTNW + LBLW + dx*3;
 
-	wxClientDC dc(this);
-	dc.SetFont(m_BTNFont);
-	wxSize min_ocr_btn_size = get_max_wxSize({ dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_ces_text),
-									dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_ccti_text),
-									dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_csftr_text),
-									dc.GetTextExtent(m_pMF->m_cfg.m_ocr_button_cesfcti_text) });
-	w2 = 700;
-	w = min_ocr_btn_size.x + txt_dw*2;
-	h = min_ocr_btn_size.y + txt_dy*2;
+	h = 26;
 
-	rcCCTI.x = w2/2 - w/2;
-	rcCCTI.y = 20;
-	rcCCTI.width = w;
+	rlMSD.x = (PW - BTNW - LBLW - dx) / 2;
+	rlMSD.y = dy;
+	rlMSD.width = LBLW;
+	rlMSD.height = 18;
+
+	rcCCTI.x = rlMSD.GetRight() + dx;
+	rcCCTI.y = dy;
+	rcCCTI.width = BTNW;
 	rcCCTI.height = h;
 
 	rcCSTXT.x = rcCCTI.x;
 	rcCSTXT.y = rcCCTI.GetBottom() + 10;
-	rcCSTXT.width = w;
+	rcCSTXT.width = BTNW;
 	rcCSTXT.height = h;
 
 	rcCSCTI.x = rcCCTI.x;
 	rcCSCTI.y = rcCSTXT.GetBottom() + 10;
-	rcCSCTI.width = w;
+	rcCSCTI.width = BTNW;
 	rcCSCTI.height = h;
 
 	rcCES.x = rcCCTI.x;
 	rcCES.y = rcCSCTI.GetBottom() + 10;
-	rcCES.width = w;
+	rcCES.width = BTNW;
 	rcCES.height = h;
 
 	rcTEST.x = rcCCTI.GetRight() + 30;
 	rcTEST.y = rcCCTI.GetBottom() + 5 - h/2;
 	rcTEST.width = 100;
 	rcTEST.height = h;
-
-	rlMSD.x = 10;
-	rlMSD.y = 20;
-	rlMSD.width = rcCCTI.GetLeft() - rlMSD.x*2;
-	rlMSD.height = 18;
 
 	int cb_dist = 6;
 
@@ -293,8 +277,8 @@ void COCRPanel::Init()
 
 	rcP3.x = 10;	
 	rcP3.y = 10;
-	rcP3.width = w2 + dw;
-	rcP3.height = rcCES.GetBottom() + 20 + dh;
+	rcP3.width = PW + dw;
+	rcP3.height = rcCES.GetBottom() + dy + dh;
 
 	SaveToReportLog("COCRPanel::Init(): this->SetSize(rcP3)...\n");
 	this->SetSize(rcP3);	
@@ -305,59 +289,59 @@ void COCRPanel::Init()
 	m_pP3->SetBackgroundColour( m_CLOCR );
 
 	SaveToReportLog("COCRPanel::Init(): init m_plblMSD...\n");
-	m_plblMSD = new wxStaticText( m_pP3, wxID_ANY,
-		m_pMF->m_cfg.m_ocr_label_msd_text, rlMSD.GetPosition(), rlMSD.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
-	m_plblMSD->SetFont(m_LBLFont);
+	m_plblMSD = new CStaticText(m_pP3, wxID_ANY, m_pMF->m_cfg.m_ocr_label_msd_text);
+	m_plblMSD->SetSize(rlMSD);
+	m_plblMSD->SetFont(m_pMF->m_LBLFont);
 	m_plblMSD->SetBackgroundColour( m_CL1 );
 
 	SaveToReportLog("COCRPanel::Init(): init m_pMSD...\n");
 	m_pMSD = new CTextCtrl(m_pP3, wxID_ANY,
 		&(m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
-	m_pMSD->SetFont(m_LBLFont);
+	m_pMSD->SetFont(m_pMF->m_LBLFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbJSACT...\n");
 	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
 		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
-	m_pcbJSACT->SetFont(m_LBLFont);
+	m_pcbJSACT->SetFont(m_pMF->m_LBLFont);
 	m_pcbJSACT->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbCTXTF...\n");
 	m_pcbCTXTF = new CCheckBox(m_pP3, wxID_ANY, &g_clear_txt_folders,
 		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
-	m_pcbCTXTF->SetFont(m_LBLFont);
+	m_pcbCTXTF->SetFont(m_pMF->m_LBLFont);
 	m_pcbCTXTF->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbSESS...\n");
 	m_pcbSESS = new CCheckBox(m_pP3, wxID_ANY, &g_save_each_substring_separately,
 		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
-	m_pcbSESS->SetFont(m_LBLFont);
+	m_pcbSESS->SetFont(m_pMF->m_LBLFont);
 	m_pcbSESS->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbSSI...\n");
 	m_pcbSSI = new CCheckBox(m_pP3, wxID_ANY, &g_save_scaled_images,
 		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
-	m_pcbSSI->SetFont(m_LBLFont);
+	m_pcbSSI->SetFont(m_pMF->m_LBLFont);
 	m_pcbSSI->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
-	m_pCES = new wxButton( m_pP3, ID_BTN_CES,
+	m_pCES = new CButton( m_pP3, ID_BTN_CES,
 		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
-	m_pCES->SetFont(m_BTNFont);
+	m_pCES->SetFont(m_pMF->m_BTNFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCCTI...\n");
-	m_pCCTI = new wxButton( m_pP3, ID_BTN_CCTI,
+	m_pCCTI = new CButton( m_pP3, ID_BTN_CCTI,
 		m_pMF->m_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
-	m_pCCTI->SetFont(m_BTNFont);
+	m_pCCTI->SetFont(m_pMF->m_BTNFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSTXT...\n");
-	m_pCSTXT = new wxButton( m_pP3, ID_BTN_CSTXT,
+	m_pCSTXT = new CButton( m_pP3, ID_BTN_CSTXT,
 		m_pMF->m_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
-	m_pCSTXT->SetFont(m_BTNFont);
+	m_pCSTXT->SetFont(m_pMF->m_BTNFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSCTI...\n");
-	m_pCSCTI = new wxButton( m_pP3, ID_BTN_CSCTI,
+	m_pCSCTI = new CButton( m_pP3, ID_BTN_CSCTI,
 		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
-	m_pCSCTI->SetFont(m_BTNFont);
+	m_pCSCTI->SetFont(m_pMF->m_BTNFont);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 

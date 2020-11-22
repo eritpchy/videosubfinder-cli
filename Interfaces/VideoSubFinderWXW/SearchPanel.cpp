@@ -45,14 +45,6 @@ void CSearchPanel::Init()
 	m_CL1 = wxColour(255, 215, 0);
 	m_CL2 = wxColour(127, 255, 0);
 	
-	m_BTNFont = wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_BOLD, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-	m_LBLFont = wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_NORMAL, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
 	wxRect rcP1, rcClP1, rcBT1, rcBTA1, rcBT2, rcBTA2, rcClear, rcRun;
 
 	rcBT1.x = 20;
@@ -95,27 +87,28 @@ void CSearchPanel::Init()
 	m_pP1->SetMinSize(rcP1.GetSize());
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
-	m_plblBT1 = new wxStaticText( m_pP1, wxID_ANY,
-		wxT("  Begin Time:"), rcBT1.GetPosition(), rcBT1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+
+	m_plblBT1 = new CStaticText( m_pP1, wxID_ANY, wxT("  Begin Time:"));
+	m_plblBT1->SetSize(rcBT1);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
-	m_plblBT2 = new wxStaticText( m_pP1, wxID_ANY,
-		wxT("  End Time:"), rcBT2.GetPosition(), rcBT2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+	m_plblBT2 = new CStaticText( m_pP1, wxID_ANY, wxT("  End Time:"));
+	m_plblBT2->SetSize(rcBT2);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
-	m_plblBTA1 = new wxTextCtrl(m_pP1, wxID_ANY,
+	m_plblBTA1 = new CTextCtrl(m_pP1, wxID_ANY,
 		wxT(""), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA2...\n");
-	m_plblBTA2 = new wxTextCtrl( m_pP1, wxID_ANY,
+	m_plblBTA2 = new CTextCtrl( m_pP1, wxID_ANY,
 		wxT(""), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
-	m_pClear = new wxButton( m_pP1, ID_BTN_CLEAR,
+	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR,
 		wxT("Clear Folders"), rcClear.GetPosition(), rcClear.GetSize() );
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
-	m_pRun = new wxButton( m_pP1, ID_BTN_RUN,
+	m_pRun = new CButton( m_pP1, ID_BTN_RUN,
 		wxT("Run Search"), rcRun.GetPosition(), rcRun.GetSize() );
 	
 	m_pP1->SetBackgroundColour( m_CLP );
@@ -124,12 +117,12 @@ void CSearchPanel::Init()
 	m_plblBTA1->SetBackgroundColour( m_CL1 );
 	m_plblBTA2->SetBackgroundColour( m_CL1 );
 
-	m_plblBT1->SetFont(m_LBLFont);
-	m_plblBT2->SetFont(m_LBLFont);
-	m_plblBTA1->SetFont(m_LBLFont);
-	m_plblBTA2->SetFont(m_LBLFont);
-	m_pClear->SetFont(m_BTNFont);
-	m_pRun->SetFont(m_BTNFont);
+	m_plblBT1->SetFont(m_pMF->m_LBLFont);
+	m_plblBT2->SetFont(m_pMF->m_LBLFont);
+	m_plblBTA1->SetFont(m_pMF->m_LBLFont);
+	m_plblBTA2->SetFont(m_pMF->m_LBLFont);
+	m_pClear->SetFont(m_pMF->m_BTNFont);
+	m_pRun->SetFont(m_pMF->m_BTNFont);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 

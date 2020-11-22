@@ -18,11 +18,21 @@ Latest versions were built and tested on: Windows 10
 Quick Start Guide
 #########################################################################################################
 How to use without deep details:
-1) Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
-2) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
-3) MOST IMPORTANT PART: Before continue: Check does subtitles has darker border color then subtitles text color (in most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab")
+1) Click in menu "File->Open Video" (any variant, but OpenCV has better accuracy)
+2) It is strongly recommended to use Color Filtering but you can skip this step.
+For this you need:
+* - to scroll video to subtitle frame
+* - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
+* - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
+* - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
+3) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
+4) Check ILA Images: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
+this is possible if you use too strong Color Filters or subtitles pop-up on video, in this case it is better to change program settings or delete such ILA Images.
+5) [MOST IMPORTANT PART IF YOU DONT USE COLOR FILTERING]
+Before continue: Check does subtitles has darker border color then subtitles text color.
+In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab".
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
-4) Click "Create Cleared TXTImages" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
+6) Click "Create Cleared TXTImages" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
@@ -34,8 +44,8 @@ https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 Known Issues
 #########################################################################################################
 
-Different timing in OpenCV vs FFMPEG video open.
-
+1) Different timing in OpenCV vs FFMPEG video open but now they should be very close with difference ~ 000-001 milliseconds.
+2) In case of Center alignment, which is by default. Take into note that if whole subtitle will be in right half part of selected boundary box it will be removed.
 
 #########################################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -52,7 +62,7 @@ It is recommended to reduce area for search for getting less wring detections an
 In worse cases, you can detect each line separately by running program multiple times with different video area selection (this can fix
 possible incorrect multiple lines subtitles splits in single frame)
 *) Check what horizontal alignment subtitles has on video relatively to selected boundary box: Center/Left/Right/Any.
-alignment: Center - is in most case, so it set by default.
+alignment: Center - is in most case, so it set by default. Take into note that if whole subtitle will be in right half part of selected boundary box it will be removed.
 alignment: Any - currently supported but not so good as other types.
 *) For decrease amount of wrong timing splits during Run Search also as wrong produced timing or not detected subtitles you can do next
 adopt: "Moderate Threshold"(moderate_threshold)(located in "Settings" tab in left panel) in range [0.25, 0.6] by "Test" button

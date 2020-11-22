@@ -22,19 +22,19 @@
 #include "SettingsPanel.h"
 #include "OCRPanel.h"
 #include "MainFrm.h"
+#include "Control.h"
 
 class CMainFrame;
 class CSearchPanel;
 class CSettingsPanel;
 class COCRPanel;
 
-class CSSOWnd : public wxAuiNotebook
+class CSSOWnd : public wxAuiNotebook, public CControl
 {
 public:
 	CSSOWnd(CMainFrame* pMF);           // protected constructor used by dynamic creation
 	~CSSOWnd();
 
-	wxFont			m_LBLFont;
 	//wxAuiNotebook  *m_pAN;
 	CSearchPanel   *m_pSHPanel;
 	CSettingsPanel *m_pSSPanel;
@@ -45,12 +45,7 @@ public:
 
 public:
 	void Init();
-	void ResizeControls();
-	void OnSize(UINT nType, int cx, int cy);
-	void OnTcnSelchangeTab(NMHDR *pNMHDR, LRESULT *pResult);
-
-private:
-   DECLARE_EVENT_TABLE()
+	void RefreshData();
 };
 
 

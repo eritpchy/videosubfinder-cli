@@ -1,4 +1,4 @@
-                              //DataGrid.h//                                
+                              //Button.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -15,45 +15,27 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "CheckBox.h"
+#include "Button.h"
 
-BEGIN_EVENT_TABLE(CCheckBox, wxCheckBox)
-	EVT_CHECKBOX(wxID_ANY, CCheckBox::OnCheckBoxEvent)
-END_EVENT_TABLE()
-
-CCheckBox::CCheckBox(wxWindow* parent,
+CButton::CButton(wxWindow* parent,
 	wxWindowID id,
-	bool* p_val,
-	const wxString& label,		
+	const wxString& label,
 	const wxPoint& pos,
 	const wxSize& size,
-	long style) : wxCheckBox(parent, id, label, pos, size, style)
+	long style,
+	const wxValidator& validator,
+	const wxString& name) : wxButton(parent, id, label, pos, size, style, validator, name)
 {
-	m_p_val = p_val;
 	m_pFont = NULL;
-	this->SetValue(*m_p_val);
 }
 
-void CCheckBox::SetFont(wxFont& font)
+void CButton::SetFont(wxFont& font)
 {
 	m_pFont = &font;
-	wxCheckBox::SetFont(*m_pFont);
+	wxButton::SetFont(*m_pFont);
 }
 
-void CCheckBox::OnCheckBoxEvent(wxCommandEvent& evt)
+void CButton::RefreshData()
 {
-	if (evt.IsChecked())
-	{
-		*m_p_val = true;
-	}
-	else
-	{
-		*m_p_val = false;
-	}
-}
-
-void CCheckBox::RefreshData()
-{
-	if (m_pFont) wxCheckBox::SetFont(*m_pFont);
-	this->SetValue(*m_p_val);
+	if (m_pFont) wxButton::SetFont(*m_pFont);
 }

@@ -17,6 +17,7 @@
 #pragma once
 #include <wx/grid.h>
 #include <vector>
+#include "Control.h"
 
 using namespace std;
 
@@ -35,11 +36,12 @@ public:
 	int m_re;
 };
 
-class CDataGrid : public wxGrid
+class CDataGrid : public wxGrid, public CControl
 {
 public:
-	CDataGrid ( wxWindow* parent,
+	CDataGrid ( wxWindow* parent,				
 				wxWindowID id = wxID_ANY,
+				wxFont* pFont = NULL,
 				const wxPoint& pos = wxDefaultPosition,
 				const wxSize& size = wxDefaultSize );		
 	~CDataGrid();
@@ -47,40 +49,36 @@ public:
 public:
 	int m_w;
 	int m_h;
+	wxFont* m_pFont;
 	vector<DataGridGroup> m_DataGridGroups;
 	vector<DataGridGroup> m_DataGridSubGroup;
 
-	void AddGroup(wxString label, wxColour colour, wxFont font);
-	void AddSubGroup(wxString label, wxColour colour, wxFont font);
+	void AddGroup(wxString label, wxColour colour);
+	void AddSubGroup(wxString label, wxColour colour);
 	
 	void AddProperty( wxString label, 
-					  wxColour colour1, wxColour colour2,
-					  wxFont font1, wxFont font2,
+					  wxColour colour1, wxColour colour2,					  
 					  wxString *pstr );
 
 	void AddProperty(wxString label,
 		wxColour colour1, wxColour colour2,
-		wxFont font1, wxFont font2,
 		wxString *pstr, wxArrayString vals);
 
 	void AddProperty(wxString label,
 		wxColour colour1, wxColour colour2,
-		wxFont font1, wxFont font2,
 		wxArrayString* pstr);
 
 	void AddProperty( wxString label, 
 					  wxColour colour1, wxColour colour2,
-		              wxFont font1, wxFont font2, 
 					  int *pval, int val_min, int val_max );
 
 	void AddProperty( wxString label, 
 					  wxColour colour1, wxColour colour2,
-		              wxFont font1, wxFont font2, 
 					  double *pval, double val_min, double val_max );
 
 	void AddProperty( wxString label, 
 					  wxColour colour1, wxColour colour2,
-		              wxFont font, bool *pbln );
+		              bool *pbln );
 
 	//void AddSubGroup();
 	//bool SetFont(const wxFont& font);
@@ -88,6 +86,7 @@ public:
 	//bool SetBackgroundColour(const wxColour& colour);
 	//void SetTextColour(const wxColour& colour);
 	void OnSize(wxSizeEvent& event);
+	void RefreshData();
 
 private:
    DECLARE_EVENT_TABLE()

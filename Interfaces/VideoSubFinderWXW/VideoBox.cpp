@@ -546,10 +546,6 @@ void CVideoBox::Init()
 	m_CL1 = wxColour(255, 255, 225);
 	m_CL2 = wxColour(0, 0, 0);
 
-	m_LBLFont = wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_NORMAL, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-	
 	m_pVBar = new wxToolBar(this, wxID_ANY,
                                wxDefaultPosition, wxSize(380, 30), 
 							   wxTB_HORIZONTAL | wxTB_BOTTOM | 
@@ -568,13 +564,13 @@ void CVideoBox::Init()
 
 	m_plblVB = new CStaticText( this, ID_LBL_VB, wxT("Video Box") );
 	m_plblVB->SetSize(0, 0, 390, 30);
-	m_plblVB->SetFont(m_LBLFont);
+	m_plblVB->SetFont(m_pMF->m_LBLFont);
 	m_plblVB->SetBackgroundColour( m_CL1 );
 	
 	m_plblTIME = new CStaticText( m_pVBar, ID_LBL_TIME, 
 									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
 	m_plblTIME->SetSize(200, 242, 190, 26);
-	m_plblTIME->SetFont(m_LBLFont);
+	m_plblTIME->SetFont(m_pMF->m_LBLFont);
 	m_plblTIME->SetTextColour(*wxWHITE);
 	m_plblTIME->SetBackgroundColour( m_CL2 );
 
@@ -813,6 +809,10 @@ void CVideoBox::OnMouseWheel(wxMouseEvent& event)
 			if (Cur < 0) Cur = 0;
 			m_pMF->m_pVideo->SetPosFast(Cur);
 		}
+	}
+	else
+	{
+		m_pMF->OnMouseWheel(event);
 	}
 }
 

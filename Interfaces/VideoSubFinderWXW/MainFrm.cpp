@@ -158,6 +158,7 @@ BEGIN_EVENT_TABLE(CMainFrame, wxMDIParentFrame)
 	EVT_MENU(ID_SETPRIORITY_BELOWNORMAL, CMainFrame::OnSetPriorityBelownormal)
 	EVT_MENU(ID_SETPRIORITY_ABOVENORMAL, CMainFrame::OnSetPriorityAbovenormal)
 	EVT_MENU(ID_SETPRIORITY_HIGH, CMainFrame::OnSetPriorityHigh)
+	EVT_MOUSEWHEEL(CMainFrame::OnMouseWheel)
 END_EVENT_TABLE() 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -288,16 +289,70 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
 	LoadSettings();
 
+	bool find_fount_size_lbl = false;
+	bool find_fount_size_btn = false;
+
+	if (m_cfg.m_fount_size_lbl == -1)
+	{
+		m_cfg.m_fount_size_lbl = 8;
+		find_fount_size_lbl = true;
+	}
+	if (m_cfg.m_fount_size_btn == -1)
+	{
+		m_cfg.m_fount_size_btn = 10;
+		find_fount_size_btn = true;
+	}
+
+	// https://docs.wxwidgets.org/stable/interface_2wx_2font_8h.html#a0cd7bfd21a4f901245d3c86d8ea0c080
+	// wxFONTFAMILY_SWISS / A sans - serif font.
+
+	SaveToReportLog("CMainFrame::Init(): init m_BTNFont...\n");
+	m_BTNFont = wxFont(m_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+
+	SaveToReportLog("CMainFrame::Init(): init m_LBLFont...\n");
+	m_LBLFont = wxFont(m_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+
 	SaveToReportLog("CMainFrame::Init(): new CSSOWnd(this)...\n");
 	m_pPanel = new CSSOWnd(this);
-	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
-	m_pPanel->Init();
 
 	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");
 	this->SetMenuBar(pMenuBar);
 
 	SaveToReportLog("CMainFrame::Init(): this->SetSize(..)...\n");
 	this->SetSize(0, 0, w, h - 50);
+
+	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
+	m_pPanel->Init();
+
+	// Finding Optimal Font Size For Labels
+	if (find_fount_size_lbl)
+	{
+		SaveToReportLog("CMainFrame::Init(): GetOptimalFontSize(..) for Labels...\n");
+
+		int cw, ch;
+		m_pPanel->m_pSSPanel->m_plblPixelColor->GetClientSize(&cw, &ch);
+		m_cfg.m_fount_size_lbl = GetOptimalFontSize(cw, ch, m_cfg.m_label_pixel_color, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+		
+		if (m_cfg.m_fount_size_lbl > 10)
+		{
+			m_cfg.m_fount_size_lbl = 10;
+		}
+	}
+
+	// Finding Optimal Font Size For Buttons
+	if (find_fount_size_btn)
+	{
+		SaveToReportLog("CMainFrame::Init(): GetOptimalFontSize(..) for Buttons...\n");
+
+		int cw, ch;
+		m_pPanel->m_pOCRPanel->m_pCSCTI->GetClientSize(&cw, &ch);
+		m_cfg.m_fount_size_btn = GetOptimalFontSize(cw, ch, m_cfg.m_ocr_button_cesfcti_text, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+
+		if (m_cfg.m_fount_size_btn > 13)
+		{
+			m_cfg.m_fount_size_btn = 13;
+		}
+	}
 
 	int cw, ch;
 	this->GetClientSize(&cw, &ch);
@@ -314,7 +369,74 @@ void CMainFrame::Init()
 
 	m_WasInited = true;
 
+	if (find_fount_size_lbl || find_fount_size_btn)
+	{
+		SaveToReportLog("CMainFrame::Init(): reinit m_BTNFont...\n");
+		m_BTNFont = wxFont(m_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+
+		SaveToReportLog("CMainFrame::Init(): reinit m_LBLFont...\n");
+		m_LBLFont = wxFont(m_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+	}
+		
+	CControl::RefreshAllControlsData();
+	this->Refresh();
+
 	SaveToReportLog("CMainFrame::Init(): finished.\n");
+}
+
+int CMainFrame::GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined, const wxString& face, wxFontEncoding encoding)
+{
+	wxStaticText static_text(this, wxID_ANY, label);	
+	wxClientDC dc(this);
+	wxSize text_size;
+	int font_size = 0;
+
+	do
+	{
+		font_size++;
+		wxFont font(font_size, family, style, weight, underlined, face, encoding);
+		dc.SetFont(font);
+		text_size = dc.GetMultiLineTextExtent(label);
+	} while ((text_size.GetWidth() < cw) && (text_size.GetHeight() < ch));
+	font_size--;
+
+	if (font_size == 0)
+	{
+		font_size = 1;
+	}
+
+	return font_size;
+}
+
+void CMainFrame::OnMouseWheel(wxMouseEvent& event)
+{
+	if (wxGetKeyState(WXK_CONTROL))
+	{
+		if (event.m_wheelRotation > 0)
+		{
+			m_cfg.m_fount_size_btn++;
+			m_cfg.m_fount_size_lbl++;
+		}
+		else
+		{
+			if ((m_cfg.m_fount_size_btn > 1) && (m_cfg.m_fount_size_lbl > 1))
+			{
+				m_cfg.m_fount_size_btn--;
+				m_cfg.m_fount_size_lbl--;
+			}
+		}
+
+		m_BTNFont = wxFont(m_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+			wxFONTWEIGHT_BOLD, false /* !underlined */,
+			wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
+
+		m_LBLFont = wxFont(m_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+			wxFONTWEIGHT_NORMAL, false /* !underlined */,
+			wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
+
+		CControl::RefreshAllControlsData();
+		this->Refresh();
+	}
 }
 
 void CMainFrame::OnSize(wxSizeEvent& event)
@@ -756,8 +878,8 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, m_cfg.m_txt_dw, "txt_dw");
 	ReadProperty(m_general_settings, m_cfg.m_txt_dy, "txt_dy");
 
-	ReadProperty(m_general_settings, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
-	ReadProperty(m_general_settings, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
+	ReadProperty(m_general_settings, m_cfg.m_fount_size_lbl, "fount_size_lbl");
+	ReadProperty(m_general_settings, m_cfg.m_fount_size_btn, "fount_size_btn");
 
 	ReadProperty(m_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
 	ReadProperty(m_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
@@ -938,6 +1060,9 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
 
+	WriteProperty(fout, m_cfg.m_fount_size_lbl, "fount_size_lbl");
+	WriteProperty(fout, m_cfg.m_fount_size_btn, "fount_size_btn");
+
 	WriteProperty(fout, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
 	WriteProperty(fout, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
 
@@ -1012,9 +1137,6 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, m_cfg.m_txt_dw, "txt_dw");
 	WriteProperty(fout, m_cfg.m_txt_dy, "txt_dy");
-
-	WriteProperty(fout, m_cfg.m_fount_size_ocr_lbl, "fount_size_ocr_lbl");
-	WriteProperty(fout, m_cfg.m_fount_size_ocr_btn, "fount_size_ocr_btn");
 
 	WriteProperty(fout, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
 	WriteProperty(fout, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");

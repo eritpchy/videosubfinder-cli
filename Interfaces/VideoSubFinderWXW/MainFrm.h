@@ -49,8 +49,8 @@ public:
 	int			m_txt_dw;
 	int			m_txt_dy;
 
-	int			m_fount_size_ocr_lbl;
-	int			m_fount_size_ocr_btn;
+	int			m_fount_size_lbl;
+	int			m_fount_size_btn;
 
 	double		m_ocr_min_sub_duration;
 
@@ -171,8 +171,6 @@ public:
 	
 	bool		m_blnNoGUI;
 
-	wxSizer		*m_pSizer;
-
 	CSSOWnd		*m_pPanel;
 	CVideoBox	*m_pVideoBox;
 	CImageBox	*m_pImageBox;
@@ -216,6 +214,9 @@ public:
 
 	Settings	m_cfg;
 
+	wxFont    m_BTNFont;
+	wxFont    m_LBLFont;
+
 	std::map<wxString, wxString> m_general_settings;
 	std::map<wxString, wxString> m_locale_settings;
 
@@ -232,6 +233,7 @@ public:
 	void ClearDir(wxString DirName);
 
 public:
+	void OnMouseWheel(wxMouseEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void OnPlayPause(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
@@ -256,6 +258,7 @@ public:
 	wxString ConvertClockTime(clock_t time);
 	void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
 	void ShowErrorMessage(wxString& msg);
+	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
 
 private:
    DECLARE_EVENT_TABLE()

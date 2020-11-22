@@ -1,4 +1,4 @@
-                              //DataGrid.h//                                
+                              //TextCtrl.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -21,6 +21,17 @@ BEGIN_EVENT_TABLE(CTextCtrl, wxTextCtrl)
 	EVT_TEXT(wxID_ANY, CTextCtrl::OnTextCtrlEvent)
 END_EVENT_TABLE()
 
+CTextCtrl::CTextCtrl(wxWindow* parent, wxWindowID id,
+	const wxString& value,
+	const wxPoint& pos,
+	const wxSize& size,
+	long style,
+	const wxValidator& validator,
+	const wxString& name) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
+{
+	m_pFont = NULL;
+}
+
 CTextCtrl::CTextCtrl(wxWindow* parent,
 	wxWindowID id,
 	wxString* p_str_val,
@@ -29,6 +40,7 @@ CTextCtrl::CTextCtrl(wxWindow* parent,
 	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
 {
 	m_p_str_val = p_str_val;
+	m_pFont = NULL;
 	ChangeValue(*m_p_str_val);
 }
 
@@ -59,8 +71,16 @@ void CTextCtrl::OnTextCtrlEvent(wxCommandEvent& evt)
 	}
 }
 
+void CTextCtrl::SetFont(wxFont& font)
+{
+	m_pFont = &font;
+	wxTextCtrl::SetFont(*m_pFont);
+}
+
 void CTextCtrl::RefreshData()
 {
+	if (m_pFont) wxTextCtrl::SetFont(*m_pFont);
+
 	if (m_p_str_val)
 	{
 		ChangeValue(*m_p_str_val);

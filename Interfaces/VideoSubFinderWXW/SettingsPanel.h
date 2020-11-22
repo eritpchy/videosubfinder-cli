@@ -20,6 +20,8 @@
 #include "DataGrid.h"
 #include "DataTypes.h"
 #include "TextCtrl.h"
+#include "Button.h"
+#include "StaticBox.h"
 #include <wx/panel.h>
 #include <wx/bmpbuttn.h>
 
@@ -32,16 +34,13 @@ public:
 	CSettingsPanel(CSSOWnd* pParent);
 	~CSettingsPanel();
 
-	wxFont    m_BTNFont;
-	wxFont    m_LBLFont;
-
 	CDataGrid	*m_pOI;
 	CDataGrid	*m_pOIM;
 
-	wxButton	*m_pTest;
-	wxStaticBox *m_pGB1;
-	wxStaticBox *m_pGB2;
-	wxStaticBox	*m_pGB3;
+	CButton		*m_pTest;
+	CStaticBox *m_pGB1;
+	CStaticBox *m_pGB2;
+	CStaticBox	*m_pGB3;
 	wxPanel		*m_pP2;
 
 	wxBitmapButton *m_pLeft;

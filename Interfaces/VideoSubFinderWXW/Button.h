@@ -1,4 +1,4 @@
-                              //DataGrid.h//                                
+                              //Button.h//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -15,27 +15,24 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <wx/checkbox.h>
+#include <wx/button.h>
 #include "Control.h"
 
-class CCheckBox : public wxCheckBox, public CControl
+class CButton : public wxButton, public CControl
 {
 public:
-	bool* m_p_val;
-
-	CCheckBox(wxWindow* parent,
+	CButton(wxWindow* parent,
 		wxWindowID id,
-		bool* p_val,
-		const wxString& label,
+		const wxString& label = wxEmptyString,
 		const wxPoint& pos = wxDefaultPosition,
 		const wxSize& size = wxDefaultSize,
-		long style = 0);
+		long style = 0,
+		const wxValidator& validator = wxDefaultValidator,
+		const wxString& name = wxButtonNameStr);
 
-	void OnCheckBoxEvent(wxCommandEvent& evt);
 	void RefreshData();
 	void SetFont(wxFont& font);
 	
 private:
 	wxFont* m_pFont;
-	DECLARE_EVENT_TABLE()
 };

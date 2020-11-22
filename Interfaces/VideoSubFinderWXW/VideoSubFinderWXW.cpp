@@ -29,7 +29,7 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_OPTION, "cstxt", "create_sub_from_txt_results", "Create Sub From TXT Results With Provided Output File Name (*.ass or *.srt)" },
 	{ wxCMD_LINE_OPTION, "i", "input_video", "input video file" },
 	{ wxCMD_LINE_SWITCH, "ovocv", "open_video_opencv", "open video by OpenCV (default)" },
-	{ wxCMD_LINE_SWITCH, "ovffmpeg", "open_video_ffmpeg", "open video by FFMPEG with GPU Acceleration" },
+	{ wxCMD_LINE_SWITCH, "ovffmpeg", "open_video_ffmpeg", "open video by FFMPEG" },
 	{ wxCMD_LINE_SWITCH, "uc", "use_cuda", "use cuda" },
 	{ wxCMD_LINE_OPTION, "s", "start_time", "start time, default = 0:00:00:000 (in format hour:min:sec:milisec)" },
 	{ wxCMD_LINE_OPTION, "e", "end_time", "end time, default = video length" },

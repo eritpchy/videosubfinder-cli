@@ -53,12 +53,17 @@ void CSettingsPanel::Init()
 {
 	SaveToReportLog("CSettingsPanel::Init(): starting...\n");
 
-	int bbw, bbh, w, h, dw, dh;
+	int bbw, bbh, w, h, dw, dh, cw, ch;
 	wxRect rcP2, rcClP2, rcGB1, rcGB2, rcGB3; 
 	wxRect rcTEST, rcLeft, rcRight, rlIF;
 	wxRect rcOI, rcOIM;
 	wxBitmap bmp_na, bmp_od;
-	//CObjectInspector::CProperty *pProp;
+	const int GBH = 238;
+	const int GB3W = 300;
+	const int GB12OPTW = 580;
+	const int TESTW = 170;
+	const int dx = 5;
+	int GB12W;
 
 	m_CLDBG = wxColour(200, 200, 200);
 	m_CLSP = wxColour(170,170,170);
@@ -68,17 +73,6 @@ void CSettingsPanel::Init()
 	m_CL4 = wxColour(255, 255, 0);
 	m_CLGG = wxColour(0, 255, 255);
 
-	//"Arial Black"
-	m_BTNFont = wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_BOLD, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-	//"Microsoft Sans Serif"
-	m_LBLFont = wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL,
-                    wxFONTWEIGHT_NORMAL, false /* !underlined */,
-                    wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-	
-	
 	rcP2 = this->GetRect();
 
 	this->GetClientSize(&w, &h);
@@ -89,29 +83,43 @@ void CSettingsPanel::Init()
 	dw = rcP2.width - rcClP2.width;
 	dh = rcP2.height - rcClP2.height;
 
-	rcGB1.x = 10;
+	m_pParent->GetClientSize(&cw, &ch);
+
+	GB12W = std::min<int>(GB12OPTW, (cw - GB3W - (dx * 6) - dw) / 2);
+
+	rcGB1.x = dx * 2;
 	rcGB1.y = 2;
-	rcGB1.width = 580;
-	rcGB1.height = 238;
+	rcGB1.width = GB12W;
+	rcGB1.height = GBH;
+
+	rcGB2.x = rcGB1.GetRight() + dx;
+	rcGB2.y = rcGB1.y;
+	rcGB2.width = GB12W;
+	rcGB2.height = GBH;
+
+	rcGB3.x = rcGB2.GetRight() + dx;
+	rcGB3.y = rcGB2.y;
+	rcGB3.width = GB3W;
+	rcGB3.height = GBH;
+
+	rcP2.x = 0;
+	rcP2.y = 0;
+	rcP2.width = rcGB3.GetRight() + (dx * 2) + dw;
+	rcP2.height = (rcGB2.GetBottom() + 5) + dh;
 
 	rcOI.x = rcGB1.x + 3;
 	rcOI.y = rcGB1.y + 15;
 	rcOI.width = rcGB1.width - 3*2;
 	rcOI.height = rcGB1.height - 15 - 3;
 
-	rcGB2.x = rcGB1.GetRight() + 5;
-	rcGB2.y = rcGB1.y;
-	rcGB2.width = rcGB1.width;
-	rcGB2.height = rcGB1.height;
-
 	rcOIM.x = rcGB2.x + 3;
 	rcOIM.y = rcGB2.y + 15;
 	rcOIM.width = rcGB2.width - 3*2;
 	rcOIM.height = rcGB2.height - 15 - 3;
 
-	rcTEST.x = rcGB2.GetRight() + 70;
+	rcTEST.x = rcGB3.x + (GB3W - TESTW)/2;
 	rcTEST.y = 50;
-	rcTEST.width = 170;
+	rcTEST.width = TESTW;
 	rcTEST.height = 30;
 
 	bbw = 23;
@@ -132,18 +140,6 @@ void CSettingsPanel::Init()
 	rlIF.width = rcRight.x - 2 - rlIF.x;
 	rlIF.height = bbh;
 
-	rcGB3.x = rcGB2.GetRight() + 5;
-	rcGB3.y = rcGB2.y;
-	rcGB3.width = rcGB2.GetRight() + 2*(rcTEST.x+rcTEST.width/2-rcGB2.GetRight())-5-rcGB3.x;
-	rcGB3.height = rcGB2.height;
-
-	rcP2.x = 10;
-	rcP2.y = 10;
-	rcP2.width = rcGB3.GetRight() + 10 + dw;
-	rcP2.height = (rcGB2.GetBottom() + 5) + dh;
-
-	this->SetSize(rcP2);
-
 	SaveToReportLog("CSettingsPanel::Init(): init m_pP2...\n");
 	m_pP2 = new wxPanel( this, wxID_ANY, rcP2.GetPosition(), rcP2.GetSize() );
 	m_pP2->SetMinSize(rcP2.GetSize());
@@ -162,24 +158,24 @@ void CSettingsPanel::Init()
 	this->SetSizer(top_sizer);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB1...\n");
-	m_pGB1 = new wxStaticBox( m_pP2, wxID_ANY,
+	m_pGB1 = new CStaticBox( m_pP2, wxID_ANY,
 		m_pMF->m_cfg.m_ssp_label_parameters_influencing_image_processing, rcGB1.GetPosition(), rcGB1.GetSize() );
-	m_pGB1->SetFont(m_LBLFont);
+	m_pGB1->SetFont(m_pMF->m_LBLFont);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB2...\n");
-	m_pGB2 = new wxStaticBox( m_pP2, wxID_ANY,
+	m_pGB2 = new CStaticBox( m_pP2, wxID_ANY,
 		m_pMF->m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, rcGB2.GetPosition(), rcGB2.GetSize() );
-	m_pGB2->SetFont(m_LBLFont);
+	m_pGB2->SetFont(m_pMF->m_LBLFont);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB3...\n");
-	m_pGB3 = new wxStaticBox( m_pP2, wxID_ANY,
+	m_pGB3 = new CStaticBox( m_pP2, wxID_ANY,
 		wxT(""), rcGB3.GetPosition(), rcGB3.GetSize() );
-	m_pGB3->SetFont(m_LBLFont);
+	m_pGB3->SetFont(m_pMF->m_LBLFont);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pTest...\n");
-	m_pTest = new wxButton( m_pP2, ID_TEST,
+	m_pTest = new CButton( m_pP2, ID_TEST,
 		wxT("Test"), rcTEST.GetPosition(), rcTEST.GetSize() );
-	m_pTest->SetFont(m_BTNFont);
+	m_pTest->SetFont(m_pMF->m_BTNFont);
 	
 	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_na.bmp"));
 	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_od.bmp"));
@@ -199,71 +195,71 @@ void CSettingsPanel::Init()
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblIF...\n");
 	m_plblIF = new CStaticText( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
-	m_plblIF->SetFont(m_LBLFont);
+	m_plblIF->SetFont(m_pMF->m_LBLFont);
 	m_plblIF->SetBackgroundColour( m_CL3 );
 	m_plblIF->SetSize(rlIF);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI...\n");
-	m_pOI = new CDataGrid( m_pP2, ID_OI,
+	m_pOI = new CDataGrid( m_pP2, ID_OI, &(m_pMF->m_LBLFont),
                            rcOI.GetPosition(), rcOI.GetSize() );
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_global_image_processing_settings...\n");
-    m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG, m_LBLFont);	
+    m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG);	
 	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_text_alignment, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_text_alignment_string, GetAvailableTextAlignments());
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_text_alignment, m_CL2, m_CL4, &g_text_alignment_string, GetAvailableTextAlignments());
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_filter_color);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_outline_filter_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_use_outline_filter_color);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dL_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_dL_color, 0, 255);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dA_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_dA_color, 0, 255);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dB_color, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_dB_color, 0, 255);	
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, &g_use_filter_color);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_outline_filter_color, m_CL2, m_CL4, &g_use_outline_filter_color);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dL_color, m_CL2, m_CL4, &g_dL_color, 0, 255);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dA_color, m_CL2, m_CL4, &g_dA_color, 0, 255);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dB_color, m_CL2, m_CL4, &g_dB_color, 0, 255);	
 	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_hw_device, GetAvailableHWDeviceTypes());
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, &g_hw_device, GetAvailableHWDeviceTypes());
 	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_filter_descr);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, &g_filter_descr);
 
 #ifdef WIN64
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, m_LBLFont, &g_use_cuda_gpu);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, &g_use_cuda_gpu);
 #else
-	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (only on x64 is supported)", m_CLSP, m_CLSP, m_LBLFont, &g_use_cuda_gpu);
+	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (only on x64 is supported)", m_CLSP, m_CLSP, &g_use_cuda_gpu);
 	//m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
 #endif
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, m_LBLFont, &g_use_ocl);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, &g_use_ocl);
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, m_LBLFont, &g_playback_sound);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, &g_playback_sound);
 
 	// debug settings
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, m_LBLFont, &g_generate_cleared_text_images_on_test);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_results);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_sf_results);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CLDBG, m_CLDBG, m_LBLFont, &g_clear_test_images_folder);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CLDBG, m_CLDBG, m_LBLFont, &g_show_transformed_images_only);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, &g_generate_cleared_text_images_on_test);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CLDBG, m_CLDBG, &g_show_results);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CLDBG, m_CLDBG, &g_show_sf_results);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CLDBG, m_CLDBG, &g_clear_test_images_folder);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CLDBG, m_CLDBG, &g_show_transformed_images_only);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_initial_image_processing...\n");
-	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG, m_LBLFont);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mthr, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_nedges_threshold, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mnthr, 0.0, 1.0);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1, m_LBLFont);	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_segment_width, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segw, 4, 50);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_segments_count, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msegc, 1, 10);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_sum_color_difference, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scd, 0, 10000);
+	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold, m_CL2, m_CL4, &g_mthr, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_nedges_threshold, m_CL2, m_CL4, &g_mnthr, 0.0, 1.0);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1);	
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_segment_width, m_CL2, m_CL4, &g_segw, 4, 50);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_segments_count, m_CL2, m_CL4, &g_msegc, 1, 10);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_sum_color_difference, m_CL2, m_CL4, &g_scd, 0, 10000);
 
-	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_secondary_image_processing, m_CLGG, m_LBLFont);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_segh, 1, 50);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_btd, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_to, 0.0, 1.0);	
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpn, 0, 10000);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpd, 0.0, 1.0);	
+	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_secondary_image_processing, m_CLGG);
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, &g_segh, 1, 50);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, &g_btd, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, &g_to, 0.0, 1.0);	
+	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, &g_mpn, 0, 10000);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, &g_mpd, 0.0, 1.0);	
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mpned, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, &g_mpned, 0.0, 1.0);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_tertiary_image_processing...\n");
-	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG, m_LBLFont);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msh, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_msd, 0.0, 1.0);
+	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, &g_msh, 0.0, 1.0);
+	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, &g_msd, 0.0, 1.0);
 
 	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.65);
 	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.35);
@@ -271,85 +267,88 @@ void CSettingsPanel::Init()
 	////////////////////////////////////////////////////////////////////////
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM...\n");
-	m_pOIM = new CDataGrid( m_pP2, ID_OIM,
+	m_pOIM = new CDataGrid( m_pP2, ID_OIM, &(m_pMF->m_LBLFont),
                            rcOIM.GetPosition(), rcOIM.GetSize() );
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_ocr_settings...\n");
-	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_border_is_darker, m_CL2, m_CL4, m_LBLFont, &g_border_is_darker);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_extend_by_grey_color, m_CL2, m_CL4, m_LBLFont, &g_extend_by_grey_color);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_allow_min_luminance, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_allow_min_luminance, 0, 255);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ocr_threads, -1, 100);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_scale, 1, 4);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_smthr, 0.0, 1.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cpu_kmeans_loop_iterations, 1, 1000);
+	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_border_is_darker, m_CL2, m_CL4, &g_border_is_darker);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_extend_by_grey_color, m_CL2, m_CL4, &g_extend_by_grey_color);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_allow_min_luminance, m_CL2, m_CL4, &g_allow_min_luminance, 0, 255);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, &g_ocr_threads, -1, 100);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, &g_scale, 1, 4);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, &g_smthr, 0.0, 1.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, m_CL2, m_CL4, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, m_CL2, m_CL4, &g_cpu_kmeans_loop_iterations, 1, 1000);
 #ifdef WIN64
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_cuda_kmeans_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CL2, m_CL4, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CL2, m_CL4, &g_cuda_kmeans_loop_iterations, 1, 1000);
 #else
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CLSP, m_CLSP, m_LBLFont, m_LBLFont, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CLSP, m_CLSP, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
 	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CLSP, m_CLSP, m_LBLFont, m_LBLFont, &g_cuda_kmeans_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CLSP, m_CLSP, &g_cuda_kmeans_loop_iterations, 1, 1000);
 	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 #endif
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_CLEAN_RGB_IMAGES);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, m_LBLFont, &g_clear_image_logical);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_combine_to_single_cluster, m_CL2, m_CL4, m_LBLFont, &g_combine_to_single_cluster);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_get_txt_area);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_get_txt_area);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_gradient_images_for_clear_txt_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_getting_txt_symbols_areas);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_before_clear_txt_images_from_borders);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_clear_txt_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, m_LBLFont, &g_clear_txt_images_by_main_color);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, m_LBLFont, &g_remove_wide_symbols);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, &g_CLEAN_RGB_IMAGES);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, &g_clear_image_logical);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_combine_to_single_cluster, m_CL2, m_CL4, &g_combine_to_single_cluster);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, &g_use_ISA_images_for_get_txt_area);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, &g_use_ILA_images_for_get_txt_area);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, &g_use_gradient_images_for_clear_txt_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, m_CL2, m_CL4, &g_use_ILA_images_for_getting_txt_symbols_areas);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, m_CL2, m_CL4, &g_use_ILA_images_before_clear_txt_images_from_borders);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, &g_use_ILA_images_for_clear_txt_images);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, &g_clear_txt_images_by_main_color);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, &g_remove_wide_symbols);
 
-	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, m_LBLFont, &g_ValidateAndCompareTXTImages);
+	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, &g_ValidateAndCompareTXTImages);
 	//m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages1);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, m_LBLFont, &g_DontDeleteUnrecognizedImages2);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DefStringForEmptySub);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, &g_DontDeleteUnrecognizedImages1);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, &g_DontDeleteUnrecognizedImages2);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, &g_DefStringForEmptySub);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_settings_for_multiframe_image_processing...\n");
-	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_threads, -1, 100);
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1, m_LBLFont);		
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_frames_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_DL, 1, 100);
+	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, &g_threads, -1, 100);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1);		
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_frames_length, m_CL2, m_CL4, &g_DL, 1, 100);
 
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_use_ILA_images_for_search_subtitles);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, m_CL2, m_CL4, m_LBLFont, &g_use_ISA_images_for_search_subtitles);	
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, m_CL2, m_CL4, m_LBLFont, &g_replace_ISA_by_filtered_version);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_down, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_max_dl_down, 0, 255);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_up, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_max_dl_up, 0, 255);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, m_CL2, m_CL4, &g_use_ILA_images_for_search_subtitles);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, m_CL2, m_CL4, &g_use_ISA_images_for_search_subtitles);	
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, m_CL2, m_CL4, &g_replace_ISA_by_filtered_version);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_down, m_CL2, m_CL4, &g_max_dl_down, 0, 255);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_up, m_CL2, m_CL4, &g_max_dl_up, 0, 255);
 
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_veple, 0.0, 10.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_ila_points_line_error, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_ilaple, 0.0, 10.0);
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_percent, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_tp, 0.0, 1.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_mtpl, 0.0, 1.0);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, &g_veple, 0.0, 10.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_ila_points_line_error, m_CL2, m_CL4, &g_ilaple, 0.0, 10.0);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_percent, m_CL2, m_CL4, &g_tp, 0.0, 1.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, &g_mtpl, 0.0, 1.0);
 
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, m_CL1, m_LBLFont);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_contrast, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_contrast, 0.0, 10.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_gamma, m_CL2, m_CL4, m_LBLFont, m_LBLFont, &g_video_gamma, 0.0, 10.0);
+	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, m_CL1);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_contrast, m_CL2, m_CL4, &g_video_contrast, 0.0, 10.0);
+	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_gamma, m_CL2, m_CL4, &g_video_gamma, 0.0, 10.0);
 
 	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x * 0.65);
 	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x * 0.35);
 
 	wxRect rlGSFN, rcGSFN, rlPixelColor, rcPixelColorRGB, rcPixelColorLab, rcPixelColorExample;
-	rlGSFN = rlIF;
+	rlGSFN.x = rcLeft.x;
 	rlGSFN.y = rcTEST.GetBottom() + 8;
+	rlGSFN.height = rlIF.height;
+	rlGSFN.width = rcRight.GetRight() - rcLeft.GetLeft() + 1;	
 
-	rcGSFN = rlIF;
+	rcGSFN = rlGSFN;
 	rcGSFN.y = rlGSFN.GetBottom() + 4;
 
-	rlPixelColor = rlIF;
+	rlPixelColor = rlGSFN;
 	rlPixelColor.y = rcGSFN.GetBottom() + 8;
+	rlPixelColor.height *= 2;
 
-	rcPixelColorRGB = rlIF;
-	rcPixelColorRGB.width = ((2 * rlIF.width) / 3) - 1;
+	rcPixelColorRGB = rlGSFN;
+	rcPixelColorRGB.width = ((2 * rlGSFN.width) / 3) - 1;
 	rcPixelColorRGB.y = rlPixelColor.GetBottom() + 4;
 
 	rcPixelColorLab = rcPixelColorRGB;
@@ -357,40 +356,40 @@ void CSettingsPanel::Init()
 	
 	rcPixelColorExample.x = rcPixelColorRGB.GetRight() + 2;
 	rcPixelColorExample.y = rcPixelColorRGB.y;
-	rcPixelColorExample.width = (rlIF.width / 3) - 1;
+	rcPixelColorExample.width = (rlGSFN.width / 3) - 1;
 	rcPixelColorExample.height = rcPixelColorLab.GetBottom() - rcPixelColorRGB.y + 1;	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
 	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_settings_file);
-	m_plblGSFN->SetFont(m_LBLFont);
+	m_plblGSFN->SetFont(m_pMF->m_LBLFont);
 	m_plblGSFN->SetBackgroundColour(m_CL1);
 	m_plblGSFN->SetSize(rlGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGSFN...\n");
 	m_pGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_GeneralSettingsFileName + wxT(" "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);	
-	m_pGSFN->SetFont(m_LBLFont);
+	m_pGSFN->SetFont(m_pMF->m_LBLFont);
 	m_pGSFN->SetBackgroundColour(wxColour(255, 255, 255));
 	m_pGSFN->SetSize(rcGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblPixelColor...\n");
 	m_plblPixelColor = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_pixel_color);
-	m_plblPixelColor->SetFont(m_LBLFont);
+	m_plblPixelColor->SetFont(m_pMF->m_LBLFont);
 	m_plblPixelColor->SetBackgroundColour(m_CL1);
 	m_plblPixelColor->SetSize(rlPixelColor);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorRGB...\n");
 	m_pPixelColorRGB = new CTextCtrl(m_pP2, wxID_ANY,
 		&(m_pMF->m_cfg.m_pixel_color_bgr), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
-	m_pPixelColorRGB->SetFont(m_LBLFont);
+	m_pPixelColorRGB->SetFont(m_pMF->m_LBLFont);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorLab...\n");
 	m_pPixelColorLab = new CTextCtrl(m_pP2, wxID_ANY,
 		&(m_pMF->m_cfg.m_pixel_color_lab), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
-	m_pPixelColorLab->SetFont(m_LBLFont);
+	m_pPixelColorLab->SetFont(m_pMF->m_LBLFont);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorExample...\n");
 	m_pPixelColorExample = new CStaticText(m_pP2, wxID_ANY, wxT(""));
-	m_pPixelColorExample->SetFont(m_LBLFont);
+	m_pPixelColorExample->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorExample->SetBackgroundColour(wxColour(255, 255, 255));
 	m_pPixelColorExample->SetSize(rcPixelColorExample);
 

@@ -1,4 +1,4 @@
-                              //TextBox.cpp//                                
+                              //StaticText.cpp//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -31,19 +31,26 @@ CStaticText::CStaticText(  wxWindow* parent,
 		:wxPanel( parent, id, pos, size, style, name)
 {
 	m_pParent = parent;
+	m_pFont = NULL;
 
-	m_pST = new wxStaticText( this, wxID_ANY, label);
-	m_text_style = text_style;
+	m_pST = new wxStaticText(this, wxID_ANY, label, wxDefaultPosition, wxDefaultSize, text_style, wxStaticTextNameStr);
+
+	m_text_style = text_style;	
 }
 
 CStaticText::~CStaticText()
 {
 }
 
-bool CStaticText::SetFont(const wxFont& font)
+void CStaticText::SetFont(wxFont& font)
 {
-	return m_pST->SetFont(font);
+	m_pFont = &font;
+	wxSizeEvent event;
+	OnSize(event);
+}
 
+void CStaticText::RefreshData()
+{
 	wxSizeEvent event;
 	OnSize(event);
 }
@@ -70,6 +77,8 @@ void CStaticText::SetTextColour(const wxColour& colour)
 void CStaticText::OnSize(wxSizeEvent& event)
 {
 	int w, h, tw, th, x, y;
+
+	if (m_pFont) m_pST->SetFont(*m_pFont);
 
     this->GetClientSize(&w, &h);
 	m_pST->GetSize(&tw, &th);

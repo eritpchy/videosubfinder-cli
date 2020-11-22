@@ -1,4 +1,4 @@
-                              //DataGrid.h//                                
+                              //StaticBox.h//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -15,27 +15,22 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <wx/checkbox.h>
+#include <wx/statbox.h>
 #include "Control.h"
 
-class CCheckBox : public wxCheckBox, public CControl
+class CStaticBox : public wxStaticBox, public CControl
 {
 public:
-	bool* m_p_val;
+    CStaticBox(wxWindow* parent, wxWindowID id,
+        const wxString& label,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = 0,
+        const wxString& name = wxStaticBoxNameStr);
 
-	CCheckBox(wxWindow* parent,
-		wxWindowID id,
-		bool* p_val,
-		const wxString& label,
-		const wxPoint& pos = wxDefaultPosition,
-		const wxSize& size = wxDefaultSize,
-		long style = 0);
-
-	void OnCheckBoxEvent(wxCommandEvent& evt);
 	void RefreshData();
 	void SetFont(wxFont& font);
 	
 private:
 	wxFont* m_pFont;
-	DECLARE_EVENT_TABLE()
 };

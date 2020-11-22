@@ -19,6 +19,9 @@
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include "SSOWnd.h"
+#include "Button.h"
+#include "StaticText.h"
+#include "TextCtrl.h"
 #include "MyResource.h"
 
 class CMainFrame;
@@ -41,18 +44,15 @@ public:
 	CSearchPanel(CSSOWnd* pParent);
 	~CSearchPanel();
 
-	wxFont    m_BTNFont;
-	wxFont    m_LBLFont;
-
-	wxButton	*m_pClear;
-	wxButton	*m_pRun;
+	CButton	*m_pClear;
+	CButton	*m_pRun;
 	
 	wxPanel		*m_pP1;
 
-	wxStaticText  *m_plblBT1;
-	wxTextCtrl  *m_plblBTA1;
-	wxStaticText  *m_plblBT2;
-	wxTextCtrl  *m_plblBTA2;
+	CStaticText  *m_plblBT1;
+	CTextCtrl  *m_plblBTA1;
+	CStaticText  *m_plblBT2;
+	CTextCtrl  *m_plblBTA2;
 	
 	wxColour   m_CLP;
 	wxColour   m_CL1;

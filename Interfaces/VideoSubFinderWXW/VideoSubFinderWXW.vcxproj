@@ -347,6 +347,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Button.cpp" />
     <ClCompile Include="CheckBox.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
     <ClCompile Include="DataGrid.cpp" />
@@ -358,12 +359,14 @@
     <ClCompile Include="SeparatingLine.cpp" />
     <ClCompile Include="SettingsPanel.cpp" />
     <ClCompile Include="SSOWnd.cpp" />
+    <ClCompile Include="StaticBox.cpp" />
     <ClCompile Include="StaticText.cpp" />
     <ClCompile Include="TextCtrl.cpp" />
     <ClCompile Include="VideoBox.cpp" />
     <ClCompile Include="VideoSubFinderWXW.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Button.h" />
     <ClInclude Include="CheckBox.h" />
     <ClInclude Include="CommonFunctions.h" />
     <ClInclude Include="Control.h" />
@@ -379,6 +382,7 @@
     <ClInclude Include="SeparatingLine.h" />
     <ClInclude Include="SettingsPanel.h" />
     <ClInclude Include="SSOWnd.h" />
+    <ClInclude Include="StaticBox.h" />
     <ClInclude Include="StaticText.h" />
     <ClInclude Include="TextCtrl.h" />
     <ClInclude Include="VideoBox.h" />
