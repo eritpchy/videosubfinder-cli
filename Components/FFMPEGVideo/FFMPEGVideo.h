@@ -92,6 +92,7 @@ public:
 	int video_stream;
 	int64_t m_cur_pts;
 	s64	m_dt_search;
+	s64	m_dt;
 
 	int m_frame_buffer_size = -1;
 	simple_buffer<u8> m_frame_buffer;

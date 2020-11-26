@@ -116,30 +116,18 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		m_pVideoWindow = pVideoWindow;
 		m_pVideoWindow ? m_show_video = true : m_show_video = false;
 
-		m_VC >> m_cur_frame;		
+		m_VC >> m_cur_frame;
 
-		m_frameNumbers = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
-
-		if (m_frameNumbers < 0)
-		{
-			double Pos = 0, add_pos = 60000, prev_pos, cur_pos;
-
-			do
-			{
-				Pos += add_pos;
-				prev_pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
-				m_VC.set(cv::CAP_PROP_POS_MSEC, Pos);
-				cur_pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
-			} while (prev_pos != cur_pos);
-
-			m_frameNumbers = cur_pos;
-			m_VC.set(cv::CAP_PROP_POS_FRAMES, 0);
-			m_VC >> m_cur_frame;			
-		}
-
+		m_Pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
 		m_fps = m_VC.get(cv::CAP_PROP_FPS);
-		m_Duration = ((m_frameNumbers * 1000.0) / m_fps);
-
+		m_frameNumbers = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
+		m_Duration = -1;
+		
+		if (m_frameNumbers > 0)
+		{
+			m_Duration = ((m_frameNumbers * 1000.0) / m_fps);
+		}
+		
 		m_ImageGeted = true;
 
 		if (m_show_video)
@@ -200,9 +188,24 @@ void OCVVideo::SetPos(s64 Pos)
 			Pause();
 		}
 
-		double FN = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
-		m_VC.set(cv::CAP_PROP_POS_FRAMES, ((double)Pos*FN)/(double)m_Duration);			
-		OneStep();
+		double dt = 1000.0 / m_fps;
+
+		if ((Pos < m_Pos) && (Pos > (m_Pos - dt * 3 / 2)))
+		{
+			double pos = m_VC.get(cv::CAP_PROP_POS_FRAMES);
+			m_VC.set(cv::CAP_PROP_POS_FRAMES, pos-2);
+			OneStep();
+			double cur_pos = m_VC.get(cv::CAP_PROP_POS_FRAMES);
+			cur_pos = cur_pos;
+		}
+		else
+		{
+			if (m_frameNumbers > 0)
+			{
+				m_VC.set(cv::CAP_PROP_POS_FRAMES, ((double)Pos * m_frameNumbers) / (double)m_Duration);
+				OneStep();
+			}
+		}		
 	}
 }
 

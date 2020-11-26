@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"5.40"
+#define VSF_VERSION	"5.50"
 
 #define ID_APP_ABOUT                    1100
 
@@ -171,4 +171,6 @@
 #define _APS_NEXT_CONTROL_VALUE         62
 #define _APS_NEXT_SYMED_VALUE           63
 #define TIMER_ID						64
+#define TIMER_ID_VB						65
+
 

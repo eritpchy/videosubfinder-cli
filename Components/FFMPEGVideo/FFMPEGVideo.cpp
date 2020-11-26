@@ -463,6 +463,7 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 	m_Height = 0;
 
 	m_dt_search = 1000;
+	m_dt = 0;
 
 	if (input_ctx) {
 		CloseMovie();
@@ -719,8 +720,14 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		SaveToReportLog(wxT("FFMPEGVideo::OpenMovie(): filt_frame = av_frame_alloc() passed\n"));
 	}		
 
-	//m_Duration = input_ctx->duration / (AV_TIME_BASE / 1000);
-	m_Duration = av_rescale(video->duration, video->time_base.num * 1000, video->time_base.den);
+	if (video->duration > 0)
+	{
+		m_Duration = av_rescale(video->duration, video->time_base.num * 1000, video->time_base.den);
+	}
+	else
+	{
+		m_Duration = (input_ctx->duration * (s64)1000) / (s64)AV_TIME_BASE;
+	}
 
 	m_pVideoWindow = pVideoWindow;
 	m_pVideoWindow ? m_show_video = true : m_show_video = false;
@@ -750,7 +757,28 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		return false;
 	}
 
-	m_fps = video->avg_frame_rate.num / (double)video->avg_frame_rate.den;
+	if ((video->avg_frame_rate.num > 0) && (video->avg_frame_rate.den > 0))
+	{
+		m_fps = (double)video->avg_frame_rate.num / (double)video->avg_frame_rate.den;
+		m_dt = 1000 / m_fps;
+	}
+	else
+	{
+		s64 cur_pos = m_Pos;
+		OneStep();
+		m_dt = m_Pos - cur_pos;
+
+		if (m_dt > 0)
+		{
+			m_fps = 1000.0 / (double)m_dt;
+		}
+		else
+		{
+			SaveToReportLog(wxT("FFMPEGVideo::OpenMovie(): ERROR: Failed to get right time for 2-d frame\n"));
+			CloseMovie();
+			return false;
+		}
+	}
 
 	m_MovieName = csMovieName;
 
@@ -805,8 +833,7 @@ void FFMPEGVideo::SetPos(s64 Pos)
 		{
 			Pause();
 		}
-
-		s64 dt = av_rescale(1000, decoder_ctx->framerate.den, decoder_ctx->framerate.num);
+		
 		s64 setPos, minPos, maxPos;
 		int num_tries, res;
 		int64_t min_ts, ts, max_ts;		
@@ -816,7 +843,7 @@ void FFMPEGVideo::SetPos(s64 Pos)
 		{
 			setPos = Pos - m_dt_search;
 			minPos = Pos - m_dt_search*10;
-			maxPos = Pos - dt;
+			maxPos = Pos - m_dt;
 
 			min_ts = std::max<int64_t>(0, av_rescale(minPos, video->time_base.den, video->time_base.num * 1000) + m_start_pts);
 			ts = std::max<int64_t>(0, av_rescale(setPos, video->time_base.den, video->time_base.num * 1000) + m_start_pts);
@@ -846,7 +873,7 @@ void FFMPEGVideo::SetPos(s64 Pos)
 			OneStep();
 		}
 
-		if (m_Pos < Pos - (9*dt / 10))
+		if (m_Pos < Pos - (9*m_dt / 10))
 		{
 			OneStep();
 		}

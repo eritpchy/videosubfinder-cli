@@ -71,7 +71,7 @@ bool CVideoWnd::CheckFilterImage()
 		}
 		else 
 		{
-			if (g_use_filter_color.size() > 0)
+			if (g_color_ranges.size() > 0)
 			{
 				if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
 					wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')))
@@ -82,7 +82,7 @@ bool CVideoWnd::CheckFilterImage()
 
 			if (!filter_image)
 			{
-				if (g_use_outline_filter_color.size() > 0)
+				if (g_outline_color_ranges.size() > 0)
 				{
 					if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
 						wxGetKeyState(wxKeyCode('I')) || wxGetKeyState(wxKeyCode('i')))
@@ -99,8 +99,6 @@ bool CVideoWnd::CheckFilterImage()
 
 inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, const int w, const int h)
 {
-	g_color_ranges = GetColorRanges(g_use_filter_color);
-	g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 	bool bln_color_ranges = (g_color_ranges.size() > 0) ? true : false;
 	bool bln_outline_color_ranges = (g_outline_color_ranges.size() > 0) ? true : false;	
 	bool bln_t_pressed = (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')));
@@ -337,6 +335,11 @@ void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 	}
 }
 
+void CVideoWnd::OnSetFocus(wxFocusEvent& event)
+{
+	m_pVB->SetFocus();
+}
+
 void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 {
 	if (m_pVB != NULL)
@@ -379,7 +382,7 @@ void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 
 BEGIN_EVENT_TABLE(CVideoWindow, wxPanel)
 	EVT_PAINT(CVideoWindow::OnPaint)
-	EVT_SIZE(CVideoWindow::OnSize)
+	EVT_SIZE(CVideoWindow::OnSize)	
 END_EVENT_TABLE()
 
 CVideoWindow::CVideoWindow(CVideoBox *pVB)
@@ -511,6 +514,7 @@ BEGIN_EVENT_TABLE(CVideoBox, wxMDIChildFrame)
 	EVT_KEY_UP(CVideoBox::OnKeyUp)
 	EVT_MOUSEWHEEL(CVideoBox::OnMouseWheel)
 	EVT_SCROLL_THUMBTRACK(CVideoBox::OnHScroll)
+	EVT_TIMER(TIMER_ID_VB, CVideoBox::OnTimer)
 END_EVENT_TABLE()
 
 CVideoBox::CVideoBox(CMainFrame* pMF)
@@ -520,7 +524,7 @@ CVideoBox::CVideoBox(CMainFrame* pMF)
 				  | wxRESIZE_BORDER 
 				  | wxCAPTION 
 				  | wxWANTS_CHARS
-				  )
+				  ), m_timer(this, TIMER_ID_VB)
 {
 	m_pImage = NULL;
 	m_pMF = pMF;
@@ -707,6 +711,9 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 		case 'u':
 		case 'I':
 		case 'i':
+			g_color_ranges = GetColorRanges(g_use_filter_color);
+			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+
 			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
 			{
 				m_pVBox->m_pVideoWnd->Reparent(NULL);
@@ -716,6 +723,12 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 				m_pVBox->m_pVideoWnd->Refresh(false);
 				m_pVBox->m_pVideoWnd->Update();
+
+				if (!m_timer.IsRunning())
+				{
+					m_timer.Start(100);
+				}
+
 				break;
 			}
 			break;
@@ -781,6 +794,11 @@ void CVideoBox::OnKeyUp(wxKeyEvent& event)
 			}
 			else
 			{
+				if (m_timer.IsRunning())
+				{
+					m_timer.Stop();
+				}
+
 				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
 
 				wxSizeEvent event;
@@ -943,7 +961,16 @@ void CVideoBox::OnHScroll(wxScrollEvent& event)
 	}
 }
 
-void CVideoWnd::OnSetFocus( wxFocusEvent &event )
+void CVideoBox::OnTimer(wxTimerEvent& event)
 {
-	m_pVB->SetFocus();
+	if (!m_pVBox->m_pVideoWnd->CheckFilterImage())
+	{
+		m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+
+		wxSizeEvent event;
+		m_pVBox->OnSize(event);
+
+		m_timer.Stop();
+	}
 }
+

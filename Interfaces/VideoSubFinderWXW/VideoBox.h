@@ -37,7 +37,7 @@ public:
 	CVideoWindow	*m_pVW;
 	CVideoBox		*m_pVB;
 
-	bool			m_filter_image;
+	bool			m_filter_image;	
 
 public:
 	void OnPaint( wxPaintEvent &event );
@@ -45,7 +45,7 @@ public:
 	void OnEraseBackGround(wxEraseEvent& event);
 	void OnLeftDown(wxMouseEvent& event);
 	bool CheckFilterImage();
-	void DrawImage(simple_buffer<u8>& ImBGR, const int w, const int h);
+	void DrawImage(simple_buffer<u8>& ImBGR, const int w, const int h);	
 
 private:
    DECLARE_EVENT_TABLE()
@@ -74,7 +74,7 @@ public:
 
 public:
 	void OnSize(wxSizeEvent& event);
-	void OnPaint(wxPaintEvent &event);
+	void OnPaint(wxPaintEvent &event);	
 
 private:
    DECLARE_EVENT_TABLE()
@@ -102,6 +102,8 @@ public:
 	CMainFrame	*m_pMF;
 	bool		m_WasInited;
 
+	wxTimer		m_timer;
+
 public:
 	void Init();
 	void ViewImage(simple_buffer<int> &Im, int w, int h);
@@ -118,6 +120,7 @@ public:
 	void OnKeyUp(wxKeyEvent& event);
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnHScroll(wxScrollEvent& event);
+	void OnTimer(wxTimerEvent& event);
 
 private:
 	std::mutex m_view_mutex;

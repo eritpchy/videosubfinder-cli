@@ -225,7 +225,7 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.* $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|Win32'">
@@ -302,7 +302,7 @@
       </DataExecutionPrevention>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.* $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|x64'">

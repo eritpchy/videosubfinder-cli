@@ -80,6 +80,8 @@ extern wxArrayString g_use_outline_filter_color;
 extern std::vector<color_range> g_color_ranges;
 extern std::vector<color_range> g_outline_color_ranges;
 
+extern bool	g_use_light_outline_filtering;
+
 extern int g_dL_color;
 extern int g_dA_color;
 extern int g_dB_color;
@@ -609,19 +611,59 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 		simple_buffer<u8> ImMASK(w * h), ImInside(w * h);
 		GetMaskByPixelColorIsInRange(g_outline_color_ranges, ImMASK, pImBGR, pImLab, w, h);
 
-		if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_ImMASK" + g_im_save_format, w, h);
+		if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_01_ImMASK" + g_im_save_format, w, h);
 
-		if (GetImageWithInsideFigures(ImMASK, ImInside, w, h, (u8)255, true, true) > 0)
+		if (g_use_light_outline_filtering)
 		{
-			if (show_results) SaveGreyscaleImage(ImInside, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_02_ImInside" + g_im_save_format, w, h);
-			if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
-			IntersectTwoImages(ImRes, ImInside, w, h, zero_value);
-			if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_04_ImResIntImInside" + g_im_save_format, w, h, -1, -1, zero_value);
+			CMyClosedFigure* pFigure;
+			custom_buffer<CMyClosedFigure> pFigures;
+
+			SearchClosedFigures(ImMASK, w, h, (u8)255, pFigures);
+			int N = pFigures.size();						
+
+			if (N > 0)
+			{
+
+				for (int i = 0; i < N; i++)
+				{
+					pFigure = &(pFigures[i]);
+
+					for (int y = pFigure->m_minY; y <= pFigure->m_maxY; y++)
+					{
+						for (int x = pFigure->m_minX; x <= pFigure->m_maxX; x++)
+						{
+							ImMASK[(y * w) + x] = 255;
+						}
+					}
+				}
+
+				if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_02_ImMASKExt" + g_im_save_format, w, h);
+				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+				IntersectTwoImages(ImRes, ImMASK, w, h, zero_value);
+				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_04_ImResIntImMSK" + g_im_save_format, w, h, -1, -1, zero_value);
+			}
+			else
+			{
+				ImRes.set_values(zero_value, w * h);
+				res = 0;
+			}			
 		}
 		else
 		{
-			ImRes.set_values(zero_value, w * h);
-			res = 0;
+			simple_buffer<u8> ImInside(w * h);
+
+			if (GetImageWithInsideFigures(ImMASK, ImInside, w, h, (u8)255, true, true) > 0)
+			{
+				if (show_results) SaveGreyscaleImage(ImInside, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_02_ImInside" + g_im_save_format, w, h);
+				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+				IntersectTwoImages(ImRes, ImInside, w, h, zero_value);
+				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_04_ImResIntImInside" + g_im_save_format, w, h, -1, -1, zero_value);
+			}
+			else
+			{
+				ImRes.set_values(zero_value, w * h);
+				res = 0;
+			}
 		}
 	}
 

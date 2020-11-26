@@ -19,20 +19,26 @@ Quick Start Guide
 #########################################################################################################
 How to use without deep details:
 1) Click in menu "File->Open Video" (any variant, but OpenCV has better accuracy)
-2) It is strongly recommended to use Color Filtering but you can skip this step.
+2) Check boundary box in "Video Box" where most subs will appear (you can move split lines for that in it): by default it is whole video.
+It is recommended to reduce area for search for getting less wrong detections and less timings splits.
+3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab.
+Center - is in most case, so it set by default.
+4) It is strongly recommended to use "Use Filter Colors" but you can skip this step.
 For this you need:
-* - to scroll video to subtitle frame
+* - scroll video to subtitle frame
 * - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
 * - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-3) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
-4) Check ILA Images: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
+5) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
+6) Check ILA Images: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
 this is possible if you use too strong Color Filters or subtitles pop-up on video, in this case it is better to change program settings or delete such ILA Images.
-5) [MOST IMPORTANT PART IF YOU DONT USE COLOR FILTERING]
+7) [MOST IMPORTANT PART IF YOU DONT USE COLOR FILTERING]
 Before continue: Check does subtitles has darker border color then subtitles text color.
 In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab".
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
-6) Click "Create Cleared TXTImages" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
+8) If you are using "Use Filter Colors" and have too good ILAImages (all characters separated from background)
+it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
+9) Click "Create Cleared TXTImages" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
@@ -44,8 +50,8 @@ https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 Known Issues
 #########################################################################################################
 
-1) Different timing in OpenCV vs FFMPEG video open but now they should be very close with difference ~ 000-001 milliseconds.
-2) In case of Center alignment, which is by default. Take into note that if whole subtitle will be in right half part of selected boundary box it will be removed.
+1) Different timing in OpenCV vs FFMPEG video open but now they are very close with difference ~ 000-001 milliseconds.
+2) In case of Center alignment, which is by default, take into the note that if whole subtitle will be in right half part of selected boundary box it will be removed.
 
 #########################################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -58,27 +64,28 @@ Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXT
 After opening video:
 *) Test all setting in "Settings" tab by pressing "Test" button with selection different video frames with too light and to dark background and so on.
 *) Check boundary box in "Video Box" where most subs will appear (you can move split lines for that in it): by default it is whole video.
-It is recommended to reduce area for search for getting less wring detections and less timings splits.
+It is recommended to reduce area for search for getting less wrong detections and less timings splits.
 In worse cases, you can detect each line separately by running program multiple times with different video area selection (this can fix
 possible incorrect multiple lines subtitles splits in single frame)
-*) Check what horizontal alignment subtitles has on video relatively to selected boundary box: Center/Left/Right/Any.
-alignment: Center - is in most case, so it set by default. Take into note that if whole subtitle will be in right half part of selected boundary box it will be removed.
+*) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab.
+alignment: Center - is in most case, so it set by default. Take into the note that if whole subtitle will be in right half part of selected boundary box it will be removed.
 alignment: Any - currently supported but not so good as other types.
-*) For decrease amount of wrong timing splits during Run Search also as wrong produced timing or not detected subtitles you can do next
-adopt: "Moderate Threshold"(moderate_threshold)(located in "Settings" tab in left panel) in range [0.25, 0.6] by "Test" button
+*) For decrease amount of: wrong timing splits during Run Search, wrong produced timings, not detected subtitles, missed multiple lines during Clean TXT Images on found images with subs;
+you can do next - adopt: "Moderate Threshold"(moderate_threshold)(located in "Settings" tab in left panel) in range [0.25, 0.6] by "Test" button
 Need to find optimal value when subtitles symbols in 'After First/Second/Third Filtration' images will have not broken edgings and
 filled with white (not empty) but most part of background disappear, it very depends from video and also from concrete frame,
-so try on too bright and dark scenes and so on.
-0.25 or 0.3 - are working on most videos but can produce too much of garbage.
-then higher value than more pixels will be filtered/removed as not related to subtitle.
-*) It is recommended to set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results:
+so try on too bright and dark scenes and so on. Then higher value than more pixels will be filtered/removed as not related to subtitle.
+0.25 - are working on most videos, especially in case with 1080p, but can produce too much of garbage.
+0.5-0.6 - very oftenly optimal in case of subtitles with low resolution (~480p) and solid outlines/borders (like white subs with black outlines).
+0.1 - in some cases when subtitles have not outlines or/and transparent (but many splits also as garbage can be found).
+*) It is recommended to set "Use Filter Colors" which can very improve accuracy of results:
 more accurate produced timing, less wrong splits and better cleared TXT images results (read below in separate topic).
 *) Also on splits affects two parameters:
 vedges_points_line_error = 0.3
 ila_points_line_error = 0.3
 0.3 is like 30% allowed difference in other case nearest by time two subtitles treated as different.
-Then higher values than more rarely time code will be splitted.
-Then lover values than more often time code will be splitted.
+Then higher values than more rarely time code will be split.
+Then lover values than more often time code will be split.
 I don't recommend to change them. Only if you sure that there is not sequential subtitles in video (which come without pause between them) you can try to increase them.
 -------------------------------------------
 1-2) Before starting "Create Cleared TXTImages":
@@ -90,29 +97,40 @@ In most cases program correctly identify which color is related to subtitles tex
 in such cases decision will be applied according this setting.
 *) Check on missed symbols during clearing images or selected video frame
 Moderate Threshold For Scaled Image (moderate_threshold_for_scaled_image)(located in "Settings" tab in right panel) [0.1, moderate_threshold]
-0.25 or 0.3 will be working in most case, if some symbols are removed try to use lover values or else.
+0.25 will be working in most case, if some symbols are removed try to use lover values or else.
 It should be not higher then optimal value for moderate_threshold.
 In some cases when subtitles have bad/missed borders (outline color) and have mostly same color as background
 (can be difficultly separated from background) it need to be set to 0.1 or 0.15, also in such cases is recommended
 to turn on "Use ILAImages before clear TXT images from borders", it can improve results.
-*) It is recommended to set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results:
+*) It is recommended to set "Use Filter Colors" which can very improve accuracy of results:
 more accurate produced timing, less wrong splits and better cleared TXT images results (read below in separate topic).
 *) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
 *) For decrease amount of garbage on cleaned TXT images you can try to turn on "Clear Images Logical" (located in "Settings" tab in right panel) which is turned off by default.
-This option can remove garbage but can remove wrong/good elements, mostly useful if symbols are not broken in produced results and if language in not Hieroglyph or Arabic type.
-It try to remove figures which mostly appear inside other figures and so on.
+This option can remove garbage but can remove wrong/good elements. It try to remove figures which mostly appear inside other figures and so on.
+Mostly useful if everything listed below is right:
+* - language is not Hieroglyph or Arabic type
+* - symbols are not broken in produced results (subtitles are with good quality, with stable luminance)
+* - "Use Outline Filter Colors" is used (subtitles has solid outlines from all sides)
+* - "Use ILAImages for getting TXT symbols areas" turned on
 *) For decrease amount of garbage on cleaned TXT images you can also try to turn on "Remove too wide symbols"
 Don't use it for Arabic or handwritten subs which can have very long symbols or can be written not separately.
 
 2) "Use Filter Colors" and/or "Use Outline Filter Colors"
-It is recommended to set "Use Filter Colors" and/or "Use Outline Filter Colors" which can very improve accuracy of results:
+It is strongly recommended to use "Use Filter Colors" which can very improve accuracy of results,
 more accurate produced timing, less wrong splits and better cleared TXT images results.
 Color filters are used in both cases "Run Search" and "Clear TXT Images" so use them accurately.
 You can define multiple colors ranges if subtitles has different colors during video (by usage "Ctrl+Enter" for adding new line record)
+For this you need:
+* - scroll video to subtitle frame
+* - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
+* - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
+* - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
 *) Use not too strong color filtering if subtitles are mostly stable and have same colors: 
 "Use Filter Colors" - inline color - color of subtitles symbols, located in "Settings" tab in left panel.
 Example of values which are working in most case of white subtitles:
+Lab: l:100-255 a:0-255 b:0-255
+
 Lab: l:180-255 a:108-148 b:108-148  (mostly working in all cases)
 Lab: l:200-255 a:118-138 b:118-138
 Lab: l:220-255 a:118-138 b:118-138 (strong color filter, mostly useful only in case if subs which has very good quality)
@@ -131,7 +149,8 @@ when 'a' and 'b' like chroma components.
 if min_l_val==max_l_val or only l_val is specified then will be used dL value from settings for define 'L'/'l' range: [l_val-dL, l_val+dL]
 if min_a_val==max_a_val or only a_val is specified then will be used dA value from settings for define 'a' range: [a_val-dA, a_val+dA]
 if min_b_lab_val==max_b_lab_val or only b_lab_val is specified then will be used dB value from settings for define 'b' range: [b_lab_val-dB, b_lab_val+dB]
-*) Use not too strong outline color filters only if all symbols are contained inside borders (in inside figures produced by pixels which are in outline color filters range).
+*) Use not too strong "Use Outline Filter Colors" only if all symbols are contained inside borders:
+subtitles has solid outlines from all sides, symbols are contained in inside figures produced by pixels which are in outline filter colors range.
 "Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
 Example in case if borders are mostly black color.
 Lab: l:0-30 a:0-255 b:0-255
@@ -148,15 +167,42 @@ You can get pixel color by left mouse click in Video box or in shown full screen
 *) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
 
-3) If subtitles has too unstable color, old video with bad quality, with distortions and flickering of image,
-or you try to get subs which gradually become visible than invisible (like on some openings of films),
-it is recommended to disable all options related to use ILAImages:
-"Use ILAImages for search subtitles"
-"Use ILAImages for getting TXT areas"
-"Use ILAImages For Clear TXTImages"
+3) "Create Cleared TXTImages" from subs with bad quality:
+3-1)
+In case of subs with bad quality, especially in case of not too stable luminance in text color:
+You can try to turn on "Extend By Grey Color" in "Settings" tab, which turn on usage of "Allow Min Luminance" setting.
+In this case you should manually specify optimal value in "Allow Min Luminance" for you video.
+It is also useful if you use "Use Filter Colors", in this case is recommended to set value in "Allow Min Luminance" same as min_l_val in "Use Filter Colors".
+"Extend By Grey Color" extend text area by pixels whose chroma color is same as automatically detected but luminance is in range:
+[min("Allow Min Luminance", min_text_lum_auto_detected), max_text_lum_auto_detected]
+Also you can change "Video Gamma" or/and "Video Contrast" in "Settings" tab, which can also very improve results.
+In some cases setting "Video Gamma" == 0.7 and setting "Allow Min Luminance" == 100 with turned on "Extend By Grey Color" produce more better results.
+For find optimal values for your video you can use "Test" button in "Settings" tab.
+3-2)
+In case of subs with bad quality sometimes help if improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
+Take into the note that most settings for "Create Cleared TXTImages" are aligned with RGBImages resolution 480-720p.
+So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
+To use this approach: you need to replace original RGB images generated by "Run Search" by produced in "Topaz Gigapixel AI",
+they should have same names as original generated by "Run Search".
 
-4) Add Video Filters during "Run Search"
-4-1)
+4) "Create Cleared TXTImages" from subs with no outlines/borders:
+In case if subtitles have not outlines/borders there possible cases when symbols become inseparable from background,
+in this case sometimes can very help to turn on "Use ILAImages before clear TXT images from borders" in "Settings" tab,
+and at same time it is recommended to set most close/strong "Use Filter Colors" range,
+in this case, especially if background dynamically changed, produced ILA images can possibly very help to separate symbols from background.
+Also on such video fragments and images can help:
+"Min Sum Color Difference": min_sum_color_diff = 0 (with selection boundary box in "Video Box" where to search subtitles)
+"Moderate Threshold": moderate_threshold = 0.1
+"Moderate Threshold For Scaled Image": moderate_threshold_for_scaled_image = 0.1
+"Use ILAImages for getting TXT symbols areas" - Turn Off: use_ILA_images_for_getting_txt_symbols_areas = 0 (which is by default)
+
+5) "Create Cleared TXTImages" from subs with multiple colors in single subtitle line:
+There possible cases when in single subtitle line part of symbols has one color when other symbols has another,
+for example left part of subtitle line is with one color and right part with another.
+In this case you can use "Use Filter Colors" with define all of used colors in subtitle and turn on "Combine To Single Cluster" in "Settings" tab.
+
+6) Add Video Filters during "Run Search"
+6-1)
 In case of logo present or some other issues program now support also AviSynth+ scripts by opening video with FFPMEG CPU device video decoding:
 https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
 NOTE1: HW Acceleration (GPU) doesn't support AviSynth. So you need to set CPU device in "FFMPEG HW Devices" in "Settings" tab (which is by default).
@@ -171,32 +217,14 @@ MaskTools2 v2.2.26: https://github.com/pinterf/masktools/releases/tag/2.2.26
 All AviSynth plugins can be found in: http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
 NOTE3: Plugins dll should be placed to "C:\Program Files (x86)\AviSynth+\plugins64+"
 NOTE4: LSmashVideoSource failed to open mkv but FFVideoSource open it successfully in my case.
-4-2)
+6-2)
 You can also use FFMPEG Video Filters by opening video with FFMPEG video decoding.
 https://ffmpeg.org/ffmpeg-filters.html#Video-Filters
 You can set them in "Settings" tab by setting "FFMPEG Video Filters" record.
 For example you can set it to: curves=psfile='curves.acv'
 for using Photoshop curves file (.acv) for specify color settings changes.
 
-5) "Create Cleared TXTImages" from subs with bad quality:
-5-1)
-In case of subs with bad quality, especially in case of not too stable luminance in text color:
-You can try to turn on "Extend By Grey Color" in "Settings" tab, which turn on usage of "Allow Min Luminance" setting.
-In this case you should manually specify optimal value in "Allow Min Luminance" for you video.
-"Extend By Grey Color" merge clustered result and extend text area by pixels whose chroma color is same as automatically detected but luminance is in range:
-[min("Allow Min Luminance", min_text_lum_auto_detected), max_text_lum_auto_detected]
-Also you can change "Video Gamma" or/and "Video Contrast" in "Settings" tab, which can also very improve results.
-In some cases setting "Video Gamma" == 0.7 and setting "Allow Min Luminance" == 100 with turned on "Extend By Grey Color" produce more better results.
-For find optimal values for your video you can use "Test" button in "Settings" tab.
-5-2)
-In case of subs with bad quality sometimes help if improve RGBImages quality by using "Topaz Gigapixel AI": https://topazlabs.com/gigapixel-ai/
-Take into the note that most settings for "Create Cleared TXTImages" are aligned with RGBImages resolution 480-720p.
-So now only x2 scale is most recommended setting in "Topaz Gigapixel AI" and which is default in it.
-To use this approach: you need to replace original RGB images generated by "Run Search" by produced in "Topaz Gigapixel AI",
-they should have same names as original generated by "Run Search".
-
-
-6) Performance during "Create Cleared TXTImages":
+7) Performance during "Create Cleared TXTImages":
 Currently program use:
 "CPU kmeans initial loop iterations" == 20
 CPU kmeans loop iterations" = 30
@@ -214,6 +242,7 @@ Used terms:
 "Max luminance diff from down for IL image generation"
 "Max luminance diff from up for IL image generation"
 First image of DL sequence (~12 nearest frames in video) are taked as reference, all next images in DL sequence are compared with it by luminance change.
+On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (First image of DL sequence).
 
 #########################################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:

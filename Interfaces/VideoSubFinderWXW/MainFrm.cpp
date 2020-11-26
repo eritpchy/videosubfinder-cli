@@ -239,6 +239,7 @@ void CMainFrame::Init()
 	wxMenu *pMenu1 = new wxMenu;	
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, _T("Open Video (OpenCV)"));
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, _T("Open Video (FFMPEG)"));
+	pMenu1->Append(ID_FILE_REOPENVIDEO, _T("Reopen Video"));
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
 	pMenu1->AppendSeparator();
 	pMenu1->AppendSubMenu( pMenu5, _T("Set Priority"));
@@ -453,8 +454,11 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 
 void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)
 {
-	m_blnReopenVideo = true;
-	OnFileOpenVideo(m_type);
+	if (m_FileName.size() > 0)
+	{
+		m_blnReopenVideo = true;
+		OnFileOpenVideo(m_type);
+	}
 }
 
 void CMainFrame::OnFileOpenVideoOpenCV(wxCommandEvent& event)
