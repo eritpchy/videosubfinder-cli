@@ -389,7 +389,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 
 			if (res != 0)
 			{
-				res = FilterImageByPixelColorIsInRange(ImY, &ImBGR, pImLab, w, h);
+				res = FilterImageByPixelColorIsInRange(ImY, &ImBGR, pImLab, w, h, wxT(""), (u16)0, true, true);
 
 				if (res == 0)
 				{
@@ -599,8 +599,9 @@ public:
 		int xmax = m_xmax;
 		int ymin = m_ymin;
 		int ymax = m_ymax;
+		bool convert_to_lab = m_convert_to_lab;
 
-		m_thrs_save_images.emplace_back(concurrency::create_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax]() mutable {
+		m_thrs_save_images.emplace_back(concurrency::create_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
 					{
 						simple_buffer<u8> ImTMP_BGR(W * H * 3);
 						ImBGRToNativeSize(ImBGR, ImTMP_BGR, w, h, W, H, xmin, xmax, ymin, ymax);
@@ -614,7 +615,30 @@ public:
 						SaveGreyscaleImage(ImISA, wxT("/ISAImages/") + name + g_im_save_format, w, h);
 					}
 					{
-						SaveBinaryImage(ImILA, wxT("/ILAImages/") + name + g_im_save_format, w, h);
+						if ((g_color_ranges.size() > 0) || (g_outline_color_ranges.size() > 0))
+						{
+							simple_buffer<u16> ImILARes(ImILA);
+							simple_buffer<u8> ImLab, *pImLab = NULL;
+
+							if (convert_to_lab)
+							{
+								ImLab.set_size(w * h * 3);
+								pImLab = &ImLab;
+
+								cv::Mat cv_ImBGR, cv_ImLab;
+								BGRImageToMat(ImBGR, w, h, cv_ImBGR);
+								cv::cvtColor(cv_ImBGR, cv_ImLab, cv::COLOR_BGR2Lab);
+								BGRMatToImage(cv_ImLab, w, h, *pImLab);
+							}
+
+							FilterImageByPixelColorIsInRange(ImILARes, &ImBGR, pImLab, w, h, wxT(""), (u16)0, false, true);
+
+							SaveBinaryImage(ImILARes, wxT("/ILAImages/") + name + g_im_save_format, w, h);
+						}
+						else
+						{
+							SaveBinaryImage(ImILA, wxT("/ILAImages/") + name + g_im_save_format, w, h);
+						}
 					}
 				}
 			)

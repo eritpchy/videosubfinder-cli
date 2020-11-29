@@ -80,8 +80,6 @@ extern wxArrayString g_use_outline_filter_color;
 extern std::vector<color_range> g_color_ranges;
 extern std::vector<color_range> g_outline_color_ranges;
 
-extern bool	g_use_light_outline_filtering;
-
 extern int g_dL_color;
 extern int g_dA_color;
 extern int g_dB_color;
@@ -601,7 +599,7 @@ void GetMaskByPixelColorIsInRange(std::vector<color_range>& color_ranges, simple
 }
 
 template <class T>
-int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, wxString iter_det = wxT(""), T zero_value = 0)
+int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>* pImBGR, simple_buffer<u8>* pImLab, int w, int h, wxString iter_det = wxT(""), T zero_value = 0, bool extend_inline = false, bool extend_outline = false)
 {
 	int res = 1;
 	bool show_results = g_show_results && (iter_det.size() > 0);
@@ -613,7 +611,7 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 
 		if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_01_ImMASK" + g_im_save_format, w, h);
 
-		if (g_use_light_outline_filtering)
+		if (extend_outline)
 		{
 			CMyClosedFigure* pFigure;
 			custom_buffer<CMyClosedFigure> pFigures;
@@ -671,10 +669,18 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 	{
 		if (g_color_ranges.size() > 0)
 		{
+			simple_buffer<T> ImTMP, *pIm = &ImRes;
+
+			if (extend_inline)
+			{
+				ImTMP = ImRes;
+				pIm = &ImTMP;
+			}
+
 			int cnt = 0;
 			for (int i = 0; i < w * h; i++)
 			{
-				if (ImRes[i] != zero_value)
+				if ((*pIm)[i] != zero_value)
 				{
 					if (PixelColorIsInRange(g_color_ranges, pImBGR, pImLab, w, h, i))
 					{
@@ -682,11 +688,21 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 					}
 					else
 					{
-						ImRes[i] = zero_value;
+						(*pIm)[i] = zero_value;
 					}
 				}
 			}
-			if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_05_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+			if (show_results) SaveBinaryImage(*pIm, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_05_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+
+			if (extend_inline)
+			{
+				cvMAT cv_im_gr;
+				BinaryImageToMat(ImTMP, w, h, cv_im_gr);
+				cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 2);
+				BinaryMatToImage(cv_im_gr, w, h, ImTMP, (T)255);
+				IntersectTwoImages(ImRes, ImTMP, w, h);
+				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_06_ImResDilate" + g_im_save_format, w, h, -1, -1, zero_value);
+			}
 
 			if (cnt == 0)
 			{

@@ -73,7 +73,8 @@ bool CVideoWnd::CheckFilterImage()
 		{
 			if (g_color_ranges.size() > 0)
 			{
-				if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
+				if (wxGetKeyState(wxKeyCode('R')) || wxGetKeyState(wxKeyCode('r')) ||
+					wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
 					wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')))
 				{
 					filter_image = true;
@@ -84,7 +85,8 @@ bool CVideoWnd::CheckFilterImage()
 			{
 				if (g_outline_color_ranges.size() > 0)
 				{
-					if (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
+					if (wxGetKeyState(wxKeyCode('R')) || wxGetKeyState(wxKeyCode('r')) ||
+						wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')) ||
 						wxGetKeyState(wxKeyCode('I')) || wxGetKeyState(wxKeyCode('i')))
 					{
 						filter_image = true;
@@ -101,18 +103,19 @@ inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, cons
 {
 	bool bln_color_ranges = (g_color_ranges.size() > 0) ? true : false;
 	bool bln_outline_color_ranges = (g_outline_color_ranges.size() > 0) ? true : false;	
+	bool bln_r_pressed = (wxGetKeyState(wxKeyCode('R')) || wxGetKeyState(wxKeyCode('r')));
 	bool bln_t_pressed = (wxGetKeyState(wxKeyCode('T')) || wxGetKeyState(wxKeyCode('t')));
 	bool bln_y_pressed = (wxGetKeyState(wxKeyCode('Y')) || wxGetKeyState(wxKeyCode('y')));
 	bool bln_i_pressed = (wxGetKeyState(wxKeyCode('I')) || wxGetKeyState(wxKeyCode('i')));
 	int rc = GetBGRColor(ColorName::Red);
 	int gc = GetBGRColor(ColorName::Green);
-	int yc = GetBGRColor(ColorName::Green);
+	int yc = GetBGRColor(ColorName::Yellow);
 	int bc = 0;
 	int pc;
 
 	if (bln_y_pressed)
 	{
-		if (!bln_t_pressed)
+		if ((!bln_t_pressed) && (!bln_r_pressed))
 		{
 			if (!bln_color_ranges)
 			{
@@ -123,7 +126,7 @@ inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, cons
 
 	if (bln_i_pressed)
 	{
-		if ((!bln_t_pressed) && (!bln_y_pressed))
+		if ((!bln_t_pressed) && (!bln_r_pressed) && (!bln_y_pressed))
 		{
 			if (!bln_outline_color_ranges)
 			{
@@ -134,63 +137,85 @@ inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, cons
 
 	if (bln_color_ranges || bln_outline_color_ranges)
 	{
-		int offset;
 		int num_pixels = w * h;
-		bool bln_in_color_ranges;
-		bool bln_in_outline_color_ranges;
 
-		for (int p_id = 0; p_id < num_pixels; p_id++)
+		if (bln_r_pressed)
 		{
-			bln_in_color_ranges = false;
-			bln_in_outline_color_ranges = false;
-			pc = -1;
+			simple_buffer<u8> ImRes(w * h, (u8)255);
+			int res = FilterImageByPixelColorIsInRange(ImRes, &ImBGR, &ImLab, w, h, wxT("FilterImage"), (u8)0, true, true);
 
-			if (bln_color_ranges) bln_in_color_ranges = PixelColorIsInRange(g_color_ranges, &ImBGR, &ImLab, w, h, p_id);
-			if (bln_outline_color_ranges) bln_in_outline_color_ranges = PixelColorIsInRange(g_outline_color_ranges, &ImBGR, &ImLab, w, h, p_id);
-
-			if (bln_t_pressed)
+			ImBGR.set_values(0);
+			
+			if (res != 0)
 			{
-				if (bln_in_color_ranges)
+				for (int p_id = 0; p_id < num_pixels; p_id++)
 				{
-					if (bln_in_outline_color_ranges)
+					if (ImRes[p_id] != 0)
 					{
-						pc = yc;
-					}
-					else
-					{
-						pc = rc;
+						SetBGRColor(ImBGR, p_id, rc);
 					}
 				}
-				else
+			}
+		}
+		else
+		{
+			int offset;			
+			bool bln_in_color_ranges;
+			bool bln_in_outline_color_ranges;
+
+			for (int p_id = 0; p_id < num_pixels; p_id++)
+			{
+				bln_in_color_ranges = false;
+				bln_in_outline_color_ranges = false;
+				pc = -1;
+
+				if (bln_color_ranges) bln_in_color_ranges = PixelColorIsInRange(g_color_ranges, &ImBGR, &ImLab, w, h, p_id);
+				if (bln_outline_color_ranges) bln_in_outline_color_ranges = PixelColorIsInRange(g_outline_color_ranges, &ImBGR, &ImLab, w, h, p_id);
+
+				if (bln_t_pressed)
 				{
-					if (bln_in_outline_color_ranges)
+					if (bln_in_color_ranges)
 					{
-						pc = gc;
+						if (bln_in_outline_color_ranges)
+						{
+							pc = yc;
+						}
+						else
+						{
+							pc = rc;
+						}
 					}
 					else
+					{
+						if (bln_in_outline_color_ranges)
+						{
+							pc = gc;
+						}
+						else
+						{
+							pc = bc;
+						}
+					}
+				}
+				else if (bln_y_pressed)
+				{
+					if (!bln_in_color_ranges)
 					{
 						pc = bc;
 					}
 				}
-			}
-			else if (bln_y_pressed)
-			{
-				if (!bln_in_color_ranges)
+				else if (bln_i_pressed)
 				{
-					pc = bc;
+					if (!bln_in_outline_color_ranges)
+					{
+						pc = bc;
+					}
 				}
-			}
-			else if (bln_i_pressed)
-			{
-				if (!bln_in_outline_color_ranges)
-				{
-					pc = bc;
-				}
-			}
 
-			if (pc != -1)
-			{
-				SetBGRColor(ImBGR, p_id, pc);
+				if (pc != -1)
+				{
+					SetBGRColor(ImBGR, p_id, pc);
+				}
 			}
 		}
 	}
@@ -703,6 +728,8 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 	switch (key_code)
 	{
+		case 'R':
+		case 'r':
 		case 'T':
 		case 't':
 		case 'Y':
@@ -779,6 +806,8 @@ void CVideoBox::OnKeyUp(wxKeyEvent& event)
 
 	switch (key_code)
 	{
+		case 'R':
+		case 'r':
 		case 'T':
 		case 't':
 		case 'Y':

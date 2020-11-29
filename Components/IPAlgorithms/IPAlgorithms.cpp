@@ -142,8 +142,6 @@ wxArrayString g_use_outline_filter_color;
 std::vector<color_range> g_color_ranges;
 std::vector<color_range> g_outline_color_ranges;
 
-bool g_use_light_outline_filtering = false;
-
 int g_dL_color = 40;
 int g_dA_color = 30;
 int g_dB_color = 30;

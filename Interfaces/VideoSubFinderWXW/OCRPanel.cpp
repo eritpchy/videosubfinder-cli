@@ -275,8 +275,8 @@ void COCRPanel::Init()
 	dw = rcP3.width - rcClP3.width;
 	dh = rcP3.height - rcClP3.height;
 
-	rcP3.x = 10;	
-	rcP3.y = 10;
+	rcP3.x = 0;	
+	rcP3.y = 0;
 	rcP3.width = PW + dw;
 	rcP3.height = rcCES.GetBottom() + dy + dh;
 

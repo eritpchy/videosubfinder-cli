@@ -18,8 +18,8 @@ Latest versions were built and tested on: Windows 10
 Quick Start Guide
 #########################################################################################################
 How to use without deep details:
-1) Click in menu "File->Open Video" (any variant, but OpenCV has better accuracy)
-2) Check boundary box in "Video Box" where most subs will appear (you can move split lines for that in it): by default it is whole video.
+1) Click in menu "File->Open Video" (any variant)
+2) Check boundary box in "Video Box" where most subs will appear (for that you can move split lines in it): by default it is whole video.
 It is recommended to reduce area for search for getting less wrong detections and less timings splits.
 3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab.
 Center - is in most case, so it set by default.
@@ -28,17 +28,18 @@ For this you need:
 * - scroll video to subtitle frame
 * - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
-* - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-5) Click "Run Search" in the first tab page (if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub")
-6) Check ILA Images: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
-this is possible if you use too strong Color Filters or subtitles pop-up on video, in this case it is better to change program settings or delete such ILA Images.
+* - if there are many subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
+5) Click "Run Search" in the first tab page, if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub",
+found original images with subtitles will be located in "RGBImages" folder.
+6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
+which is possible if you use too strong Color Filters or subtitles pop-up on video and disappear, in this case it is better to change program settings or delete such ILA Images.
 7) [MOST IMPORTANT PART IF YOU DONT USE COLOR FILTERING]
 Before continue: Check does subtitles has darker border color then subtitles text color.
 In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab".
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
-8) If you are using "Use Filter Colors" and have too good ILAImages (all characters separated from background)
+8) If you are using "Use Filter Colors" and have too good ILAImages - all characters separated from background,
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
-9) Click "Create Cleared TXTImages" on the last tab page (for get Text Mining, if you plan to OCR text after in other software)
+9) Click "Create Cleared TXTImages" on the last tab page for get text symbols separation from background, after this you can do OCR text in other software as described in separate topic "For OCR".
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
@@ -52,6 +53,7 @@ Known Issues
 
 1) Different timing in OpenCV vs FFMPEG video open but now they are very close with difference ~ 000-001 milliseconds.
 2) In case of Center alignment, which is by default, take into the note that if whole subtitle will be in right half part of selected boundary box it will be removed.
+3) Missed subtitles. Check that missed subtitles are not < 12 frames length (going less then 0.5s), if so you can change "Sub Frames Length" to 6 or other in "Settings" tab.
 
 #########################################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -86,7 +88,7 @@ ila_points_line_error = 0.3
 0.3 is like 30% allowed difference in other case nearest by time two subtitles treated as different.
 Then higher values than more rarely time code will be split.
 Then lover values than more often time code will be split.
-I don't recommend to change them. Only if you sure that there is not sequential subtitles in video (which come without pause between them) you can try to increase them.
+I don't recommend to change them. Only if you sure that there is not sequential subtitles in video (which go without pause between them) you can try to increase them.
 -------------------------------------------
 1-2) Before starting "Create Cleared TXTImages":
 -------------------------------------------
@@ -96,9 +98,9 @@ if not than disable checkbox "Characters Border Is Darker" in first right settin
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated,
 in such cases decision will be applied according this setting.
 *) Check on missed symbols during clearing images or selected video frame
-Moderate Threshold For Scaled Image (moderate_threshold_for_scaled_image)(located in "Settings" tab in right panel) [0.1, moderate_threshold]
+"Moderate Threshold For Scaled Image" (moderate_threshold_for_scaled_image)(located in "Settings" tab in right panel) [0.1, moderate_threshold]
 0.25 will be working in most case, if some symbols are removed try to use lover values or else.
-It should be not higher then optimal value for moderate_threshold.
+It should be not higher then optimal value for  "Moderate Threshold" (moderate_threshold).
 In some cases when subtitles have bad/missed borders (outline color) and have mostly same color as background
 (can be difficultly separated from background) it need to be set to 0.1 or 0.15, also in such cases is recommended
 to turn on "Use ILAImages before clear TXT images from borders", it can improve results.
@@ -129,8 +131,6 @@ For this you need:
 *) Use not too strong color filtering if subtitles are mostly stable and have same colors: 
 "Use Filter Colors" - inline color - color of subtitles symbols, located in "Settings" tab in left panel.
 Example of values which are working in most case of white subtitles:
-Lab: l:100-255 a:0-255 b:0-255
-
 Lab: l:180-255 a:108-148 b:108-148  (mostly working in all cases)
 Lab: l:200-255 a:118-138 b:118-138
 Lab: l:220-255 a:118-138 b:118-138 (strong color filter, mostly useful only in case if subs which has very good quality)
@@ -161,6 +161,7 @@ Press left/right/space for check that during video symbols are shown stable (not
 * - all pixels which are in inline and outline color filters will be shown as 'yelow' (better that no one will be in yelow (no intersection))
 Also:
 Using 'U' button in Video Box will show original video frame but in full screen.
+Using 'R' button in Video Box will show original video frame filtered by color filters in case of "Run Search" version - which extend inline/outline pixels area.
 Using 'Y' button in Video Box will show pixels related to inline color without change, all others in black color.
 Using 'I' button in Video Box will show pixels related to outline color without change, all others in black color.
 You can get pixel color by left mouse click in Video box or in shown full screen image (its values and color will be shown in "Settings" tab in bottom right part)
