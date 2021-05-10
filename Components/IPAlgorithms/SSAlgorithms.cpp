@@ -1530,16 +1530,16 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 					bln = CompareTwoSubsOptimal(ImIntS, &ImYS, ImNES, prevImNE, *pImInt, pImYInt, *pImNE, w, h, W, H, 0, w - 1, wxDEBUG_DET("FastSearchSubtitles_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__)));
 					
-					if ((bln > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL)))
+					if ((bln > 0) && (fn - bf + 1 == 3))
 					{
 #ifdef CUSTOM_DEBUG
 						SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): (bln(GetIntersectImages) > 0) && bf != -2 && (bln(CompareTwoSubsOptimal(ImIntS..pImInt)) > 0) && ((fn - bf + 1 == 3)||(fn - bf + 1 == DL(%d)))\n", (int)__LINE__, fn, DL));
 #endif
 
-						ImIntS = *pImInt;
-						ImNES = *pImNE;
-						ImYS = *pImYInt;
 						ImFS = *pImBGR;
+						ImNES = *pImNE;						
+						ImIntS = *pImInt;
+						ImYS = *pImYInt;
 
 #ifdef CUSTOM_DEBUG
 						{
@@ -1548,7 +1548,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 							SaveGreyscaleImage(ImIntS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntS" + g_im_save_format, w, h);
 							SaveBinaryImage(ImYS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImYS" + g_im_save_format, w, h);
 						}
-#endif
+#endif						
 					}
 
 					if (bln == 0)
@@ -1591,7 +1591,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 									SaveGreyscaleImage(ImNES, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNES" + g_im_save_format, w, h);
 
 									SaveBGRImage(ImFSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFSP" + g_im_save_format, w, h);
-									SaveGreyscaleImage(ImIntSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImSP" + g_im_save_format, w, h);
+									SaveGreyscaleImage(ImIntSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntSP" + g_im_save_format, w, h);
 									SaveGreyscaleImage(ImNESP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNESP" + g_im_save_format, w, h);
 								}
 #endif
@@ -1634,6 +1634,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #endif
 						if (fn > bf + 1)
 						{
+#ifdef CUSTOM_DEBUG
+							{
+								SaveGreyscaleImage(ImIntS, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntS" + g_im_save_format, w, h);
+								SaveGreyscaleImage(ImNES, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNES" + g_im_save_format, w, h);
+							}
+#endif
+
 							offset = FindOffsetForNewSub(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, 0, w - 1, fn);
 
 							pef = fn + offset - 1;
@@ -1647,11 +1654,19 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 						if (pef - pbf + 1 >= DL)
 						{
 							if (!((finded_prev == 1) && (cmp_prev == 1)))
-							{
+							{								
 								ImIntSP = ImIntS;
 								ImFSP = ImFS;
 								ImNESP = ImNES;
 								ImYSP = ImYS;
+
+#ifdef CUSTOM_DEBUG
+								{
+									SaveBGRImage(ImFSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImFSP" + g_im_save_format, w, h);
+									SaveGreyscaleImage(ImIntSP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImIntSP" + g_im_save_format, w, h);
+									SaveGreyscaleImage(ImNESP, wxString("/TestImages/FastSearchSubtitles") + "_fn" + std::to_string(fn) + "_line" + std::to_string(__LINE__) + "_ImNESP" + g_im_save_format, w, h);
+								}
+#endif
 							}
 							finded_prev = 1;
 

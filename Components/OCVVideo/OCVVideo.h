@@ -20,6 +20,7 @@
 #include "Video.h"
 #include "opencv2/opencv.hpp"
 #include <wx/wx.h>
+#include <mutex>
 
 class OCVVideo;
 
@@ -65,9 +66,11 @@ public:
 	long		m_origHeight;	
 
 	ThreadRunVideo *m_pThreadRunVideo;
+	std::mutex m_run_mutex;
+	std::mutex m_pause_mutex;
 
 public:
-	void ShowFrame(cv::Mat &img, void *dc = NULL);
+	void ShowFrame(cv::Mat &img, void *dc = NULL, int left = -1, int top = -1, int width = -1, int height = -1);
 
 	bool OpenMovie(wxString csMovieName, void *pVideoWindow, int type);
 

@@ -180,6 +180,7 @@ public:
 	CTextCtrl	 *m_pMSD;
 	CButton	 *m_pCCTI;
 	CButton	 *m_pCES;
+	CButton  *m_pJOIN;
 	CButton	 *m_pCSCTI;
 	CButton	 *m_pCSTXT;
 	wxPanel		 *m_pP3;
@@ -201,6 +202,7 @@ public:
 	void OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event);
 	void OnBnClickedCreateSubFromTXTResults(wxCommandEvent& event);
 	void OnBnClickedCreateClearedTextImages(wxCommandEvent& event);
+	void OnBnClickedJoinTXTImages(wxCommandEvent& event);
 	void SaveSub(wxString srt_sub, wxString ass_sub);
 
 private:

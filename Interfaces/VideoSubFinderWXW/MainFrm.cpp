@@ -198,6 +198,8 @@ CMainFrame::CMainFrame(const wxString& title)
 	m_dt = 0;
 
 	m_type = 0;
+
+	m_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
 }
 
 CMainFrame::~CMainFrame()
@@ -212,9 +214,7 @@ void CMainFrame::Init()
 
 	m_blnNoGUI = false;
 
-	wxMenuBar *pMenuBar = new wxMenuBar;
-
-	m_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
+	wxMenuBar *pMenuBar = new wxMenuBar;	
 
 	m_ErrorFileName = g_work_dir + wxT("/error.log");
 
@@ -945,6 +945,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_join_text, "ocr_button_join_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");

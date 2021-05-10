@@ -279,6 +279,26 @@ https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line
 
 #-----------------------------------------------------
 
+(3) baidu ocr
+You can try to write a program in python with usage baidu ocr api for ocr images.
+
+Usefull links:
+http://www.baidu.com 
+https://rapidapi.com/blog/directory/baidu-ocr-text-recognition/
+https://github.com/Baidu-AIP/python-sdk
+https://programmer.ink/think/5d35803c404e4.html
+https://ai.baidu.com/ai-doc/OCR/Dk3h7yf8m
+https://ai.baidu.com/ai-doc/OCR/Kk3h7y7vq
+https://ai.baidu.com/sdk#ocr
+
+#-----------------------------------------------------
+
+(4) Google vision API
+https://cloud.google.com/vision
+
+Some possible solution is described in bottom:
+https://sourceforge.net/p/videosubfinder/discussion/684990/thread/352389f0e9/
+
 #########################################################################################################
 OUTDATED OLD INFORMATION:
 #########################################################################################################

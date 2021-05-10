@@ -8784,8 +8784,16 @@ void ReadFile(cv::Mat& res_data, wxString name)
 void WriteFile(std::vector<uchar>& write_data, wxString name)
 {
 	wxFileOutputStream fout(name);
-	fout.WriteAll(write_data.data(), write_data.size());
-	fout.Close();
+
+	if (fout.IsOk())
+	{
+		fout.WriteAll(write_data.data(), write_data.size());
+		fout.Close();
+	}
+	else
+	{
+		SaveToReportLog(wxString::Format(wxT("ERROR: Failed to open file for write: %s\n"), name));
+	}
 }
 
 void GetImageSize(wxString name, int &w, int &h)
@@ -8843,27 +8851,19 @@ void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int 
 {
 	if (g_disable_save_images) return;
 
-	cv::Mat im(h, w, CV_8UC3);
+	cv::Mat im(h, w, CV_8UC1);
 	u8 color;
 
 	if ((add == 0) && (scale == 1.0))
 	{
-		for (int i = 0; i < w * h; i++)
-		{
-			color = Im[i];
-			im.data[i * 3] = color;
-			im.data[i * 3 + 1] = color;
-			im.data[i * 3 + 2] = color;
-		}
+		custom_assert(w * h <= Im.m_size, "SaveGreyscaleImage(...): not: w * h <= Im.m_size");
+		memcpy(im.data, Im.m_pData, w * h);
 	}
 	else
 	{
 		for (int i = 0; i < w * h; i++)
 		{
-			color = (double)((int)(Im[i]) + add) * scale;
-			im.data[i * 3] = color;
-			im.data[i * 3 + 1] = color;
-			im.data[i * 3 + 2] = color;
+			im.data[i] = (double)((int)(Im[i]) + add) * scale;
 		}
 	}
 
@@ -8887,6 +8887,18 @@ void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int 
 	catch (runtime_error& ex) {
 		wxString msg;
 		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
+		wxMessageBox(msg, "ERROR: SaveGreyscaleImage");
+	}
+	catch (const exception& ex)
+	{
+		wxString msg;
+		msg.Printf(wxT("Exception saving image to %s format: %s\n"), g_im_save_format, wxString(ex.what()));
+		wxMessageBox(msg, "ERROR: SaveGreyscaleImage");
+	}
+	catch (...)
+	{
+		wxString msg;
+		msg.Printf(wxT("Exception saving image to %s format\n"), g_im_save_format);
 		wxMessageBox(msg, "ERROR: SaveGreyscaleImage");
 	}
 }

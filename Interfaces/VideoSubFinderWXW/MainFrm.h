@@ -63,6 +63,7 @@ public:
 	wxString	m_ocr_label_save_each_substring_separately;
 	wxString	m_ocr_label_save_scaled_images;
 	wxString	m_ocr_button_ces_text;
+	wxString	m_ocr_button_join_text;
 	wxString	m_ocr_button_ccti_text;
 	wxString	m_ocr_button_csftr_text;
 	wxString	m_ocr_button_cesfcti_text;

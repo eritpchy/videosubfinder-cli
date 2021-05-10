@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"5.50"
+#define VSF_VERSION	"5.60"
 
 #define ID_APP_ABOUT                    1100
 
@@ -104,6 +104,8 @@
 #define ID_BTN_TEST						1278
 #define ID_BTN_CSTXT					1279
 #define ID_BTN_CSCTI					1280
+
+#define ID_BTN_JOIN					    1281
 
 ///////////////////////////////////////////////////////////
 

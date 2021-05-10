@@ -757,6 +757,15 @@ bool FFMPEGVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int device
 		return false;
 	}
 
+	if ((m_origWidth == 0) || (m_origHeight == 0))
+	{
+		wxString msg = wxString::Format(wxT("ERROR: Video \"%s\" has wrong frame sizes: FRAME_WIDTH: %d, FRAME_HEIGHT: %d\n"), csMovieName, m_origWidth, m_origHeight);
+		SaveToReportLog(wxString::Format(wxT("FFMPEGVideo::OpenMovie(): %s\n"), msg));
+		wxMessageBox(msg, wxT("FFMPEGVideo::OpenMovie"));
+		CloseMovie();
+		return false;
+	}
+
 	if ((video->avg_frame_rate.num > 0) && (video->avg_frame_rate.den > 0))
 	{
 		m_fps = (double)video->avg_frame_rate.num / (double)video->avg_frame_rate.den;

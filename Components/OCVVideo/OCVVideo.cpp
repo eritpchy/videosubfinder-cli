@@ -63,14 +63,23 @@ OCVVideo::~OCVVideo()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
+void OCVVideo::ShowFrame(cv::Mat &img, void *dc, int left, int top, int width, int height)
 {
 	if ((!img.empty()) && m_VC.isOpened() && m_show_video && (dc != NULL))
 	{
-		int wnd_w, wnd_h, img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
+		int img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
+		int wnd_w, wnd_h;
 		((wxPaintDC*)dc)->GetSize(&wnd_w, &wnd_h);
 
-		if ((wnd_w > 0) && (wnd_h > 0) && (img_w > 0) && (img_h > 0))
+		if (left == -1)
+		{
+			left = 0;
+			top = 0;
+			width = wnd_w;
+			height = wnd_h;
+		}
+
+		if ((width > 0) && (height > 0) && (img_w > 0) && (img_h > 0))
 		{
 			unsigned char *img_data = (unsigned char*)malloc(num_pixels * 3); // auto released by wxImage
 
@@ -83,7 +92,21 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc)
 
 			UpdateImageColor(img_data, img_w, img_h);
 
-			((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(wnd_w, wnd_h), 0, 0);
+			if ((left != 0) || (top != 0) || (width != wnd_w) || (height != wnd_h))
+			{
+				wxBitmap bitmap(wnd_w, wnd_h);
+				wxMemoryDC temp_dc;
+				temp_dc.SelectObject(bitmap);
+
+				temp_dc.DrawBitmap(wxImage(img_w, img_h, img_data).Scale(width, height), left, top);
+				((wxPaintDC*)dc)->Blit(0, 0, wnd_w, wnd_h, &temp_dc, 0, 0);
+
+				temp_dc.SelectObject(wxNullBitmap);
+			}
+			else
+			{
+				((wxPaintDC*)dc)->DrawBitmap(wxImage(img_w, img_h, img_data).Scale(width, height), left, top);
+			}
 		}
 	}
 }
@@ -105,6 +128,15 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 		m_Width = m_origWidth;
 		m_Height = m_origHeight;
+
+		if ((m_origWidth == 0) || (m_origHeight == 0))
+		{
+			wxString msg = wxString::Format(wxT("ERROR: Video \"%s\" has wrong frame sizes: FRAME_WIDTH: %d, FRAME_HEIGHT: %d\n"), csMovieName, m_origWidth, m_origHeight);
+			SaveToReportLog(wxString::Format(wxT("OCVVideo::OpenMovie(): %s\n"), msg));
+			wxMessageBox(msg, wxT("OCVVideo::OpenMovie"));
+			CloseMovie();
+			return false;
+		}
 
 		/*if (m_origWidth > 1280)
 		{
@@ -404,23 +436,26 @@ void OCVVideo::Run()
 {
 	if (m_VC.isOpened())
 	{
-		if (m_play_video)
-		{
-			Pause();
-		}
+		std::lock_guard<std::mutex> guard(m_run_mutex);
 
-		if (m_ImageGeted == false)
+		if (!m_play_video)
 		{
-			OneStep();
-		}
-		else
-		{
-			m_play_video = true;			
+			//Pause();
+		//}
 
-			m_pThreadRunVideo = new ThreadRunVideo(this);
-			m_pThreadRunVideo->Create();
-			m_pThreadRunVideo->Run();
-			//m_pThreadRunVideo->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+			if (m_ImageGeted == false)
+			{
+				OneStep();
+			}
+			else
+			{
+				m_play_video = true;
+
+				m_pThreadRunVideo = new ThreadRunVideo(this);
+				m_pThreadRunVideo->Create();
+				m_pThreadRunVideo->Run();
+				//m_pThreadRunVideo->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+			}
 		}
 	}
 }
@@ -429,10 +464,16 @@ void OCVVideo::Run()
 
 void OCVVideo::Pause()
 {
-	if (m_VC.isOpened() && m_play_video)
+	if (m_VC.isOpened())
 	{
-		m_play_video = false;
-		while (!m_pThreadRunVideo->IsDetached()) { wxMilliSleep(30); }
+		std::lock_guard<std::mutex> guard(m_pause_mutex);
+
+		if (m_play_video)
+		{
+			
+			m_play_video = false;
+			while (!m_pThreadRunVideo->IsDetached()) { wxMilliSleep(30); }
+		}
 	}
 }
 
@@ -462,7 +503,7 @@ void OCVVideo::WaitForCompletion(s64 timeout)
 
 void OCVVideo::SetVideoWindowPosition(int left, int top, int width, int height, void *dc)
 {
-	ShowFrame(m_cur_frame, dc);
+	ShowFrame(m_cur_frame, dc, left, top, width, height);
 }
 
 ThreadRunVideo::ThreadRunVideo(OCVVideo *pVideo) : wxThread()
@@ -472,20 +513,27 @@ ThreadRunVideo::ThreadRunVideo(OCVVideo *pVideo) : wxThread()
 
 void *ThreadRunVideo::Entry()
 {
+	double startPos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
+	clock_t start_t = clock();
+
 	while (m_pVideo->m_play_video)
 	{		
-		clock_t start_t = clock();
+		
 		m_pVideo->m_VC >> m_pVideo->m_cur_frame;
 		if (m_pVideo->m_cur_frame.empty())
 		{
+			m_pVideo->m_play_video = false;
 			break;
 		}
 		m_pVideo->m_Pos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
 		
 		((wxWindow*)m_pVideo->m_pVideoWindow)->Refresh(true);
-		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(clock() - start_t);
-		if (dt > 0) wxMilliSleep(dt);
-	}
+		int dt = (m_pVideo->m_Pos - startPos) - (int)(clock() - start_t);
+		if (dt > 0)
+		{
+			wxMilliSleep(dt);
+		}
+	}	
 
 	return 0;
 }

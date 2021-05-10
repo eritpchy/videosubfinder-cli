@@ -28,6 +28,7 @@
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
 #include <wx/sound.h>
+#include <wx/rawbmp.h>
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
@@ -178,6 +179,7 @@ BEGIN_EVENT_TABLE(COCRPanel, wxPanel)
 	EVT_BUTTON(ID_BTN_CSCTI, COCRPanel::OnBnClickedCreateSubFromClearedTXTImages)
 	EVT_BUTTON(ID_BTN_CSTXT, COCRPanel::OnBnClickedCreateSubFromTXTResults)
 	EVT_BUTTON(ID_BTN_CCTI, COCRPanel::OnBnClickedCreateClearedTextImages)
+	EVT_BUTTON(ID_BTN_JOIN, COCRPanel::OnBnClickedJoinTXTImages)
 END_EVENT_TABLE()
 
 COCRPanel::COCRPanel(CSSOWnd* pParent)
@@ -198,7 +200,7 @@ void COCRPanel::Init()
 	m_CL1 = wxColour(255, 215, 0);
 	m_CLOCR = wxColour(170, 170, 170);
 
-	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT;
+	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
 	int w, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 	const int dx = 20;
 	const int dy = 20;
@@ -232,6 +234,11 @@ void COCRPanel::Init()
 	rcCES.y = rcCSCTI.GetBottom() + 10;
 	rcCES.width = BTNW;
 	rcCES.height = h;
+
+	rcJOIN.x = rcCCTI.x;
+	rcJOIN.y = rcCES.GetBottom() + 10;
+	rcJOIN.width = BTNW;
+	rcJOIN.height = h;
 
 	rcTEST.x = rcCCTI.GetRight() + 30;
 	rcTEST.y = rcCCTI.GetBottom() + 5 - h/2;
@@ -278,7 +285,7 @@ void COCRPanel::Init()
 	rcP3.x = 0;	
 	rcP3.y = 0;
 	rcP3.width = PW + dw;
-	rcP3.height = rcCES.GetBottom() + dy + dh;
+	rcP3.height = rcJOIN.GetBottom() + dy + dh;
 
 	SaveToReportLog("COCRPanel::Init(): this->SetSize(rcP3)...\n");
 	this->SetSize(rcP3);	
@@ -323,25 +330,30 @@ void COCRPanel::Init()
 	m_pcbSSI->SetFont(m_pMF->m_LBLFont);
 	m_pcbSSI->SetBackgroundColour(m_CL1);
 
-	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
-	m_pCES = new CButton( m_pP3, ID_BTN_CES,
-		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
-	m_pCES->SetFont(m_pMF->m_BTNFont);
-
 	SaveToReportLog("COCRPanel::Init(): init m_pCCTI...\n");
-	m_pCCTI = new CButton( m_pP3, ID_BTN_CCTI,
+	m_pCCTI = new CButton(m_pP3, ID_BTN_CCTI,
 		m_pMF->m_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
 	m_pCCTI->SetFont(m_pMF->m_BTNFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSTXT...\n");
-	m_pCSTXT = new CButton( m_pP3, ID_BTN_CSTXT,
+	m_pCSTXT = new CButton(m_pP3, ID_BTN_CSTXT,
 		m_pMF->m_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
 	m_pCSTXT->SetFont(m_pMF->m_BTNFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSCTI...\n");
-	m_pCSCTI = new CButton( m_pP3, ID_BTN_CSCTI,
+	m_pCSCTI = new CButton(m_pP3, ID_BTN_CSCTI,
 		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_pMF->m_BTNFont);
+
+	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
+	m_pCES = new CButton( m_pP3, ID_BTN_CES,
+		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
+	m_pCES->SetFont(m_pMF->m_BTNFont);
+	
+	SaveToReportLog("COCRPanel::Init(): init m_pJOIN...\n");
+	m_pJOIN = new CButton(m_pP3, ID_BTN_JOIN,
+		m_pMF->m_cfg.m_ocr_button_join_text, rcJOIN.GetPosition(), rcJOIN.GetSize());
+	m_pJOIN->SetFont(m_pMF->m_BTNFont);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 
@@ -994,6 +1006,152 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 	}
 }
 
+void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
+{
+	wxString Str;
+	wxString dir_path = wxString(g_work_dir + wxT("/TXTImages/"));
+	wxDir dir(dir_path);
+	vector<wxString> FileNamesVector;
+	wxString file_name, file_path;
+	bool res;
+	const int max_joins_size = 300;
+
+	m_pMF->m_pPanel->m_pSSPanel->Disable();
+	m_pMF->m_pPanel->m_pSHPanel->Disable();
+	m_pMF->m_pPanel->m_pOCRPanel->Disable();
+
+	res = dir.GetFirst(&file_name);
+	while (res)
+	{
+		FileNamesVector.push_back(file_name);
+
+		res = dir.GetNext(&file_name);
+	}
+
+	for (int i = 0; i < (int)FileNamesVector.size() - 1; i++)
+		for (int j = i + 1; j < (int)FileNamesVector.size(); j++)
+		{
+			if (FileNamesVector[i] > FileNamesVector[j])
+			{
+				Str = FileNamesVector[i];
+				FileNamesVector[i] = FileNamesVector[j];
+				FileNamesVector[j] = Str;
+			}
+		}
+
+	int fn = FileNamesVector.size();
+
+	int fi = 0;
+	while (fi < fn)
+	{
+		int fi_start = fi;
+		int fi_end = std::min<int>(fi_start + max_joins_size - 1, fn - 1);
+		int w = 0, h, w_prev = -1, H = 0, dh = 0;
+
+		for (; fi <= fi_end; fi++)
+		{			
+			file_name = FileNamesVector[fi];
+			file_path = dir_path + file_name;
+			GetImageSize(file_path, w, h);
+			if (fi == fi_start)
+			{
+				w_prev = w;
+				dh = (w / 16);
+			}
+			else
+			{
+				if (w != w_prev)
+				{
+					wxMessageBox(wxString::Format(wxT("ERROR: File \"%s\" has not same width %d as file \"%\" with width %d"), file_name, w, FileNamesVector[fi_start], w_prev), wxT("JoinTXTImages"));
+					m_pMF->m_pPanel->m_pSHPanel->Enable();
+					m_pMF->m_pPanel->m_pSSPanel->Enable();
+					m_pMF->m_pPanel->m_pOCRPanel->Enable();
+					return;
+				}
+			}
+
+			if (H + dh + h > 65500)
+			{
+				fi_end = fi - 1;
+				break;
+			}
+
+			H += dh + h;
+		}
+
+		wxBitmap bitmap(w, dh);
+		wxMemoryDC dc;
+		dc.SelectObject(bitmap);
+
+		wxSize text_size;
+		int font_size = 0;
+
+		do
+		{
+			font_size++;
+			wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+			dc.SetFont(font);
+			text_size = dc.GetTextExtent(wxT("12345678987654321"));
+		} while ((text_size.GetWidth() < w) && (text_size.GetHeight() < (dh * 7) / 10));
+		font_size--;
+
+		if (font_size == 0)
+		{
+			wxMessageBox(wxT("ERROR: Unfortunately optimal font size is too small"), wxT("JoinTXTImages"));
+			m_pMF->m_pPanel->m_pSHPanel->Enable();
+			m_pMF->m_pPanel->m_pSSPanel->Enable();
+			m_pMF->m_pPanel->m_pOCRPanel->Enable();
+			return;
+		}
+
+		wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+		dc.SetFont(font);
+
+		simple_buffer<u8> ImRes(w * H, 255);
+
+		int h_ofset = 0;
+		for (int fi = fi_start; fi <= fi_end; fi++)
+		{
+			file_name = FileNamesVector[fi];
+			file_path = dir_path + file_name;
+
+			//Str = wxString::Format(wxT("%d"), fi + 1);
+			Str = wxT("12345678987654321");
+
+			text_size = dc.GetTextExtent(Str);			
+			dc.Clear();
+			dc.DrawText(Str, (w - text_size.GetWidth()) / 2, (dh - text_size.GetHeight()) / 2);
+
+			wxImage img = bitmap.ConvertToImage();
+			u8 *img_data = img.GetData();			
+
+			for (int y = 0; y < img.GetHeight(); y++)
+			{
+				for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
+				{
+					if ((img_data[0] <= 30) && (img_data[1] <= 30) && (img_data[2] <= 30))
+					{
+						ImRes[((h_ofset + y) * w) + x] = 0;
+					}					
+				}
+			}
+			h_ofset += dh;
+
+			LoadBinaryImage(ImRes.get_sub_buffer(w * h_ofset), file_path, w, h);
+			h_ofset += h;
+		}
+
+		dc.SelectObject(wxNullBitmap);
+
+		Str = wxString::Format(wxT("%s%s%s"), wxT("/TXTImagesJoined/"), GetFileName(FileNamesVector[fi_start]), g_im_save_format);
+		SaveGreyscaleImage(ImRes, Str, w, H);
+	}
+
+	m_pMF->m_pPanel->m_pSHPanel->Enable();
+	m_pMF->m_pPanel->m_pSSPanel->Enable();
+	m_pMF->m_pPanel->m_pOCRPanel->Enable();
+}
+
 ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind)
         : wxThread(kind)
 {
@@ -1058,7 +1216,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 		{
 			Str = FileName;
 			Str = GetFileName(Str);
-			Str = "/TXTImages/" + Str + g_im_save_format;
+			Str = g_work_dir + "/TXTImages/" + Str + g_im_save_format;
 			SaveGreyscaleImage(ImTF, wxString(Str), w, h);
 			res.m_ImClearedText = ImTF;
 			return;
@@ -1288,6 +1446,7 @@ void *ThreadCreateClearedTextImages::Entry()
 	{
 		m_pMF->ClearDir(g_work_dir + "/TXTImages");
 		m_pMF->ClearDir(g_work_dir + "/TXTResults");
+		m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
 	}
 
 	wxDir dir(g_work_dir + "/RGBImages");

@@ -38,6 +38,7 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_OPTION, "le", "left_video_image_percent_end", "left video image percent end, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "re", "right_video_image_percent_end", "right video image percent end, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "o", "output_dir",  "output dir (root directory where results will be stored)" },
+	{ wxCMD_LINE_OPTION, "gs", "general_settings",  "general settings (path to general settings *.cfg file, default = settings/general.cfg)" },
 	{ wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_OPTION, "nocrthr", "num_ocr_threads", "number of threads used for Create Cleared TXT Images", wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -i \"C:\\test_video.mp4\" -cscti \"C:\\test_video.srt\" -o \"C:\\ResultsDir\" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
@@ -88,6 +89,12 @@ bool CVideoSubFinderApp::OnInit()
 	wxString wxStr;
 	bool blnNeedToExit = false;	
 	
+	if (m_pMainWnd->m_parser.Found("gs", &wxStr))
+	{
+		wxStr.Replace("\\", "/");
+		m_pMainWnd->m_GeneralSettingsFileName = wxStr;
+	}
+
 	SaveToReportLog("m_pMainWnd->Init...\n");
 	m_pMainWnd->Init();	
 	SaveToReportLog("m_pMainWnd->Init was finished.\n");
@@ -138,6 +145,7 @@ bool CVideoSubFinderApp::OnInit()
 	wxFileName::Mkdir(g_work_dir + "/ILAImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TestImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/TXTImagesJoined", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 
 	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("c"))
