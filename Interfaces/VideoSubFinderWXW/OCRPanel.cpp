@@ -679,9 +679,10 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 {
 	if (!(m_pMF->m_blnNoGUI))
 	{
+		wxString sub_name = (m_pMF->m_FileName.size() > 0) ? GetFileName(m_pMF->m_FileName) : wxT("sub");
 		m_sub_path.Clear();
 		wxFileDialog fd(m_pMF, wxT("Save subtitle as..."),
-			g_work_dir, "sub", wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass"), wxFD_SAVE);
+			g_work_dir, sub_name, wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass|All Files (*.*)|*.*"), wxFD_SAVE);
 		int res = fd.ShowModal();
 
 		if (res == wxID_OK)
