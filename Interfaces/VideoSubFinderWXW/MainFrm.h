@@ -54,6 +54,8 @@ public:
 
 	double		m_ocr_min_sub_duration;
 
+	int			process_affinity_mask = -1;
+
 	wxString	m_pixel_color_bgr;
 	wxString	m_pixel_color_lab;
 

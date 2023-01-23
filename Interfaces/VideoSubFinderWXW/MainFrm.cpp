@@ -290,6 +290,19 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
 	LoadSettings();
 
+	if (m_cfg.process_affinity_mask > 0)
+	{
+		HANDLE process = GetCurrentProcess();
+		DWORD_PTR dwProcessAffinityMask, dwSystemAffinityMask;
+
+		GetProcessAffinityMask(process, &dwProcessAffinityMask, &dwSystemAffinityMask);
+
+		dwProcessAffinityMask = (DWORD_PTR)m_cfg.process_affinity_mask & dwSystemAffinityMask;
+		BOOL success = SetProcessAffinityMask(process, dwProcessAffinityMask);
+
+		SaveToReportLog(wxString::Format(wxT("CMainFrame::Init(): SetProcessAffinityMask(%d) == %d\n"), (int)dwProcessAffinityMask, (int)success));
+	}
+
 	bool find_fount_size_lbl = false;
 	bool find_fount_size_btn = false;
 
@@ -877,6 +890,8 @@ void CMainFrame::LoadSettings()
 
 	ReadProperty(m_general_settings, m_cfg.m_prefered_locale, "prefered_locale");
 
+	ReadProperty(m_general_settings, m_cfg.process_affinity_mask, "process_affinity_mask");
+
 	ReadProperty(m_general_settings, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
 	
 	ReadProperty(m_general_settings, m_cfg.m_txt_dw, "txt_dw");
@@ -1064,6 +1079,8 @@ void CMainFrame::SaveSettings()
 	m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
 
 	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
+
+	WriteProperty(fout, m_cfg.process_affinity_mask, "process_affinity_mask");
 
 	WriteProperty(fout, m_cfg.m_fount_size_lbl, "fount_size_lbl");
 	WriteProperty(fout, m_cfg.m_fount_size_btn, "fount_size_btn");

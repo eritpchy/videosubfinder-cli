@@ -54,6 +54,7 @@ Known Issues
 1) Different timing in OpenCV vs FFMPEG video open but now they are very close with difference ~ 000-001 milliseconds.
 2) In case of Center alignment, which is by default, take into the note that if whole subtitle will be in right half part of selected boundary box it will be removed.
 3) Missed subtitles. Check that missed subtitles are not < 12 frames length (going less then 0.5s), if so you can change "Sub Frames Length" to 6 or other in "Settings" tab.
+4) For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 
 #########################################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -204,7 +205,7 @@ In this case you can use "Use Filter Colors" with define all of used colors in s
 
 6) Add Video Filters during "Run Search"
 6-1)
-In case of logo present or some other issues program now support also AviSynth+ scripts by opening video with FFPMEG CPU device video decoding:
+In case of logo present or some other issues program now support also AviSynth+ scripts by opening *.avs script like video file with FFPMEG CPU device video decoding:
 https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
 NOTE1: HW Acceleration (GPU) doesn't support AviSynth. So you need to set CPU device in "FFMPEG HW Devices" in "Settings" tab (which is by default).
 NOTE2: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use 
@@ -234,6 +235,11 @@ In case of subs with solid/good borders you can try to decrease both of them to 
 Dependently from what CPU and Nvidia GPU you have, if speed is important it is recommended to turn on "Use CUDA GPU Acceleration" checkbox,
 this can also increase performance ~x2.
 
+8) You can define Process Affinity Mask ('process_affinity_mask' parameter in 'settings/general.cfg') for selection logical processor on which the threads of the process are allowed to run.
+A process affinity mask is a bit vector in which each bit represents a logical processor on which the threads of the process are allowed to run.
+By default it is set to '-1' == threads on all logical processors is allowed to run.
+https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask
+
 #########################################################################################################
 Used terms:
 #########################################################################################################
@@ -248,6 +254,9 @@ On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Co
 #########################################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:
 #########################################################################################################
+
+NOTE:
+For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 
 (1) FineReader: https://www.abbyy.com/finereader/
 1_1. Video instructions:
