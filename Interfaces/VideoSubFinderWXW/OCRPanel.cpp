@@ -1093,7 +1093,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 			dc.SetFont(font);
 			text_size = dc.GetTextExtent(wxT("12345678987654321"));
-		} while ((text_size.GetWidth() < w) && (text_size.GetHeight() < (dh * 7) / 10));
+		} while ((text_size.GetWidth() < w) && (text_size.GetHeight() <= (dh * 6) / 10));
 		font_size--;
 
 		if (font_size == 0)
@@ -1116,8 +1116,27 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			file_name = FileNamesVector[fi];
 			file_path = dir_path + file_name;
 
-			//Str = wxString::Format(wxT("%d"), fi + 1);
-			Str = wxT("12345678987654321");
+			wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
+			u64 bt, et;
+
+			Str = file_name;
+
+			hour1 = Str.Mid(0, 1);
+			min1 = Str.Mid(2, 2);
+			sec1 = Str.Mid(5, 2);
+			msec1 = Str.Mid(8, 3);
+
+			hour2 = Str.Mid(13, 1);
+			min2 = Str.Mid(15, 2);
+			sec2 = Str.Mid(18, 2);
+			msec2 = Str.Mid(21, 3);
+
+			bt = (wxAtoi(hour1) * 3600 + wxAtoi(min1) * 60 + wxAtoi(sec1)) * 1000 + wxAtoi(msec1);
+			et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);
+
+			Str = VideoTimeToStr2(bt) +
+				" --> " +
+				VideoTimeToStr2(et);
 
 			text_size = dc.GetTextExtent(Str);			
 			dc.Clear();
