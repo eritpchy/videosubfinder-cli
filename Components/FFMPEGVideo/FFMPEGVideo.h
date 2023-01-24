@@ -85,7 +85,7 @@ public:
 	AVBufferRef *hw_device_ctx = NULL;		
 	AVCodecContext *decoder_ctx = NULL;		
 	AVStream *video = NULL;
-	AVCodec *decoder = NULL;
+	const AVCodec *decoder = NULL;
 	AVFrame *frame = NULL;
 	AVFrame *sw_frame = NULL;
 	AVFrame* filt_frame = NULL;
