@@ -14,6 +14,7 @@
 //																				//
 //////////////////////////////////////////////////////////////////////////////////
 
+#define _HAS_STD_BYTE 0
 #include "SearchPanel.h"
 #include <exception>
 #include <wx/sound.h>

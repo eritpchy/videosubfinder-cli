@@ -14,6 +14,7 @@
 //																				//
 //////////////////////////////////////////////////////////////////////////////////
 
+#define _HAS_STD_BYTE 0
 #include "OCRPanel.h"
 #include "CommonFunctions.h"
 #include <algorithm>
@@ -21,14 +22,17 @@
 #include <regex>
 #include <fstream>
 #include <streambuf>
-#include <ppl.h>
-#include <ppltasks.h>
 #include <concurrent_queue.h>
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
 #include <wx/sound.h>
 #include <wx/rawbmp.h>
+#ifdef WIN32
+#include <ppl.h>
+#include <ppltasks.h>
+#endif
+
 using namespace std;
 
 bool g_use_ISA_images_for_get_txt_area = true;
@@ -1374,34 +1378,33 @@ struct find_text_queue_data
 	bool m_is_end = false;
 };
 
-concurrency::task<void> TaskFindTextLines(concurrency::concurrent_queue<find_text_queue_data> &task_queue)
+custom_task TaskFindTextLines(threadsafe_queue<find_text_queue_data> &task_queue)
 {
-	return concurrency::create_task([&task_queue] {
+	return create_custom_task([&task_queue] {
 			find_text_queue_data text_queue_data;
 
 			while (1)
-			{			
-				if (task_queue.try_pop(text_queue_data))
+			{
+				task_queue.wait_and_pop(text_queue_data);
+				
+				if (text_queue_data.m_is_end)
 				{
-					if (text_queue_data.m_is_end)
+					break;
+				}
+				else
+				{
+					custom_set_started(text_queue_data.m_p_event);
+
+					if (g_RunCreateClearedTextImages == 0)
 					{
-						break;
+						text_queue_data.m_p_event->m_need_to_skip = true;
 					}
 					else
 					{
-						custom_set_started(text_queue_data.m_p_event);
-
-						if (g_RunCreateClearedTextImages == 0)
-						{
-							text_queue_data.m_p_event->m_need_to_skip = true;
-						}
-						else
-						{
-							FindTextLines(g_work_dir + "/RGBImages/" + text_queue_data.m_file_name, *text_queue_data.m_p_res);															
-						}
-
-						text_queue_data.m_p_event->set();
+						FindTextLines(g_work_dir + "/RGBImages/" + text_queue_data.m_file_name, *text_queue_data.m_p_res);															
 					}
+
+					text_queue_data.m_p_event->set();
 				}
 			}
 		}
@@ -1505,10 +1508,11 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	if (NImages > 0)
 	{
-		concurrency::concurrent_queue<find_text_queue_data> task_queue;
+		threadsafe_queue<find_text_queue_data> task_queue;
 		simple_buffer<FindTextLinesRes*> task_results(NImages);
 		simple_buffer<my_event*> task_events(NImages);
-		vector<concurrency::task<void>> tasks(g_ocr_threads, concurrency::create_task([] {}));		
+		vector<custom_task> tasks(g_ocr_threads, create_custom_task([] {}));
+		wait_all(begin(tasks), end(tasks));
 
 		if (!(m_pMF->m_blnNoGUI))
 		{
@@ -1539,12 +1543,12 @@ void *ThreadCreateClearedTextImages::Entry()
 		{
 			task_results[k] = new FindTextLinesRes();
 			task_events[k] = new my_event();
-			task_queue.push({ FileNamesVector[k], task_results[k], task_events[k] });
+			task_queue.push(find_text_queue_data{ FileNamesVector[k], task_results[k], task_events[k] });
 		}
 
 		for (k = 0; k < g_ocr_threads; k++)
 		{
-			task_queue.push({ "", NULL, NULL, true });
+			task_queue.push(find_text_queue_data{ "", NULL, NULL, true });
 			tasks[k] = TaskFindTextLines(task_queue);
 		}
 
@@ -1626,7 +1630,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			}
 		}
 
-		concurrency::when_all(begin(tasks), end(tasks)).wait();
+		wait_all(begin(tasks), end(tasks));
 	}
 
 	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));

@@ -22,6 +22,8 @@
 #include <wx/string.h>
 #include <wx/wfstream.h>
 #include <fstream>
+#include <execution>
+#include <algorithm>
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
 #include <opencv2/opencv.hpp>
@@ -528,7 +530,7 @@ int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int
 
 	simple_buffer<T> ImIntRes(w * h, 0);
 
-	concurrency::parallel_for(0, N, [&ImIntRes, &ppFigures, N, w, h, white, im_is_white](int i)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(N), [&ImIntRes, &ppFigures, N, w, h, white, im_is_white](int i)
 		//for (i = 0; i < N; i++)
 		{
 			bool found = false;

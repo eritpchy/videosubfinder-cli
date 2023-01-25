@@ -18,8 +18,12 @@
 #include <time.h>
 #include <memory.h>
 #include <wx/wx.h>
-#include <ppl.h>
 #include "opencv2/imgcodecs.hpp"
+#include <condition_variable>
+#include <queue>
+#ifdef WIN32
+#include <ppl.h>
+#endif
 
 typedef unsigned char		u8;
 typedef unsigned short		u16;
@@ -86,37 +90,240 @@ enum TextAlignment {
 	Any
 };
 
-class custom_event : public concurrency::event
+class custom_event
 {
+	std::mutex m_cv_mutex;
+	std::condition_variable m_cv;
+
 public:
+#ifdef CUSTOM_ASSERT
 	bool m_started = false;
+#endif
 	bool m_finished = false;
 	bool m_need_to_skip = false;
 
+#ifdef CUSTOM_ASSERT
 	void set_started()
 	{
 		custom_assert(m_started == false, "class custom_event:set_started\nnot: m_started == false");
 		custom_assert(m_finished == false, "class custom_event:set_started\nnot: m_finished == false");
 		m_started = true;
 	}
+#endif
 
 	void set()
 	{
+		const std::lock_guard<std::mutex> lock(m_cv_mutex);
 		custom_assert(m_started == true, "class custom_event:set\nnot: m_started == true");
 		custom_assert(m_finished == false, "class custom_event:set\nnot: m_finished == false");
 		m_finished = true;
-		concurrency::event::set();
+		m_cv.notify_all();
+	}
+
+	void wait()
+	{
+		std::unique_lock<std::mutex> lock(m_cv_mutex);
+		m_cv.wait(lock, [this] { return m_finished; });
 	}
 
 	void reset()
 	{
 		custom_assert(m_started == m_finished, "class custom_event:reset\nnot: m_started == m_finished");
+#ifdef CUSTOM_ASSERT
 		m_started = false;
+#endif
 		m_finished = false;
 		m_need_to_skip = false;
-		concurrency::event::reset();
 	}
 };
+
+template <typename T>
+class threadsafe_queue
+{
+	std::mutex m_cv_mutex;
+	std::condition_variable m_cv;
+	std::queue<T> m_data_queue;
+
+public:
+	void push(T& new_data)
+	{
+		const std::lock_guard<std::mutex> lock(m_cv_mutex);
+		m_data_queue.push(new_data);
+		m_cv.notify_all();
+	}
+
+	void wait_and_pop(T& data)
+	{
+		std::unique_lock<std::mutex> lock(m_cv_mutex);
+		m_cv.wait(lock, [this] { return m_data_queue.size() > 0; });
+		data = m_data_queue.front();
+		m_data_queue.pop();
+	}
+};
+
+template <typename T>
+class ForwardIteratorForDefineRange
+{
+public:
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = T;
+	using difference_type = T;
+	using pointer = T*;
+	using reference = T&;
+
+	ForwardIteratorForDefineRange() = default;
+	ForwardIteratorForDefineRange(T index) : m_index(index) {}
+	const T& operator*() const { return m_index; }
+	const void operator++() { ++m_index; }
+	bool operator!=(const ForwardIteratorForDefineRange& lhs) const { return m_index != lhs.m_index; }
+private:
+	T m_index;
+};
+
+template <typename T>
+class ForwardIteratorForDefineRangeWithStep
+{
+public:
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = T;
+	using difference_type = T;
+	using pointer = T*;
+	using reference = T&;
+
+	ForwardIteratorForDefineRangeWithStep() = default;
+	ForwardIteratorForDefineRangeWithStep(T index, T step) : m_index(index), m_step(step) {}
+	const T& operator*() const { return m_index; }
+	const void operator++() { m_index += m_step; }
+	bool operator!=(const ForwardIteratorForDefineRangeWithStep& lhs) const { return m_index != lhs.m_index; }
+private:
+	T m_index;
+	T m_step;
+};
+
+#ifdef WIN32
+#define run_in_parallel concurrency::parallel_invoke
+#else
+template <typename _Function1, typename _Function2>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2)
+{
+	std::thread t1(_Func1);
+	std::thread t2(_Func2);
+
+	t1.join();
+	t2.join();
+}
+
+template <typename _Function1, typename _Function2, typename _Function3>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, const _Function3& _Func3)
+{
+	std::thread t1(_Func1);
+	std::thread t2(_Func2);
+	std::thread t3(_Func3);
+
+	t1.join();
+	t2.join();
+	t3.join();
+}
+
+template <typename _Function1, typename _Function2, typename _Function3, typename _Function4>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, const _Function3& _Func3, const _Function4& _Func4)
+{
+	std::thread t1(_Func1);
+	std::thread t2(_Func2);
+	std::thread t3(_Func3);
+	std::thread t4(_Func4);
+
+	t1.join();
+	t2.join();
+	t3.join();
+	t4.join();
+}
+
+template <typename _Function1, typename _Function2, typename _Function3, typename _Function4, typename _Function5>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, const _Function3& _Func3, const _Function4& _Func4, const _Function5& _Func5)
+{
+	std::thread t1(_Func1);
+	std::thread t2(_Func2);
+	std::thread t3(_Func3);
+	std::thread t4(_Func4);
+	std::thread t5(_Func5);
+
+	t1.join();
+	t2.join();
+	t3.join();
+	t4.join();
+	t5.join();
+}
+#endif
+
+class custom_task
+{
+	std::shared_ptr<std::thread> m_thr;
+
+public:
+	custom_task() {}
+
+	template<typename _Function>
+	custom_task(const _Function& _Func)
+	{
+		m_thr = std::make_shared<std::thread>(_Func);
+	}
+
+	custom_task(const custom_task& other)
+	{
+		m_thr = other.m_thr;
+	}
+
+	custom_task(custom_task&& other)
+	{
+		m_thr = std::move(other.m_thr);
+	}
+
+	custom_task & operator= (const custom_task& other)
+	{
+		custom_assert(static_cast<bool>(m_thr) == false, "custom_task: 'operator= &&' m_thr != false");
+
+		if (other.m_thr)
+		{
+			m_thr = other.m_thr;
+		}		
+
+		return *this;
+	}
+
+	custom_task& operator= (custom_task&& other)
+	{
+		custom_assert(static_cast<bool>(m_thr) == false, "custom_task: 'operator= &&' m_thr != false");
+
+		m_thr = std::move(other.m_thr);
+
+		return *this;
+	}
+
+	void wait()
+	{
+		if (m_thr)
+		{
+			if (m_thr->joinable())
+			{
+				m_thr->join();				
+			}
+
+			m_thr.reset();
+		}
+	}
+};
+
+#define create_custom_task custom_task
+
+template <typename _Iterator>
+inline void wait_all(_Iterator first, _Iterator last)
+{
+	for (; first != last; ++first)
+	{
+		first->wait();
+	}
+}
 
 template <typename T>
 class custom_buffer

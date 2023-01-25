@@ -56,6 +56,91 @@ void SaveToReportLog(wxString msg, wxString mode)
 	ffout.Close();
 }
 
+template <typename T>
+void test_func(simple_buffer<T>& Im)
+{
+	for (int i = 0; i < Im.size(); i++)
+	{
+		for (int j = 0; j < 1920*10; j++)
+		{
+			Im[i] += Im[j];
+		}
+	}
+}
+
+template <typename T>
+void test_func_fast(simple_buffer<T>& Im)
+{
+	for (int i = 0; i < Im.size(); i++)
+	{
+		for (int j = 0; j < 1920; j++)
+		{
+			Im[i] += 1;
+		}
+	}
+}
+
+void test1()
+{
+	int w = 1920;
+	int h = 1080;
+	simple_buffer<u8> Im(w * h, 1);
+
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(h), [&](int y)
+	{
+		for (int i = w * y; i < w * (y + 1); i++)
+		{
+			for (int j = 0; j < 1920 * 10; j++)
+			{
+				Im[i] += Im[j];
+			}
+		}
+	});
+}
+
+void test2()
+{
+	simple_buffer<u8> Im1(1920 * 1080, 1);
+	simple_buffer<u8> Im2(1920 * 1080, 2);
+	simple_buffer<u8> Im3(1920 * 1080, 3);
+	simple_buffer<u8> Im4(1920 * 1080, 4);
+	simple_buffer<u8> Im5(1920 * 1080, 5);
+
+	run_in_parallel(
+		[&] { test_func(Im1); },
+		[&] { test_func(Im2); },
+		[&] { test_func(Im3); },
+		[&] { test_func(Im4); },
+		[&] { test_func(Im5); }
+	);
+}
+
+void test3()
+{
+	int N = 64;
+	vector<custom_task> thrs;
+	thrs = vector<custom_task>(N, create_custom_task([] {}));
+	wait_all(begin(thrs), end(thrs));
+
+	simple_buffer<u32> Im1(1920 * 1080, 1);
+	simple_buffer<u32> Im2(1920 * 1080, 2);
+
+	thrs[0] = create_custom_task([&] { test_func_fast(Im1); });
+	thrs[1] = create_custom_task([&] { test_func_fast(Im2); });
+
+	wait_all(begin(thrs), end(thrs));
+
+	N = N;
+}
+
+void test()
+{
+	//test1();
+	//test2();
+
+	test3();
+}
+
 bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 {
 	wxString Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
@@ -67,6 +152,8 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 
 	SaveToReportLog("Starting program...\n", wxT("wb"));
 	SaveToReportLog("CVideoSubFinderApp::Initialize...\n");
+
+	//test();
 
 	SaveToReportLog("new CMainFrame...\n");
 	m_pMainWnd = new CMainFrame("VideoSubFinder " VSF_VERSION " Version");

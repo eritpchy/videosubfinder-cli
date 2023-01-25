@@ -17,10 +17,12 @@
 #include "SSAlgorithms.h"
 #include <math.h>
 #include <wx/regex.h>
-#include <ppl.h>
-#include <ppltasks.h>
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
+#ifdef WIN32
+#include <ppl.h>
+#include <ppltasks.h>
+#endif
 
 #ifdef CUSTOM_TA 
 #include "ittnotify.h"
@@ -192,7 +194,7 @@ int CompareTwoSubsByOffset(simple_buffer<simple_buffer<u8>*> &ImForward, simple_
 	
 		int DL = g_DL;
 
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&ImInt2, &ImForward, DL, offset, w, h] {
 				ImInt2 = *(ImForward[offset]);
 
@@ -256,7 +258,7 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 		{
 			if ((l != r) && (blns[l] == -1) && (blns[r] == -1))
 			{
-				concurrency::parallel_invoke(
+				run_in_parallel(
 					[&blns, &ImForward, &ImYForward, &ImNEForward, &ImIntS, &ImYS, &ImNES, &prevImNE, w, h, W, H, min_x, max_x, l] {
 						blns[l] = CompareTwoSubsByOffset(ImForward, ImYForward, ImNEForward, ImIntS, ImYS, ImNES, prevImNE, w, h, W, H, min_x, max_x, l, fn);
 					},
@@ -328,9 +330,9 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 	return offset;
 }
 
-inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u16> &ImY, simple_buffer<u8>* pImLab, int w, int h, int W, int H, int &res)
+inline custom_task TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u16> &ImY, simple_buffer<u8>* pImLab, int w, int h, int W, int H, int &res)
 {
-	return concurrency::create_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, pImLab, w, h, W, H, &res]
+	return create_custom_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, pImLab, w, h, W, H, &res]
 	{		
 		evt_rgb.wait();
 
@@ -343,7 +345,7 @@ inline concurrency::task<void> TaskConvertImage(int fn, my_event &evt_rgb, my_ev
 #endif
 			if (pImLab != NULL)
 			{
-				concurrency::parallel_invoke(
+				run_in_parallel(
 					[&ImBGR, &ImF, &ImNE, &ImY, w, h, W, H, &res] {
 						simple_buffer<u8> ImFF(w * h, 0), ImSF(w * h, 0), ImYOrig(w * h, 0);
 						res = GetTransformedImage(ImBGR, ImFF, ImSF, ImF, ImNE, ImYOrig, w, h, W, H, 0, w - 1);
@@ -439,11 +441,11 @@ class RunSearch
 	custom_buffer<simple_buffer<u16>> m_ImYInt;
 	simple_buffer<simple_buffer<u16>*> m_pImYInt;
 
-	vector<concurrency::task<void>> m_thrs_one_step;
-	vector<concurrency::task<void>> m_thrs_rgb;
-	vector<concurrency::task<void>> m_thrs;
-	vector<concurrency::task<void>> m_thrs_int;
-	vector<concurrency::task<void>> m_thrs_save_images;
+	vector<custom_task> m_thrs_one_step;
+	vector<custom_task> m_thrs_rgb;
+	vector<custom_task> m_thrs;
+	vector<custom_task> m_thrs_int;
+	vector<custom_task> m_thrs_save_images;
 
 	vector<my_event> m_events_one_step; // events for one step done
 	simple_buffer<my_event*> m_p_events_one_step;
@@ -574,19 +576,26 @@ public:
 			}
 		}
 
-		m_thrs_one_step = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
-		m_thrs_rgb = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
-		m_thrs = vector<concurrency::task<void>>(m_N, concurrency::create_task([] {}));
-		m_thrs_int = vector<concurrency::task<void>>(m_threads, concurrency::create_task([] {}));
+		m_thrs_one_step = vector<custom_task>(m_N, create_custom_task([] {}));
+		wait_all(begin(m_thrs_one_step), end(m_thrs_one_step));
+
+		m_thrs_rgb = vector<custom_task>(m_N, create_custom_task([] {}));
+		wait_all(begin(m_thrs_rgb), end(m_thrs_rgb));
+
+		m_thrs = vector<custom_task>(m_N, create_custom_task([] {}));
+		wait_all(begin(m_thrs), end(m_thrs));
+
+		m_thrs_int = vector<custom_task>(m_threads, create_custom_task([] {}));
+		wait_all(begin(m_thrs_int), end(m_thrs_int));
 	}
 
 	~RunSearch()
 	{		
-		concurrency::when_all(begin(m_thrs_one_step), end(m_thrs_one_step)).wait();
-		concurrency::when_all(begin(m_thrs_rgb), end(m_thrs_rgb)).wait();
-		concurrency::when_all(begin(m_thrs), end(m_thrs)).wait();
-		concurrency::when_all(begin(m_thrs_int), end(m_thrs_int)).wait();
-		concurrency::when_all(begin(m_thrs_save_images), end(m_thrs_save_images)).wait();		
+		wait_all(begin(m_thrs_one_step), end(m_thrs_one_step));
+		wait_all(begin(m_thrs_rgb), end(m_thrs_rgb));
+		wait_all(begin(m_thrs), end(m_thrs));
+		wait_all(begin(m_thrs_int), end(m_thrs_int));
+		wait_all(begin(m_thrs_save_images), end(m_thrs_save_images));
 	}
 
 	void AddSaveImagesTask(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImISA, simple_buffer<u16>& ImILA, wxString name)
@@ -601,7 +610,7 @@ public:
 		int ymax = m_ymax;
 		bool convert_to_lab = m_convert_to_lab;
 
-		m_thrs_save_images.emplace_back(concurrency::create_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
+		m_thrs_save_images.emplace_back(create_custom_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
 					{
 						simple_buffer<u8> ImTMP_BGR(W * H * 3);
 						ImBGRToNativeSize(ImBGR, ImTMP_BGR, w, h, W, H, xmin, xmax, ymin, ymax);
@@ -689,7 +698,7 @@ public:
 				}
 			}
 
-			m_thrs_one_step[j] = concurrency::create_task([fn, fdn, num, pPos, pFrameData, pV, p_events_one_step, need_to_get]() mutable
+			m_thrs_one_step[j] = create_custom_task([fn, fdn, num, pPos, pFrameData, pV, p_events_one_step, need_to_get]() mutable
 			{
 				for (int i = 0; i < num; i++)
 				{
@@ -716,7 +725,7 @@ public:
 				}
 			});
 
-			m_thrs_rgb[j] = concurrency::create_task([fn, fdn, num, pFrameData, pImBGR, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
+			m_thrs_rgb[j] = create_custom_task([fn, fdn, num, pFrameData, pImBGR, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
 				{
 					for (int i = 0; i < num; i++)
 					{
@@ -790,7 +799,7 @@ public:
 			int h = m_h;
 			int DL = g_DL;
 
-			m_thrs_int[fdn] = concurrency::create_task([pthrs_int_res, fn, fn_start, fdn, pIm, pImY, p_events, pthrs_res, pImInt, pImYInt, threads, w, h, DL]() mutable
+			m_thrs_int[fdn] = create_custom_task([pthrs_int_res, fn, fn_start, fdn, pIm, pImY, p_events, pthrs_res, pImInt, pImYInt, threads, w, h, DL]() mutable
 			{
 				int bln = 1;
 				bool need_to_skip = false;
@@ -820,7 +829,7 @@ public:
 #ifdef CUSTOM_TA
 					__itt_task_begin(domain, __itt_null, __itt_null, shAddIntersectImagesTaskV1);
 #endif
-					concurrency::parallel_invoke(
+					run_in_parallel(
 							[&pImInt, &pIm, fdn, DL, w, h] {
 							*pImInt = *pIm[fdn];
 							IntersectImages(*(pImInt), pIm, fdn + 1, fdn + DL - 1, w, h);
@@ -1003,8 +1012,10 @@ public:
 				m_p_events_rgb[i]->wait();
 			}
 
-			concurrency::when_all(begin(m_thrs), next(begin(m_thrs),fdn)).wait();
-			concurrency::when_all(begin(m_thrs_int), next(begin(m_thrs_int), std::min<int>(fdn, m_threads))).wait();
+			wait_all(begin(m_thrs), next(begin(m_thrs),fdn));
+			wait_all(begin(m_thrs_one_step), next(begin(m_thrs_one_step), fdn));
+			wait_all(begin(m_thrs_rgb), next(begin(m_thrs_rgb), fdn));
+			wait_all(begin(m_thrs_int), next(begin(m_thrs_int), std::min<int>(fdn, m_threads)));
 
 			simple_buffer<simple_buffer<u8>*>  pFrameData(m_pFrameData);
 			simple_buffer<simple_buffer<u8>*> pImBGR(m_pImBGR);
@@ -1027,14 +1038,14 @@ public:
 				m_pImNE[i] = pImNE[i + fdn];
 				m_pImY[i] = pImY[i + fdn];
 				m_pIm[i] = pIm[i + fdn];
-				m_pPos[i] = pPos[i + fdn];
-				m_thrs[i] = m_thrs[i + fdn];
+				m_pPos[i] = pPos[i + fdn];				
 				m_pthrs_res[i] = pthrs_res[i + fdn];
 				m_p_events_one_step[i] = p_events_one_step[i + fdn];
 				m_p_events_rgb[i] = p_events_rgb[i + fdn];
 				m_p_events[i] = p_events[i + fdn];
-				m_thrs_one_step[i] = m_thrs_one_step[i + fdn];				
-				m_thrs_rgb[i] = m_thrs_rgb[i + fdn];
+				m_thrs[i] = std::move(m_thrs[i + fdn]);
+				m_thrs_one_step[i] = std::move(m_thrs_one_step[i + fdn]);
+				m_thrs_rgb[i] = std::move(m_thrs_rgb[i + fdn]);
 			}			
 
 			for (i = m_N - fdn, j=0; i < m_N; i++, j++)
@@ -1084,8 +1095,8 @@ public:
 				{
 					m_pImInt[i] = pImInt[i + fdn];
 					m_pImYInt[i] = pImYInt[i + fdn];
-					m_thrs_int[i] = m_thrs_int[i + fdn];
 					m_pthrs_int_res[i] = pthrs_int_res[i + fdn];
+					m_thrs_int[i] = std::move(m_thrs_int[i + fdn]);
 				}
 
 				for (i = m_threads - fdn, j = 0; i < m_threads; i++, j++)
@@ -1285,7 +1296,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #ifdef CUSTOM_TA
 					__itt_task_begin(domain, __itt_null, __itt_null, shFirstCheck);
 #endif
-					concurrency::parallel_invoke(
+					run_in_parallel(
 						[&rs , &ImInt, &ImForward, fn_start, ddl1_ofset, w, h] {
 							rs.GetConvertImageCopy(fn_start + ddl1_ofset, NULL, &ImInt, NULL, NULL);
 							IntersectTwoImages(ImInt, *(ImForward[1]), w, h);
@@ -1327,7 +1338,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #ifdef CUSTOM_TA
 							__itt_task_begin(domain, __itt_null, __itt_null, shSecondCheckPart2);
 #endif
-							concurrency::parallel_invoke(
+							run_in_parallel(
 								[&ImInt, &ImForward, ddl1_ofset, ddl2_ofset, w, h] {
 									IntersectImages(ImInt, ImForward, ddl1_ofset + 1, ddl2_ofset - 1, w, h);
 								},
@@ -2310,7 +2321,7 @@ int DifficultCompareTwoSubs2(simple_buffer<u8>& ImF1, simple_buffer<u16>* pImILA
 	AddTwoImages(ImF1, ImF2, ImRES, w*h);
 	ln = GetLinesInfo(ImRES, lb, le, w, h);
 	
-	concurrency::parallel_invoke(
+	run_in_parallel(
 		[&] {
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/DifficultCompareTwoSubs2_02_1_ImFF1" + g_im_save_format, w, h);
 			FilterImage(ImFF1, ImNE11, w, h, W, H, min_x, max_x, lb, le, ln);
@@ -2363,7 +2374,7 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 		ImFF1 = Im1;
 		ImFF2 = Im2;
 
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&ImFF1, pImILA1, w, h, &iter_det] {
 			if (g_show_results) SaveGreyscaleImage(ImFF1, "/TestImages/CompareTwoSubs_01_01_01_ImFF1" + g_im_save_format, w, h);
 			if (pImILA1 != NULL)
@@ -2631,7 +2642,7 @@ int CompareTwoSubs(simple_buffer<u8>& Im1, simple_buffer<u16>* pImILA1, simple_b
 
 	double min_dif, dif1, dif2;
 
-	concurrency::parallel_invoke(
+	run_in_parallel(
 		[&ImVE11, &ImVE2, &val1, &dif1, &compare] {
 		val1 = compare(ImVE11, ImVE2, dif1);
 	},

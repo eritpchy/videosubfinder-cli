@@ -25,8 +25,11 @@
 #ifdef WIN64
 #include "cuda_kernels.h"
 #endif
+#ifdef WIN32
 #include <ppl.h>
 #include <ppltasks.h>
+#endif
+
 using namespace std;
 
 void ClearMainClusterImage(simple_buffer<u8>& ImMainCluster, simple_buffer<u8> ImMASK, simple_buffer<u8>& ImIL, int w, int h, int W, int H, int LH, wxString iter_det);
@@ -819,7 +822,7 @@ void ColorFiltration(simple_buffer<u8>& ImBGR, simple_buffer<int>& LB, simple_bu
 
 	simple_buffer<int> line(h, 0);
 	
-	concurrency::parallel_for(0, h, [&](int y)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(h), [&](int y)
 	{
 		int ib = w * y;
 		int cnt = 0;
@@ -955,7 +958,7 @@ void ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int 
 	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
 	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
 
-	concurrency::parallel_for(1, my, [&](int y)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(1), ForwardIteratorForDefineRange<int>(my), [&](int y)
 	{
 		int x;
 		short val, val1, val2, val3, val4, max;
@@ -1015,7 +1018,7 @@ void FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, 
 	const int mx = w - 1;
 	const int my = h - 1;
 
-	concurrency::parallel_for(1, my, [&](int y)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(1), ForwardIteratorForDefineRange<int>(my), [&](int y)
 	{
 		int x;
 		short val, val1, val2;
@@ -1053,7 +1056,7 @@ void FastImprovedSobelHEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImHOE, 
 	const int mx = w - 1;
 	const int my = h - 1;
 
-	concurrency::parallel_for(1, my, [&](int y)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(1), ForwardIteratorForDefineRange<int>(my), [&](int y)
 	{
 		int x;
 		short val, val1, val2;
@@ -1293,7 +1296,7 @@ void AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)
 	const int mx = w - 2;
 	const int my = h - 2;	
 
-	concurrency::parallel_for(2, my, [&](int y)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(2), ForwardIteratorForDefineRange<int>(my), [&](int y)
 	{
 		int i, x, val;
 		
@@ -1323,7 +1326,7 @@ void AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)
 	const int mx = w - 2;
 	const int my = h - 2;
 	
-	concurrency::parallel_for(2, my, [&](int y)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(2), ForwardIteratorForDefineRange<int>(my), [&](int y)
 	{
 		int i, ii, x, val;
 
@@ -1553,7 +1556,7 @@ void GetImFF(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8>
 				ImV.copy_data(ImVFull, i, w * LB[k], cnt);
 			}
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&] { ImprovedSobelMEdge(ImY, ImYMOE, ww, hh); },
 				[&] { ImprovedSobelMEdge(ImU, ImUMOE, ww, hh); },
 				[&] { ImprovedSobelMEdge(ImV, ImVMOE, ww, hh); }
@@ -1563,7 +1566,7 @@ void GetImFF(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8>
 		{
 			simple_buffer<u16> ImRES1(ww * hh), ImRES4(ww * hh);
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&] { GetImCMOEWithThr1(ImRES4, ImYMOE, ImUMOE, ImVMOE, ww, hh, W, H, offsets, dhs, N, mthr); },
 				[&] { GetImCMOEWithThr2(ImRES1, ImYMOE, ImUMOE, ImVMOE, ww, hh, W, H, offsets, dhs, N, mthr); }
 			);
@@ -1627,7 +1630,7 @@ void GetImNE(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	{
 		simple_buffer<u16> ImYMOE(w * h), ImUMOE(w * h), ImVMOE(w * h);
 
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&] { FastImprovedSobelNEdge(ImY, ImYMOE, w, h); },
 			[&] { FastImprovedSobelNEdge(ImU, ImUMOE, w, h); },
 			[&] { FastImprovedSobelNEdge(ImV, ImVMOE, w, h); }
@@ -1638,7 +1641,7 @@ void GetImNE(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 
 		// ImRES1 values in range [0, 3*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
 		// ImRES2 values in range [0, 11*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&] {
 				int i = w + 1, x, y;
 				for (y = 1; y < my; y++, i += 2)
@@ -1699,7 +1702,7 @@ void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	{
 		simple_buffer<u16> ImYMOE(w * h), ImUMOE(w * h), ImVMOE(w * h);
 
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&] { FastImprovedSobelHEdge(ImY, ImYMOE, w, h); },
 			[&] { FastImprovedSobelHEdge(ImU, ImUMOE, w, h); },
 			[&] { FastImprovedSobelHEdge(ImV, ImVMOE, w, h); }
@@ -1710,7 +1713,7 @@ void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 
 		// ImRES1 values in range [0, 3*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
 		// ImRES2 values in range [0, 11*16*255] < max(u16) : https://docs.microsoft.com/en-us/cpp/cpp/data-type-ranges?view=vs-2019
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&] {
 				int i = w + 1, x, y;
 				for (y = 1; y < my; y++, i += 2)
@@ -1887,7 +1890,7 @@ int GetTransformedImage(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simpl
 				SaveGreyscaleImage(ImV, "/TestImages/GetTransformedImage_01_05_ImV" + g_im_save_format, w, h);
 			}
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&] { GetImFF(ImFF, ImSF, ImY, ImU, ImV, LB, LE, N, w, h, W, H, g_mthr); },
 				[&] { GetImNE(ImNE, ImY, ImU, ImV, w, h); },
 				[&] { GetImHE(ImHE, ImY, ImU, ImV, w, h); }
@@ -1985,7 +1988,7 @@ int SecondFiltration(simple_buffer<u8>& Im, simple_buffer<u8>& ImNE, simple_buff
 		int ia = 0;
 
 		// doesn't give difference (work a little longer)
-		//concurrency::parallel_for(LB[k] * w, ie, da, [&](int ia)
+		// std::for_each(std::execution::par, ForwardIteratorForDefineRangeWithStep<int>(LB[k] * w, da), ForwardIteratorForDefineRangeWithStep<int>(ie, da), [&](int ia)
 		//{
 		for (ia = LB[k] * w; ia < ie; ia += da)
 		{
@@ -3045,7 +3048,7 @@ void GetInfoByLocation(simple_buffer<u8> &Im, int &len, int &ww, int &max_sectio
 
 void GetClustersInfoByLocation(simple_buffer<u8> &ImMASKClusters, simple_buffer<int> &len, simple_buffer<int> &ww, simple_buffer<int> &max_section, simple_buffer<int> &cnts, int clusterCount, int w, int h, int min_x, int max_x, int min_y, int max_y, wxString iter_det)
 {
-	concurrency::parallel_for(0, clusterCount, [&ImMASKClusters, &len, &ww, &max_section, &cnts, clusterCount, w, h, min_x, max_x, min_y, max_y, iter_det](int cluster_id)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount), [&ImMASKClusters, &len, &ww, &max_section, &cnts, clusterCount, w, h, min_x, max_x, min_y, max_y, iter_det](int cluster_id)
 	{
 		int white = GetClusterColor(clusterCount, cluster_id);
 		GetInfoByLocation(ImMASKClusters, len[cluster_id], ww[cluster_id], max_section[cluster_id], cnts[cluster_id], w, h, min_x, max_x, min_y, max_y, white, iter_det);
@@ -3103,7 +3106,7 @@ void GetBinaryImageFromClustersImageByClusterId(simple_buffer<u8> &ImRES, simple
 
 void RestoreImMask(simple_buffer<u8> &ImClusters, simple_buffer<u8> &ImMASKF, int clusterCount, int w, int h, wxString iter_det)
 {	
-	concurrency::parallel_for(0, clusterCount, [&ImClusters, &ImMASKF, clusterCount, w, h](int cluster_id)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount), [&ImClusters, &ImMASKF, clusterCount, w, h](int cluster_id)
 	{
 		simple_buffer<u8> ImCluster(w * h);
 		simple_buffer<u8> ImTMP(ImMASKF);
@@ -3512,7 +3515,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 	if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetFirstFilteredClusters_" + iter_det + "_01_07_ImClustersRes" + g_im_save_format, w, h);
 
 	{
-		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h](int cluster_idx)
+		std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount2), [&ImClusters2, clusterCount2, w, h](int cluster_idx)
 		{
 			ClearImageOptimal(ImClusters2, w, h, GetClusterColor(clusterCount2, cluster_idx));
 		});
@@ -3570,7 +3573,7 @@ int GetFirstFilteredClusters(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImLab,
 	ImMaskWithBorderF.copy_data(ImMaskWithBorder, w * h);
 
 	{
-		concurrency::parallel_for(0, clusterCount2, [&ImMASK2, &ImClusters2, clusterCount2, w, h](int cluster_idx)
+		std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount2), [&ImMASK2, &ImClusters2, clusterCount2, w, h](int cluster_idx)
 		{
 			ClearImageByMask(ImClusters2, ImMASK2, w, h, GetClusterColor(clusterCount2, cluster_idx));
 		});
@@ -4040,7 +4043,7 @@ void MorphCloseAndExtByInsideAllFigures(simple_buffer<u8>& Im, simple_buffer<CMy
 {
 	//if (g_show_results) SaveGreyscaleImage(Im, "/TestImages/MorphCloseAndExtByInsideAllFigures_" + iter_det + "_01_FigureIm" + g_im_save_format, w, h);
 
-	concurrency::parallel_for(0, N, [&Im, &ppFigures, w, h, morph_close_size, iter_det](int f_i)
+	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(N), [&Im, &ppFigures, w, h, morph_close_size, iter_det](int f_i)
 	//for (int f_i = 0; f_i < N; f_i++)
 		{
 			CMyClosedFigure* pFigure = ppFigures[f_i];
@@ -4194,7 +4197,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 	if (g_show_results) SaveGreyscaleImage(ImClusters2, "/TestImages/GetMainClusterImage_" + iter_det + "_02_04_04_ImClusters2" + g_im_save_format, w, h);
 
 	{				
-		concurrency::parallel_for(0, clusterCount2, [&ImClusters2, clusterCount2, w, h, W, H, min_h, real_im_x_center, yb, ye, &ImMASK, iter_det](int cluster_idx)
+		std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount2), [&ImClusters2, clusterCount2, w, h, W, H, min_h, real_im_x_center, yb, ye, &ImMASK, iter_det](int cluster_idx)
 		{
 			int i, val, LH, LMAXY, lb, le;
 			u8 white = GetClusterColor(clusterCount2, cluster_idx);
@@ -4356,7 +4359,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 				{ std::pair<int, int>{min_y, rc}, std::pair<int, int>{max_y, rc} },
 				{ std::pair<int, int>{min_x, rc}, std::pair<int, int>{max_x, rc} });
 
-			concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h, min_h, real_im_x_center, min_x, max_x, min_y, max_y, rc, iter_det](int cluster_idx)
+			std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount3), [&ImClusters3, clusterCount3, w, h, min_h, real_im_x_center, min_x, max_x, min_y, max_y, rc, iter_det](int cluster_idx)
 				{					
 					int white = GetClusterColor(clusterCount3, cluster_idx);
 					if (g_show_results)
@@ -4446,7 +4449,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 		{
 			if (g_show_results) SaveGreyscaleImage(ImClusters3, "/TestImages/GetMainClusterImage_" + iter_det + "_03_02_05_01_ImClusters3" + g_im_save_format, w, h);
 
-			concurrency::parallel_for(0, clusterCount3, [&ImMASK2, &ImClusters3, clusterCount3, w, h](int cluster_idx)
+			std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount3), [&ImMASK2, &ImClusters3, clusterCount3, w, h](int cluster_idx)
 			{
 				ClearImageByMask(ImClusters3, ImMASK2, w, h, GetClusterColor(clusterCount3, cluster_idx));
 			});
@@ -4480,7 +4483,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 				{
 					if (g_show_results) SaveGreyscaleImageWithSubParams(ImMASK, "/TestImages/GetMainClusterImage_" + iter_det + "_03_03_02_04_sub_iter" + std::to_string(sub_iter) + "_01_01_02_ImMASK_WSP" + g_im_save_format, lb, le, LH, LMAXY, real_im_x_center, w, h);
 
-					concurrency::parallel_for(0, clusterCount3, [&ImClusters3, clusterCount3, w, h, W, H, lb, le, LH, LMAXY, min_h, real_im_x_center, iter_det, sub_iter, yb, ye](int cluster_idx)
+					std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(clusterCount3), [&ImClusters3, clusterCount3, w, h, W, H, lb, le, LH, LMAXY, min_h, real_im_x_center, iter_det, sub_iter, yb, ye](int cluster_idx)
 					{
 						u8 white = GetClusterColor(clusterCount3, cluster_idx);
 						if (g_show_results)
@@ -4753,7 +4756,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 				SaveGreyscaleImage(ImMainCluster2, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainClusterInImClusters2" + g_im_save_format, w, h);
 			}
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&ImMainCluster, &ImMaskWithBorder, &ImIL, &ImBGR, &ImLab, w, h, iter_det] {
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainCluster" + g_im_save_format, w, h);
 				if (g_use_ILA_images_before_clear_txt_images_from_borders)
@@ -4830,7 +4833,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 		{
 			val = GetSubParams(ImMASK, w, h, 255, LH, LMAXY, lb, le, min_h, real_im_x_center, yb, ye, iter_det);
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&ImMainCluster, &ImMaskWithBorder, w, h, LH, LMAXY, lb, le, real_im_x_center, iter_det] {
 				IntersectTwoImages(ImMainCluster, ImMaskWithBorder, w, h);
 				if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainClusterImage_" + iter_det + "_03_04_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainClusterFByMaskWithBorder" + g_im_save_format, w, h);
@@ -5379,7 +5382,7 @@ void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, i
 	}
 }
 
-FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
+void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
 {
 	int i, j, l, r, x, y, ib, bln, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
 	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
@@ -5390,7 +5393,6 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	int LH, LMAXY;
 	int real_im_x_center;
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
-	FindTextRes res;
 	int color, rc, gc, bc, yc, cc, wc, min_h;
 	u8 *pClr;
 	DWORD start_time;
@@ -5558,7 +5560,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 	if (YE - YB < (2 * min_h) / 3)
 	{
-		return res;
+		return;
 	}
 
 	if (YB > orig_LLBk - 2)
@@ -5598,7 +5600,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 	{
 		if (real_im_x_center <= XB)
 		{
-			return res;
+			return;
 		}
 	}
 
@@ -5640,7 +5642,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 		{
 			cv::Mat cv_ImBGR;
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&ImBGR, &ImBGRScaled, &cv_ImBGR, YB, YE, XB, w_orig, w, h, iter_det] {
 					int y, i, j;
 					simple_buffer<u8> ImBGROrig(w * h * 3);
@@ -5699,7 +5701,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 				}
 				);
 
-			concurrency::parallel_invoke(
+			run_in_parallel(
 				[&cv_ImBGR, &ImY, &ImU, &ImV, w, h, iter_det] {
 					cv::Mat cv_Im, cv_ImSplit[3];
 					cv::cvtColor(cv_ImBGR, cv_Im, cv::COLOR_BGR2YUV);
@@ -5759,7 +5761,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 		ImSNFS = ImSNF;
 
-		concurrency::parallel_invoke(
+		run_in_parallel(
 			[&ImSNF, w, h, iter_det, W_orig, H_orig, xb, xe, yb, ye] {
 				if (g_show_results) SaveGreyscaleImage(ImSNF, "/TestImages/FindText_" + iter_det + "_06_1_1_ImSNF" + g_im_save_format, w, h);
 				ExtendAndFilterImFF(ImSNF, w, h, (W_orig* g_scale), (H_orig* g_scale), iter_det + "_ImSNF", xb, xe, yb, ye);
@@ -5814,7 +5816,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 			if (val == 0)
 			{
-				return res;
+				return;
 			}
 
 			if (g_show_results) SaveGreyscaleImage(ImTHRMerge, "/TestImages/FindText_" + iter_det + "_11_02_02_ImTHRMergeOrig" + g_im_save_format, w, h);
@@ -5827,7 +5829,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 			if (val == 0)
 			{
-				return res;
+				return;
 			}
 			else
 			{
@@ -5882,12 +5884,12 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 				if (val == 0)
 				{
-					return res;
+					return;
 				}
 
 				Im2.copy_data(Im1, w * h);
 
-				concurrency::parallel_invoke(
+				run_in_parallel(
 					[&Im1, &ImTHRMerge, w, h, W_orig, H_orig, real_im_x_center, iter_det] {
 						if (g_show_results) SaveGreyscaleImage(Im1, "/TestImages/FindText_" + iter_det + "_11_04_01_01_ImMainCluster1" + g_im_save_format, w, h);
 						ExtendByInsideFigures(Im1, w, h, (u8)255);
@@ -5994,7 +5996,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 					if (max_txt_w == 0)
 					{
-						return res;
+						return;
 					}
 
 					auto check_split = [&res, &ImThrRef, &LL, &LR, &LLB, &LLE, &N, 
@@ -6144,7 +6146,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 					if (check_split(new_txt_y))
 					{
-						return res;
+						return;
 					}
 
 					min_y1 = std::min<int>(LMAXY + LH * 0.2, h - 1);
@@ -6208,7 +6210,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 
 					if (check_split(new_txt_y))
 					{
-						return res;
+						return;
 					}
 				}
 				//----------------------------	
@@ -6226,7 +6228,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			val = GetMainClusterImage(ImBGRScaled, ImLab, ImTHRMerge, ImSNFS, ImIL, ImMainCluster, ImL, ImA, ImB, ImMaskWithBorder, ImMaskWithBorderF, ImClusters2, labels2, clusterCount2, w, h, W_orig * g_scale, H_orig * g_scale, iter_det, real_im_x_center, min_h * g_scale, xb, xe, yb, ye);
 			if (val == 0)
 			{
-				return res;
+				return;
 			}
 
 			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/FindText_" + iter_det + "_13_02_ImMainCluster" + g_im_save_format, w, h);
@@ -6237,7 +6239,7 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 				val = GetSubParams(ImTHRMerge, w, h, 255, LH, LMAXY, lb, le, min_h * g_scale, real_im_x_center, yb, ye, iter_det);
 				if (val == 0)
 				{
-					return res;
+					return;
 				}
 			}
 
@@ -6437,14 +6439,12 @@ FindTextRes FindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_bu
 			}
 		}
 	}
-
-	return res;
 }
 
-inline concurrency::task<FindTextRes> TaskFindText(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString &SaveName, wxString &iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
+inline custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString &SaveName, wxString &iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
 {	
-	return concurrency::create_task([&ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
-			return FindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+	return create_custom_task([&res, &ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
+			FindText(res, ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 		}
 	);
 }
@@ -6619,49 +6619,54 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	if (g_show_results)	SaveBGRImageWithLinesInfo(ImBGR, "/TestImages/FindTextLines_01_6_ImBGRWithLinesInfo" + g_im_save_format, LLB, LLE, N, w_orig, h_orig);
 
 #ifdef WIN64
-	vector<concurrency::task<FindTextRes>> FindTextTasks;
-	
+	vector<custom_task> FindTextTasks;
+	vector<FindTextRes*> FindTextTasksRes(N);
+
 	for (k = 0; k < N; k++)
 	{
-		FindTextTasks.emplace_back(TaskFindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, wxT("l") + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+		FindTextTasksRes[k] = new FindTextRes();
+		FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, wxT("l") + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
 	}
-	
+
 	k = 0;
 	while (k < FindTextTasks.size())
 	{
-		FindTextRes ft_res = FindTextTasks[k].get();
+		FindTextTasks[k].wait();
+		FindTextRes* p_ft_res = FindTextTasksRes[k];
 
-		if (ft_res.m_LL.m_size > 0) // ned to split text on 2 parts
+		if (p_ft_res->m_LL.m_size > 0) // ned to split text on 2 parts
 		{
-			FindTextTasks.emplace_back(TaskFindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, ft_res.m_iter_det + "_sl1", ft_res.m_N, ft_res.m_k, ft_res.m_LL, ft_res.m_LR, ft_res.m_LLB, ft_res.m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
-			FindTextTasks.emplace_back(TaskFindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, ft_res.m_iter_det + "_sl2", ft_res.m_N, ft_res.m_k + 1, ft_res.m_LL, ft_res.m_LR, ft_res.m_LLB, ft_res.m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+			FindTextTasksRes.push_back(new FindTextRes());
+			FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[FindTextTasksRes.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+			FindTextTasksRes.push_back(new FindTextRes());
+			FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[FindTextTasksRes.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
 		}
 		else
 		{
-			if (ft_res.m_res == 1)
+			if (p_ft_res->m_res == 1)
 			{
-				SavedFiles.push_back(ft_res.m_ImageName);
+				SavedFiles.push_back(p_ft_res->m_ImageName);
 
-				for (y = 0, i = 0; y < ft_res.m_im_h; y++)
+				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 				{
 					for (x = 0; x < w_orig; x++, i++)
 					{
-						if (ft_res.m_cv_ImClearedText.data[i] == 0)
+						if (p_ft_res->m_cv_ImClearedText.data[i] == 0)
 						{
-							ImClearedText[(ft_res.m_YB * w_orig) + i] = 0;
+							ImClearedText[(p_ft_res->m_YB * w_orig) + i] = 0;
 						}
 					}
 				}
 
 				if ((!g_save_each_substring_separately) && g_save_scaled_images)
 				{
-					for (y = 0, i = 0; y < ft_res.m_im_h*g_scale; y++)
+					for (y = 0, i = 0; y < p_ft_res->m_im_h * g_scale; y++)
 					{
 						for (x = 0; x < w_orig * g_scale; x++, i++)
 						{
-							if (ft_res.m_cv_ImClearedTextScaled.data[i] == 0)
+							if (p_ft_res->m_cv_ImClearedTextScaled.data[i] == 0)
 							{
-								ImClearedTextScaled[(ft_res.m_YB * g_scale * w_orig * g_scale) + i] = 0;
+								ImClearedTextScaled[(p_ft_res->m_YB * g_scale * w_orig * g_scale) + i] = 0;
 							}
 						}
 					}
@@ -6671,6 +6676,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 			}
 		}
 
+		delete p_ft_res;
 		k++;
 	}
 #else
@@ -6679,7 +6685,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	for (k = 0; k < N; k++)
 	{
 		FindTextTasks[k] = new FindTextRes();
-		*(FindTextTasks[k]) = FindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+		FindText(*(FindTextTasks[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 	}
 
 	k = 0;
@@ -6690,9 +6696,9 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 		if (p_ft_res->m_LL.m_size > 0) // ned to split text on 2 parts
 		{
 			FindTextTasks.push_back(new FindTextRes());
-			*(FindTextTasks[FindTextTasks.size() - 1]) = FindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+			FindText(*(FindTextTasks[FindTextTasks.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 			FindTextTasks.push_back(new FindTextRes());
-			*(FindTextTasks[FindTextTasks.size() - 1]) = FindText(ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+			FindText(*(FindTextTasks[FindTextTasks.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 		}
 		else
 		{
