@@ -433,14 +433,14 @@ int ClearImageLogical(simple_buffer<u8>& Im, int w, int h, int W, int H, int rea
 
 void ConvertToRange(wxString& val, int& res_min, int& res_max)
 {
-	wxRegEx re1 = "^([[:digit:]]+)$";
+	wxRegEx re1(wxT("^([[:digit:]]+)$"));
 	if (re1.Matches(val))
 	{
 		res_min = res_max = wxAtoi(re1.GetMatch(val, 1));
 	}
 	else
 	{
-		wxRegEx re2 = "^([[:digit:]]+)-([[:digit:]]+)$";
+		wxRegEx re2(wxT("^([[:digit:]]+)-([[:digit:]]+)$"));
 		if (re2.Matches(val))
 		{
 			res_min = wxAtoi(re2.GetMatch(val, 1));
@@ -506,7 +506,7 @@ std::vector<color_range> GetColorRanges(wxArrayString& filter_colors)
 		//example 3: r:3 g:253 b:252
 		//example 4: r:0-20 g:230-260 b:240-270
 
-		wxRegEx space = "[[:space:]]";
+		wxRegEx space(wxT("[[:space:]]"));
 		space.ReplaceAll(&filter_color, wxT(""));
 
 		if (filter_color.size() == 0)
@@ -514,7 +514,7 @@ std::vector<color_range> GetColorRanges(wxArrayString& filter_colors)
 			continue;
 		}
 
-		wxRegEx reRGB = "^RGB:r:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)g:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)(L:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+))?";
+		wxRegEx reRGB(wxT("^RGB:r:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)g:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)(L:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+))?"));
 		if (reRGB.Matches(filter_color))
 		{
 			wxString strR = reRGB.GetMatch(filter_color, 1);
@@ -585,7 +585,7 @@ std::vector<color_range> GetColorRanges(wxArrayString& filter_colors)
 		}
 		else
 		{
-			wxRegEx reLab = "^Lab:l:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)a:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)";
+			wxRegEx reLab(wxT("^Lab:l:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)a:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)"));
 			if (reLab.Matches(filter_color))
 			{
 				wxString strL = reLab.GetMatch(filter_color, 1);
@@ -1463,7 +1463,8 @@ void GetImCMOEWithThr1(simple_buffer<u16> &ImCMOE, simple_buffer<u16> &ImYMOE, s
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
-		ApplyModerateThreshold(ImCMOE.get_sub_buffer(i), mthr, w, dhs[k]);
+		simple_buffer<u16> ImCMOE_sub_buffer(ImCMOE, i, true);
+		ApplyModerateThreshold(ImCMOE_sub_buffer, mthr, w, dhs[k]);
 	}
 }
 
@@ -1517,7 +1518,8 @@ void GetImCMOEWithThr2(simple_buffer<u16> &ImCMOE, simple_buffer<u16> &ImYMOE, s
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
-		ApplyModerateThreshold(ImCMOE.get_sub_buffer(i), mthr, w, dhs[k]);
+		simple_buffer<u16> ImCMOE_sub_buffer(ImCMOE, i, true);
+		ApplyModerateThreshold(ImCMOE_sub_buffer, mthr, w, dhs[k]);
 	}
 }
 
@@ -5301,7 +5303,8 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = hh - 1;
-		res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(yb * w_orig), LB, LE, 1, w_orig, hh, W_orig, H_orig, 0, w_orig - 1, iter_det);
+		simple_buffer<u8> ImNE_sub_buffer(ImNE, yb * w_orig, true);
+		res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE_sub_buffer, LB, LE, 1, w_orig, hh, W_orig, H_orig, 0, w_orig - 1, iter_det);
 
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/CheckOnSubPresence_" + iter_det + "_03_ImFF_F" + g_im_save_format, w_orig, hh);
 
@@ -5350,7 +5353,7 @@ void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, i
 	
 	wxString str_ymin, str_xmin, str_H, str_W, str_saved_w;
 
-	wxRegEx re = "^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$";
+	wxRegEx re(wxT("^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$"));
 	if (re.Matches(FileName))
 	{		
 		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
@@ -6403,7 +6406,8 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = res.m_im_h - 1;
-		res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE.get_sub_buffer(res.m_YB* w_orig), LB, LE, 1, w_orig, res.m_im_h, W_orig, H_orig, 0, w_orig - 1, iter_det);
+		simple_buffer<u8> ImNE_sub_buffer(ImNE, res.m_YB* w_orig, true);
+		res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE_sub_buffer, LB, LE, 1, w_orig, res.m_im_h, W_orig, H_orig, 0, w_orig - 1, iter_det);
 
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/FindText_" + iter_det + "_78_02_ImTXTF" + g_im_save_format, w_orig, res.m_im_h);
 

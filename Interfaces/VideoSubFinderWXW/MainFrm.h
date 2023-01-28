@@ -260,7 +260,7 @@ public:
 	void OnSetPriorityHigh(wxCommandEvent& event);
 	wxString ConvertClockTime(clock_t time);
 	void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
-	void ShowErrorMessage(wxString& msg);
+	void ShowErrorMessage(wxString msg);
 	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
 
 private:

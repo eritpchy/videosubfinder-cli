@@ -1161,7 +1161,8 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			}
 			h_ofset += dh;
 
-			LoadBinaryImage(ImRes.get_sub_buffer(w * h_ofset), file_path, w, h);
+			simple_buffer<u8> ImRes_sub_buffer(ImRes, w* h_ofset, true);
+			LoadBinaryImage(ImRes_sub_buffer, file_path, w, h);
 			h_ofset += h;
 		}
 
@@ -1543,12 +1544,14 @@ void *ThreadCreateClearedTextImages::Entry()
 		{
 			task_results[k] = new FindTextLinesRes();
 			task_events[k] = new my_event();
-			task_queue.push(find_text_queue_data{ FileNamesVector[k], task_results[k], task_events[k] });
+			find_text_queue_data queue_data{ FileNamesVector[k], task_results[k], task_events[k] };
+			task_queue.push(queue_data);
 		}
 
 		for (k = 0; k < g_ocr_threads; k++)
 		{
-			task_queue.push(find_text_queue_data{ "", NULL, NULL, true });
+			find_text_queue_data queue_data{ "", NULL, NULL, true };
+			task_queue.push(queue_data);
 			tasks[k] = TaskFindTextLines(task_queue);
 		}
 

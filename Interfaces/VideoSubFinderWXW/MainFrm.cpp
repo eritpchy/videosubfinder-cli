@@ -786,7 +786,7 @@ void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& 
 
 	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
 	wxString name, val, line;
-	wxRegEx re = "^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([^[:space:]].*[^[:space:]]|[^[:space:]])[[:space:]]*$";
+	wxRegEx re(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([^[:space:]].*[^[:space:]]|[^[:space:]])[[:space:]]*$"));
 
 	while (ffin.IsOk() && !ffin.Eof())
 	{
@@ -1522,7 +1522,7 @@ void CMainFrame::ClearDir(wxString DirName)
 	FileNamesVector.clear();
 }
 
-void CMainFrame::ShowErrorMessage(wxString& msg)
+void CMainFrame::ShowErrorMessage(wxString msg)
 {
 	wxMessageBox(msg, wxT("Error Info"), wxOK | wxICON_ERROR);
 }

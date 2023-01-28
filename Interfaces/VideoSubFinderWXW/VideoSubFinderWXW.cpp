@@ -362,7 +362,8 @@ bool CVideoSubFinderApp::OnInit()
 	if (wxCMD_SWITCH_ON == m_pMainWnd->m_parser.FoundSwitch("h"))
 	{		
 		cout << m_pMainWnd->m_parser.GetUsageString();
-		m_pMainWnd->OnAppAbout(wxCommandEvent());
+		wxCommandEvent send_event;
+		m_pMainWnd->OnAppAbout(send_event);
 		//m_pMainWnd->m_parser.Usage();
 		blnNeedToExit = true;
 	}

@@ -2844,7 +2844,7 @@ wxString GetFileName(wxString FilePath)
 {
 	wxString res;
 
-	wxRegEx re = "([^\\\\\\/]+)\\.[^\\\\\\/\\.]+$";
+	wxRegEx re(wxT("([^\\\\\\/]+)\\.[^\\\\\\/\\.]+$"));
 	if (re.Matches(FilePath))
 	{
 		res = re.GetMatch(FilePath, 1);
@@ -2857,7 +2857,7 @@ wxString GetFileExtension(wxString FilePath)
 {
 	wxString res;
 
-	wxRegEx re = "[^\\\\\\/]+\\.([^\\\\\\/\\.]+)$";
+	wxRegEx re(wxT("[^\\\\\\/]+\\.([^\\\\\\/\\.]+)$"));
 	if (re.Matches(FilePath))
 	{
 		res = re.GetMatch(FilePath, 1);

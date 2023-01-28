@@ -414,6 +414,16 @@ public:
 		}
 	}
 
+	// return sub buffer
+	custom_buffer(const custom_buffer<T>& obj, int offset, bool)
+	{
+		custom_assert(offset < obj.m_size, "custom_buffer(const custom_buffer<T>& obj, int offset): not: offset < obj.m_size");
+		m_pData = obj.m_pData + offset;
+		m_size = obj.m_size - offset;
+		m_need_to_release = false;
+		
+	}
+
 	custom_buffer<T>& operator= (const custom_buffer<T> &obj)
 	{
 		if (m_need_to_release)
@@ -517,13 +527,6 @@ public:
 		}
 	}
 
-	custom_buffer<T> get_sub_buffer(int offset)
-	{
-		custom_assert(offset < m_size, "get_sub_buffer(int offset): not: offset < m_size");
-
-		return custom_buffer<T>(m_pData + offset, m_size - offset);
-	}
-
 	inline int size()
 	{
 		return m_size;
@@ -610,15 +613,15 @@ class simple_buffer : public custom_buffer<T>
 {
 public:
 
-	simple_buffer() : custom_buffer()
+	simple_buffer() : custom_buffer<T>()
 	{
 	}
 
-	simple_buffer(T* pData, int size) : custom_buffer(pData, size)
+	simple_buffer(T* pData, int size) : custom_buffer<T>(pData, size)
 	{
-	}
+	}	
 
-	simple_buffer(int size) : custom_buffer(size)
+	simple_buffer(int size) : custom_buffer<T>(size)
 	{
 	}
 
@@ -671,6 +674,16 @@ public:
 		}
 	}
 
+	// return sub buffer
+	simple_buffer(const simple_buffer<T>& obj, int offset, bool)
+	{
+		custom_assert(offset < obj.m_size, "simple_buffer(const simple_buffer<T>& obj, int offset): not: offset < obj.m_size");
+		m_pData = obj.m_pData + offset;
+		m_size = obj.m_size - offset;
+		m_need_to_release = false;
+	}
+
+	// make copy if required
 	simple_buffer(const simple_buffer<T>& obj, int offset, int size)
 	{
 		custom_assert(size > 0, "simple_buffer(const simple_buffer<T>& obj, int offset, int size): not: size >= 0");
@@ -801,13 +814,6 @@ public:
 		{
 			memcpy(m_pData + offset_dst, pData + offset_src, size * sizeof(T));
 		}
-	}
-
-	simple_buffer<T> get_sub_buffer(int offset)
-	{
-		custom_assert(offset < m_size, "simple_buffer<T>::get_sub_buffer(int offset): not: offset < m_size");
-
-		return simple_buffer<T>(m_pData + offset, m_size - offset);
 	}
 
 	inline void set_values(T val)
