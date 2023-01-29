@@ -16,7 +16,7 @@
 
 #include "DataGrid.h"
 #include "Control.h"
-#include <wx\dcclient.h>
+#include <wx/dcclient.h>
 
 class CGridCellTextEditor: public wxGridCellTextEditor, public CControl
 {

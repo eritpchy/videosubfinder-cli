@@ -26,18 +26,20 @@ CMainFrame *g_pMF;
 
 bool g_playback_sound = false;
 
-const DWORD _MMX_FEATURE_BIT = 0x00800000;
-const DWORD _SSE2_FEATURE_BIT = 0x04000000;
+// const DWORD _MMX_FEATURE_BIT = 0x00800000;
+// const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
 std::vector<CControl*> CControl::m_all_controls;
 
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef WIN32	
 int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det)
 {
 	g_pMF->SaveError(wxT("Got C Exception: ") + wxString(det));
 	return EXCEPTION_EXECUTE_HANDLER;
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -89,7 +91,7 @@ void ViewRGBImage(simple_buffer<int> &Im, int w, int h)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
+/*
 static bool _IsFeature(DWORD dwRequestFeature)
 {
 #ifndef WIN64
@@ -133,7 +135,7 @@ static bool _IsFeature(DWORD dwRequestFeature)
 
 	return false;
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CMainFrame, wxMDIParentFrame)
@@ -290,6 +292,7 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
 	LoadSettings();
 
+#ifdef WIN32
 	if (m_cfg.process_affinity_mask > 0)
 	{
 		HANDLE process = GetCurrentProcess();
@@ -302,6 +305,7 @@ void CMainFrame::Init()
 
 		SaveToReportLog(wxString::Format(wxT("CMainFrame::Init(): SetProcessAffinityMask(%d) == %d\n"), (int)dwProcessAffinityMask, (int)success));
 	}
+#endif
 
 	bool find_fount_size_lbl = false;
 	bool find_fount_size_btn = false;

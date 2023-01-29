@@ -210,22 +210,41 @@ void ThreadSearchSubtitlesEnd();
 
 void *ThreadSearchSubtitles::Entry()
 {
+#ifdef WIN32
 	__try
 	{
 		ThreadSearchSubtitlesRun();
 	}
-	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitlesRun"))
+	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun()"))
 	{
-		int res = 1;
 	}
 
 	__try
 	{
 		ThreadSearchSubtitlesEnd();
 	}
-	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitlesEnd"))
+	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()"))
 	{
 	}
+#else
+	try
+	{
+		ThreadSearchSubtitlesRun();
+	}
+	catch (const exception& e)
+	{
+		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun() ") + wxString(e.what()));
+	}
+	
+	try
+	{
+		ThreadSearchSubtitlesEnd();
+	}
+	catch (const exception& e)
+	{
+		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()") + wxString(e.what()));
+	}
+#endif
 
 	return 0;
 }

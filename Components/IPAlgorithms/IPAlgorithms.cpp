@@ -814,7 +814,7 @@ void ColorFiltration(simple_buffer<u8>& ImBGR, simple_buffer<int>& LB, simple_bu
 {	
 	custom_assert(g_segw > 0, "ColorFiltration: g_segw > 0");
 	const int scd = g_scd, segw = g_segw, msegc = g_msegc, mx = (w - 1) / g_segw;
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	custom_assert(ImBGR.size() >= w * h * 3, "ColorFiltration(...)\nnot: ImBGR.size() >= w*h*3");
 	custom_assert(LB.size() >= h, "ColorFiltration(...)\nnot: LB.size() >= H");
@@ -953,7 +953,7 @@ void ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int 
 {
 	const int mx = w - 1;
 	const int my = h - 1;
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	custom_assert(ImIn.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)\nnot: ImIn.size() >= w*h");
 	custom_assert(ImMOE.size() >= w*h, "ImprovedSobelMEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImMOE, int w, int h)\nnot: ImMOE.size() >= w*h");
@@ -1013,7 +1013,7 @@ void FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, 
 	custom_assert(ImIn.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, int w, int h)\nnot: ImIn.size() >= w*h");
 	custom_assert(ImNOE.size() >= w*h, "FastImprovedSobelNEdge(simple_buffer<u8> &ImIn, simple_buffer<u16> &ImNOE, int w, int h)\nnot: ImNOE.size() >= w*h");
 
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	const int mx = w - 1;
 	const int my = h - 1;
@@ -1288,7 +1288,7 @@ void ApplyModerateThreshold(simple_buffer<T> &Im, double mthr, int w, int h)
 
 void AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)
 {
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	custom_assert(ImIn.size() >= w * h, "AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
 	custom_assert(ImOut.size() >= w * h, "AplyESS(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
@@ -1321,7 +1321,7 @@ void AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)
 	custom_assert(ImIn.size() >= w*h, "AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImIn.size() >= w*h");
 	custom_assert(ImOut.size() >= w*h, "AplyECP(simple_buffer<u16> &ImIn, simple_buffer<u16> &ImOut, int w, int h)\nnot: ImOut.size() >= w*h");
 
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	const int mx = w - 2;
 	const int my = h - 2;
@@ -1529,7 +1529,7 @@ void GetImFF(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8>
 	int i, j, k, cnt, val;
 	int x, y, segh;
 	int ww, hh;
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 	
 	ww = w;
 	hh = 0;
@@ -1623,7 +1623,7 @@ void GetImNE(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	EasyBorderClear(ImNE, w, h);
 	EasyBorderClear(ImRES1, w, h);
@@ -1695,7 +1695,7 @@ void GetImHE(simple_buffer<u8> &ImHE, simple_buffer<u8> &ImY, simple_buffer<u8> 
 	int k, cnt, val, N, mx, my;
 	int segh;
 	int ww, hh;
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	EasyBorderClear(ImHE, w, h);
 	EasyBorderClear(ImRES1, w, h);
@@ -1856,7 +1856,7 @@ int GetTransformedImage(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simpl
 	simple_buffer<int> LB(h, 0), LE(h, 0);
 	int N;
 	int res = 0;
-	__int64 t1, dt, num_calls = 100;
+	s64 t1, dt, num_calls = 100;
 
 	if (g_show_results) SaveBGRImage(ImBGR, "/TestImages/GetTransformedImage_01_01_ImRGB" + g_im_save_format, w, h);
 
@@ -4158,7 +4158,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 	int clusterCount3 = 4;
 	simple_buffer<int> cluster_cnt3(clusterCount3, 0);
 	simple_buffer<int> cluster_id3(clusterCount3, 0);
-	DWORD  start_time;
+	//DWORD  start_time;
 	int ddy1 = 1, ddy2 = h - 2;
 	int LH, LMAXY, lb, le, val, res = 0;
 	int minX, maxX;
@@ -4967,7 +4967,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 	ClearImageByTextDistance(ImRES, w, h, W, H, real_im_x_center, (u8)255, iter_det + wxT("_04"));
 	if (g_show_results) SaveGreyscaleImage(ImRES, "/TestImages/GetMainClusterImage_" + iter_det + "_07_4_ImMainClusterFByTextDistance" + g_im_save_format, w, h);
 
-	start_time = GetTickCount();
+	//start_time = GetTickCount();
 
 	res = 1;
 	return res;
@@ -5398,12 +5398,12 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	int color, rc, gc, bc, yc, cc, wc, min_h;
 	u8 *pClr;
-	DWORD start_time;
+	//DWORD start_time;
 	const int mpn = g_mpn;
 
 	cv::ocl::setUseOpenCL(g_use_ocl);
 
-	start_time = GetTickCount();
+	//start_time = GetTickCount();
 
 	if (g_show_results)	SaveBGRImageWithLinesInfo(ImBGR, "/TestImages/FindText_" + iter_det + "_01_ImBGRWithLinesInfo" + g_im_save_format, LLB, LLE, N, w_orig, h_orig, k);
 

@@ -9,9 +9,15 @@ target_compile_features(IPAlgorithms PUBLIC cxx_std_17)
 
 target_include_directories(IPAlgorithms PUBLIC
 	"../Include"
-	# "../CUDAKernels"
-	"$ENV{OPENCV_PATH_X64}/builds/Win64/install/include"
-	"$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib/mswu"
-	"$ENV{WX_WIDGETS_PATH}/include"
+	 ${wxWidgets_INCLUDE_DIRS}
+	 ${OpenCV_INCLUDE_DIRS}
+	 ${CUDAKernels_INCLUDE_DIRS}
 )
+
+if (WIN32)
+else()
+target_compile_definitions(IPAlgorithms PUBLIC ${wxWidgets_DEFINITIONS})
+target_compile_options(IPAlgorithms PRIVATE ${wxWidgets_CXX_FLAGS})
+endif (WIN32)
+
 

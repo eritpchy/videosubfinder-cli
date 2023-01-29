@@ -9,10 +9,15 @@ target_compile_features(FFMPEGVideo PUBLIC cxx_std_17)
 
 target_include_directories(FFMPEGVideo PUBLIC
 	"../Include"
-	"$ENV{OPENCV_PATH_X64}/builds/Win64/install/include"
-	"$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib/mswu"
-	"$ENV{WX_WIDGETS_PATH}/include"
-	"$ENV{FFMPEG_PATH_X64}/include"
-	# "../CUDAKernels"
 	"../../Components/IPAlgorithms"
+	${wxWidgets_INCLUDE_DIRS}
+	 ${OpenCV_INCLUDE_DIRS}
+	 ${FFMPEG_INCLUDE_DIRS}
+	 ${CUDAKernels_INCLUDE_DIRS}
 )
+
+if (WIN32)
+else()
+target_compile_definitions(FFMPEGVideo PUBLIC ${wxWidgets_DEFINITIONS})
+target_compile_options(FFMPEGVideo PRIVATE ${wxWidgets_CXX_FLAGS})
+endif (WIN32)

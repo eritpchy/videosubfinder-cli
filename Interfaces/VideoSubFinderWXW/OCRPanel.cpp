@@ -22,7 +22,6 @@
 #include <regex>
 #include <fstream>
 #include <streambuf>
-#include <concurrent_queue.h>
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
@@ -1185,14 +1184,26 @@ ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wx
 
 void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, simple_buffer<u8>* pImNF, simple_buffer<u8>* pImNE, simple_buffer<u8>* pImIL)
 {
+#ifdef WIN32
 	__try
 	{		
 		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
 	}
-	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter"))
+	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter:FindTextLines()"))
 	{
 		res->m_res = -1;
 	}
+#else
+	try
+	{
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
+	}
+	catch (const exception& e)
+	{
+		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLinesWithExcFilter:FindTextLines()") + wxString(e.what()));
+		res->m_res = -1;
+	}
+#endif
 }
 
 void FindTextLines(wxString FileName, FindTextLinesRes& res)
@@ -1412,13 +1423,19 @@ custom_task TaskFindTextLines(threadsafe_queue<find_text_queue_data> &task_queue
 	);
 }
 
+#ifdef WIN32
 s64 getTotalSystemMemory()
 {
 	MEMORYSTATUSEX status;
 	status.dwLength = sizeof(status);
 	GlobalMemoryStatusEx(&status);
+	
+	// ullTotalPhys
+	// The amount of actual physical memory, in bytes.
+	// https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-memorystatusex
 	return status.ullTotalPhys;
 }
+#endif
 
 void *ThreadCreateClearedTextImages::Entry()
 {
@@ -1441,7 +1458,8 @@ void *ThreadCreateClearedTextImages::Entry()
 		{
 			g_ocr_threads = max_thrs;
 		}
-#else
+#endif
+#ifdef WINX86
 		if (g_ocr_threads > 1)
 		{
 			g_ocr_threads = 1;
@@ -1499,7 +1517,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		}
 	}
 
-	__int64 t1, dt, num_calls;
+	s64 t1, dt, num_calls;
 
 	//t1 = GetTickCount();	
 
