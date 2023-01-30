@@ -36,6 +36,7 @@
 using namespace std;
 
 extern bool g_playback_sound;
+extern wxCmdLineParser g_parser;
 
 class CSSOWnd;
 class CVideoBox;
@@ -163,7 +164,7 @@ public:
 
 };
 
-class CMainFrame : public wxMDIParentFrame
+class CMainFrame : public wxFrame
 {
 public:
 	CMainFrame(const wxString& title);
@@ -197,7 +198,10 @@ public:
 	int			m_cw; //client width
 	int			m_ch; //client height
 
-	int			m_ph; //panel height
+	bool	    m_bUpdateSizes = false;
+	int 		m_dx = 20;
+	int 		m_dy = 20;
+	int			m_ph = 288; //panel height
 
 	s64			m_dt;
 	s64         m_ct;
@@ -213,7 +217,7 @@ public:
 	int			m_type;
 
 	bool		m_blnOpenVideoThreadStateFlag;
-	bool		m_blnOpenVideoResult;	
+	bool		m_blnOpenVideoResult;
 
 	Settings	m_cfg;
 
@@ -222,8 +226,6 @@ public:
 
 	std::map<wxString, wxString> m_general_settings;
 	std::map<wxString, wxString> m_locale_settings;
-
-	wxCmdLineParser m_parser;
 
 public:
 	void Init();

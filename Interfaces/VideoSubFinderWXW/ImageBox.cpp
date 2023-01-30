@@ -49,19 +49,14 @@ void CImageWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 	}
 }
 
-BEGIN_EVENT_TABLE(CImageBox, wxMDIChildFrame)
+BEGIN_EVENT_TABLE(CImageBox, CResizableWindow)
 	EVT_SIZE(CImageBox::OnSize)
 END_EVENT_TABLE()
 
 CImageBox::CImageBox(CMainFrame* pMF)
-		: wxMDIChildFrame(pMF, wxID_ANY, "", 
-		          wxDefaultPosition, wxDefaultSize, 				  
-				  wxCLIP_CHILDREN
-				  | wxRESIZE_BORDER 
-				  | wxCAPTION 
-				  | wxWANTS_CHARS
-				  //| wxTHICK_FRAME
-				  )
+		: CResizableWindow(pMF,//->GetClientWindow(),
+			wxID_ANY,
+			wxDefaultPosition, wxDefaultSize)
 {
 	m_pMF = pMF;
 	m_pImage = NULL;
@@ -97,6 +92,11 @@ void CImageBox::Init()
 
 	this->SetBackgroundColour(m_IBColor);
 	this->SetSize(20,20,402,300);
+
+	m_plblIB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
+	m_plblIB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
+	m_plblIB->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
+	m_plblIB->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
 
 	m_WasInited = true;
 }

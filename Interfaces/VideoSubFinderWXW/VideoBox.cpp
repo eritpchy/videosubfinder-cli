@@ -530,7 +530,7 @@ void CVideoWindow::OnSize(wxSizeEvent& event)
 	m_pVSL2->UpdateSL();
 }
 
-BEGIN_EVENT_TABLE(CVideoBox, wxMDIChildFrame)
+BEGIN_EVENT_TABLE(CVideoBox, CResizableWindow)
 	EVT_SIZE(CVideoBox::OnSize)
 	EVT_MENU(ID_TB_RUN, CVideoBox::OnBnClickedRun)
 	EVT_MENU(ID_TB_PAUSE, CVideoBox::OnBnClickedPause)
@@ -542,14 +542,10 @@ BEGIN_EVENT_TABLE(CVideoBox, wxMDIChildFrame)
 	EVT_TIMER(TIMER_ID_VB, CVideoBox::OnTimer)
 END_EVENT_TABLE()
 
-CVideoBox::CVideoBox(CMainFrame* pMF)
-		: wxMDIChildFrame(pMF, wxID_ANY, "", 
-		          wxDefaultPosition, wxDefaultSize,				  
-				  wxCLIP_CHILDREN
-				  | wxRESIZE_BORDER 
-				  | wxCAPTION 
-				  | wxWANTS_CHARS
-				  ), m_timer(this, TIMER_ID_VB)
+CVideoBox::CVideoBox(CMainFrame* pMF, wxColour	bc)
+		: CResizableWindow(pMF,//->GetClientWindow(),
+				  wxID_ANY,
+		          wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_VB), m_bc (bc)
 {
 	m_pImage = NULL;
 	m_pMF = pMF;
@@ -575,20 +571,21 @@ void CVideoBox::Init()
 	m_CL1 = wxColour(255, 255, 225);
 	m_CL2 = wxColour(0, 0, 0);
 
+	this->SetBackgroundColour(m_bc);
+
 	m_pVBar = new wxToolBar(this, wxID_ANY,
-                               wxDefaultPosition, wxSize(380, 30), 
+                               wxDefaultPosition, wxSize(30, 30), 
 							   wxTB_HORIZONTAL | wxTB_BOTTOM | 
 							   /*wxTB_NO_TOOLTIPS |*/ wxTB_FLAT );
 	m_pVBar->SetMargins(4, 4);
-	m_CLVBar = m_pVBar->GetBackgroundColour();
 
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_run.bmp", m_CLVBar);
+	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_run.bmp", m_bc);
 	m_pVBar->AddTool(ID_TB_RUN, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
 
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_pause.bmp", m_CLVBar);
+	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_pause.bmp", m_bc);
 	m_pVBar->AddTool(ID_TB_PAUSE, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
 	
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_stop.bmp", m_CLVBar);
+	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_stop.bmp", m_bc);
 	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);	
 
 	m_plblVB = new CStaticText( this, ID_LBL_VB, wxT("Video Box") );
@@ -596,17 +593,15 @@ void CVideoBox::Init()
 	m_plblVB->SetFont(m_pMF->m_LBLFont);
 	m_plblVB->SetBackgroundColour( m_CL1 );
 	
-	m_plblTIME = new CStaticText( m_pVBar, ID_LBL_TIME, 
-									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+	m_plblTIME = new CStaticText( this, ID_LBL_TIME, 
+									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxTB_BOTTOM);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_pMF->m_LBLFont);
 	m_plblTIME->SetTextColour(*wxWHITE);
 	m_plblTIME->SetBackgroundColour( m_CL2 );
 
 	m_pVBox = new CVideoWindow(this);
-	m_pVBox->Init();	
-
-	this->SetBackgroundColour(m_CLVBar);
+	m_pVBox->Init();
 
 	m_pSB = new CScrollBar(this, ID_TRACKBAR);
 	m_pSB->SetScrollRange(0, 255);
@@ -614,6 +609,16 @@ void CVideoBox::Init()
 	this->SetSize(20,20,402,300);
 
 	m_pVBar->Realize();
+
+	m_plblVB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
+	m_plblVB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
+	m_plblVB->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
+	m_plblVB->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+
+	m_plblTIME->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
+	m_plblTIME->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
+	m_plblTIME->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
+	m_plblTIME->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
 
 	m_WasInited = true;
 }
@@ -630,10 +635,13 @@ void CVideoBox::OnSize(wxSizeEvent& event)
 	rlVB.y = 0;
 	rlVB.height = 28;
 
-	rcVBAR.width = w;
-	rcVBAR.height = 30;
-	rcVBAR.x = 0;
-	rcVBAR.y = h - rcVBAR.height+6;
+	int vbw, vbh;
+	m_pVBar->GetBestSize(&vbw, &vbh);
+
+	rcVBAR.width = vbw;
+	rcVBAR.height = vbh;
+	rcVBAR.x = 2;
+	rcVBAR.y = h - rcVBAR.height - 2;
 
 	m_pSB->GetClientSize(&csbw, &csbh);
 	m_pSB->GetSize(&sbw, &sbh);
@@ -653,12 +661,12 @@ void CVideoBox::OnSize(wxSizeEvent& event)
 	m_pSB->SetSize(rcSB);
 	m_pVBar->SetSize(rcVBAR);
 
-	m_pVBar->GetClientSize(&w, &h);
+	//m_pVBar->GetSize(&w, &h);
 
-	rlTIME.width = w - m_pVBar->GetToolSize().GetWidth() * m_pVBar->GetToolsCount() - 2;
+	rlTIME.width = w - rcVBAR.width - rcVBAR.x - 2;
 	rlTIME.height = 22;
-	rlTIME.x = w - rlTIME.width;
-	rlTIME.y = (h - rlTIME.height)/2-2;
+	rlTIME.x = rcVBAR.x + rcVBAR.width;
+	rlTIME.y = rcVBAR.y + (rcVBAR.height - rlTIME.height)/2;
 
 	m_plblTIME->SetSize(rlTIME);
 

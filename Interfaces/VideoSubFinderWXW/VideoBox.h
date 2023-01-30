@@ -16,7 +16,7 @@
 
 #pragma once
 #include <wx/toolbar.h>
-#include <wx/mdi.h>
+#include <wx/minifram.h>
 #include <wx/image.h>
 #include <mutex>
 #include "MyResource.h"
@@ -24,6 +24,7 @@
 #include "StaticText.h"
 #include "ScrollBar.h"
 #include "SeparatingLine.h"
+#include "ResizableWindow.h"
 
 class CVideoBox;
 class CVideoWindow;
@@ -80,10 +81,10 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class CVideoBox : public wxMDIChildFrame
+class CVideoBox : public CResizableWindow
 {
 public:
-	CVideoBox(CMainFrame* pMF);
+	CVideoBox(CMainFrame* pMF, wxColour	bc);
 	~CVideoBox();
 
 	wxToolBar		*m_pVBar;
@@ -95,7 +96,7 @@ public:
 	wxColour	m_VBX;
 	wxColour	m_CL1;
 	wxColour	m_CL2;
-	wxColour	m_CLVBar;
+	wxColour	m_bc;
 
 	wxImage	*m_pImage;	
 

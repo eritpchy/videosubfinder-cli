@@ -66,6 +66,7 @@ public:
 	void	OnLButtonDown( wxMouseEvent& event );
 	void	OnLButtonUp( wxMouseEvent& event );
 	void	OnMouseMove( wxMouseEvent& event );
+	void	OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
 
 private:
    DECLARE_EVENT_TABLE()

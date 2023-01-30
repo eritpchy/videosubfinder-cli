@@ -15,11 +15,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <wx/mdi.h>
+#include <wx/minifram.h>
 #include <wx/image.h>
 #include "MyResource.h"
 #include "MainFrm.h"
 #include "StaticText.h"
+#include "ResizableWindow.h"
 
 class CImageBox;
 
@@ -38,7 +39,7 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class CImageBox : public wxMDIChildFrame
+class CImageBox : public CResizableWindow
 {
 public:
 	CImageBox(CMainFrame* pMF);           // protected constructor used by dynamic creation

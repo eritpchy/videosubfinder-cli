@@ -138,7 +138,7 @@ static bool _IsFeature(DWORD dwRequestFeature)
 */
 /////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(CMainFrame, wxMDIParentFrame)
+BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
 	EVT_SIZE(CMainFrame::OnSize)   
 	EVT_MENU(ID_PLAY_PAUSE, CMainFrame::OnPlayPause)
 	EVT_MENU(ID_PLAY_STOP, CMainFrame::OnStop)
@@ -166,7 +166,7 @@ END_EVENT_TABLE()
 /////////////////////////////////////////////////////////////////////////////
 
 CMainFrame::CMainFrame(const wxString& title)
-		: wxMDIParentFrame( NULL, wxID_ANY, title,
+		: wxFrame( NULL, wxID_ANY, title,
 							wxDefaultPosition, wxDefaultSize,
 							wxDEFAULT_FRAME_STYLE | wxFRAME_NO_WINDOW_MENU )
 		, m_timer(this, TIMER_ID)
@@ -179,9 +179,11 @@ CMainFrame::CMainFrame(const wxString& title)
 	m_pImageBox = NULL;
 	m_pVideo = NULL;
 
+#ifdef WIN32
 	// set frame icon
 	this->SetIcon(wxIcon("vsf_ico"));
-	
+#endif
+
 	g_pV = NULL;
 
 	g_pMF = this;
@@ -268,19 +270,20 @@ void CMainFrame::Init()
 
 	cnt = pMenuBar->GetMenuCount();			
 
+	wxColor bc(215, 228, 242);
+
 	SaveToReportLog("CMainFrame::Init(): new CImageBox(this)...\n");
 	m_pImageBox = new CImageBox(this);
 
 	SaveToReportLog("CMainFrame::Init(): m_pImageBox->Init()...\n");
 	m_pImageBox->Init();
+	m_pImageBox->SetBackgroundColour(bc);
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
-	int dx = 20, dy = 20;
-	m_ph = 288;
 	
 	SaveToReportLog("CMainFrame::Init(): new CVideoBox(this)...\n");
-	m_pVideoBox = new CVideoBox(this);
+	m_pVideoBox = new CVideoBox(this, bc);
 
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Init()...\n");
 	m_pVideoBox->Init();
@@ -337,7 +340,12 @@ void CMainFrame::Init()
 	this->SetMenuBar(pMenuBar);
 
 	SaveToReportLog("CMainFrame::Init(): this->SetSize(..)...\n");
+
+#ifdef WIN32
 	this->SetSize(0, 0, w, h - 50);
+#else
+	this->SetSize(w/10, h/10, (4*w)/5, (4*h)/5);
+#endif
 
 	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
 	m_pPanel->Init();
@@ -373,16 +381,16 @@ void CMainFrame::Init()
 	}
 
 	int cw, ch;
-	this->GetClientSize(&cw, &ch);
+	this->GetClientSize(&cw, &ch);	
 
 	SaveToReportLog("CMainFrame::Init(): m_pImageBox->SetSize(..)...\n");
-	m_pImageBox->SetSize(cw / 2 + dx, dy, cw / 2 - 2 * dx, ch - m_ph - 2 * dy);
+	m_pImageBox->SetSize(cw / 2 + m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
 	SaveToReportLog("CMainFrame::Init(): m_pImageBox->Show(true)...\n");
 	m_pImageBox->Show(true);
 
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->SetSize(..)...\n");
-	m_pVideoBox->SetSize(dx, dy, cw / 2 - 2 * dx, ch - m_ph - 2 * dy);
-	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Show(true)...\n");
+	m_pVideoBox->SetSize(m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
+	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Show(true)...\n");	
 	m_pVideoBox->Show(true);	
 
 	m_WasInited = true;
@@ -398,6 +406,10 @@ void CMainFrame::Init()
 		
 	CControl::RefreshAllControlsData();
 	this->Refresh();
+
+#ifndef WIN32
+	m_bUpdateSizes = true;
+#endif
 
 	SaveToReportLog("CMainFrame::Init(): finished.\n");
 }
@@ -459,14 +471,21 @@ void CMainFrame::OnMouseWheel(wxMouseEvent& event)
 
 void CMainFrame::OnSize(wxSizeEvent& event)
 {
-	int w, h;
-    this->GetClientSize(&w, &h);
-	m_cw = w;
-	m_ch = h;
+	int cw, ch;
+    this->GetClientSize(&cw, &ch);
+	m_cw = cw;
+	m_ch = ch;
 
-	m_pPanel->SetSize(0, h - m_ph, w, m_ph);
+	m_pPanel->SetSize(0, ch - m_ph, cw, m_ph);
 
-	GetClientWindow()->SetSize(0, 0, w, h - m_ph);
+	if (m_bUpdateSizes)
+	{		
+		m_pImageBox->SetSize(cw / 2 + m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
+		m_pVideoBox->SetSize(m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
+		m_bUpdateSizes = false;
+	}
+
+	//GetClientWindow()->SetSize(0, 0, w, h - m_ph);
 }
 
 void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)
@@ -517,7 +536,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	if (m_blnReopenVideo == false)
 	{
 		// https://en.wikipedia.org/wiki/Video_file_format
-		wxString all_video_formats("*.3g2; *.3gp; *.amv; *.asf; *.avi; *.drc; *.flv; *.f4v; *.f4p; *.f4a; *.f4b; *.gif; *.gifv; *.m4p; *.m4v; *.m4v; *.mkv; *.mng; *.mov; *.qt; *.mp4; *.mpg; *.mp2; *.mpeg; *.mpe; *.mpv; *.mpg; *.mpeg; *.m2v; *.mts; *.m2ts; *.ts; *.mxf; *.nsv; *.ogv; *.ogg; *.rm; *.rmvb; *.roq; *.svi; *.viv; *.vob; *.webm; *.wmv; *.yuv; *.avs");
+		wxString all_video_formats("*.3g2;*.3gp;*.amv;*.asf;*.avi;*.drc;*.flv;*.f4v;*.f4p;*.f4a;*.f4b;*.gif;*.gifv;*.m4p;*.m4v;*.m4v;*.mkv;*.mng;*.mov;*.qt;*.mp4;*.mpg;*.mp2;*.mpeg;*.mpe;*.mpv;*.mpg;*.mpeg;*.m2v;*.mts;*.m2ts;*.ts;*.mxf;*.nsv;*.ogv;*.ogg;*.rm;*.rmvb;*.roq;*.svi;*.viv;*.vob;*.webm;*.wmv;*.yuv;*.avs");
 
 		wxFileDialog fd(this, wxT("Open Video File"),
 						wxEmptyString, wxEmptyString, wxString::Format(wxT("Video Files (%s)|%s|All Files (*.*)|*.*"), all_video_formats, all_video_formats), wxFD_OPEN);
@@ -596,16 +615,20 @@ void CMainFrame::OnFileOpenVideo(int type)
 		m_EndTime = m_pVideo->m_Duration;
 	}
 
-	m_pPanel->m_pSHPanel->m_plblBTA1->SetLabel(ConvertVideoTime(m_BegTime));
-	m_pPanel->m_pSHPanel->m_plblBTA2->SetLabel(ConvertVideoTime(m_EndTime));
+	m_pPanel->m_pSHPanel->m_plblBTA1->SetValue(ConvertVideoTime(m_BegTime));
+	m_pPanel->m_pSHPanel->m_plblBTA2->SetValue(ConvertVideoTime(m_EndTime));
 
 	m_w = m_pVideo->m_Width;
 	m_h = m_pVideo->m_Height;
 	m_BufferSize = m_w*m_h*sizeof(int);
 	m_VIsOpen = true;
 
-	wxRect rc, rcP, rcVB, rVB, rcVW, rVW, rcIW, rImB;
+	wxRect rc, rcP, rVB, rcVW, rcIW, rImB;
 	int w, wmax, h, ww, hh, dw, dh, dwi, dhi;
+
+	this->GetClientSize(&w, &h);
+	m_cw = w;
+	m_ch = h;
 
 	rc.x = rc.y = 0; 
 	rc.width = m_cw;
@@ -613,19 +636,12 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 	rcP = m_pPanel->GetRect();
 
-	m_pVideoBox->GetClientSize(&w, &h);
-	rcVB.x = rcVB.y = 0; 
-	rcVB.width = w;
-	rcVB.height = h;
-
 	rVB = m_pVideoBox->GetRect();
 
 	m_pVideoBox->m_pVBox->m_pVideoWnd->GetClientSize(&w, &h);
 	rcVW.x = rcVW.y = 0; 
 	rcVW.width = w;
 	rcVW.height = h;
-
-	rVW = m_pVideoBox->m_pVBox->m_pVideoWnd->GetRect();
 	
 	dw = rVB.width-rcVW.width;
 	dh = rVB.height-rcVW.height;
@@ -1221,7 +1237,7 @@ void CMainFrame::OnEditSetBeginTime(wxCommandEvent& event)
 	
 		Cur = m_pVideo->GetPos();
 
-		m_pPanel->m_pSHPanel->m_plblBTA1->SetLabel(ConvertVideoTime(Cur));
+		m_pPanel->m_pSHPanel->m_plblBTA1->SetValue(ConvertVideoTime(Cur));
 
 		m_BegTime = Cur;
 	}
@@ -1235,7 +1251,7 @@ void CMainFrame::OnEditSetEndTime(wxCommandEvent& event)
 	
 		Cur = m_pVideo->GetPos();
 
-		m_pPanel->m_pSHPanel->m_plblBTA2->SetLabel(ConvertVideoTime(Cur));
+		m_pPanel->m_pSHPanel->m_plblBTA2->SetValue(ConvertVideoTime(Cur));
 
 		m_EndTime = Cur;
 	}
@@ -1536,7 +1552,7 @@ void CMainFrame::OnAppAbout(wxCommandEvent& event)
 	wxSize cl_size = this->GetClientSize();
 	wxSize msg_size(600, 600);
 	MyMessageBox msg_dlg(this,
-		"This program was written by Simeon Kosnitsky. \nPublished under public domain license.\n\nSupported command line options:\n" + m_parser.GetUsageString(),
+		"This program was written by Simeon Kosnitsky. \nPublished under public domain license.\n\nSupported command line options:\n" + g_parser.GetUsageString(),
 		"VideoSubFinder " VSF_VERSION " Version",
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);

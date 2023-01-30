@@ -22,6 +22,7 @@ BEGIN_EVENT_TABLE(CSeparatingLine, wxWindow)
 	EVT_LEFT_DOWN(CSeparatingLine::OnLButtonDown)
 	EVT_LEFT_UP(CSeparatingLine::OnLButtonUp)
 	EVT_MOTION(CSeparatingLine::OnMouseMove)
+	EVT_MOUSE_CAPTURE_LOST(CSeparatingLine::OnMouseCaptureLost)
 END_EVENT_TABLE()
 
 CSeparatingLine::CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxWindowID id)
@@ -208,9 +209,29 @@ void CSeparatingLine::OnLButtonUp( wxMouseEvent& event )
 	if (m_bDown == true) 
 	{
 		m_bDown = false;
-		this->ReleaseMouse();		
+		this->ReleaseMouse();
 		
 		this->Refresh(true);
+	}
+}
+
+void CSeparatingLine::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
+{
+	if (m_bDown == true) 
+	{
+		m_bDown = false;
+		//this->ReleaseMouse();
+
+		wxPoint mp = wxGetMousePosition() - GetScreenPosition();
+		wxMouseEvent event;
+		event.m_x = mp.x;
+		event.m_y = mp.y;
+
+		wxPoint pt = this->GetPosition();
+		wxSize border = this->GetWindowBorderSize();
+
+		MoveSL( wxPoint(pt.x + border.GetWidth() + event.m_x, pt.y + border.GetHeight() + event.m_y) );		
+		//this->CaptureMouse();
 	}
 }
 

@@ -360,6 +360,7 @@
     <ClCompile Include="ImageBox.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="OCRPanel.cpp" />
+    <ClCompile Include="ResizableWindow.cpp" />
     <ClCompile Include="ScrollBar.cpp" />
     <ClCompile Include="SearchPanel.cpp" />
     <ClCompile Include="SeparatingLine.cpp" />
@@ -382,6 +383,7 @@
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MyResource.h" />
     <ClInclude Include="OCRPanel.h" />
+    <ClInclude Include="ResizableWindow.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScrollBar.h" />
     <ClInclude Include="SearchPanel.h" />
