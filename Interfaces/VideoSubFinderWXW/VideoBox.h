@@ -45,6 +45,7 @@ public:
 	void OnSetFocus( wxFocusEvent &event );
 	void OnEraseBackGround(wxEraseEvent& event);
 	void OnLeftDown(wxMouseEvent& event);
+	//void OnKeyUp(wxKeyEvent& event);
 	bool CheckFilterImage();
 	void DrawImage(simple_buffer<u8>& ImBGR, const int w, const int h);	
 
@@ -98,7 +99,8 @@ public:
 	wxColour	m_CL2;
 	wxColour	m_bc;
 
-	wxImage	*m_pImage;	
+	wxImage	*m_pImage;
+	wxFrame *pFullScreenWin;
 
 	CMainFrame	*m_pMF;
 	bool		m_WasInited;

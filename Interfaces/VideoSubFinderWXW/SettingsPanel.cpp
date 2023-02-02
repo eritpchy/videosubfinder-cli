@@ -401,7 +401,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	simple_buffer<u8> ImBGR;
 	int i, j, k, S=0;	
 	char str[30];
-	clock_t t;
+	std::chrono::time_point<std::chrono::high_resolution_clock> t;
 	wxString BaseImgName;	
 
 	g_color_ranges = GetColorRanges(g_use_filter_color);

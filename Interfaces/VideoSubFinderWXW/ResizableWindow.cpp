@@ -22,6 +22,7 @@ EVT_LEFT_DOWN(CResizableWindow::OnLButtonDown)
 EVT_LEFT_UP(CResizableWindow::OnLButtonUp)
 EVT_MOTION(CResizableWindow::OnMouseMove)
 EVT_LEAVE_WINDOW(CResizableWindow::OnMouseLeave)
+EVT_MOUSE_CAPTURE_LOST(CResizableWindow::OnMouseCaptureLost)
 END_EVENT_TABLE()
 
 
@@ -43,6 +44,11 @@ void CResizableWindow::OnLButtonDown(wxMouseEvent& event)
 	wxPoint mp = wxGetMousePosition() - GetScreenPosition() - clao;
 	event.m_x = mp.x;
 	event.m_y = mp.y;
+
+	if (!this->HasFocus())
+	{
+		this->SetFocus();
+	}
 
 	int x = event.m_x, y = event.m_y, w, h;
 	this->GetClientSize(&w, &h);
@@ -82,7 +88,9 @@ void CResizableWindow::OnLButtonDown(wxMouseEvent& event)
 	{
 		m_bDownMove = true;
 		m_dm_orig_point = wxPoint(event.m_x, event.m_y);
-		UpdateCursor(event.m_x, event.m_y);
+		//UpdateCursor(event.m_x, event.m_y);
+		m_cur_cursor = wxCURSOR_HAND;
+		this->SetCursor(wxCursor(m_cur_cursor));
 		this->CaptureMouse();
 	}
 }
@@ -144,6 +152,18 @@ void CResizableWindow::OnMouseLeave(wxMouseEvent& event)
 {
 	if ((m_bDownResize == false) && (m_bDownMove == false))
 	{
+		m_cur_cursor = wxCURSOR_ARROW;
+		this->SetCursor(wxCursor(m_cur_cursor));
+	}
+}
+
+void CResizableWindow::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
+{
+	if ((m_bDownResize == true) || (m_bDownMove == true))
+	{
+		m_bDownResize = false;
+		m_bDownMove = false;
+		
 		m_cur_cursor = wxCURSOR_ARROW;
 		this->SetCursor(wxCursor(m_cur_cursor));
 	}

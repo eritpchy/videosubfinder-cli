@@ -393,8 +393,8 @@ void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 
 				m_pVB->m_pMF->m_cfg.m_pixel_color_bgr = wxString::Format(wxT("RGB: r:%d g:%d b:%d L:%d"), (int)(bgr[2]), (int)(bgr[1]), (int)(bgr[0]), (int)y);
 				m_pVB->m_pMF->m_cfg.m_pixel_color_lab = wxString::Format(wxT("Lab: l:%d a:%d b:%d"), (int)(lab[0]), (int)(lab[1]), (int)(lab[2]));
-				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorRGB->SetLabel(m_pVB->m_pMF->m_cfg.m_pixel_color_bgr);
-				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorLab->SetLabel(m_pVB->m_pMF->m_cfg.m_pixel_color_lab);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorRGB->SetValue(m_pVB->m_pMF->m_cfg.m_pixel_color_bgr);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorLab->SetValue(m_pVB->m_pMF->m_cfg.m_pixel_color_lab);
 				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->SetBackgroundColour(wxColour(bgr[2], bgr[1], bgr[0]));
 				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->Refresh();
 			}
@@ -571,6 +571,11 @@ void CVideoBox::Init()
 	m_CL1 = wxColour(255, 255, 225);
 	m_CL2 = wxColour(0, 0, 0);
 
+	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+	pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
+	pFullScreenWin->Hide();	
+
 	this->SetBackgroundColour(m_bc);
 
 	m_pVBar = new wxToolBar(this, wxID_ANY,
@@ -614,11 +619,25 @@ void CVideoBox::Init()
 	m_plblVB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblVB->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblVB->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblVB->m_pST->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
+	m_plblVB->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
+	m_plblVB->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
+	m_plblVB->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
 
 	m_plblTIME->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblTIME->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblTIME->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblTIME->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblTIME->m_pST->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
+	m_plblTIME->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
+	m_plblTIME->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
+	m_plblTIME->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+
+	//m_pSB->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
+	//m_pSB->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
+
+	// m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
+	// m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
 
 	m_WasInited = true;
 }
@@ -733,6 +752,7 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 {
 	s64 Cur;
 	int key_code = event.GetKeyCode();
+	wxCommandEvent evt;
 
 	switch (key_code)
 	{
@@ -750,14 +770,30 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
 			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
-			{
-				m_pVBox->m_pVideoWnd->Reparent(NULL);
+			{				
+				//m_pVBox->m_pVideoWnd->Reparent(m_pMF);
+				
+				m_pVBox->m_pVideoWnd->Reparent(pFullScreenWin);
+				//m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
+				//m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
+
 				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 				m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
 
-				m_pVBox->m_pVideoWnd->Refresh(false);
-				m_pVBox->m_pVideoWnd->Update();
+				if (!pFullScreenWin->IsFullScreen())
+				{
+					pFullScreenWin->ShowFullScreen(true);
+				}
+				if (!pFullScreenWin->IsShown())
+				{
+					pFullScreenWin->Show(true);
+				}
+
+				//m_pVBox->m_pVideoWnd->Show(true);
+				//m_pVBox->m_pVideoWnd->Refresh(true);
+				//m_pVBox->m_pVideoWnd->Refresh(false);
+				//m_pVBox->m_pVideoWnd->Update();
 
 				if (!m_timer.IsRunning())
 				{
@@ -771,8 +807,6 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 	if (m_pMF->m_VIsOpen)
 	{
-		wxCommandEvent evt;
-
 		switch ( key_code )
 		{
 			case WXK_RIGHT:
@@ -804,7 +838,35 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 			case WXK_SPACE:				
  				m_pMF->OnPlayPause(evt);
 				break;
+
+			case 'Z':
+			case 'z':
+				if (event.CmdDown())
+				{
+					m_pMF->OnEditSetBeginTime(evt);
+				}
+				break;
+			
+			case 'X':
+			case 'x':
+				if (event.CmdDown())
+				{
+					m_pMF->OnEditSetEndTime(evt);
+				}
+				break;
 		}
+	}
+
+	switch ( key_code )
+	{
+		case 'S':
+		case 's':
+			if (event.CmdDown())
+			{
+				m_pMF->OnFileSaveSettings(evt);
+			}
+			break;
+
 	}
 }
 
@@ -834,14 +896,42 @@ void CVideoBox::OnKeyUp(wxKeyEvent& event)
 				if (m_timer.IsRunning())
 				{
 					m_timer.Stop();
+					wxTimerEvent te;
+					this->OnTimer(te);
 				}
-
-				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
-
-				wxSizeEvent event;
-				m_pVBox->OnSize(event);
 			}
 			break;
+	}
+}
+
+// note: this is the hack for resolve lost keybard messages if click video image in fullscreen
+void CVideoBox::OnTimer(wxTimerEvent& event)
+{
+	if (!m_pVBox->m_pVideoWnd->CheckFilterImage())
+	{
+		if (m_timer.IsRunning())
+		{
+			m_timer.Stop();
+		}
+
+		if (pFullScreenWin->IsShown())
+		{
+			// note: this is the hack for bring separating lines to top of video window
+			pFullScreenWin->Hide();
+			m_pVBox->m_pHSL1->Reparent(pFullScreenWin);
+			m_pVBox->m_pHSL2->Reparent(pFullScreenWin);
+			m_pVBox->m_pVSL1->Reparent(pFullScreenWin);
+			m_pVBox->m_pVSL2->Reparent(pFullScreenWin);
+
+			m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+			m_pVBox->m_pHSL1->Reparent(m_pVBox);
+			m_pVBox->m_pHSL2->Reparent(m_pVBox);
+			m_pVBox->m_pVSL1->Reparent(m_pVBox);
+			m_pVBox->m_pVSL2->Reparent(m_pVBox);
+
+			wxSizeEvent event;
+			m_pVBox->OnSize(event);
+		}
 	}
 }
 
@@ -998,16 +1088,4 @@ void CVideoBox::OnHScroll(wxScrollEvent& event)
 	}
 }
 
-void CVideoBox::OnTimer(wxTimerEvent& event)
-{
-	if (!m_pVBox->m_pVideoWnd->CheckFilterImage())
-	{
-		m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
-
-		wxSizeEvent event;
-		m_pVBox->OnSize(event);
-
-		m_timer.Stop();
-	}
-}
 

@@ -853,7 +853,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		TXTVector.push_back(Str);
 	}
 
-	// создаем srt subtitle
+	// СЃРѕР·РґР°РµРј srt subtitle
 	
 	k=0;
 	while(k < TXTVector.size())
@@ -1573,7 +1573,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			tasks[k] = TaskFindTextLines(task_queue);
 		}
 
-		clock_t start_time = clock();
+		std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
 
 		for (k = 0; k < NImages; k++)
 		{
@@ -1607,14 +1607,14 @@ void *ThreadCreateClearedTextImages::Entry()
 						g_pViewGreyscaleImage[1](ImTMP_ClearedText, p_task_res->m_W, p_task_res->m_H);
 					}
 
-					clock_t cur_time = clock();
+					std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
 					double progress = ((double)(k + 1) / (double)NImages) * 100.0;
 
-					clock_t run_time = cur_time - start_time;
-					clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+					u64 run_time = std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - start_time).count();
+					u64 eta = (u64)((double)run_time * (100.0 - progress) / progress);
 
 					wxString str;
-					str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertClockTime(eta), m_pMF->ConvertClockTime(run_time), k + 1, NImages);
+					str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertTime(eta), m_pMF->ConvertTime(run_time), k + 1, NImages);
 					m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
 
 					Str = FileNamesVector[k];

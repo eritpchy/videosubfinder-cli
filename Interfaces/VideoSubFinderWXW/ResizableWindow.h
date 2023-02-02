@@ -29,6 +29,7 @@ public:
 	void	OnLButtonUp(wxMouseEvent& event);
 	void	OnMouseMove(wxMouseEvent& event);
 	void	OnMouseLeave(wxMouseEvent& event);
+	void	OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
 	
 	void UpdateCursor(int x, int y);
 

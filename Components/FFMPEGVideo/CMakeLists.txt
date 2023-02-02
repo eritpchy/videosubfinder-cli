@@ -18,6 +18,8 @@ target_include_directories(FFMPEGVideo PUBLIC
 
 if (WIN32)
 else()
-target_compile_definitions(FFMPEGVideo PUBLIC ${wxWidgets_DEFINITIONS})
+target_compile_definitions(FFMPEGVideo PUBLIC
+	${wxWidgets_DEFINITIONS}
+	$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>)
 target_compile_options(FFMPEGVideo PRIVATE ${wxWidgets_CXX_FLAGS})
 endif (WIN32)

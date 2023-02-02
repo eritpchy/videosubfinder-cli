@@ -40,7 +40,7 @@ __itt_string_handle* shAddIntersectImagesTaskV2 = __itt_string_handle_create(L"A
 __itt_string_handle* shSubFound = __itt_string_handle_create(L"SubFound");
 #endif
 
-clock_t g_StartTimeRunSubSearch = 0;
+std::chrono::time_point<std::chrono::high_resolution_clock> g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();
 int		g_RunSubSearch = 0;
 
 int    g_threads = -1;
@@ -1120,7 +1120,7 @@ public:
 	}
 };
 
-s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
+s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 {
 	//NOTE: FastSearchSubtitles doesn't use cv:: at all
 	// in case of x86 cv::ocl::setUseOpenCL(g_use_ocl) breack ffmpeg cuda usage
@@ -1146,7 +1146,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	//g_disable_save_images = true;
 	
-	g_StartTimeRunSubSearch = clock();
+	g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();
 	g_RunSubSearch = 1;
 
 	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
@@ -1237,7 +1237,13 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	while (((CurPos < End) || (End < 0)) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
-		int create_new_threads = threads;		
+		if (pThr->TestDestroy())
+		{
+			g_RunSubSearch = 0;
+			break;
+		}
+
+		int create_new_threads = threads;	
 
 #ifdef CUSTOM_TA
 		if (fn >= 1000)
@@ -2027,14 +2033,14 @@ int AnalyseImage(simple_buffer<u8>& Im, simple_buffer<u16>* pImILA, int w, int h
 	mpl = 0;
 	i_mpl = 0;
 
-	// находим все строки, а также строку с максимальной плотностью
+	// РЅР°С…РѕРґРёРј РІСЃРµ СЃС‚СЂРѕРєРё, Р° С‚Р°РєР¶Рµ СЃС‚СЂРѕРєСѓ СЃ РјР°РєСЃРёРјР°Р»СЊРЅРѕР№ РїР»РѕС‚РЅРѕСЃС‚СЊСЋ
 	for(k=0, ia=0; k<n; k++, ia+=da)
 	{
 		l = 0;
 		bln = 0;
 		
 		pl = 0;
-		// находим все под строки
+		// РЅР°С…РѕРґРёРј РІСЃРµ РїРѕРґ СЃС‚СЂРѕРєРё
 		for(x=0; x<w; x++)
 		{
 			for(y=0, i=ia+x; y<segh; y++, i+=w)
@@ -2081,7 +2087,7 @@ int AnalyseImage(simple_buffer<u8>& Im, simple_buffer<u16>* pImILA, int w, int h
 		return 0;
 	}
 
-	// находим cоотнощение длины текста к занимаемому им месту
+	// РЅР°С…РѕРґРёРј cРѕРѕС‚РЅРѕС‰РµРЅРёРµ РґР»РёРЅС‹ С‚РµРєСЃС‚Р° Рє Р·Р°РЅРёРјР°РµРјРѕРјСѓ РёРј РјРµСЃС‚Сѓ
 	k = i_mpl;
 	len = 0;
 	for (l=0; l<g_ln[k]; l++)

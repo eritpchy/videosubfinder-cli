@@ -180,7 +180,7 @@ int ClearImageLogical(simple_buffer<u8>& Im, int w, int h, int W, int H, int rea
 	int val, lb, le, LH, LMAXY;
 	int min_h = g_min_h * H;
 	bool bln;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -1765,7 +1765,7 @@ void FilterImageByNotIntersectedFiguresWithImMask(simple_buffer<u8>& ImInOut, si
 {
 	CMyClosedFigure* pFigure;
 	int i, j, k, l, ii;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 
@@ -4124,7 +4124,7 @@ void ExtendAndFilterImFF(simple_buffer<u8>& ImFF, const int w, const int h, cons
 	{
 		CMyClosedFigure* pFigure;
 		int i, l, ii, N;
-		clock_t t;
+		u64 t;
 
 		custom_buffer<CMyClosedFigure> pFigures;
 		t = SearchClosedFigures(ImFF, w, h, (u8)255, pFigures);
@@ -5209,40 +5209,6 @@ void GetMainColorImage(simple_buffer<u8>& ImRES, simple_buffer<u8>* pImMainClust
 			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_03_MainColor" + g_im_save_format, w, h);
 
 			MergeImagesByIntersectedFigures(ImMainCluster, ImMainClusterOrig, w, h, (u8)255);
-
-			/*{
-				CMyClosedFigure* pFigure;
-				int i, j, k, l, ii;
-				clock_t t;
-
-				custom_buffer<CMyClosedFigure> pFigures;
-
-				t = SearchClosedFigures(ImMainCluster, w, h, (u8)255, pFigures);
-				for (i = 0; i < pFigures.size(); i++)
-				{
-					pFigure = &(pFigures[i]);
-
-					bool found = false;
-					for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
-					{
-						ii = pFigure->m_PointsArray[l];
-						if (ImMainClusterOrig[ii] != 0)
-						{
-							found = true;
-							break;
-						}
-					}
-
-					if (!found)
-					{
-						for (l = 0; l < pFigure->m_PointsArray.m_size; l++)
-						{
-							ii = pFigure->m_PointsArray[l];
-							ImMainCluster[ii] = 0;
-						}
-					}
-				}
-			}*/
 
 			if (g_show_results) SaveGreyscaleImage(ImMainCluster, "/TestImages/GetMainColorImage_" + iter_det + "_02_04_MainTXTClusterExtByMainColor" + g_im_save_format, w, h);
 		}
@@ -6872,7 +6838,7 @@ int ClearImageOptimal(simple_buffer<u8> &Im, int w, int h, u8 white)
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
 	int val=0, val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -6926,7 +6892,7 @@ int ClearImageOptimal2(simple_buffer<u8> &Im, int w, int h, int min_x, int max_x
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii, N /*num of closed figures*/, NNY, min_h;
 	int val = 0, val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -7063,7 +7029,7 @@ int GetSubParams(simple_buffer<u8>& Im, int w, int h, u8 white, int& LH, int& LM
 	simple_buffer<int> GRStr(256 * 2, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	int val1, val2, val3;
 	int NNY;
-	clock_t t;
+	u64 t;
 
 	LMAXY = 0;
 	LH = 0;
@@ -7285,7 +7251,7 @@ int ClearImageByMask(simple_buffer<u8> &Im, simple_buffer<u8> &ImMASK, int w, in
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -7342,7 +7308,7 @@ int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H,
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -7387,7 +7353,7 @@ int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 	int max_len = std::min<int>(0.25*W, h * 2);
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -7490,7 +7456,7 @@ int ClearImageOpt3(simple_buffer<u8> &Im, int w, int h, int real_im_x_center, u8
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 
 	if (g_text_alignment != TextAlignment::Center)
 	{
@@ -7553,7 +7519,7 @@ int ClearImageOpt4(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, in
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 	int min_h = H * g_min_h;
 
 	custom_buffer<CMyClosedFigure> pFigures;
@@ -7664,7 +7630,7 @@ int ClearImageOpt5(simple_buffer<u8> &Im, int w, int h, int LH, int LMAXY, int r
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N;
 	int val1, val2, ddy1, ddy2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -7826,7 +7792,7 @@ int ClearImageByTextDistance(simple_buffer<T>& Im, int w, int h, int W, int H, i
 
 	CMyClosedFigure *pFigure;
 	int i, j, k, val1, val2, l, ii, N, res = 0, x, y, y2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -7923,7 +7889,7 @@ int ClearImageFromSmallSymbols(simple_buffer<u8>& Im, int w, int h, int W, int H
 {
 	CMyClosedFigure *pFigure;
 	int i, l, ii, N, res = 0, x, y, y2;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 	t = SearchClosedFigures(Im, w, h, white, pFigures);
@@ -8096,7 +8062,7 @@ void MergeImagesByIntersectedFigures(simple_buffer<T>& ImInOut, simple_buffer<T>
 	simple_buffer<T> Im2(ImIn2);
 	CMyClosedFigure *pFigure;
 	int i, j, k, l, ii;
-	clock_t t;
+	u64 t;
 
 	custom_buffer<CMyClosedFigure> pFigures;
 
@@ -8375,7 +8341,7 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 	CMyClosedFigure *pFigure = NULL;
 	int i, j, k, l, N, val, val1, val2, val3, val4;
 	int *NH = NULL, NNY, min_h, min_w, prev_min_w;
-	clock_t t;
+	u64 t;
 
 	LH = 14*4;
 	XB = w/2;

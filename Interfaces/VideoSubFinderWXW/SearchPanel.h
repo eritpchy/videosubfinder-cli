@@ -70,6 +70,7 @@ public:
 	//HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	void OnBnClickedRun(wxCommandEvent& event);
 	void OnBnClickedClear(wxCommandEvent& event);
+	void ThreadSearchSubtitlesEnd(wxCommandEvent& event);
 
 private:
    DECLARE_EVENT_TABLE()

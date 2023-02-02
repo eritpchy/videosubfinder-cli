@@ -514,7 +514,7 @@ ThreadRunVideo::ThreadRunVideo(OCVVideo *pVideo) : wxThread()
 void *ThreadRunVideo::Entry()
 {
 	double startPos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
-	clock_t start_t = clock();
+	std::chrono::time_point<std::chrono::high_resolution_clock> start_t = std::chrono::high_resolution_clock::now();
 
 	while (m_pVideo->m_play_video)
 	{		
@@ -528,7 +528,7 @@ void *ThreadRunVideo::Entry()
 		m_pVideo->m_Pos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
 		
 		((wxWindow*)m_pVideo->m_pVideoWindow)->Refresh(true);
-		int dt = (m_pVideo->m_Pos - startPos) - (int)(clock() - start_t);
+		int dt = (m_pVideo->m_Pos - startPos) - (int)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_t).count());
 		if (dt > 0)
 		{
 			wxMilliSleep(dt);

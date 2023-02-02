@@ -173,6 +173,8 @@ void CScrollBar::OnLButtonDown( wxMouseEvent& event )
 	int x = event.m_x, y = event.m_y, w, h;
 	this->GetClientSize(&w, &h);
 
+	m_pParent->SetFocus();
+
 	if ( m_rcSBT.Contains(x, y) || m_rcSBLC.Contains(x, y) || m_rcSBRC.Contains(x, y) )
 	{
 		m_ld = true;

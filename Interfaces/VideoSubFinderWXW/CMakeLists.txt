@@ -64,7 +64,9 @@ if (WIN32)
 		opencv_world470.lib
 	)
 else()
-	target_compile_definitions(VideoSubFinderWXW PUBLIC ${wxWidgets_DEFINITIONS})
+	target_compile_definitions(VideoSubFinderWXW PUBLIC
+		${wxWidgets_DEFINITIONS}
+		$<$<CONFIG:Debug>:${wxWidgets_DEFINITIONS_DEBUG}>)
 	target_compile_options(VideoSubFinderWXW PRIVATE ${wxWidgets_CXX_FLAGS})
 
 	target_link_directories(VideoSubFinderWXW  PUBLIC

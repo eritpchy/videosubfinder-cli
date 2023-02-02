@@ -22,7 +22,10 @@
 int g_IsSearching = 0;
 int g_IsClose = 0;
 
+wxDEFINE_EVENT(THREAD_SEARCH_SUBTITLES_END, wxCommandEvent);
+
 BEGIN_EVENT_TABLE(CSearchPanel, wxPanel)
+	EVT_COMMAND(wxID_ANY, THREAD_SEARCH_SUBTITLES_END, CSearchPanel::ThreadSearchSubtitlesEnd)
 	EVT_BUTTON(ID_BTN_CLEAR, CSearchPanel::OnBnClickedClear)
 	EVT_BUTTON(ID_BTN_RUN, CSearchPanel::OnBnClickedRun)
 END_EVENT_TABLE()
@@ -171,7 +174,7 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_EndTime = GetVideoTime(wxString(m_plblBTA2->GetValue()));
 
 		m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
-		m_pSearchThread->Create();
+		m_pSearchThread->Create();	
 		m_pSearchThread->Run();
 		//m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 	}
@@ -179,9 +182,9 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 	{
 		if (g_RunSubSearch == 1) 
 		{
-			g_pMF->m_timer.Stop();
+			m_pMF->m_timer.Stop();
 			wxTimerEvent event;
-			g_pMF->OnTimer(event);
+			m_pMF->OnTimer(event);
 
 			g_RunSubSearch = 0;
 		}
@@ -205,51 +208,53 @@ ThreadSearchSubtitles::ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind)
 	g_pMF = pMF;
 }
 
-void ThreadSearchSubtitlesRun();
-void ThreadSearchSubtitlesEnd();
+void ThreadSearchSubtitlesRun(wxThread *pThr);
 
 void *ThreadSearchSubtitles::Entry()
 {
 #ifdef WIN32
 	__try
 	{
-		ThreadSearchSubtitlesRun();
+		ThreadSearchSubtitlesRun(this);
 	}
 	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun()"))
 	{
 	}
 
-	__try
-	{
-		ThreadSearchSubtitlesEnd();
-	}
-	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()"))
-	{
-	}
+	// __try
+	// {
+	// 	ThreadSearchSubtitlesEnd();
+	// }
+	// __except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()"))
+	// {
+	// }
 #else
 	try
 	{
-		ThreadSearchSubtitlesRun();
+		ThreadSearchSubtitlesRun(this);
 	}
 	catch (const exception& e)
 	{
 		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun() ") + wxString(e.what()));
 	}
 	
-	try
-	{
-		ThreadSearchSubtitlesEnd();
-	}
-	catch (const exception& e)
-	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()") + wxString(e.what()));
-	}
+	// try
+	// {
+	// 	ThreadSearchSubtitlesEnd();
+	// }
+	// catch (const exception& e)
+	// {
+	// 	g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()") + wxString(e.what()));
+	// }
 #endif
+
+	wxCommandEvent event(THREAD_SEARCH_SUBTITLES_END); // No specific id
+	wxPostEvent(g_pMF->m_pPanel->m_pSHPanel, event);
 
 	return 0;
 }
 
-void ThreadSearchSubtitlesRun()
+void ThreadSearchSubtitlesRun(wxThread *pThr)
 {
 	g_IsSearching = 1;
 
@@ -265,7 +270,7 @@ void ThreadSearchSubtitlesRun()
 
 		try
 		{
-			g_pMF->m_BegTime = FastSearchSubtitles(g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
+			g_pMF->m_BegTime = FastSearchSubtitles(pThr, g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
 		}
 		catch (const exception& e)
 		{
@@ -274,41 +279,42 @@ void ThreadSearchSubtitlesRun()
 	}
 }
 
-void ThreadSearchSubtitlesEnd()
+void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 {
 	wxEvtHandler *handler;
 
 	if (g_IsClose == 1) 
 	{
 		g_IsSearching = 0;
-		g_pMF->Close();
+		m_pMF->Close();
 		return;
 	}
 
-	if (!(g_pMF->m_blnNoGUI))
+	if (!(m_pMF->m_blnNoGUI))
 	{
 		if (g_RunSubSearch == 1)
 		{
-			g_pMF->m_timer.Stop();
+			m_pMF->m_timer.Stop();
 			wxTimerEvent event;
-			g_pMF->OnTimer(event);
+			m_pMF->OnTimer(event);
 		}
 		else
 		{
 			wxCommandEvent  menu_event(wxEVT_COMMAND_MENU_SELECTED, ID_FILE_REOPENVIDEO);
-			handler = g_pMF->GetEventHandler();
-			wxPostEvent(handler, menu_event);
+			m_pMF->OnFileReOpenVideo(menu_event);
+			//handler = m_pMF->GetEventHandler();
+			//wxPostEvent(handler, menu_event);
 		}
 
-		g_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
+		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
 
-		g_pMF->m_pPanel->m_pSSPanel->Enable();
-		g_pMF->m_pPanel->m_pOCRPanel->Enable();
+		m_pMF->m_pPanel->m_pSSPanel->Enable();
+		m_pMF->m_pPanel->m_pOCRPanel->Enable();
 
 		if ((g_RunSubSearch == 1) && (g_CLEAN_RGB_IMAGES == true))
 		{
 			wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
-			handler = g_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
+			handler = m_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
 			wxPostEvent(handler, bn_event);
 		}
 		else if ((g_RunSubSearch == 1) && g_playback_sound)

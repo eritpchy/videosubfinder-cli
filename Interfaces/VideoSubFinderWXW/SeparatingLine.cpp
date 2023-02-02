@@ -26,9 +26,8 @@ BEGIN_EVENT_TABLE(CSeparatingLine, wxWindow)
 END_EVENT_TABLE()
 
 CSeparatingLine::CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxWindowID id)
-		: wxWindow( parent, id, wxDefaultPosition, wxDefaultSize, 
-							0
-							| wxTRANSPARENT_WINDOW							
+		: wxWindow( parent, id, wxDefaultPosition, wxDefaultSize,
+							wxTRANSPARENT_WINDOW | wxWANTS_CHARS
 							)
 {
 	m_bDown = false;
@@ -74,7 +73,7 @@ CSeparatingLine::CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh,
 
 	CreateNewRgn();
 
-	this->Raise();
+	//this->Raise();
 	
 	UpdateSL();
 }
@@ -220,18 +219,6 @@ void CSeparatingLine::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
 	if (m_bDown == true) 
 	{
 		m_bDown = false;
-		//this->ReleaseMouse();
-
-		wxPoint mp = wxGetMousePosition() - GetScreenPosition();
-		wxMouseEvent event;
-		event.m_x = mp.x;
-		event.m_y = mp.y;
-
-		wxPoint pt = this->GetPosition();
-		wxSize border = this->GetWindowBorderSize();
-
-		MoveSL( wxPoint(pt.x + border.GetWidth() + event.m_x, pt.y + border.GetHeight() + event.m_y) );		
-		//this->CaptureMouse();
 	}
 }
 
@@ -345,15 +332,15 @@ void CSeparatingLine::UpdateSL()
 		rc.height = m_h+2*m_sh;
 	}
 
-	this->Show(false);
+	//this->Show(false);
 
 	this->SetSize(rc);
 
-	this->Show(true);
+	//this->Show(true);
 
-	this->Raise();
+	//this->Raise();
 
-	//this->Refresh(true);
+	this->Refresh(true);
 	//this->Update();
 }
 

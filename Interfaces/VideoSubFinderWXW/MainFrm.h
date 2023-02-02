@@ -227,6 +227,8 @@ public:
 	std::map<wxString, wxString> m_general_settings;
 	std::map<wxString, wxString> m_locale_settings;
 
+	std::mutex m_mutex;
+
 public:
 	void Init();
 
@@ -238,6 +240,13 @@ public:
 	void ClearDir(wxString DirName);
 
 public:
+	void OnViewImageInImageBox(wxThreadEvent& event);
+	void OnViewImageInVideoBox(wxThreadEvent& event);
+	void OnViewGreyscaleImageInImageBox(wxThreadEvent& event);
+	void OnViewGreyscaleImageInVideoBox(wxThreadEvent& event);
+	void OnViewBGRImageInImageBox(wxThreadEvent& event);
+	void OnViewBGRImageInVideoBox(wxThreadEvent& event);
+	void OnViewRGBImage(wxThreadEvent& event);
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void OnPlayPause(wxCommandEvent& event);
@@ -260,7 +269,7 @@ public:
 	void OnSetPriorityBelownormal(wxCommandEvent& event);
 	void OnSetPriorityAbovenormal(wxCommandEvent& event);
 	void OnSetPriorityHigh(wxCommandEvent& event);
-	wxString ConvertClockTime(clock_t time);
+	wxString ConvertTime(u64 total_milliseconds);
 	void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
 	void ShowErrorMessage(wxString msg);
 	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);

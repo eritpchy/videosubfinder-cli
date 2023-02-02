@@ -20,6 +20,7 @@
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
+#include <chrono>
 #include "Control.h"
 
 CMainFrame *g_pMF;
@@ -31,6 +32,14 @@ bool g_playback_sound = false;
 
 std::vector<CControl*> CControl::m_all_controls;
 
+wxDEFINE_EVENT(VIEW_IMAGE_IN_IMAGE_BOX, wxThreadEvent);
+wxDEFINE_EVENT(VIEW_IMAGE_IN_VIDEO_BOX, wxThreadEvent);
+wxDEFINE_EVENT(VIEW_GREYSCALE_IMAGE_IN_IMAGE_BOX, wxThreadEvent);
+wxDEFINE_EVENT(VIEW_GREYSCALE_IMAGE_IN_VIDEO_BOX, wxThreadEvent);
+wxDEFINE_EVENT(VIEW_BGR_IMAGE_IN_IMAGE_BOX, wxThreadEvent);
+wxDEFINE_EVENT(VIEW_BGR_IMAGE_IN_VIDEO_BOX, wxThreadEvent);
+wxDEFINE_EVENT(VIEW_RGB_IMAGE, wxThreadEvent);
+
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef WIN32	
@@ -41,53 +50,132 @@ int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *de
 }
 #endif
 
+template <typename T>
+struct ThreadData
+{
+	simple_buffer<T> m_Im;
+	int m_w;
+	int m_h;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
-void  ViewImageInImageBox(simple_buffer<int> &Im, int w, int h)
+template <typename T>
+inline void send_thread_data(wxEventType eventType, simple_buffer<T>& Im, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewImage(Im, w, h);
+	if (!(g_pMF->m_blnNoGUI))
+	{
+		const std::lock_guard<std::mutex> lock(g_pMF->m_mutex);
+
+        auto event = new wxThreadEvent(eventType);
+
+		ThreadData<T> td;
+		td.m_Im = Im;
+		td.m_w = w;
+		td.m_h = h;
+
+		event->SetPayload(td);
+
+    	wxQueueEvent(g_pMF, event);
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-void  ViewImageInVideoBox(simple_buffer<int> &Im, int w, int h)
+void  ViewImageInImageBox(simple_buffer<int>& Im, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pVideoBox->ViewImage(Im, w, h);
+	send_thread_data(VIEW_IMAGE_IN_IMAGE_BOX, Im, w, h);	
+}
+
+void CMainFrame::OnViewImageInImageBox(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<int> td = event.GetPayload<ThreadData<int>>();
+	g_pMF->m_pImageBox->ViewImage(td.m_Im, td.m_w, td.m_h);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+void  ViewImageInVideoBox(simple_buffer<int>& Im, int w, int h)
+{
+	send_thread_data(VIEW_IMAGE_IN_VIDEO_BOX, Im, w, h);	
+}
+
+void CMainFrame::OnViewImageInVideoBox(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<int> td = event.GetPayload<ThreadData<int>>();
+	g_pMF->m_pVideoBox->ViewImage(td.m_Im, td.m_w, td.m_h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void  ViewGreyscaleImageInImageBox(simple_buffer<u8>& Im, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewGrayscaleImage(Im, w, h);
+	send_thread_data(VIEW_GREYSCALE_IMAGE_IN_IMAGE_BOX, Im, w, h);	
+}
+
+void CMainFrame::OnViewGreyscaleImageInImageBox(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<u8> td = event.GetPayload<ThreadData<u8>>();
+	g_pMF->m_pImageBox->ViewGrayscaleImage(td.m_Im, td.m_w, td.m_h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void  ViewGreyscaleImageInVideoBox(simple_buffer<u8>& Im, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pVideoBox->ViewGrayscaleImage(Im, w, h);
+	send_thread_data(VIEW_GREYSCALE_IMAGE_IN_VIDEO_BOX, Im, w, h);	
+}
+
+void CMainFrame::OnViewGreyscaleImageInVideoBox(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<u8> td = event.GetPayload<ThreadData<u8>>();
+	g_pMF->m_pVideoBox->ViewGrayscaleImage(td.m_Im, td.m_w, td.m_h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void  ViewBGRImageInImageBox(simple_buffer<u8>& ImBGR, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewBGRImage(ImBGR, w, h);
+	send_thread_data(VIEW_BGR_IMAGE_IN_IMAGE_BOX, ImBGR, w, h);	
+}
+
+void CMainFrame::OnViewBGRImageInImageBox(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<u8> td = event.GetPayload<ThreadData<u8>>();
+	g_pMF->m_pImageBox->ViewBGRImage(td.m_Im, td.m_w, td.m_h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void  ViewBGRImageInVideoBox(simple_buffer<u8>& ImBGR, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pVideoBox->ViewBGRImage(ImBGR, w, h);
+	send_thread_data(VIEW_BGR_IMAGE_IN_VIDEO_BOX, ImBGR, w, h);	
+}
+
+void CMainFrame::OnViewBGRImageInVideoBox(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<u8> td = event.GetPayload<ThreadData<u8>>();
+	g_pMF->m_pVideoBox->ViewBGRImage(td.m_Im, td.m_w, td.m_h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void ViewRGBImage(simple_buffer<int> &Im, int w, int h)
 {
-	if (!(g_pMF->m_blnNoGUI)) g_pMF->m_pImageBox->ViewRGBImage(Im, w, h);
+	send_thread_data(VIEW_RGB_IMAGE, Im, w, h);		
+}
+
+void CMainFrame::OnViewRGBImage(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);	
+	ThreadData<int> td = event.GetPayload<ThreadData<int>>();
+	g_pMF->m_pImageBox->ViewRGBImage(td.m_Im, td.m_w, td.m_h);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -139,7 +227,7 @@ static bool _IsFeature(DWORD dwRequestFeature)
 /////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
-	EVT_SIZE(CMainFrame::OnSize)   
+	EVT_SIZE(CMainFrame::OnSize)
 	EVT_MENU(ID_PLAY_PAUSE, CMainFrame::OnPlayPause)
 	EVT_MENU(ID_PLAY_STOP, CMainFrame::OnStop)
 	EVT_MENU(ID_FILE_REOPENVIDEO, CMainFrame::OnFileReOpenVideo)
@@ -270,6 +358,11 @@ void CMainFrame::Init()
 
 	cnt = pMenuBar->GetMenuCount();			
 
+	// CSeparatingLine *pHSL = new CSeparatingLine(this, 200, 3, 7, 3, 100, 110, 50, 0);
+	// pHSL->m_pos = 0;
+	// pHSL->Raise();
+	// return;
+
 	wxColor bc(215, 228, 242);
 
 	SaveToReportLog("CMainFrame::Init(): new CImageBox(this)...\n");
@@ -289,9 +382,7 @@ void CMainFrame::Init()
 	m_pVideoBox->Init();
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Bind...\n");
 	//m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
-	m_pVideoBox->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, m_pVideoBox);
-	m_pVideoBox->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, m_pVideoBox);
-
+	
 	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
 	LoadSettings();
 
@@ -344,7 +435,7 @@ void CMainFrame::Init()
 #ifdef WIN32
 	this->SetSize(0, 0, w, h - 50);
 #else
-	this->SetSize(w/10, h/10, (4*w)/5, (4*h)/5);
+	this->SetSize(w/14, h/14, (6*w)/7, (6*h)/7);
 #endif
 
 	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
@@ -406,6 +497,14 @@ void CMainFrame::Init()
 		
 	CControl::RefreshAllControlsData();
 	this->Refresh();
+
+	this->Bind(VIEW_IMAGE_IN_IMAGE_BOX, &CMainFrame::OnViewImageInImageBox, this);
+	this->Bind(VIEW_IMAGE_IN_VIDEO_BOX, &CMainFrame::OnViewImageInVideoBox, this);
+	this->Bind(VIEW_GREYSCALE_IMAGE_IN_IMAGE_BOX, &CMainFrame::OnViewGreyscaleImageInImageBox, this);
+	this->Bind(VIEW_GREYSCALE_IMAGE_IN_VIDEO_BOX, &CMainFrame::OnViewGreyscaleImageInVideoBox, this);
+	this->Bind(VIEW_BGR_IMAGE_IN_IMAGE_BOX, &CMainFrame::OnViewBGRImageInImageBox, this);
+	this->Bind(VIEW_BGR_IMAGE_IN_VIDEO_BOX, &CMainFrame::OnViewBGRImageInVideoBox, this);
+	this->Bind(VIEW_RGB_IMAGE, &CMainFrame::OnViewRGBImage, this);
 
 #ifndef WIN32
 	m_bUpdateSizes = true;
@@ -476,8 +575,11 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 	m_cw = cw;
 	m_ch = ch;
 
-	m_pPanel->SetSize(0, ch - m_ph, cw, m_ph);
-
+	if (m_pPanel)
+	{
+		m_pPanel->SetSize(0, ch - m_ph, cw, m_ph);
+	}
+	
 	if (m_bUpdateSizes)
 	{		
 		m_pImageBox->SetSize(cw / 2 + m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
@@ -741,6 +843,8 @@ void CMainFrame::OnFileOpenVideo(int type)
 	m_blnReopenVideo = false;	
 
 	this->Enable();
+
+	m_pVideoBox->SetFocus();
 }
 
 void CMainFrame::OnPlayPause(wxCommandEvent& event)
@@ -1303,12 +1407,11 @@ void CMainFrame::OnFileSaveSettings(wxCommandEvent& event)
 	SaveSettings();
 }
 
-wxString CMainFrame::ConvertClockTime(clock_t time)
+wxString CMainFrame::ConvertTime(u64 total_milliseconds)
 {
 	wxString str;
-	int hour, min, sec, val;
+	int hour, min, sec, val = (int)(total_milliseconds/(u64)1000);
 
-	val = (int)(time / CLOCKS_PER_SEC); // seconds
 	hour = val / 3600;
 	val -= hour * 3600;
 	min = val / 60;
@@ -1322,8 +1425,9 @@ wxString CMainFrame::ConvertClockTime(clock_t time)
 
 void CMainFrame::OnTimer(wxTimerEvent& event)
 {
+	const std::lock_guard<std::mutex> lock(m_mutex);
 	s64 Cur;
-	
+
 	Cur = m_pVideo->GetPos();
 
 	if (Cur != m_ct) 
@@ -1332,17 +1436,17 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 		{
 			if (Cur > m_BegTime)
 			{
-				clock_t cur_time = clock();				
-				clock_t run_time = cur_time - g_StartTimeRunSubSearch;
+				std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
+				u64 run_time = std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - g_StartTimeRunSubSearch).count();
 				
 				wxString str_progress, str_eta;
 
 				if (m_EndTime >= 0)
 				{
 					double progress = std::min<double>(((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0, 100.0);
-					clock_t eta = (clock_t)((double)run_time * (100.0 - progress) / progress);
+					u64 eta = (u64)((double)run_time * (100.0 - progress) / progress);
 					str_progress.Printf(wxT("%%%2.2f"), progress);
-					str_eta = ConvertClockTime(eta);
+					str_eta = ConvertTime(eta);
 				}
 				else				
 				{
@@ -1351,10 +1455,10 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 				}
 
 				wxString str;
-				str.Printf(wxT("progress: %s eta : %s run_time : %s   |   "), str_progress, str_eta, ConvertClockTime(run_time));
+				str.Printf(wxT("progress: %s eta : %s run_time : %s   |   "), str_progress, str_eta, ConvertTime(run_time));
 
 				m_pVideoBox->m_plblTIME->SetLabel(str + ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
-			}
+			}			
 		}
 		else
 		{
@@ -1475,9 +1579,9 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		//m_pPanel->m_pSHPanel->m_pSearchThread->SetPriority(90); //THREAD_PRIORITY_HIGHEST
 	}
 
-	clock_t start_t = clock();
+	std::chrono::time_point<std::chrono::high_resolution_clock> start_t = std::chrono::high_resolution_clock::now();
 
-	while( ((clock() - start_t) < 2000) && ( (g_IsSearching == 1) || (g_IsCreateClearedTextImages == 1) ) ){}
+	while( ((int)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_t).count()) < 2000) && ( (g_IsSearching == 1) || (g_IsCreateClearedTextImages == 1) ) ){}
 
 	if (g_IsSearching == 1)
 	{
@@ -1497,22 +1601,26 @@ void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 	wxString str;
 	wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
 	wxFileInputStream ffin(pvi_path);
-	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
-	
-	m_FileName = fin.ReadLine();
 
-	str = fin.ReadLine();
-	m_BegTime = (s64)wxAtoi(str);
+	if (ffin.IsOk())
+	{
+		wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
+		
+		m_FileName = fin.ReadLine();
 
-	str = fin.ReadLine();
-	m_EndTime = (s64)wxAtoi(str);
+		str = fin.ReadLine();
+		m_BegTime = (s64)wxAtoi(str);
 
-	str = fin.ReadLine();
-	m_type = (s64)wxAtoi(str);
+		str = fin.ReadLine();
+		m_EndTime = (s64)wxAtoi(str);
 
-	m_blnReopenVideo = true;
+		str = fin.ReadLine();
+		m_type = (s64)wxAtoi(str);
 
-	OnFileOpenVideo(m_type);
+		m_blnReopenVideo = true;
+
+		OnFileOpenVideo(m_type);
+	}
 }
 
 void CMainFrame::ClearDir(wxString DirName)
