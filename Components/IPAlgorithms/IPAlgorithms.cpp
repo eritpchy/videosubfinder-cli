@@ -7346,6 +7346,8 @@ int ClearImageFromMainSymbols(simple_buffer<u8> &Im, int w, int h, int W, int H,
 		}
 		i++;
 	}
+
+	return N;
 }
 
 int ClearImageOpt2(simple_buffer<u8> &Im, int w, int h, int W, int H, int LH, int LMAXY, int real_im_x_center, u8 white, wxString iter_det)

@@ -48,7 +48,7 @@ extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, c
 //#define CUSTOM_DEBUG
 //#define CUSTOM_DEBUG2
 
-//#define CUSTOM_ASSERT
+// #define CUSTOM_ASSERT
 
 //#define CUSTOM_TA
 //----------------------------------
@@ -340,10 +340,11 @@ public:
 	int m_size;
 	bool m_need_to_release;
 
-	~custom_buffer()
+	virtual ~custom_buffer()
 	{
 		if (m_need_to_release)
 		{
+			custom_assert(m_pData != NULL, "custom_buffer<T>::~custom_buffer(): not: m_pData != NULL");
 			delete[] m_pData;
 		}
 		m_pData = NULL;
@@ -494,8 +495,10 @@ public:
 	void copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size)
 	{
 		custom_assert(size >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: size >= 0");
+		custom_assert(offset_dst >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_dst >= 0");
+		custom_assert(offset_src >= 0, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_src >= 0");
 		custom_assert(offset_dst + size - 1 <= m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_dst + size - 1 <= m_size - 1");
-		custom_assert(offset_src + size - 1 <= obj.m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_src + size - 1 <= src.m_size - 1");
+		custom_assert(offset_src + size - 1 <= src.m_size - 1, "simple_buffer<T>::copy_data(const custom_buffer<T>& src, int offset_dst, int offset_src, int size): not: offset_src + size - 1 <= src.m_size - 1");
 
 		if (size > 0)
 		{
@@ -621,6 +624,10 @@ class simple_buffer : public custom_buffer<T>
 public:
 
 	simple_buffer() : custom_buffer<T>()
+	{
+	}
+
+	~simple_buffer()
 	{
 	}
 

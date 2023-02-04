@@ -104,6 +104,11 @@ https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/to
 #      Linux Build (Ubuntu 20.04.5 LTS)
 ##############################################################################################################################
 
+Note:
+"Used default GCC versin"
+# /usr/bin/gcc --version
+# gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
+
 1) wxWidgets 
 Download from
 https://www.wxwidgets.org/downloads/
@@ -118,7 +123,6 @@ https://wiki.wxwidgets.org/Compiling_and_getting_started
 
 Required for build:
 "libgtk-3-dev"
-## sudo apt-cache search libgtk*
 sudo apt install libgtk-3-dev
 
 Before build it is preferred to fix GDK cursor:
@@ -141,11 +145,12 @@ make -j16
 sudo make install
 sudo ldconfig
 
-cd buildgtkdebug
-../configure --enable-debug --with-gtk
-make -j16
-sudo make install
-sudo ldconfig
+### for debug build only:
+## cd buildgtkdebug
+## ../configure --enable-debug --with-gtk
+## make -j16
+## sudo make install
+## sudo ldconfig
 
 ## wx-config --cxxflags --libs
 ## g++ myfoo.cpp `wx-config --cxxflags --libs` -o myfoo
@@ -154,6 +159,10 @@ sudo ldconfig
 Required for build:
 "cmake"
 sudo apt  install cmake
+"FFMPEG"
+sudo apt install ffmpeg libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libx264-dev
+"libgtk-3-dev"
+sudo apt install libgtk-3-dev
 
 Download from
 https://github.com/opencv/opencv/archive/4.7.0.zip
@@ -167,7 +176,7 @@ https://docs.opencv.org/4.x/db/df5/tutorial_linux_gcc_cmake.html
 # Create build directory
 mkdir -p build && cd build
 # Configure
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release -DWITH_GTK=ON -DWITH_FFMPEG=1 ..
 # Build
 cmake --build . --config Release -j 16
 # Check:

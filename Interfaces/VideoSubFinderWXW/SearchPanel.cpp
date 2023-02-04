@@ -173,15 +173,30 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_BegTime = GetVideoTime(wxString(m_plblBTA1->GetValue()));
 		m_pMF->m_EndTime = GetVideoTime(wxString(m_plblBTA2->GetValue()));
 
-		m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
-		m_pSearchThread->Create();	
-		m_pSearchThread->Run();
-		//m_pSearchThread->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
+		if (m_pMF->m_pVideo->SetNullRender())
+		{
+			m_pClear->Disable();
+			m_plblBTA1->Disable();
+			m_plblBTA2->Disable();
+			g_color_ranges = GetColorRanges(g_use_filter_color);
+			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+
+			m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+			m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+
+			m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
+			m_pSearchThread->Create();
+			m_pSearchThread->Run();
+		}
 	}
 	else
 	{
 		if (g_RunSubSearch == 1) 
 		{
+			m_pRun->Disable();
+
 			m_pMF->m_timer.Stop();
 			wxTimerEvent event;
 			m_pMF->OnTimer(event);
@@ -212,23 +227,6 @@ void ThreadSearchSubtitlesRun(wxThread *pThr);
 
 void *ThreadSearchSubtitles::Entry()
 {
-#ifdef WIN32
-	__try
-	{
-		ThreadSearchSubtitlesRun(this);
-	}
-	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun()"))
-	{
-	}
-
-	// __try
-	// {
-	// 	ThreadSearchSubtitlesEnd();
-	// }
-	// __except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()"))
-	// {
-	// }
-#else
 	try
 	{
 		ThreadSearchSubtitlesRun(this);
@@ -238,18 +236,16 @@ void *ThreadSearchSubtitles::Entry()
 		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun() ") + wxString(e.what()));
 	}
 	
-	// try
-	// {
-	// 	ThreadSearchSubtitlesEnd();
-	// }
-	// catch (const exception& e)
-	// {
-	// 	g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesEnd()") + wxString(e.what()));
-	// }
-#endif
-
-	wxCommandEvent event(THREAD_SEARCH_SUBTITLES_END); // No specific id
-	wxPostEvent(g_pMF->m_pPanel->m_pSHPanel, event);
+	if (!(g_pMF->m_blnNoGUI))
+	{
+		wxCommandEvent event(THREAD_SEARCH_SUBTITLES_END); // No specific id
+		wxPostEvent(g_pMF->m_pPanel->m_pSHPanel, event);
+	}
+	else
+	{
+		g_IsSearching = 0;
+		g_RunSubSearch = 0;
+	}
 
 	return 0;
 }
@@ -258,31 +254,18 @@ void ThreadSearchSubtitlesRun(wxThread *pThr)
 {
 	g_IsSearching = 1;
 
-	if (g_pMF->m_pVideo->SetNullRender())
+	try
 	{
-		g_color_ranges = GetColorRanges(g_use_filter_color);
-		g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
-
-		g_pMF->m_pVideo->SetVideoWindowSettins(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-			g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-			g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-			g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
-
-		try
-		{
-			g_pMF->m_BegTime = FastSearchSubtitles(pThr, g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
-		}
-		catch (const exception& e)
-		{
-			g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + wxString(e.what()));
-		}
+		g_pMF->m_BegTime = FastSearchSubtitles(pThr, g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
+	}
+	catch (const exception& e)
+	{
+		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + wxString(e.what()));
 	}
 }
 
 void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 {
-	wxEvtHandler *handler;
-
 	if (g_IsClose == 1) 
 	{
 		g_IsSearching = 0;
@@ -302,8 +285,6 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 		{
 			wxCommandEvent  menu_event(wxEVT_COMMAND_MENU_SELECTED, ID_FILE_REOPENVIDEO);
 			m_pMF->OnFileReOpenVideo(menu_event);
-			//handler = m_pMF->GetEventHandler();
-			//wxPostEvent(handler, menu_event);
 		}
 
 		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
@@ -314,8 +295,7 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 		if ((g_RunSubSearch == 1) && (g_CLEAN_RGB_IMAGES == true))
 		{
 			wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CCTI);
-			handler = m_pMF->m_pPanel->m_pOCRPanel->GetEventHandler();
-			wxPostEvent(handler, bn_event);
+			m_pMF->m_pPanel->m_pOCRPanel->OnBnClickedCreateClearedTextImages(bn_event);
 		}
 		else if ((g_RunSubSearch == 1) && g_playback_sound)
 		{
@@ -329,6 +309,11 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 				}
 			}
 		}
+
+		m_pClear->Enable();
+		m_plblBTA1->Enable();
+		m_plblBTA2->Enable();
+		m_pRun->Enable();
 	}
 
 	g_IsSearching = 0;

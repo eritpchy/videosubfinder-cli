@@ -178,8 +178,8 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 
 bool CVideoSubFinderApp::OnInit() 
 {
-    if ( !wxApp::OnInit() )
-        return false;
+    //if ( !wxApp::OnInit() )
+    //    return false;
 
 #ifdef __WXGTK__
     // Many version of wxGTK generate spurious diagnostic messages when
@@ -327,10 +327,21 @@ bool CVideoSubFinderApp::OnInit()
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL2->m_pos = double_val;
 				}
 
-				m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread = new ThreadSearchSubtitles(m_pMainWnd, wxTHREAD_JOINABLE);
-				m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Create();
-				m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Run();				
-				m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Wait();
+				if (m_pMainWnd->m_pVideo->SetNullRender())
+				{
+					g_color_ranges = GetColorRanges(g_use_filter_color);
+					g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+
+					m_pMainWnd->m_pVideo->SetVideoWindowSettins(m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
+						m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
+						m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
+						m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+
+					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread = new ThreadSearchSubtitles(m_pMainWnd, wxTHREAD_JOINABLE);
+					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Create();
+					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Run();
+					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Wait();
+				}
 			}
 		}
 		else

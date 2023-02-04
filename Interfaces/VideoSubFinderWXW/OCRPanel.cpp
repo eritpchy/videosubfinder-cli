@@ -52,6 +52,9 @@ bool g_CLEAN_RGB_IMAGES = false;
 
 int  g_ocr_threads = 8;
 
+wxDEFINE_EVENT(UPDATE_CCTI_PROGRESS, wxThreadEvent);
+wxDEFINE_EVENT(THREAD_CCTI_END, wxCommandEvent);
+
 AssTXTLine::AssTXTLine()
 {
 	m_LH = 0;
@@ -178,6 +181,7 @@ Style: Default,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n";
 
 BEGIN_EVENT_TABLE(COCRPanel, wxPanel)
+	EVT_COMMAND(wxID_ANY, THREAD_CCTI_END, COCRPanel::ThreadCreateClearedTextImagesEnd)
 	EVT_BUTTON(ID_BTN_CES, COCRPanel::OnBnClickedCreateEmptySub)
 	EVT_BUTTON(ID_BTN_CSCTI, COCRPanel::OnBnClickedCreateSubFromClearedTXTImages)
 	EVT_BUTTON(ID_BTN_CSTXT, COCRPanel::OnBnClickedCreateSubFromTXTResults)
@@ -368,6 +372,8 @@ void COCRPanel::Init()
 
 	SaveToReportLog("COCRPanel::Init(): this->SetSizer(top_sizer)...\n");
 	this->SetSizer(top_sizer);
+
+	this->Bind(UPDATE_CCTI_PROGRESS, &COCRPanel::OnUpdateCCTIProgress, this);
 
 	SaveToReportLog("COCRPanel::Init(): finished.\n");
 }
@@ -960,56 +966,6 @@ void COCRPanel::CreateSubFromTXTResults()
 	SaveSub(srt_sub, ass_sub);
 }
 
-void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
-{
-	if (g_IsCreateClearedTextImages == 0)
-	{
-		g_IsCreateClearedTextImages = 1;
-		g_RunCreateClearedTextImages = 1;
-
-		if (!(m_pMF->m_blnNoGUI))
-		{
-			m_pCCTI->SetLabel("Stop CCTXTImages");
-
-			if (m_pMF->m_VIsOpen)
-			{
-				wxCommandEvent event;
-				m_pMF->OnStop(event);
-
-				m_pMF->m_VIsOpen = false;
-
-				if (m_pMF->m_timer.IsRunning())
-				{
-					m_pMF->m_timer.Stop();
-				}
-
-				m_pMF->m_ct = -1;				
-
-				m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-				m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-				m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);				
-				m_pMF->m_pImageBox->ClearScreen();
-				m_pMF->m_pVideo->SetNullRender();
-			}
-
-			m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox");
-			m_pMF->m_pVideoBox->m_plblTIME->SetLabel("");
-
-			m_pMF->m_pPanel->m_pSSPanel->Disable();
-			m_pMF->m_pPanel->m_pSHPanel->Disable();
-		}
-
-		m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
-		m_pSearchThread->Create();
-		m_pSearchThread->Run();
-	}
-	else
-	{
-		m_pMF->m_pPanel->m_pOCRPanel->Disable();
-		g_RunCreateClearedTextImages = 0;
-	}
-}
-
 void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 {
 	wxString Str;
@@ -1174,12 +1130,6 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 	m_pMF->m_pPanel->m_pSHPanel->Enable();
 	m_pMF->m_pPanel->m_pSSPanel->Enable();
 	m_pMF->m_pPanel->m_pOCRPanel->Enable();
-}
-
-ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind)
-        : wxThread(kind)
-{
-    m_pMF = pMF;
 }
 
 void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, simple_buffer<u8>* pImNF, simple_buffer<u8>* pImNE, simple_buffer<u8>* pImIL)
@@ -1437,6 +1387,144 @@ s64 getTotalSystemMemory()
 }
 #endif
 
+void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
+{
+	if (g_IsCreateClearedTextImages == 0)
+	{
+		wxDir dir(g_work_dir + "/RGBImages");
+		vector<wxString> FileNamesVector;
+		wxString filename;
+		wxString Str;
+		bool bres;
+
+		bres = dir.GetFirst(&filename);
+		while (bres)
+		{
+			FileNamesVector.push_back(filename);
+
+			bres = dir.GetNext(&filename);
+		}
+
+		for (int i = 0; i < (int)FileNamesVector.size() - 1; i++)
+			for (int j = i + 1; j < (int)FileNamesVector.size(); j++)
+			{
+				if (FileNamesVector[i] > FileNamesVector[j])
+				{
+					Str = FileNamesVector[i];
+					FileNamesVector[i] = FileNamesVector[j];
+					FileNamesVector[j] = Str;
+				}
+			}
+
+		int NImages = FileNamesVector.size();
+
+		if (NImages > 0)
+		{
+			g_IsCreateClearedTextImages = 1;
+			g_RunCreateClearedTextImages = 1;
+
+			if (g_clear_txt_folders)
+			{
+				m_pMF->ClearDir(g_work_dir + "/TXTImages");
+				m_pMF->ClearDir(g_work_dir + "/TXTResults");
+				m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
+			}
+
+			if (!(m_pMF->m_blnNoGUI))
+			{
+				m_pCCTI->SetLabel("Stop CCTXTImages");
+
+				m_pCES->Disable();
+				m_pJOIN->Disable();
+				m_pCSCTI->Disable();
+				m_pCSTXT->Disable();
+
+				if (m_pMF->m_VIsOpen)
+				{
+					wxCommandEvent event;
+					m_pMF->OnStop(event);
+
+					m_pMF->m_VIsOpen = false;
+
+					if (m_pMF->m_timer.IsRunning())
+					{
+						m_pMF->m_timer.Stop();
+					}
+
+					m_pMF->m_ct = -1;
+
+					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
+					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
+					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+					m_pMF->m_pImageBox->ClearScreen();
+					m_pMF->m_pVideo->SetNullRender();
+				}
+
+				m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox");
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel("");
+
+				m_pMF->m_pPanel->m_pSSPanel->Disable();
+				m_pMF->m_pPanel->m_pSHPanel->Disable();
+
+				m_pMF->m_pVideoBox->m_pSB->Enable(true);
+				m_pMF->m_pVideoBox->m_pSB->SetScrollPos(0);
+				m_pMF->m_pVideoBox->m_pSB->SetScrollRange(0, NImages);
+
+				if (m_pMF->m_pVideoBox->m_pImage != NULL)
+				{
+					delete m_pMF->m_pVideoBox->m_pImage;
+					m_pMF->m_pVideoBox->m_pImage = NULL;
+				}
+				m_pMF->m_pVideoBox->ClearScreen();
+
+				if (m_pMF->m_pImageBox->m_pImage != NULL)
+				{
+					delete m_pMF->m_pImageBox->m_pImage;
+					m_pMF->m_pImageBox->m_pImage = NULL;
+				}
+				m_pMF->m_pImageBox->ClearScreen();
+
+				wxString str;
+				str.Printf(wxT("progress: 0%%   |   0 : %.5d   "), NImages);
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+			}
+
+			m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, FileNamesVector, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
+			m_pSearchThread->Create();
+			m_pSearchThread->Run();
+		}
+	}
+	else
+	{
+		m_pMF->m_pPanel->m_pOCRPanel->Disable();
+		g_RunCreateClearedTextImages = 0;
+	}
+}
+
+struct ProgressData
+{
+	wxString m_ProgressStr;
+	wxString m_VBLabel;
+	int m_SBpos;
+};
+
+void COCRPanel::OnUpdateCCTIProgress(wxThreadEvent& event)
+{
+	const std::lock_guard<std::mutex> lock(m_mutex);
+	ProgressData pd = event.GetPayload<ProgressData>();	
+
+	m_pMF->m_pVideoBox->m_plblTIME->SetLabel(pd.m_ProgressStr);
+	m_pMF->m_pVideoBox->m_plblVB->SetLabel(pd.m_VBLabel);
+	m_pMF->m_pVideoBox->m_pSB->SetScrollPos(pd.m_SBpos);
+}
+
+ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame* pMF, vector<wxString>& FileNamesVector, wxThreadKind kind)
+	: wxThread(kind)
+{
+	m_pMF = pMF;
+	m_FileNamesVector = FileNamesVector;
+}
+
 void *ThreadCreateClearedTextImages::Entry()
 {
 	g_IsCreateClearedTextImages = 1;
@@ -1484,46 +1572,15 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	int res;	
 
-	if (g_clear_txt_folders)
-	{
-		m_pMF->ClearDir(g_work_dir + "/TXTImages");
-		m_pMF->ClearDir(g_work_dir + "/TXTResults");
-		m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
-	}
-
-	wxDir dir(g_work_dir + "/RGBImages");
-	vector<wxString> FileNamesVector;
-	vector<wxString> prevSavedFiles;
-	vector<u64> BT, ET;
-	wxString filename;
-	bool bres;
-
-	bres = dir.GetFirst(&filename);
-    while ( bres )
-    {
-		FileNamesVector.push_back(filename);
-
-        bres = dir.GetNext(&filename);
-    }
-
-	for (i=0; i<(int)FileNamesVector.size()-1; i++)
-	for (j=i+1; j<(int)FileNamesVector.size(); j++)
-	{
-		if (FileNamesVector[i] > FileNamesVector[j])
-		{
-			Str = FileNamesVector[i];
-			FileNamesVector[i] = FileNamesVector[j];
-			FileNamesVector[j] = Str;
-		}
-	}
-
+	//vector<wxString> prevSavedFiles;
+	vector<u64> BT, ET;	
 	s64 t1, dt, num_calls;
 
 	//t1 = GetTickCount();	
 
 	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 		
-	int NImages = FileNamesVector.size();
+	int NImages = m_FileNamesVector.size();
 
 	if (NImages > 0)
 	{
@@ -1531,38 +1588,13 @@ void *ThreadCreateClearedTextImages::Entry()
 		simple_buffer<FindTextLinesRes*> task_results(NImages);
 		simple_buffer<my_event*> task_events(NImages);
 		vector<custom_task> tasks(g_ocr_threads, create_custom_task([] {}));
-		wait_all(begin(tasks), end(tasks));
-
-		if (!(m_pMF->m_blnNoGUI))
-		{
-			m_pMF->m_pVideoBox->m_pSB->Enable(true);
-			m_pMF->m_pVideoBox->m_pSB->SetScrollPos(0);
-			m_pMF->m_pVideoBox->m_pSB->SetScrollRange(0, NImages);
-
-			if (m_pMF->m_pVideoBox->m_pImage != NULL)
-			{
-				delete m_pMF->m_pVideoBox->m_pImage;
-				m_pMF->m_pVideoBox->m_pImage = NULL;
-			}
-			m_pMF->m_pVideoBox->ClearScreen();
-
-			if (m_pMF->m_pImageBox->m_pImage != NULL)
-			{
-				delete m_pMF->m_pImageBox->m_pImage;
-				m_pMF->m_pImageBox->m_pImage = NULL;
-			}
-			m_pMF->m_pImageBox->ClearScreen();
-
-			wxString str;
-			str.Printf(wxT("progress: 0%%   |   0 : %.5d   "), NImages);
-			m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
-		}
+		wait_all(begin(tasks), end(tasks));		
 
 		for (k = 0; k < NImages; k++)
 		{
 			task_results[k] = new FindTextLinesRes();
 			task_events[k] = new my_event();
-			find_text_queue_data queue_data{ FileNamesVector[k], task_results[k], task_events[k] };
+			find_text_queue_data queue_data{ m_FileNamesVector[k], task_results[k], task_events[k] };
 			task_queue.push(queue_data);
 		}
 
@@ -1592,6 +1624,10 @@ void *ThreadCreateClearedTextImages::Entry()
 
 				res = p_task_res->m_res;
 
+				if (res == -1)
+				{
+					m_pMF->SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + m_FileNamesVector[k]);
+				}
 
 				if (!(m_pMF->m_blnNoGUI))
 				{
@@ -1613,26 +1649,25 @@ void *ThreadCreateClearedTextImages::Entry()
 					u64 run_time = std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - start_time).count();
 					u64 eta = (u64)((double)run_time * (100.0 - progress) / progress);
 
-					wxString str;
-					str.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertTime(eta), m_pMF->ConvertTime(run_time), k + 1, NImages);
-					m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+					ProgressData pd;
 
-					Str = FileNamesVector[k];
+					pd.m_ProgressStr.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertTime(eta), m_pMF->ConvertTime(run_time), k + 1, NImages);
+					
+					Str = m_FileNamesVector[k];
 					Str = GetFileName(Str);
+					pd.m_VBLabel = wxString(wxT("VideoBox \"")) + Str + wxT("\"");
 
-					m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + Str + "\"");
+					pd.m_SBpos = k + 1;
 
-					m_pMF->m_pVideoBox->m_pSB->SetScrollPos(k + 1);
-
-					if (res == -1)
-					{
-						g_pMF->ShowErrorMessage(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k]);
-					}
+					auto event = new wxThreadEvent(UPDATE_CCTI_PROGRESS);
+					event->SetPayload(pd);
+					wxQueueEvent(m_pMF->m_pPanel->m_pOCRPanel, event);
 				}
+				
 
 				if ((res == 0) && (g_DontDeleteUnrecognizedImages1 == true))
 				{
-					Str = FileNamesVector[k];
+					Str = m_FileNamesVector[k];
 					Str = GetFileName(Str);
 					Str = wxT("/TXTImages/") + Str + wxT("_00001") + g_im_save_format;
 
@@ -1640,14 +1675,14 @@ void *ThreadCreateClearedTextImages::Entry()
 					SaveGreyscaleImage(ImRES1, wxString(Str), p_task_res->m_w * g_scale, p_task_res->m_h / g_scale);
 				}
 
+				//prevSavedFiles = p_task_res->m_SavedFiles;
+
 				delete task_events[k];
 				delete task_results[k];
-
-				prevSavedFiles = p_task_res->m_SavedFiles;
 			}
 			catch (const exception& e)
 			{
-				g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + wxString(e.what()));
+				m_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + wxString(e.what()));
 			}
 		}
 
@@ -1658,27 +1693,42 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
+		wxCommandEvent event(THREAD_CCTI_END);
+		wxPostEvent(m_pMF->m_pPanel->m_pOCRPanel, event);
+	}
+	else
+	{
+		g_IsCreateClearedTextImages = 0;
+	}
 
-		m_pMF->m_pPanel->m_pSHPanel->Enable();
-		m_pMF->m_pPanel->m_pSSPanel->Enable();		
-		m_pMF->m_pPanel->m_pOCRPanel->Enable();
+	return 0;
+}
 
-		if ((g_RunCreateClearedTextImages == 1) && g_playback_sound)
+void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
+{
+	m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
+
+	m_pMF->m_pPanel->m_pSHPanel->Enable();
+	m_pMF->m_pPanel->m_pSSPanel->Enable();
+	m_pMF->m_pPanel->m_pOCRPanel->Enable();
+
+	m_pCES->Enable();
+	m_pJOIN->Enable();
+	m_pCSCTI->Enable();
+	m_pCSTXT->Enable();
+
+	if ((g_RunCreateClearedTextImages == 1) && g_playback_sound)
+	{
+		wxString Str = g_app_dir + wxT("/finished.wav");
+		if (wxFileExists(Str))
 		{
-			Str = g_app_dir + wxT("/finished.wav");
-			if (wxFileExists(Str))
+			wxSound sound(Str);
+			if (sound.IsOk())
 			{
-				wxSound sound(Str);
-				if (sound.IsOk())
-				{
-					sound.Play();
-				}
+				sound.Play();
 			}
 		}
 	}
 
 	g_IsCreateClearedTextImages = 0;
-	
-	return 0;
 }

@@ -156,12 +156,13 @@ public:
 class ThreadCreateClearedTextImages : public wxThread
 {
 public:
-    ThreadCreateClearedTextImages(CMainFrame *pMF, wxThreadKind kind = wxTHREAD_DETACHED);
+    ThreadCreateClearedTextImages(CMainFrame *pMF, vector<wxString> &FileNamesVector, wxThreadKind kind = wxTHREAD_DETACHED);
 
     virtual void *Entry();
 
 public:
     CMainFrame	*m_pMF;
+	vector<wxString> m_FileNamesVector;
 };
 
 class COCRPanel : public wxPanel
@@ -169,6 +170,8 @@ class COCRPanel : public wxPanel
 public:
 	COCRPanel(CSSOWnd* pParent);
 	~COCRPanel();
+
+	std::mutex m_mutex;
 
 	wxString m_sub_path;
 
@@ -198,12 +201,14 @@ public:
 	void CreateSubFromTXTResults();
 
 public:
+	void OnUpdateCCTIProgress(wxThreadEvent& event);
 	void OnBnClickedCreateEmptySub(wxCommandEvent& event);
 	void OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event);
 	void OnBnClickedCreateSubFromTXTResults(wxCommandEvent& event);
 	void OnBnClickedCreateClearedTextImages(wxCommandEvent& event);
 	void OnBnClickedJoinTXTImages(wxCommandEvent& event);
 	void SaveSub(wxString srt_sub, wxString ass_sub);
+	void ThreadCreateClearedTextImagesEnd(wxCommandEvent& event);
 
 private:
 	DECLARE_EVENT_TABLE()
