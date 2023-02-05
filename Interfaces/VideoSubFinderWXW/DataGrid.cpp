@@ -32,7 +32,7 @@ public:
 	}
 
 	
-	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval) override
 	{
 		bool res;
 
@@ -40,13 +40,18 @@ public:
 
 		if (res == true)
 		{
-			*m_pstr = *newval;
+			UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void RefreshData()
+	void UpdateData(wxString *newval) override
+	{
+		*m_pstr = *newval;
+	}
+
+	void RefreshData() override
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 		m_grid->SetCellValue(m_row, m_col, *m_pstr);
@@ -73,7 +78,7 @@ public:
 	}
 
 
-	bool EndEdit(int row, int col, const wxGrid* grid, const wxString& oldval, wxString* newval)
+	bool EndEdit(int row, int col, const wxGrid* grid, const wxString& oldval, wxString* newval) override
 	{
 		bool res;
 
@@ -81,13 +86,18 @@ public:
 
 		if (res == true)
 		{
-			*m_pstr = wxSplit(*newval, '\n');
+			UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void RefreshData()
+	void UpdateData(wxString *newval) override
+	{
+		*m_pstr = wxSplit(*newval, '\n');
+	}
+
+	void RefreshData() override
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 		m_grid->SetCellValue(m_row, m_col, wxJoin(*m_pstr, '\n'));
@@ -127,7 +137,7 @@ public:
 		grid->SetCellValue(row, col, *m_pstr);
 	}
 
-	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
+	bool EndEdit(int row, int col, const wxGrid* grid, const wxString& oldval, wxString* newval) override
 	{
 		bool res;
 
@@ -135,13 +145,18 @@ public:
 
 		if (res == true)
 		{
-			*m_pstr = *newval;
+			UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void RefreshData()
+	void UpdateData(wxString *newval) override
+	{
+		*m_pstr = *newval;
+	}
+
+	void RefreshData() override
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 		m_grid->SetCellValue(m_row, m_col, *m_pstr);
@@ -173,35 +188,38 @@ public:
 		grid->SetCellValue( row, col, Str );
 	}
 
-	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval) override
 	{
 		bool res;
-		wxString Str;
-		int val;
 		
 		res = wxGridCellNumberEditor::EndEdit(row, col, grid, oldval, newval);
 
 		if (res == true)
 		{
-			Str = *newval;
-			val = (int)strtod(Str, NULL);
-			
-			if ( (val >= m_vmin) && (val <= m_vmax) )
-			{
-				*m_pval = val;
-			}
-			else
-			{
-				Str = "";
-				Str << *m_pval;
-				*newval = Str;
-			}
+			UpdateData(newval);			
 		}
 
 		return res;
 	}
 
-	void RefreshData()
+	void UpdateData(wxString *newval) override
+	{
+		wxString Str = *newval;
+		int val = (int)strtod(Str, NULL);
+			
+		if ( (val >= m_vmin) && (val <= m_vmax) )
+		{
+			*m_pval = val;
+		}
+		else
+		{
+			Str = "";
+			Str << *m_pval;
+			*newval = Str;
+		}	
+	}
+
+	void RefreshData() override
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 
@@ -238,7 +256,7 @@ public:
 		grid->SetCellValue( row, col, Str );
 	}
 
-	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval) override
 	{
 		bool res;
 		wxString Str;
@@ -248,25 +266,30 @@ public:
 
 		if (res == true)
 		{
-			Str = *newval;
-			val = strtod(Str, NULL);
-			
-			if ( (val >= m_vmin) && (val <= m_vmax) )
-			{
-				*m_pval = val;
-			}
-			else
-			{
-				Str = "";
-				Str << *m_pval;
-				*newval = Str;
-			}
+			UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void RefreshData()
+	void UpdateData(wxString *newval) override
+	{
+		wxString Str = *newval;
+		double val = strtod(Str, NULL);
+			
+		if ( (val >= m_vmin) && (val <= m_vmax) )
+		{
+			*m_pval = val;
+		}
+		else
+		{
+			Str = "";
+			Str << *m_pval;
+			*newval = Str;
+		}
+	}
+
+	void RefreshData() override
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 
@@ -307,31 +330,35 @@ public:
 		}
 
 		grid->SetCellValue( row, col, Str );
-	}
+	}	
 
-	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval)
+	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval) override
 	{
-		bool res;
+		bool res = true;
 		wxString Str;
 		
 		res = wxGridCellBoolEditor::EndEdit(row, col, grid, oldval, newval);
-
 		if (res == true)
 		{
-			if (IsTrueValue(*newval))
-			{
-				*m_pbln = true;
-			}
-			else
-			{
-				*m_pbln = false;
-			}
+			UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void RefreshData()
+	void UpdateData(wxString *newval) override
+	{
+		if (IsTrueValue(*newval))
+		{
+			*m_pbln = true;
+		}
+		else
+		{
+			*m_pbln = false;
+		}
+	}
+
+	void RefreshData() override
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 
@@ -358,6 +385,7 @@ public:
 
 BEGIN_EVENT_TABLE(CDataGrid, wxGrid)
 	EVT_SIZE(CDataGrid::OnSize)
+	EVT_GRID_CELL_CHANGING(CDataGrid::OnGridCellChanging)
 END_EVENT_TABLE()
 
 CDataGrid::CDataGrid( wxWindow* parent,
@@ -383,6 +411,15 @@ CDataGrid::CDataGrid( wxWindow* parent,
 
 CDataGrid::~CDataGrid()
 {
+}
+
+void CDataGrid::OnGridCellChanging(wxGridEvent& event)
+{
+	int row = event.GetRow(), col = event.GetCol();
+	wxString newval = event.GetString();
+	wxGridCellEditor *cel_editr = this->GetCellEditor(row, col);	
+	(dynamic_cast<CControl*>(cel_editr))->UpdateData(&newval);
+	cel_editr->DecRef();
 }
 
 void CDataGrid::OnSize(wxSizeEvent& event)

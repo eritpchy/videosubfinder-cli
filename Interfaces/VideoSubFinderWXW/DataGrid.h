@@ -85,6 +85,7 @@ public:
 	//void SetLabel(const wxString& label);
 	//bool SetBackgroundColour(const wxColour& colour);
 	//void SetTextColour(const wxColour& colour);
+	void OnGridCellChanging(wxGridEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void RefreshData();
 

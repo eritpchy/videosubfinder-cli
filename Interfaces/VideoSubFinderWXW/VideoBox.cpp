@@ -550,6 +550,7 @@ CVideoBox::CVideoBox(CMainFrame* pMF, wxColour	bc)
 	m_pImage = NULL;
 	m_pMF = pMF;
 	m_WasInited = false;
+	m_pFullScreenWin = NULL;
 }
 
 CVideoBox::~CVideoBox()
@@ -573,8 +574,11 @@ void CVideoBox::Init()
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
-	pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
-	pFullScreenWin->Hide();	
+
+#ifndef WIN32
+	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
+	m_pFullScreenWin->Hide();	
+#endif
 
 	this->SetBackgroundColour(m_bc);
 
@@ -632,12 +636,6 @@ void CVideoBox::Init()
 	m_plblTIME->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblTIME->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblTIME->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
-
-	//m_pSB->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
-	//m_pSB->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
-
-	// m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
-	// m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
 
 	m_WasInited = true;
 }
@@ -771,29 +769,23 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
 			{				
-				//m_pVBox->m_pVideoWnd->Reparent(m_pMF);
-				
-				m_pVBox->m_pVideoWnd->Reparent(pFullScreenWin);
-				//m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
-				//m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
+				m_pVBox->m_pVideoWnd->Reparent(m_pFullScreenWin);
 
 				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 				m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
 
-				if (!pFullScreenWin->IsFullScreen())
+				if (m_pFullScreenWin != NULL)
 				{
-					pFullScreenWin->ShowFullScreen(true);
+					if (!m_pFullScreenWin->IsFullScreen())
+					{
+						m_pFullScreenWin->ShowFullScreen(true);
+					}
+					if (!m_pFullScreenWin->IsShown())
+					{
+						m_pFullScreenWin->Show(true);
+					}
 				}
-				if (!pFullScreenWin->IsShown())
-				{
-					pFullScreenWin->Show(true);
-				}
-
-				//m_pVBox->m_pVideoWnd->Show(true);
-				//m_pVBox->m_pVideoWnd->Refresh(true);
-				//m_pVBox->m_pVideoWnd->Refresh(false);
-				//m_pVBox->m_pVideoWnd->Update();
 
 				if (!m_timer.IsRunning())
 				{
@@ -914,23 +906,35 @@ void CVideoBox::OnTimer(wxTimerEvent& event)
 			m_timer.Stop();
 		}
 
-		if (pFullScreenWin->IsShown())
+		if (m_pFullScreenWin) // Linux case
 		{
-			// note: this is the hack for bring separating lines to top of video window
-			pFullScreenWin->Hide();
-			m_pVBox->m_pHSL1->Reparent(pFullScreenWin);
-			m_pVBox->m_pHSL2->Reparent(pFullScreenWin);
-			m_pVBox->m_pVSL1->Reparent(pFullScreenWin);
-			m_pVBox->m_pVSL2->Reparent(pFullScreenWin);
+			if (m_pFullScreenWin->IsShown())
+			{
+				// note: this is the hack for bring separating lines to top of video window
+				m_pFullScreenWin->Hide();
+				m_pVBox->m_pHSL1->Reparent(m_pFullScreenWin);
+				m_pVBox->m_pHSL2->Reparent(m_pFullScreenWin);
+				m_pVBox->m_pVSL1->Reparent(m_pFullScreenWin);
+				m_pVBox->m_pVSL2->Reparent(m_pFullScreenWin);
 
-			m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
-			m_pVBox->m_pHSL1->Reparent(m_pVBox);
-			m_pVBox->m_pHSL2->Reparent(m_pVBox);
-			m_pVBox->m_pVSL1->Reparent(m_pVBox);
-			m_pVBox->m_pVSL2->Reparent(m_pVBox);
+				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+				m_pVBox->m_pHSL1->Reparent(m_pVBox);
+				m_pVBox->m_pHSL2->Reparent(m_pVBox);
+				m_pVBox->m_pVSL1->Reparent(m_pVBox);
+				m_pVBox->m_pVSL2->Reparent(m_pVBox);
 
-			wxSizeEvent event;
-			m_pVBox->OnSize(event);
+				wxSizeEvent event;
+				m_pVBox->OnSize(event);
+			}
+		}
+		else
+		{
+			if (m_pVBox->m_pVideoWnd->GetParent() == NULL)
+			{
+				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+				wxSizeEvent event;
+				m_pVBox->OnSize(event);
+			}
 		}
 	}
 }

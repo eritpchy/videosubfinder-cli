@@ -199,7 +199,6 @@ void CSeparatingLine::CreateNewRgn()
 void CSeparatingLine::OnLButtonDown( wxMouseEvent& event )
 {
 	m_bDown = true;
-
 	this->CaptureMouse();
 }
 

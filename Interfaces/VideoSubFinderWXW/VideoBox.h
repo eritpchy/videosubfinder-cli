@@ -100,7 +100,7 @@ public:
 	wxColour	m_bc;
 
 	wxImage	*m_pImage;
-	wxFrame *pFullScreenWin;
+	wxFrame *m_pFullScreenWin;
 
 	CMainFrame	*m_pMF;
 	bool		m_WasInited;

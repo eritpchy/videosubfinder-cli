@@ -12,9 +12,9 @@ Open "%WX_WIDGETS_PATH%\build\msw\wx_vc17.sln" in Visual Studio 2022.
 Set in all projects "C++\Code Generation\Runtime Library" to /MTd in "Debug/(x64/Win32)" mode and /MT in "Release/(x64/Win32)" mode.
 Build all projects in "(Debug/Release)/(x64/Win32)" mode.
 
-3) Install CUDA Toolkit 12.0
+3) Install CUDA Toolkit 12.0 Update 1
 https://developer.nvidia.com/cuda-downloads
-cuda_12.0.0_527.41_windows.exe
+cuda_12.0.1_528.33_windows.exe
 Setup Env: CUDA_TOOLKIT_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0
 Docs:
 https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-feature-list

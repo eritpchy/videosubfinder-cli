@@ -1,4 +1,4 @@
-                              //Control.h//                                
+                              //BitmapButton.h//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -15,28 +15,30 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <vector>
+#include <wx/window.h>
+#include <wx/image.h>
 
-class CControl
+class CBitmapButton : public wxWindow
 {
 public:
-	static std::vector<CControl*> m_all_controls;
+	CBitmapButton(wxWindow* parent,
+		wxWindowID id,
+		const wxImage& image,
+		const wxImage& image_selected,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
 
-	CControl()
-	{
-		CControl::m_all_controls.push_back(this);
-	}
+	void OnLButtonDown( wxMouseEvent& event );
+	void OnLButtonUp( wxMouseEvent& event );
+	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
+	void OnPaint(wxPaintEvent& event);
+	void SetBitmapSelected(const wxBitmap& bitmap);
 
-	static void RefreshAllControlsData()
-	{
-		for (int i = 0; i < m_all_controls.size(); i++)
-		{
-			m_all_controls[i]->RefreshData();
-		}
-	}
+	bool	m_bDown;
+	wxImage m_image;
+	wxImage m_image_selected;
+	wxWindow* m_parent;
 
-	virtual void UpdateData(wxString *newval){}
-
-	virtual void RefreshData() = 0;
+private:
+	DECLARE_EVENT_TABLE()
 };
-

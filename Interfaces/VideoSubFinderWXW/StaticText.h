@@ -26,10 +26,9 @@ public:
 				   wxWindowID id = wxID_ANY,				   
 				   const wxString& label = "",
 				   long text_style = wxALIGN_CENTER,
-				   long style = wxTAB_TRAVERSAL | wxBORDER,				   
+				   long panel_style = wxTAB_TRAVERSAL | wxBORDER,				   
 				   const wxPoint& pos = wxDefaultPosition,
-				   const wxSize& size = wxDefaultSize,
-				   const wxString& name = "panel");		
+				   const wxSize& size = wxDefaultSize);		
 	~CStaticText();
 	
 	wxWindow		*m_pParent;

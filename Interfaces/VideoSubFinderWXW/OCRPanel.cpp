@@ -208,7 +208,7 @@ void COCRPanel::Init()
 	m_CLOCR = wxColour(170, 170, 170);
 
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
-	int w, h, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
+	int w, h, cbh, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 	const int dx = 20;
 	const int dy = 20;
 	const int BTNW = 410;
@@ -216,6 +216,7 @@ void COCRPanel::Init()
 	const int PW = BTNW + LBLW + dx*3;
 
 	h = 26;
+	cbh = 22;
 
 	rlMSD.x = (PW - BTNW - LBLW - dx) / 2;
 	rlMSD.y = dy;
@@ -262,22 +263,22 @@ void COCRPanel::Init()
 	rlJSACT.x = reMSD.x;
 	rlJSACT.y = reMSD.GetBottom() + cb_dist;
 	rlJSACT.width = reMSD.width;
-	rlJSACT.height = 18;
+	rlJSACT.height = cbh;
 
 	rlCTXTF.x = rlJSACT.x;
 	rlCTXTF.y = rlJSACT.GetBottom() + cb_dist;
 	rlCTXTF.width = rlJSACT.width;
-	rlCTXTF.height = 18;
+	rlCTXTF.height = cbh;
 
 	rlSESS.x = rlCTXTF.x;
 	rlSESS.y = rlCTXTF.GetBottom() + cb_dist;
 	rlSESS.width = rlCTXTF.width;
-	rlSESS.height = 18;
+	rlSESS.height = cbh;
 	
 	rlSSI.x = rlSESS.x;
 	rlSSI.y = rlSESS.GetBottom() + cb_dist;
 	rlSSI.width = rlSESS.width;
-	rlSSI.height = 18;
+	rlSSI.height = cbh;
 
 	rcP3 = this->GetRect();
 
@@ -315,25 +316,25 @@ void COCRPanel::Init()
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbJSACT...\n");
 	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
-		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize());
 	m_pcbJSACT->SetFont(m_pMF->m_LBLFont);
 	m_pcbJSACT->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbCTXTF...\n");
 	m_pcbCTXTF = new CCheckBox(m_pP3, wxID_ANY, &g_clear_txt_folders,
-		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize());
 	m_pcbCTXTF->SetFont(m_pMF->m_LBLFont);
 	m_pcbCTXTF->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbSESS...\n");
 	m_pcbSESS = new CCheckBox(m_pP3, wxID_ANY, &g_save_each_substring_separately,
-		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize());
 	m_pcbSESS->SetFont(m_pMF->m_LBLFont);
 	m_pcbSESS->SetBackgroundColour(m_CL1);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbSSI...\n");
 	m_pcbSSI = new CCheckBox(m_pP3, wxID_ANY, &g_save_scaled_images,
-		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize(), wxALIGN_RIGHT | wxST_NO_AUTORESIZE | wxBORDER);
+		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize());
 	m_pcbSSI->SetFont(m_pMF->m_LBLFont);
 	m_pcbSSI->SetBackgroundColour(m_CL1);
 

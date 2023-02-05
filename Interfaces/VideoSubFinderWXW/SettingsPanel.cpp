@@ -57,7 +57,7 @@ void CSettingsPanel::Init()
 	wxRect rcP2, rcClP2, rcGB1, rcGB2, rcGB3; 
 	wxRect rcTEST, rcLeft, rcRight, rlIF;
 	wxRect rcOI, rcOIM;
-	wxBitmap bmp_na, bmp_od;
+	wxImage bmp_na, bmp_od;
 	const int GBH = 238;
 	const int GB3W = 300;
 	const int GB12OPTW = 580;
@@ -177,21 +177,19 @@ void CSettingsPanel::Init()
 		wxT("Test"), rcTEST.GetPosition(), rcTEST.GetSize() );
 	m_pTest->SetFont(m_pMF->m_BTNFont);
 	
-	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_na.bmp"));
-	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/left_od.bmp"));
+	bmp_na = wxImage(g_app_dir + "/bitmaps/left_na.bmp");
+	bmp_od = wxImage(g_app_dir + "/bitmaps/left_od.bmp");
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pLeft...\n");
-	m_pLeft = new wxBitmapButton( m_pP2, ID_SP_LEFT,
-		bmp_na, rcLeft.GetPosition(), rcLeft.GetSize() );
-	m_pLeft->SetBitmapSelected(bmp_od);
+	m_pLeft = new CBitmapButton( m_pP2, ID_SP_LEFT,
+		bmp_na, bmp_od, rcLeft.GetPosition(), rcLeft.GetSize() );
 
-	bmp_na = wxBitmap(wxImage(g_app_dir + "/bitmaps/right_na.bmp"));
-	bmp_od = wxBitmap(wxImage(g_app_dir + "/bitmaps/right_od.bmp"));
+	bmp_na = wxImage(g_app_dir + "/bitmaps/right_na.bmp");
+	bmp_od = wxImage(g_app_dir + "/bitmaps/right_od.bmp");
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pRight...\n");
-	m_pRight = new wxBitmapButton( m_pP2, ID_SP_RIGHT,
-		bmp_na, rcRight.GetPosition(), rcRight.GetSize() );
-	m_pRight->SetBitmapSelected(bmp_od);
+	m_pRight = new CBitmapButton( m_pP2, ID_SP_RIGHT,
+		bmp_na, bmp_od, rcRight.GetPosition(), rcRight.GetSize() );
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblIF...\n");
 	m_plblIF = new CStaticText( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
@@ -347,17 +345,17 @@ void CSettingsPanel::Init()
 	rlPixelColor.y = rcGSFN.GetBottom() + 8;
 	rlPixelColor.height *= 2;
 
-	rcPixelColorRGB = rlGSFN;
-	rcPixelColorRGB.width = ((2 * rlGSFN.width) / 3) - 1;
-	rcPixelColorRGB.y = rlPixelColor.GetBottom() + 4;
+	rcPixelColorLab = rlGSFN;
+	rcPixelColorLab.width = ((2 * rlGSFN.width) / 3) - 1;
+	rcPixelColorLab.y = rlPixelColor.GetBottom() + 4;
 
-	rcPixelColorLab = rcPixelColorRGB;
-	rcPixelColorLab.y = rcPixelColorRGB.GetBottom() + 4;
+	rcPixelColorRGB = rcPixelColorLab;
+	rcPixelColorRGB.y = rcPixelColorLab.GetBottom() + 4;
 	
-	rcPixelColorExample.x = rcPixelColorRGB.GetRight() + 2;
-	rcPixelColorExample.y = rcPixelColorRGB.y;
+	rcPixelColorExample.x = rcPixelColorLab.GetRight() + 2;
+	rcPixelColorExample.y = rcPixelColorLab.y;
 	rcPixelColorExample.width = (rlGSFN.width / 3) - 1;
-	rcPixelColorExample.height = rcPixelColorLab.GetBottom() - rcPixelColorRGB.y + 1;	
+	rcPixelColorExample.height = rcPixelColorRGB.GetBottom() - rcPixelColorLab.y + 1;	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
 	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_settings_file);

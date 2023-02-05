@@ -353,6 +353,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BitmapButton.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="CheckBox.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
@@ -373,6 +374,7 @@
     <ClCompile Include="VideoSubFinderWXW.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitmapButton.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="CheckBox.h" />
     <ClInclude Include="CommonFunctions.h" />

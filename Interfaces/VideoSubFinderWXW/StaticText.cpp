@@ -24,11 +24,10 @@ CStaticText::CStaticText(  wxWindow* parent,
 				wxWindowID id,
 				const wxString& label,
 				long text_style,
-				long style,				   
+				long panel_style,
 				const wxPoint& pos,
-				const wxSize& size,
-				const wxString& name )				
-		:wxPanel( parent, id, pos, size, style, name)
+				const wxSize& size)				
+		:wxPanel( parent, id, pos, size, panel_style, wxT(""))
 {
 	m_pParent = parent;
 	m_pFont = NULL;

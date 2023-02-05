@@ -1,4 +1,4 @@
-                              //VideoSubFinder.h//                                
+                              //VideoSubFinderWXW.h//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//

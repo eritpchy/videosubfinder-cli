@@ -21,6 +21,7 @@
 #include "DataTypes.h"
 #include "TextCtrl.h"
 #include "Button.h"
+#include "BitmapButton.h"
 #include "StaticBox.h"
 #include <wx/panel.h>
 #include <wx/bmpbuttn.h>
@@ -43,8 +44,8 @@ public:
 	CStaticBox	*m_pGB3;
 	wxPanel		*m_pP2;
 
-	wxBitmapButton *m_pLeft;
-	wxBitmapButton *m_pRight;
+	CBitmapButton *m_pLeft;
+	CBitmapButton *m_pRight;
 	CStaticText	   *m_plblIF;
 
 	CStaticText* m_plblGSFN;

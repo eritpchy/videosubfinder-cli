@@ -435,7 +435,7 @@ void CMainFrame::Init()
 #ifdef WIN32
 	this->SetSize(0, 0, w, h - 50);
 #else
-	this->SetSize(w/14, h/14, (6*w)/7, (6*h)/7);
+	this->SetSize(w/16, h/14, (7*w)/8, (6*h)/7);
 #endif
 
 	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
@@ -576,8 +576,12 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 	m_ch = ch;
 
 	if (m_pPanel)
-	{
+	{		
 		m_pPanel->SetSize(0, ch - m_ph, cw, m_ph);
+#ifdef WIN32		
+		m_pPanel->Refresh();
+		m_pPanel->Update();
+#endif
 	}
 	
 	if (m_bUpdateSizes)
