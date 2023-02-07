@@ -22,7 +22,7 @@
 #include <chrono>
 #include <iostream>
 #include <algorithm>
-#ifdef WIN64
+#ifdef USE_CUDA
 #include "cuda_kernels.h"
 #endif
 #ifdef WIN32
@@ -786,7 +786,7 @@ int GetBGRColor(ColorName cn)
 bool InitCUDADevice()
 {
 	bool res = false;
-#ifdef WIN64
+#ifdef USE_CUDA
 	int num = GetCUDADeviceCount();
 	if (num > 0)
 	{
@@ -2552,7 +2552,7 @@ inline void GetDDY(int &h, int &LH, int &LMAXY, int &ddy1, int &ddy2)
 int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer<char>& labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int& min_x, int& max_x, int& min_y, int& max_y, bool mask_only = false, float threshold = 0.001)
 {	
 	int res = 0;
-#ifdef WIN64	
+#ifdef USE_CUDA	
 	int numObjs = w * h, i, j, numObjsFF;
 	float **clusters;	
 	simple_buffer<char> color_cluster_id(1 << 24, -1);
@@ -6411,7 +6411,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 	}
 }
 
-inline custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString &SaveName, wxString &iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
+inline custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
 {	
 	return create_custom_task([&res, &ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
 			FindText(res, ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
@@ -6588,14 +6588,14 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 
 	if (g_show_results)	SaveBGRImageWithLinesInfo(ImBGR, "/TestImages/FindTextLines_01_6_ImBGRWithLinesInfo" + g_im_save_format, LLB, LLE, N, w_orig, h_orig);
 
-#ifdef WIN64
+#ifndef WINX86
 	vector<custom_task> FindTextTasks;
 	vector<FindTextRes*> FindTextTasksRes(N);
 
 	for (k = 0; k < N; k++)
 	{
 		FindTextTasksRes[k] = new FindTextRes();
-		FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, wxT("l") + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+		FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, wxString(wxT("l")) + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
 	}
 
 	k = 0;

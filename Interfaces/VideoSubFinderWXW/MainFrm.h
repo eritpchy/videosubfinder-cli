@@ -54,6 +54,7 @@ public:
 	int			m_fount_size_btn;
 
 	double		m_ocr_min_sub_duration;
+	wxString	m_ocr_join_txt_images_split_line;
 
 	int			process_affinity_mask = -1;
 
@@ -61,6 +62,7 @@ public:
 	wxString	m_pixel_color_lab;
 
 	wxString	m_ocr_label_msd_text;
+	wxString	m_ocr_label_join_txt_images_split_line_text;
 	wxString	m_ocr_label_jsact_text;
 	wxString	m_ocr_label_clear_txt_folders;
 	wxString	m_ocr_label_save_each_substring_separately;

@@ -179,52 +179,6 @@ void CMainFrame::OnViewRGBImage(wxThreadEvent& event)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-/*
-static bool _IsFeature(DWORD dwRequestFeature)
-{
-#ifndef WIN64
-	// This	bit	flag can get set on	calling	cpuid
-	// with	register eax set to	1
-	DWORD dwFeature	= 0;
-	__try {
-			_asm {
-				mov	eax,1
-				cpuid
-				mov	dwFeature,edx
-			}
-	} __except ( EXCEPTION_EXECUTE_HANDLER)	{
-			return false;
-	}
-	if ((dwRequestFeature == _MMX_FEATURE_BIT) &&
-		(dwFeature & _MMX_FEATURE_BIT)) {
-		__try {
-			__asm {
-				pxor mm0, mm0
-				pmaxsw mm0, mm0
-				emms
-			}
-		} __except (EXCEPTION_EXECUTE_HANDLER) {
-			return (0);
-		}
-		return(true);
-	}
-	else if ((dwRequestFeature == _SSE2_FEATURE_BIT) &&
-		(dwFeature & _SSE2_FEATURE_BIT)) {
-		__try {
-			__asm {
-				xorpd xmm0, xmm0
-			}
-		} __except (EXCEPTION_EXECUTE_HANDLER) {
-			return (0);
-		}
-		return(true);
-	}
-#endif
-
-	return false;
-}
-*/
-/////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
 	EVT_SIZE(CMainFrame::OnSize)
@@ -915,6 +869,7 @@ void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& 
 	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
 	wxString name, val, line;
 	wxRegEx re(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([^[:space:]].*[^[:space:]]|[^[:space:]])[[:space:]]*$"));
+	wxRegEx re_empty(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*$"));
 
 	while (ffin.IsOk() && !ffin.Eof())
 	{
@@ -930,8 +885,17 @@ void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& 
 			}
 			else
 			{
-				(void)wxMessageBox(wxT("Unsupported line format: ") + line + wxT("\nin file: ") + file_name);
-				exit(1);
+				if (re_empty.Matches(line))
+				{
+					name = re.GetMatch(line, 1);
+					val = wxString(wxT(""));
+					settings[name] = val;
+				}
+				else
+				{
+					(void)wxMessageBox(wxT("Unsupported line format: ") + line + wxT("\nin file: ") + file_name);
+					exit(1);
+				}
 			}
 		}
 	}
@@ -1021,6 +985,7 @@ void CMainFrame::LoadSettings()
 	ReadProperty(m_general_settings, m_cfg.process_affinity_mask, "process_affinity_mask");
 
 	ReadProperty(m_general_settings, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
+	ReadProperty(m_general_settings, m_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
 	
 	ReadProperty(m_general_settings, m_cfg.m_txt_dw, "txt_dw");
 	ReadProperty(m_general_settings, m_cfg.m_txt_dy, "txt_dy");
@@ -1083,6 +1048,7 @@ void CMainFrame::LoadSettings()
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_locale_settings...\n");
 
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
+	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_join_txt_images_split_line_text, "ocr_label_join_txt_images_split_line_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
 	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
@@ -1284,6 +1250,7 @@ void CMainFrame::SaveSettings()
 	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
 
 	WriteProperty(fout, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
+	WriteProperty(fout, m_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
 
 	WriteProperty(fout, m_cfg.m_txt_dw, "txt_dw");
 	WriteProperty(fout, m_cfg.m_txt_dy, "txt_dy");

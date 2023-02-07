@@ -176,11 +176,13 @@ public:
 	wxString m_sub_path;
 
 	CStaticText *m_plblMSD;
-	CCheckBox    *m_pcbJSACT;
-	CCheckBox    *m_pcbCTXTF;
-	CCheckBox    *m_pcbSESS;
-	CCheckBox    *m_pcbSSI;
-	CTextCtrl	 *m_pMSD;
+	CStaticText	*m_plblJTXTSL;
+	CCheckBox	*m_pcbJSACT;
+	CCheckBox	*m_pcbCTXTF;
+	CCheckBox	*m_pcbSESS;
+	CCheckBox	*m_pcbSSI;
+	CTextCtrl	*m_pMSD;
+	CTextCtrl	*m_pJTXTSL;
 	CButton	 *m_pCCTI;
 	CButton	 *m_pCES;
 	CButton  *m_pJOIN;

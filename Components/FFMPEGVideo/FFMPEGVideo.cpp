@@ -17,7 +17,7 @@
 #include "FFMPEGVideo.h"
 #include "IPAlgorithms.h"
 
-#ifdef WIN64
+#ifdef USE_CUDA
 #include "cuda_kernels.h"
 #endif
 
@@ -968,7 +968,7 @@ inline int FFMPEGVideo::convert_to_dst_format(u8* frame_data, uint8_t* const dst
 		{
 			ret = 0;
 
-#ifdef WIN64
+#ifdef USE_CUDA
 			ret = NV12_to_BGR(src_data[0], src_data[1], src_linesize[0],
 				dst_data[0], m_Width, m_Height, m_origWidth, m_origHeight);
 

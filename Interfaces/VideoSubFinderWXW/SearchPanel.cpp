@@ -300,6 +300,7 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 		else if ((g_RunSubSearch == 1) && g_playback_sound)
 		{
 			wxString Str = g_app_dir + wxT("/finished.wav");
+#ifdef WIN32
 			if (wxFileExists(Str))
 			{
 				wxSound sound(Str);
@@ -308,6 +309,10 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 					sound.Play();
 				}
 			}
+#else
+			// Unfortunately wxWidgets doesn't play sound
+			system(wxString::Format(wxT("canberra-gtk-play -f \"%s\""), Str).c_str());
+#endif
 		}
 
 		m_pClear->Enable();

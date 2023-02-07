@@ -29,9 +29,7 @@ if (WIN32)
 		IPAlgorithms
 		OCVVideo
 		FFMPEGVideo
-		
-		CUDAKernels.lib
-
+		${CUDAKernels_LIB}
 		wxmsw32u_aui.lib
 		wxmsw32u_media.lib
 		wxmsw32u_core.lib
@@ -48,11 +46,9 @@ if (WIN32)
 		rpcrt4.lib
 		wsock32.lib
 		odbc32.lib
-
 		cudart.lib
 		nppicc.lib
 		nppig.lib
-		
 		vfw32.lib
 		avdevice.lib
 		avformat.lib
@@ -71,48 +67,22 @@ else()
 
 	target_link_directories(VideoSubFinderWXW  PUBLIC
 		"${wxWidgets_LIBRARY_DIRS}"
-		# "$ENV{OPENCV_PATH_X64}/builds/Win64/lib/Release"
-		# "$ENV{CUDA_TOOLKIT_PATH}/lib/x64"
-		# "$ENV{FFMPEG_PATH_X64}/lib"
-		# "../../Components/CUDAKernels/x64/Release"
 	)
 
 	target_link_libraries(VideoSubFinderWXW PUBLIC
 		IPAlgorithms
 		OCVVideo
 		FFMPEGVideo
-		# CUDAKernels.lib
+		${CUDAKernels_LIB}
 		${wxWidgets_LIBRARIES}
 		${OpenCV_LIBS}
-		
 		avcodec
 		avformat
 		avutil
 		swscale
 		avfilter
-
 		tbb
 		X11
-		
-		# winmm.lib
-		# comctl32.lib
-		# rpcrt4.lib
-		# wsock32.lib
-		# odbc32.lib
-		
-		# cudart.lib
-		# nppicc.lib
-		# nppig.lib
-		
-		# vfw32.lib
-		# avdevice.lib
-		# avformat.lib
-		# avfilter.lib
-		# avcodec.lib
-		# swresample.lib
-		# swscale.lib
-		# avutil.lib
-		# opencv_world470.lib
 	)
 endif (WIN32)
 

@@ -4,7 +4,7 @@
 
 1) Microsoft Visual Studio Professional 2022 (64-bit) Version 17.4.4
 
-2) wxWidgets 
+2) wxWidgets
 https://www.wxwidgets.org/downloads/
 Windows Installer -> wxMSW-3.2.1-Setup.exe
 Setup Env: WX_WIDGETS_PATH=C:\wxWidgets-3.2.1
@@ -70,7 +70,7 @@ Build in Debug and Release mode for Platform Win32 and Win64
 + Build INSTALL project in CMakeTargets folder for Win64
 NOTE: Projects will be built with MD* instead of MT* but it will be compatible with VSF due to used from dll.
 
-Setup Env: 
+Setup Env:
 OPENCV_PATH_X64=C:\opencv-4.7.0
 OPENCV_PATH_X86=C:\opencv-4.7.0
 after build should exist:
@@ -105,11 +105,11 @@ https://software.intel.com/content/www/us/en/develop/documentation/vtune-help/to
 ##############################################################################################################################
 
 Note:
-"Used default GCC versin"
+"Used default GCC version"
 # /usr/bin/gcc --version
-# gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
+# gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1)
 
-1) wxWidgets 
+1) wxWidgets
 Download from
 https://www.wxwidgets.org/downloads/
 Source for Linux, macOS, etc
@@ -125,7 +125,7 @@ Required for build:
 "libgtk-3-dev"
 sudo apt install libgtk-3-dev
 
-Before build it is preferred to fix GDK cursor:
+Before build it is preferred to fix GDK cursor (but not required):
 ~/wxWidgets-3.2.1/src/gtk/cursor.cpp
 replace
 -----------
@@ -185,20 +185,78 @@ ls lib
 # Install:
 sudo make install
 
-5)
+3)
 FFMPEG
 https://ffmpeg.org/download.html
 https://launchpad.net/ubuntu/+source/ffmpeg
 
 sudo apt install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavfilter-dev
 
-6)
+4)
+"NOTE: CUDA is not required for build,
+you can build program without it by specifying -DUSE_CUDA=OFF for cmake"
+
+Install CUDA Toolkit 12.0 Update 1
+https://developer.nvidia.com/cuda-downloads
+Linux->x86_64->Ubuntu->20.04->runfile(local) (deb(local) install failed)
+"cuda_12.0.1_525.85.12_linux.run"
+
+# For remove old cuda and nvidia driver or cuda failed installation from deb package
+sudo apt-get --purge remove "*cublas*" "cuda*" "nsight*"
+sudo apt-get --purge remove "*nvidia*"
+sudo apt-get update
+sudo apt-get autoremove
+sudo apt-get autoclean
+sudo apt --fix-broken install
+
+# reboot machine (required for install nvidia driver)
+
+wget https://developer.download.nvidia.com/compute/cuda/12.0.1/local_installers/cuda_12.0.1_525.85.12_linux.run
+sudo sh cuda_12.0.1_525.85.12_linux.run
+# nvidia driver install will fail, additional reboot will be possibly required
+# run again: sudo sh cuda_12.0.1_525.85.12_linux.run
+
+Final install log:
+--------------------------
+===========
+= Summary =
+===========
+
+Driver:   Installed
+Toolkit:  Installed in /usr/local/cuda-12.0/
+
+Please make sure that
+ -   PATH includes /usr/local/cuda-12.0/bin
+ -   LD_LIBRARY_PATH includes /usr/local/cuda-12.0/lib64, or, add /usr/local/cuda-12.0/lib64 to /etc/ld.so.conf and run ldconfig as root
+
+To uninstall the CUDA Toolkit, run cuda-uninstaller in /usr/local/cuda-12.0/bin
+To uninstall the NVIDIA Driver, run nvidia-uninstall
+Logfile is /var/log/cuda-installer.log
+--------------------------
+
+5)
+# Building VideoSubFinderWXW #
+
+# You can use Visual Studio Code with installed cmake and c++ extensions
+# In my case i build with its option: gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1)
+
 Required for build:
 "libtbb-dev"
 sudo apt install libtbb-dev
 
-# cd videosubfinder source directory
+cd $videosubfinder_source_root_dir
 mkdir -p linux_build
 cd linux_build
+
+# for build with CUDA support in Visual Studio Code :
+cd $videosubfinder_source_root_dir
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-12.0/lib64:/usr/local/cuda-12.0/extras/CUPTI/lib64 PATH=$PATH:/usr/local/cuda-12.0/bin code .
+
+# for build with CUDA support in terminal:
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-12.0/lib64:/usr/local/cuda-12.0/extras/CUPTI/lib64 export PATH=$PATH:/usr/local/cuda-12.0/bin
 cmake -DCMAKE_BUILD_TYPE=Release ..
-VERBOSE=1 cmake --build . --config Release -j 16 >log.txt 2>&1
+cmake --build . --config Release -j 16
+
+# for build without CUDA support in terminal:
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF ..
+cmake --build . --config Release -j 16

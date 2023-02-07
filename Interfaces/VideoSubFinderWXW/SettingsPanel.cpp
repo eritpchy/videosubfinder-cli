@@ -216,7 +216,7 @@ void CSettingsPanel::Init()
 	
 	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, &g_filter_descr);
 
-#ifdef WIN64
+#ifdef USE_CUDA
 	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, &g_use_cuda_gpu);
 #else
 	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (only on x64 is supported)", m_CLSP, m_CLSP, &g_use_cuda_gpu);
@@ -278,7 +278,7 @@ void CSettingsPanel::Init()
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, &g_smthr, 0.0, 1.0);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, m_CL2, m_CL4, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, m_CL2, m_CL4, &g_cpu_kmeans_loop_iterations, 1, 1000);
-#ifdef WIN64
+#ifdef USE_CUDA
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CL2, m_CL4, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
 	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CL2, m_CL4, &g_cuda_kmeans_loop_iterations, 1, 1000);
 #else

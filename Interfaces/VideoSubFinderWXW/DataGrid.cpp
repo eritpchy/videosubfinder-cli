@@ -416,10 +416,16 @@ CDataGrid::~CDataGrid()
 void CDataGrid::OnGridCellChanging(wxGridEvent& event)
 {
 	int row = event.GetRow(), col = event.GetCol();
-	wxString newval = event.GetString();
+	wxString updateval, newval;
+	newval = event.GetString();
+	updateval = newval;
 	wxGridCellEditor *cel_editr = this->GetCellEditor(row, col);	
-	(dynamic_cast<CControl*>(cel_editr))->UpdateData(&newval);
+	(dynamic_cast<CControl*>(cel_editr))->UpdateData(&updateval);
 	cel_editr->DecRef();
+	if (updateval != newval)
+	{
+		this->SetCellValue(row, col, updateval);
+	}
 }
 
 void CDataGrid::OnSize(wxSizeEvent& event)

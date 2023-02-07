@@ -207,7 +207,7 @@ void COCRPanel::Init()
 	m_CL1 = wxColour(255, 215, 0);
 	m_CLOCR = wxColour(170, 170, 170);
 
-	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
+	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJTXTSL, reJTXTSL, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
 	int w, h, cbh, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
 	const int dx = 20;
 	const int dy = 20;
@@ -221,7 +221,7 @@ void COCRPanel::Init()
 	rlMSD.x = (PW - BTNW - LBLW - dx) / 2;
 	rlMSD.y = dy;
 	rlMSD.width = LBLW;
-	rlMSD.height = 18;
+	rlMSD.height = cbh;
 
 	rcCCTI.x = rlMSD.GetRight() + dx;
 	rcCCTI.y = dy;
@@ -253,17 +253,27 @@ void COCRPanel::Init()
 	rcTEST.width = 100;
 	rcTEST.height = h;
 
-	int cb_dist = 6;
+	int cb_dist = 3;
 
 	reMSD.x = rlMSD.x;
 	reMSD.y = rlMSD.GetBottom() + cb_dist;
 	reMSD.width = rlMSD.width;
-	reMSD.height = 18;
+	reMSD.height = cbh;
 
-	rlJSACT.x = reMSD.x;
-	rlJSACT.y = reMSD.GetBottom() + cb_dist;
-	rlJSACT.width = reMSD.width;
-	rlJSACT.height = cbh;
+	rlJTXTSL.x = reMSD.x;
+	rlJTXTSL.y = reMSD.GetBottom() + cb_dist;
+	rlJTXTSL.width = reMSD.width;
+	rlJTXTSL.height = cbh;
+
+	reJTXTSL.x = rlJTXTSL.x;
+	reJTXTSL.y = rlJTXTSL.GetBottom() + cb_dist;
+	reJTXTSL.width = rlJTXTSL.width;
+	reJTXTSL.height = cbh;
+
+	rlJSACT.x = reJTXTSL.x;
+	rlJSACT.y = reJTXTSL.GetBottom() + cb_dist;
+	rlJSACT.width = reJTXTSL.width;
+	rlJSACT.height = cbh;	
 
 	rlCTXTF.x = rlJSACT.x;
 	rlCTXTF.y = rlJSACT.GetBottom() + cb_dist;
@@ -293,7 +303,7 @@ void COCRPanel::Init()
 	rcP3.x = 0;	
 	rcP3.y = 0;
 	rcP3.width = PW + dw;
-	rcP3.height = rcJOIN.GetBottom() + dy + dh;
+	rcP3.height = rlSSI.GetBottom() + dy + dh;
 
 	SaveToReportLog("COCRPanel::Init(): this->SetSize(rcP3)...\n");
 	this->SetSize(rcP3);	
@@ -313,6 +323,17 @@ void COCRPanel::Init()
 	m_pMSD = new CTextCtrl(m_pP3, wxID_ANY,
 		&(m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_pMF->m_LBLFont);
+
+	SaveToReportLog("COCRPanel::Init(): init m_plblJTXTSL...\n");
+	m_plblJTXTSL = new CStaticText(m_pP3, wxID_ANY, m_pMF->m_cfg.m_ocr_label_join_txt_images_split_line_text);
+	m_plblJTXTSL->SetSize(rlJTXTSL);
+	m_plblJTXTSL->SetFont(m_pMF->m_LBLFont);
+	m_plblJTXTSL->SetBackgroundColour(m_CL1);
+
+	SaveToReportLog("COCRPanel::Init(): init m_pJTXTSL...\n");
+	m_pJTXTSL = new CTextCtrl(m_pP3, wxID_ANY,
+		&(m_pMF->m_cfg.m_ocr_join_txt_images_split_line), reJTXTSL.GetPosition(), reJTXTSL.GetSize());
+	m_pJTXTSL->SetFont(m_pMF->m_LBLFont);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbJSACT...\n");
 	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
@@ -1010,14 +1031,18 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 		int w = 0, h, w_prev = -1, H = 0, dh = 0;
 
 		for (; fi <= fi_end; fi++)
-		{			
+		{
 			file_name = FileNamesVector[fi];
 			file_path = dir_path + file_name;
 			GetImageSize(file_path, w, h);
 			if (fi == fi_start)
 			{
 				w_prev = w;
-				dh = (w / 16);
+
+				if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
+				{
+					dh = (w / 16);
+				}
 			}
 			else
 			{
@@ -1040,33 +1065,36 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			H += dh + h;
 		}
 
-		wxBitmap bitmap(w, dh);
+		wxBitmap bitmap(w, (dh > 0) ? dh: 1);
 		wxMemoryDC dc;
 		dc.SelectObject(bitmap);
-
 		wxSize text_size;
-		int font_size = 0;
 
-		do
-		{
-			font_size++;
+		if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
+		{			
+			int font_size = 0;
+
+			do
+			{
+				font_size++;
+				wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+				dc.SetFont(font);
+				text_size = dc.GetTextExtent(wxT("12345678987654321"));
+			} while ((text_size.GetWidth() < w) && (text_size.GetHeight() <= (dh * 6) / 10));
+			font_size--;
+
+			if (font_size == 0)
+			{
+				wxMessageBox(wxT("ERROR: Unfortunately optimal font size is too small"), wxT("JoinTXTImages"));
+				m_pMF->m_pPanel->m_pSHPanel->Enable();
+				m_pMF->m_pPanel->m_pSSPanel->Enable();
+				m_pMF->m_pPanel->m_pOCRPanel->Enable();
+				return;
+			}
+
 			wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 			dc.SetFont(font);
-			text_size = dc.GetTextExtent(wxT("12345678987654321"));
-		} while ((text_size.GetWidth() < w) && (text_size.GetHeight() <= (dh * 6) / 10));
-		font_size--;
-
-		if (font_size == 0)
-		{
-			wxMessageBox(wxT("ERROR: Unfortunately optimal font size is too small"), wxT("JoinTXTImages"));
-			m_pMF->m_pPanel->m_pSHPanel->Enable();
-			m_pMF->m_pPanel->m_pSSPanel->Enable();
-			m_pMF->m_pPanel->m_pOCRPanel->Enable();
-			return;
 		}
-
-		wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-		dc.SetFont(font);
 
 		simple_buffer<u8> ImRes(w * H, 255);
 
@@ -1076,45 +1104,63 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			file_name = FileNamesVector[fi];
 			file_path = dir_path + file_name;
 
-			wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
-			u64 bt, et;
-
-			Str = file_name;
-
-			hour1 = Str.Mid(0, 1);
-			min1 = Str.Mid(2, 2);
-			sec1 = Str.Mid(5, 2);
-			msec1 = Str.Mid(8, 3);
-
-			hour2 = Str.Mid(13, 1);
-			min2 = Str.Mid(15, 2);
-			sec2 = Str.Mid(18, 2);
-			msec2 = Str.Mid(21, 3);
-
-			bt = (wxAtoi(hour1) * 3600 + wxAtoi(min1) * 60 + wxAtoi(sec1)) * 1000 + wxAtoi(msec1);
-			et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);
-
-			Str = VideoTimeToStr2(bt) +
-				" --> " +
-				VideoTimeToStr2(et);
-
-			text_size = dc.GetTextExtent(Str);			
-			dc.Clear();
-			dc.DrawText(Str, (w - text_size.GetWidth()) / 2, (dh - text_size.GetHeight()) / 2);
-
-			wxImage img = bitmap.ConvertToImage();
-			u8 *img_data = img.GetData();			
-
-			for (int y = 0; y < img.GetHeight(); y++)
+			if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
 			{
-				for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
+				wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
+				u64 bt, et;
+
+				Str = file_name;
+
+				hour1 = Str.Mid(0, 1);
+				min1 = Str.Mid(2, 2);
+				sec1 = Str.Mid(5, 2);
+				msec1 = Str.Mid(8, 3);
+
+				hour2 = Str.Mid(13, 1);
+				min2 = Str.Mid(15, 2);
+				sec2 = Str.Mid(18, 2);
+				msec2 = Str.Mid(21, 3);
+
+				bt = (wxAtoi(hour1) * 3600 + wxAtoi(min1) * 60 + wxAtoi(sec1)) * 1000 + wxAtoi(msec1);
+				et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);
+
+				wxString str_bt = VideoTimeToStr2(bt);
+				wxString str_et = VideoTimeToStr2(et);
+
+				Str = m_pMF->m_cfg.m_ocr_join_txt_images_split_line;
+
+				wxRegEx re_bt(wxT("\\[begin_time\\]"));
+				wxRegEx re_et(wxT("\\[end_time\\]"));
+				
+				if (re_bt.Matches(Str))
 				{
-					if ((img_data[0] <= 30) && (img_data[1] <= 30) && (img_data[2] <= 30))
+					re_bt.Replace(&Str, str_bt);
+				}
+
+				if (re_et.Matches(Str))
+				{
+					re_et.Replace(&Str, str_et);
+				}				
+
+				text_size = dc.GetTextExtent(Str);
+				dc.Clear();
+				dc.DrawText(Str, (w - text_size.GetWidth()) / 2, (dh - text_size.GetHeight()) / 2);
+
+				wxImage img = bitmap.ConvertToImage();
+				u8* img_data = img.GetData();
+
+				for (int y = 0; y < img.GetHeight(); y++)
+				{
+					for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
 					{
-						ImRes[((h_ofset + y) * w) + x] = 0;
-					}					
+						if ((img_data[0] <= 30) && (img_data[1] <= 30) && (img_data[2] <= 30))
+						{
+							ImRes[((h_ofset + y) * w) + x] = 0;
+						}
+					}
 				}
 			}
+
 			h_ofset += dh;
 
 			simple_buffer<u8> ImRes_sub_buffer(ImRes, w* h_ofset, true);
@@ -1721,6 +1767,7 @@ void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 	if ((g_RunCreateClearedTextImages == 1) && g_playback_sound)
 	{
 		wxString Str = g_app_dir + wxT("/finished.wav");
+#ifdef WIN32
 		if (wxFileExists(Str))
 		{
 			wxSound sound(Str);
@@ -1729,6 +1776,10 @@ void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 				sound.Play();
 			}
 		}
+#else
+		// Unfortunately wxWidgets doesn't play sound
+		system(wxString::Format(wxT("canberra-gtk-play -f \"%s\""), Str).c_str());		
+#endif
 	}
 
 	g_IsCreateClearedTextImages = 0;
