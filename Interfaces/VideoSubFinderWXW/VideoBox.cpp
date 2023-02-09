@@ -695,14 +695,18 @@ void CVideoBox::OnSize(wxSizeEvent& event)
 
 void CVideoBox::OnBnClickedRun(wxCommandEvent& event)
 {
+	const std::lock_guard<std::mutex> lock(m_pMF->m_play_mutex);
+
 	if (m_pMF->m_VIsOpen)
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, true);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
-
-		m_pMF->m_pVideo->Run();
-		m_pMF->m_vs = m_pMF->Play;
+		if (m_pMF->m_vs != m_pMF->Play)
+		{
+			m_pMF->m_vs = m_pMF->Play;
+			m_pVBar->ToggleTool(ID_TB_RUN, true);
+			m_pVBar->ToggleTool(ID_TB_PAUSE, false);
+			m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pMF->m_pVideo->Run();
+		}
 	}
 	else
 	{
@@ -714,14 +718,18 @@ void CVideoBox::OnBnClickedRun(wxCommandEvent& event)
 
 void CVideoBox::OnBnClickedPause(wxCommandEvent& event)
 {
+	const std::lock_guard<std::mutex> lock(m_pMF->m_play_mutex);
+
 	if (m_pMF->m_VIsOpen)
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, true);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
-
-		m_pMF->m_pVideo->Pause();		
-		m_pMF->m_vs = m_pMF->Pause;
+		if (m_pMF->m_vs != m_pMF->Pause)
+		{
+			m_pMF->m_vs = m_pMF->Pause;
+			m_pVBar->ToggleTool(ID_TB_RUN, false);
+			m_pVBar->ToggleTool(ID_TB_PAUSE, true);
+			m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pMF->m_pVideo->Pause();
+		}
 	}
 	else
 	{

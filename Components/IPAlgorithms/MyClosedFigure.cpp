@@ -16,9 +16,6 @@
 
 #include "MyClosedFigure.h"
 #include <algorithm>
-#ifdef WIN32
-#include <ppl.h>
-#endif
 
 using namespace std;
 

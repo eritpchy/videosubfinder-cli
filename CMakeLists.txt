@@ -1,41 +1,41 @@
 cmake_minimum_required(VERSION 3.13)
 
-option(USE_CUDA "Build with CUDA support" ON)
+project(VideoSubFinderWXW LANGUAGES CXX)
 
-if (USE_CUDA)
-	project(VideoSubFinderWXW LANGUAGES CXX CUDA)
-else()
-	project(VideoSubFinderWXW LANGUAGES CXX)
-endif(USE_CUDA)
+if(WIN32)
+	find_package(IntelDPCPP REQUIRED)
 
-if (WIN32)
-	set(wxWidgets_INCLUDE_DIRS "$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib/mswu;$ENV{WX_WIDGETS_PATH}/include" CACHE STRING "Paths to OpenCV include dirs")
-	set(OpenCV_INCLUDE_DIRS "$ENV{OPENCV_PATH_X64}/builds/Win64/install/include" CACHE STRING "Paths to OpenCV include dirs")
-	set(FFMPEG_INCLUDE_DIRS "$ENV{FFMPEG_PATH_X64}/include" CACHE STRING "Paths to FFMPEG include dirs")
-	set(CMAKE_CXX_FLAGS_RELEASE "/MT")
-	set(CMAKE_CXX_FLAGS_DEBUG "/MTd")	
-	set(CompilerFlags
-			CMAKE_CXX_FLAGS
-			CMAKE_CXX_FLAGS_DEBUG
-			CMAKE_CXX_FLAGS_RELEASE
-			CMAKE_C_FLAGS
-			CMAKE_C_FLAGS_DEBUG
-			CMAKE_C_FLAGS_RELEASE
-			)
-	foreach(CompilerFlag ${CompilerFlags})
-	  string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-	endforeach()
+	option(WIN64 "Make x64 build" ON)
+
+	if(WIN64)
+		option(USE_CUDA "Build with CUDA support" ON)
+		add_definitions(-DWIN64)
+		set(wxWidgets_INCLUDE_DIRS "$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib/mswu;$ENV{WX_WIDGETS_PATH}/include" CACHE STRING "Paths to OpenCV include dirs")
+		set(OpenCV_INCLUDE_DIRS "$ENV{OPENCV_BUILD_PATH_X64}/install/include" CACHE STRING "Paths to OpenCV include dirs")
+		set(FFMPEG_INCLUDE_DIRS "$ENV{FFMPEG_PATH_X64}/include" CACHE STRING "Paths to FFMPEG include dirs")
+		set(VideoSubFinderWXW_LINK_DIRS "$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib;$ENV{OPENCV_BUILD_PATH_X64}/lib/Release;$ENV{CUDA_TOOLKIT_PATH}/lib/x64;$ENV{FFMPEG_PATH_X64}/lib" CACHE STRING "VideoSubFinderWXW link dirs")
+	else()
+		option(USE_CUDA "Build with CUDA support" OFF)
+		add_definitions(-DWINX86)
+		set(wxWidgets_INCLUDE_DIRS "$ENV{WX_WIDGETS_PATH}/lib/vc_lib/mswu;$ENV{WX_WIDGETS_PATH}/include" CACHE STRING "Paths to OpenCV include dirs")
+		set(OpenCV_INCLUDE_DIRS "$ENV{OPENCV_BUILD_PATH_X86}/install/include" CACHE STRING "Paths to OpenCV include dirs")
+		set(FFMPEG_INCLUDE_DIRS "$ENV{FFMPEG_PATH_X86}/include" CACHE STRING "Paths to FFMPEG include dirs")
+		set(VideoSubFinderWXW_LINK_DIRS "$ENV{WX_WIDGETS_PATH}/lib/vc_lib;$ENV{OPENCV_BUILD_PATH_X86}/lib/Release;$ENV{FFMPEG_PATH_X86}/lib" CACHE STRING "VideoSubFinderWXW link dirs")
+	endif(WIN64)
+
+	set(OpenCV_LIBS "opencv_world$ENV{OPENCV_LIBS_VER}.lib" CACHE STRING "Required OpenCV libs for build")
+
 else()
-	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(wxWidgets_USE_DEBUG ON)
 	else()
 	set(wxWidgets_USE_DEBUG OFF)
-	endif()	
+	endif()
 	find_package(wxWidgets REQUIRED COMPONENTS core base aui)
 	find_package(OpenCV REQUIRED)
-endif (WIN32)
+endif(WIN32)
 
-if (USE_CUDA)
+if(USE_CUDA)
 	set(CMAKE_CUDA_FLAGS "-arch=all")
 	add_definitions(-DUSE_CUDA)
 	set(CUDAKernels_INCLUDE_DIRS "../CUDAKernels")

@@ -18,10 +18,6 @@
 
 #include "DataTypes.h"
 #include <fstream>
-#ifdef WIN32
-#include <ppl.h>
-#include <ppltasks.h>
-#endif
 
 using namespace std;
 

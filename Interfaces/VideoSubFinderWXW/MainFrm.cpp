@@ -807,22 +807,22 @@ void CMainFrame::OnFileOpenVideo(int type)
 
 void CMainFrame::OnPlayPause(wxCommandEvent& event)
 {
+	const std::lock_guard<std::mutex> lock(m_play_mutex);
+
 	if (m_VIsOpen)	
 	{
 		if (m_vs == Play)
 		{
-			m_pVideo->Pause();
 			m_vs = Pause;
-
+			m_pVideo->Pause();
 			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
 			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, true);
 			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
 		}
 		else
 		{
-			m_pVideo->Run();
 			m_vs = Play;
-
+			m_pVideo->Run();
 			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, true);
 			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
 			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
@@ -832,24 +832,29 @@ void CMainFrame::OnPlayPause(wxCommandEvent& event)
 
 void CMainFrame::OnStop(wxCommandEvent& event)
 {
+	const std::lock_guard<std::mutex> lock(m_play_mutex);
+
 	if (m_VIsOpen)	
 	{
-		m_pVideo->StopFast();
-		m_vs = Stop;
-		
-		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, true);
+		if (m_vs != Stop)
+		{
+			m_vs = Stop;
+			m_pVideo->StopFast();
+			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
+			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
+			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, true);
+		}
 	}
 }
 
 void CMainFrame::PauseVideo()
 {
+	const std::lock_guard<std::mutex> lock(m_play_mutex);
+
 	if (m_VIsOpen && (m_vs != Pause))	
 	{
-		m_pVideo->Pause();
 		m_vs = Pause;
-
+		m_pVideo->Pause();
 		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
 		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, true);
 		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);

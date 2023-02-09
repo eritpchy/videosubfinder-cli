@@ -172,7 +172,7 @@ public:
 	CMainFrame(const wxString& title);
 	~CMainFrame();
 
-public:
+public:	
 	bool		m_WasInited;
 	
 	bool		m_blnNoGUI;
@@ -190,8 +190,9 @@ public:
 	wxString		m_EndTimeStr;
 
 	wxTimer		m_timer;
-
-	enum {Play, Pause, Stop} m_vs;
+	
+	enum {Play, Pause, Stop}	m_vs;
+	std::mutex					m_play_mutex;
 
 	int			m_BufferSize;
 	int			m_w; //video width

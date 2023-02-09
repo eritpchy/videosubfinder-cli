@@ -55,8 +55,11 @@ extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, c
 
 #define my_event custom_event
 
-#define cvMAT cv::UMat
-//#define cvMAT cv::Mat
+// NOTE: UMat lead to app process hang on exit in x86 version
+// also leads to lower performance: time ./VideoSubFinderWXW.exe -ccti -nocrthr 16
+// NOTE: cv::UMat real    3m31.686s
+// NOTE: cv::Mat real    3m23.222s
+#define cvMAT cv::Mat
 
 extern bool g_use_ocl;
 
@@ -207,9 +210,47 @@ private:
 	T m_step;
 };
 
-#ifdef WIN32
+#ifdef WIN32 // WINX86 or WIN64
+#ifdef WIN64
 #define run_in_parallel concurrency::parallel_invoke
-#else
+#endif
+#ifdef WINX86
+// replacing run_in_parallel to sequential run in 1 thread
+template <typename _Function1, typename _Function2>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2)
+{
+	_Func1();
+	_Func2();
+}
+
+template <typename _Function1, typename _Function2, typename _Function3>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, const _Function3& _Func3)
+{
+	_Func1();
+	_Func2();
+	_Func3();
+}
+
+template <typename _Function1, typename _Function2, typename _Function3, typename _Function4>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, const _Function3& _Func3, const _Function4& _Func4)
+{
+	_Func1();
+	_Func2();
+	_Func3();
+	_Func4();
+}
+
+template <typename _Function1, typename _Function2, typename _Function3, typename _Function4, typename _Function5>
+inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, const _Function3& _Func3, const _Function4& _Func4, const _Function5& _Func5)
+{
+	_Func1();
+	_Func2();
+	_Func3();
+	_Func4();
+	_Func5();
+}
+#endif
+#else // not WIN32 == Linux
 template <typename _Function1, typename _Function2>
 inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2)
 {
@@ -263,65 +304,77 @@ inline void run_in_parallel(const _Function1& _Func1, const _Function2& _Func2, 
 }
 #endif
 
-class custom_task
+class shared_custom_task
 {
-	std::shared_ptr<std::thread> m_thr;
+	struct custom_task_data
+	{
+		std::thread m_thr;
+		std::mutex m_mutex;
+
+		template<typename _Function>
+		custom_task_data(const _Function& _Func) : m_thr(_Func) {}
+
+		void wait()
+		{
+			const std::lock_guard<std::mutex> lock(m_mutex);
+			if (m_thr.joinable())
+			{
+				m_thr.join();
+			}
+		}
+	};
+
+	std::shared_ptr<custom_task_data> m_data;
 
 public:
-	custom_task() {}
+	shared_custom_task() {}
 
 	template<typename _Function>
-	custom_task(const _Function& _Func)
+	shared_custom_task(const _Function& _Func)
 	{
-		m_thr = std::make_shared<std::thread>(_Func);
+		m_data = std::make_shared<custom_task_data>(_Func);
 	}
 
-	custom_task(const custom_task& other)
+	shared_custom_task(const shared_custom_task& other)
 	{
-		m_thr = other.m_thr;
+		m_data = other.m_data;
 	}
 
-	custom_task(custom_task&& other)
+	shared_custom_task(shared_custom_task&& other)
 	{
-		m_thr = std::move(other.m_thr);
+		m_data = std::move(other.m_data);
 	}
 
-	custom_task & operator= (const custom_task& other)
+	shared_custom_task & operator= (const shared_custom_task& other)
 	{
-		custom_assert(static_cast<bool>(m_thr) == false, "custom_task: 'operator= &&' m_thr != false");
+		custom_assert(static_cast<bool>(m_data) == false, "shared_custom_task: 'operator= &&' m_data != false");
 
-		if (other.m_thr)
+		if (other.m_data)
 		{
-			m_thr = other.m_thr;
+			m_data = other.m_data;
 		}		
 
 		return *this;
 	}
 
-	custom_task& operator= (custom_task&& other)
+	shared_custom_task& operator= (shared_custom_task&& other)
 	{
-		custom_assert(static_cast<bool>(m_thr) == false, "custom_task: 'operator= &&' m_thr != false");
+		custom_assert(static_cast<bool>(m_data) == false, "shared_custom_task: 'operator= &&' m_data != false");
 
-		m_thr = std::move(other.m_thr);
+		m_data = std::move(other.m_data);
 
 		return *this;
 	}
 
 	void wait()
 	{
-		if (m_thr)
+		if (m_data)
 		{
-			if (m_thr->joinable())
-			{
-				m_thr->join();				
-			}
-
-			m_thr.reset();
+			m_data->wait();
+			m_data.reset();
 		}
 	}
 };
-
-#define create_custom_task custom_task
 
 template <typename _Iterator>
 inline void wait_all(_Iterator first, _Iterator last)

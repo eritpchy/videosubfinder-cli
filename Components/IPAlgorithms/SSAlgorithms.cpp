@@ -19,10 +19,6 @@
 #include <wx/regex.h>
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
-#ifdef WIN32
-#include <ppl.h>
-#include <ppltasks.h>
-#endif
 
 #ifdef CUSTOM_TA 
 #include "ittnotify.h"
@@ -330,9 +326,9 @@ int FindOffsetForNewSub(simple_buffer<simple_buffer<u8>*> &ImForward, simple_buf
 	return offset;
 }
 
-inline custom_task TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u16> &ImY, simple_buffer<u8>* pImLab, int w, int h, int W, int H, int &res)
+inline shared_custom_task TaskConvertImage(int fn, my_event &evt_rgb, my_event &evt, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, simple_buffer<u16> &ImY, simple_buffer<u8>* pImLab, int w, int h, int W, int H, int &res)
 {
-	return create_custom_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, pImLab, w, h, W, H, &res]
+	return shared_custom_task([fn, &evt_rgb, &evt, &ImBGR, &ImF, &ImNE, &ImY, pImLab, w, h, W, H, &res]
 	{		
 		evt_rgb.wait();
 
@@ -441,11 +437,11 @@ class RunSearch
 	custom_buffer<simple_buffer<u16>> m_ImYInt;
 	simple_buffer<simple_buffer<u16>*> m_pImYInt;
 
-	vector<custom_task> m_thrs_one_step;
-	vector<custom_task> m_thrs_rgb;
-	vector<custom_task> m_thrs;
-	vector<custom_task> m_thrs_int;
-	vector<custom_task> m_thrs_save_images;
+	vector<shared_custom_task> m_thrs_one_step;
+	vector<shared_custom_task> m_thrs_rgb;
+	vector<shared_custom_task> m_thrs;
+	vector<shared_custom_task> m_thrs_int;
+	vector<shared_custom_task> m_thrs_save_images;
 
 	vector<my_event> m_events_one_step; // events for one step done
 	simple_buffer<my_event*> m_p_events_one_step;
@@ -576,16 +572,16 @@ public:
 			}
 		}
 
-		m_thrs_one_step = vector<custom_task>(m_N, create_custom_task([] {}));
+		m_thrs_one_step = vector<shared_custom_task>(m_N, shared_custom_task([] {}));
 		wait_all(begin(m_thrs_one_step), end(m_thrs_one_step));
 
-		m_thrs_rgb = vector<custom_task>(m_N, create_custom_task([] {}));
+		m_thrs_rgb = vector<shared_custom_task>(m_N, shared_custom_task([] {}));
 		wait_all(begin(m_thrs_rgb), end(m_thrs_rgb));
 
-		m_thrs = vector<custom_task>(m_N, create_custom_task([] {}));
+		m_thrs = vector<shared_custom_task>(m_N, shared_custom_task([] {}));
 		wait_all(begin(m_thrs), end(m_thrs));
 
-		m_thrs_int = vector<custom_task>(m_threads, create_custom_task([] {}));
+		m_thrs_int = vector<shared_custom_task>(m_threads, shared_custom_task([] {}));
 		wait_all(begin(m_thrs_int), end(m_thrs_int));
 	}
 
@@ -610,7 +606,7 @@ public:
 		int ymax = m_ymax;
 		bool convert_to_lab = m_convert_to_lab;
 
-		m_thrs_save_images.emplace_back(create_custom_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
+		m_thrs_save_images.emplace_back(shared_custom_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
 					{
 						simple_buffer<u8> ImTMP_BGR(W * H * 3);
 						ImBGRToNativeSize(ImBGR, ImTMP_BGR, w, h, W, H, xmin, xmax, ymin, ymax);
@@ -698,7 +694,7 @@ public:
 				}
 			}
 
-			m_thrs_one_step[j] = create_custom_task([fn, fdn, num, pPos, pFrameData, pV, p_events_one_step, need_to_get]() mutable
+			m_thrs_one_step[j] = shared_custom_task([fn, fdn, num, pPos, pFrameData, pV, p_events_one_step, need_to_get]() mutable
 			{
 				for (int i = 0; i < num; i++)
 				{
@@ -725,7 +721,7 @@ public:
 				}
 			});
 
-			m_thrs_rgb[j] = create_custom_task([fn, fdn, num, pFrameData, pImBGR, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
+			m_thrs_rgb[j] = shared_custom_task([fn, fdn, num, pFrameData, pImBGR, pV, xmin, xmax, ymin, ymax, p_events_one_step, p_events_rgb, need_to_get]() mutable
 				{
 					for (int i = 0; i < num; i++)
 					{
@@ -799,7 +795,7 @@ public:
 			int h = m_h;
 			int DL = g_DL;
 
-			m_thrs_int[fdn] = create_custom_task([pthrs_int_res, fn, fn_start, fdn, pIm, pImY, p_events, pthrs_res, pImInt, pImYInt, threads, w, h, DL]() mutable
+			m_thrs_int[fdn] = shared_custom_task([pthrs_int_res, fn, fn_start, fdn, pIm, pImY, p_events, pthrs_res, pImInt, pImYInt, threads, w, h, DL]() mutable
 			{
 				int bln = 1;
 				bool need_to_skip = false;

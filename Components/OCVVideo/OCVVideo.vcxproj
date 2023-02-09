@@ -130,7 +130,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\Include;$(OPENCV_PATH_X64)\builds\Win64\install\include;$(WX_WIDGETS_PATH)\lib\vc_lib\mswud;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include;$(OPENCV_BUILD_PATH_X64)\install\include;$(WX_WIDGETS_PATH)\lib\vc_lib\mswud;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINX86;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -147,7 +147,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\Include;$(OPENCV_PATH_X64)\builds\Win64\install\include;$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswud;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include;$(OPENCV_BUILD_PATH_X64)\install\include;$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswud;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -166,7 +166,7 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\Include;$(OPENCV_PATH_X64)\builds\Win64\install\include;$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include;$(OPENCV_BUILD_PATH_X64)\install\include;$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINX86;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader />
@@ -183,7 +183,7 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\Include;$(OPENCV_PATH_X64)\builds\Win64\install\include;$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include;$(OPENCV_BUILD_PATH_X64)\install\include;$(WX_WIDGETS_PATH)\lib\vc_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINX86;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -202,7 +202,7 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\Include;$(OPENCV_PATH_X64)\builds\Win64\install\include;$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include;$(OPENCV_BUILD_PATH_X64)\install\include;$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -221,7 +221,7 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\Include;$(OPENCV_PATH_X64)\builds\Win64\install\include;$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Include;$(OPENCV_BUILD_PATH_X64)\install\include;$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswu;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>

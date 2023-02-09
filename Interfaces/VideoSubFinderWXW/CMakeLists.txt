@@ -3,7 +3,11 @@ file(GLOB VideoSubFinderWXW_src
      "*.cpp"
 )
 
-add_executable(VideoSubFinderWXW ${VideoSubFinderWXW_src})
+if (WIN32)
+	add_executable(VideoSubFinderWXW WIN32 ${VideoSubFinderWXW_src} VideoSubFinderWXW.rc)
+else()
+	add_executable(VideoSubFinderWXW ${VideoSubFinderWXW_src})
+endif (WIN32)
 
 target_compile_features(VideoSubFinderWXW PUBLIC cxx_std_17)
 
@@ -18,11 +22,7 @@ target_include_directories(VideoSubFinderWXW PUBLIC
 
 if (WIN32)
 	target_link_directories(VideoSubFinderWXW  PUBLIC
-		"$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib"
-		"$ENV{OPENCV_PATH_X64}/builds/Win64/lib/Release"
-		"$ENV{CUDA_TOOLKIT_PATH}/lib/x64"
-		"$ENV{FFMPEG_PATH_X64}/lib"
-		"../../Components/CUDAKernels/x64/Release"
+		${VideoSubFinderWXW_LINK_DIRS}
 	)
 
 	target_link_libraries(VideoSubFinderWXW PUBLIC
@@ -46,9 +46,6 @@ if (WIN32)
 		rpcrt4.lib
 		wsock32.lib
 		odbc32.lib
-		cudart.lib
-		nppicc.lib
-		nppig.lib
 		vfw32.lib
 		avdevice.lib
 		avformat.lib
@@ -56,9 +53,9 @@ if (WIN32)
 		avcodec.lib
 		swresample.lib
 		swscale.lib
-		avutil.lib
-		opencv_world470.lib
-	)
+		avutil.lib		
+		${OpenCV_LIBS}
+	)	
 else()
 	target_compile_definitions(VideoSubFinderWXW PUBLIC
 		${wxWidgets_DEFINITIONS}

@@ -123,15 +123,15 @@ void test2()
 void test3()
 {
 	int N = 64;
-	vector<custom_task> thrs;
-	thrs = vector<custom_task>(N, create_custom_task([] {}));
+	vector<shared_custom_task> thrs;
+	thrs = vector<shared_custom_task>(N, shared_custom_task([] {}));
 	wait_all(begin(thrs), end(thrs));
 
 	simple_buffer<u32> Im1(1920 * 1080, 1);
 	simple_buffer<u32> Im2(1920 * 1080, 2);
 
-	thrs[0] = create_custom_task([&] { test_func_fast(Im1); });
-	thrs[1] = create_custom_task([&] { test_func_fast(Im2); });
+	thrs[0] = shared_custom_task([&] { test_func_fast(Im1); });
+	thrs[1] = shared_custom_task([&] { test_func_fast(Im2); });
 
 	wait_all(begin(thrs), end(thrs));
 

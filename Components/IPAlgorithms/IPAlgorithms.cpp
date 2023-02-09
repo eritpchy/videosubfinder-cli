@@ -25,10 +25,6 @@
 #ifdef USE_CUDA
 #include "cuda_kernels.h"
 #endif
-#ifdef WIN32
-#include <ppl.h>
-#include <ppltasks.h>
-#endif
 
 using namespace std;
 
@@ -6411,9 +6407,9 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 	}
 }
 
-inline custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
+inline shared_custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
 {	
-	return create_custom_task([&res, &ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
+	return shared_custom_task([&res, &ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
 			FindText(res, ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 		}
 	);
@@ -6589,7 +6585,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	if (g_show_results)	SaveBGRImageWithLinesInfo(ImBGR, "/TestImages/FindTextLines_01_6_ImBGRWithLinesInfo" + g_im_save_format, LLB, LLE, N, w_orig, h_orig);
 
 #ifndef WINX86
-	vector<custom_task> FindTextTasks;
+	vector<shared_custom_task> FindTextTasks;
 	vector<FindTextRes*> FindTextTasksRes(N);
 
 	for (k = 0; k < N; k++)

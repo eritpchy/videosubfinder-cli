@@ -27,10 +27,6 @@
 #include <wx/regex.h>
 #include <wx/sound.h>
 #include <wx/rawbmp.h>
-#ifdef WIN32
-#include <ppl.h>
-#include <ppltasks.h>
-#endif
 
 using namespace std;
 
@@ -1181,16 +1177,6 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 
 void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, simple_buffer<u8>* pImNF, simple_buffer<u8>* pImNE, simple_buffer<u8>* pImIL)
 {
-#ifdef WIN32
-	__try
-	{		
-		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
-	}
-	__except (exception_filter(GetExceptionCode(), GetExceptionInformation(), "got error in FindTextLinesWithExcFilter:FindTextLines()"))
-	{
-		res->m_res = -1;
-	}
-#else
 	try
 	{
 		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
@@ -1200,7 +1186,6 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, 
 		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLinesWithExcFilter:FindTextLines()") + wxString(e.what()));
 		res->m_res = -1;
 	}
-#endif
 }
 
 void FindTextLines(wxString FileName, FindTextLinesRes& res)
@@ -1387,9 +1372,9 @@ struct find_text_queue_data
 	bool m_is_end = false;
 };
 
-custom_task TaskFindTextLines(threadsafe_queue<find_text_queue_data> &task_queue)
+shared_custom_task TaskFindTextLines(threadsafe_queue<find_text_queue_data> &task_queue)
 {
-	return create_custom_task([&task_queue] {
+	return shared_custom_task([&task_queue] {
 			find_text_queue_data text_queue_data;
 
 			while (1)
@@ -1602,10 +1587,6 @@ void *ThreadCreateClearedTextImages::Entry()
 #endif
 	}
 
-#ifdef WINX86
-	// Create a scheduler policy that allows up to g_ocr_threads simultaneous tasks.
-	concurrency::CurrentScheduler::Create(concurrency::SchedulerPolicy(2, Concurrency::MinConcurrency, 1, Concurrency::MaxConcurrency, g_ocr_threads));
-#endif
 
 	wxString Str, dStr;
 	wxString fname;
@@ -1634,7 +1615,7 @@ void *ThreadCreateClearedTextImages::Entry()
 		threadsafe_queue<find_text_queue_data> task_queue;
 		simple_buffer<FindTextLinesRes*> task_results(NImages);
 		simple_buffer<my_event*> task_events(NImages);
-		vector<custom_task> tasks(g_ocr_threads, create_custom_task([] {}));
+		vector<shared_custom_task> tasks(g_ocr_threads, shared_custom_task([] {}));
 		wait_all(begin(tasks), end(tasks));		
 
 		for (k = 0; k < NImages; k++)
