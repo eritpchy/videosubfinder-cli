@@ -153,7 +153,7 @@ https://www.intel.com/content/www/us/en/developer/articles/technical/enabling-ip
 https://github.com/opencv/opencv/issues/11263
 
 Unfortunately build with Intel oneAPI compiler will lead to cmake generation and build errors.
-Tested with: -T "Intel C++ Compiler 2023", -T "Intel(R) oneAPI DPC++ Compiler 2023", CMAKE_(C/CPP)_COMPILER=icx(-cl/cc), dpcpp, -GNinja, -G"NMake Makefiles", -G "Visual Studio 15 2017 Win64"
+Tested with: -T "Intel C++ Compiler 2023", -T "Intel(R) oneAPI DPC++ Compiler 2023", CMAKE_(C/CPP)_COMPILER=icx(-cl/cc), dpcpp, -GNinja, -G"NMake Makefiles", -G "Visual Studio 17 2022"
 The main issue:
 -------------------
 -- Performing Test HAVE_CPU_SSE3_SUPPORT (check file: cmake/checks/cpu_sse3.cpp)
@@ -186,7 +186,6 @@ cmake --build . --config Release -j 16
 # start "Intel oneAPI command prompt for IA32 for Visual Studio 2022"
 cd %videosubfinder_source_root_dir%\intel_windows_build\release_x86
 # example: cd E:\Public\Programs\VideoSubFinder\src_git\videosubfinder-src\intel_windows_build\release_x86 && E: && set "WX_WIDGETS_PATH=C:\wxWidgets-3.2.1-intel" && set "VERBOSE=1"
-# set WX_WIDGETS_PATH=C:\wxWidgets-3.2.1-intel
 cmake -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icx -DCMAKE_BUILD_TYPE=Release -DWIN64=OFF -GNinja ../..
 cmake --build . --config Release -j 16
 
