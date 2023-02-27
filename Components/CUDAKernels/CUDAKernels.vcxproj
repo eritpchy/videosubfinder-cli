@@ -128,7 +128,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Runtime>MTd</Runtime>
+      <Runtime>MDd</Runtime>
       <CudaRuntime>Shared</CudaRuntime>
       <CodeGeneration>
       </CodeGeneration>
@@ -151,7 +151,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Runtime>MTd</Runtime>
+      <Runtime>MDd</Runtime>
       <CudaRuntime>Shared</CudaRuntime>
       <CodeGeneration>
       </CodeGeneration>
@@ -181,7 +181,7 @@
       <CudaRuntime>Shared</CudaRuntime>
       <CodeGeneration>
       </CodeGeneration>
-      <Runtime>MT</Runtime>
+      <Runtime>MD</Runtime>
       <Optimization>O2</Optimization>
       <AdditionalOptions>-arch=all %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
@@ -206,7 +206,7 @@
       <CudaRuntime>Shared</CudaRuntime>
       <CodeGeneration>
       </CodeGeneration>
-      <Runtime>MT</Runtime>
+      <Runtime>MD</Runtime>
       <AdditionalOptions>-arch=all %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
@@ -228,7 +228,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CudaRuntime>Shared</CudaRuntime>
-      <Runtime>MT</Runtime>
+      <Runtime>MD</Runtime>
       <HostDebugInfo>true</HostDebugInfo>
       <Defines>
       </Defines>
@@ -259,7 +259,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CudaRuntime>Shared</CudaRuntime>
-      <Runtime>MT</Runtime>
+      <Runtime>MD</Runtime>
       <HostDebugInfo>true</HostDebugInfo>
       <Defines>
       </Defines>
