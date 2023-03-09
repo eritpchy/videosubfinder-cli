@@ -68,14 +68,6 @@ public:
 	int		m_xmax = 0;
 	int		m_ymax = 0;
 
-	wxColour   m_CLDBG;
-	wxColour   m_CLSP;
-	wxColour   m_CL1;
-	wxColour   m_CL2;
-	wxColour   m_CL3;
-	wxColour   m_CL4;
-	wxColour   m_CLGG;
-
 	//HCURSOR  m_hCursor;
 
 	CSSOWnd		*m_pParent;

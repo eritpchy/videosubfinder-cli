@@ -94,9 +94,6 @@ public:
 	CVideoWindow	*m_pVBox;
 	CScrollBar		*m_pSB;
 
-	wxColour	m_VBX;
-	wxColour	m_CL1;
-	wxColour	m_CL2;
 	wxColour	m_bc;
 
 	wxImage	*m_pImage;

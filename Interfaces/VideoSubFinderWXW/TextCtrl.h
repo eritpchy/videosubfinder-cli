@@ -50,8 +50,10 @@ public:
 	void RefreshData();
 
 	void SetFont(wxFont& font);
+	void SetTextColour(wxColour& colour);
 	
 private:
-	wxFont* m_pFont;
+	wxFont* m_pFont = NULL;
+	wxColour* m_pTextColour = NULL;
 	DECLARE_EVENT_TABLE()
 };

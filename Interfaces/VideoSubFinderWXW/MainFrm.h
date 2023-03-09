@@ -35,12 +35,20 @@
 
 using namespace std;
 
+class Settings;
+
 extern bool g_playback_sound;
-extern wxCmdLineParser g_parser;
+extern wxCmdLineParser *g_pParser;
+extern Settings	g_cfg;
+extern wxString g_GeneralSettingsFileName;
 
 class CSSOWnd;
 class CVideoBox;
 class CImageBox;
+
+void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
+void LoadSettings();
+void SaveSettings();
 
 class Settings
 {
@@ -163,7 +171,108 @@ public:
 	wxString	m_label_pixel_color;
 	wxString	m_label_video_contrast;
 	wxString	m_label_video_gamma;
+	double		m_bottom_video_image_percent_end = 0;
+	double		m_top_video_image_percent_end = 1;
+	double		m_left_video_image_percent_end = 0;
+	double		m_right_video_image_percent_end = 1;
+	wxString	m_video_box_title;
+	wxString	m_image_box_title;
+	wxString	m_search_panel_title;
+	wxString	m_settings_panel_title;
+	wxString	m_ocr_panel_title;
+	wxString	m_label_begin_time;
+	wxString	m_label_end_time;
 
+	wxString	m_file_dialog_title_open_video_file;
+	wxString	m_file_dialog_title_open_video_file_wild_card;
+	wxString	m_file_dialog_title_open_settings_file;
+	wxString	m_file_dialog_title_open_settings_file_wild_card;
+	wxString	m_file_dialog_title_save_settings_file;
+	wxString	m_file_dialog_title_save_settings_file_wild_card;
+	wxString	m_file_dialog_title_save_subtitle_as;
+	wxString	m_file_dialog_title_save_subtitle_as_wild_card;
+
+	wxString	m_menu_file;
+	wxString	m_menu_edit;
+	wxString	m_menu_view;
+	wxString	m_menu_play;
+	wxString	m_menu_help;
+	wxString	m_menu_setpriority;
+	wxString	m_menu_setpriority_high;
+	wxString	m_menu_setpriority_abovenormal;
+	wxString	m_menu_setpriority_normal;
+	wxString	m_menu_setpriority_belownormal;
+	wxString	m_menu_setpriority_idle;
+	wxString	m_menu_file_open_video_opencv;
+	wxString	m_menu_file_open_video_ffmpeg;
+	wxString	m_menu_file_reopenvideo;
+	wxString	m_menu_file_openpreviousvideo;
+	wxString	m_menu_file_savesettings;
+	wxString	m_menu_file_savesettingsas;
+	wxString	m_menu_file_loadsettings;
+	wxString	m_menu_file_exit;
+	wxString	m_menu_edit_setbegintime;
+	wxString	m_menu_edit_setendtime;
+	wxString	m_menu_scale_text_size_inc;
+	wxString	m_menu_scale_text_size_dec;
+	wxString	m_menu_play_pause;
+	wxString	m_menu_play_stop;
+	wxString	m_menu_app_about;
+
+	wxString	m_help_desc_app_about;
+	wxString	m_help_desc_for_clear_dirs;
+	wxString	m_help_desc_for_run_search;
+	wxString	m_help_desc_for_create_cleared_text_images;
+	wxString	m_help_desc_for_create_empty_sub;
+	wxString	m_help_desc_for_create_sub_from_cleared_txt_images;
+	wxString	m_help_desc_for_create_sub_from_txt_results;
+	wxString	m_help_desc_for_input_video;
+	wxString	m_help_desc_for_open_video_opencv;
+	wxString	m_help_desc_for_open_video_ffmpeg;
+	wxString	m_help_desc_for_use_cuda;
+	wxString	m_help_desc_for_start_time;
+	wxString	m_help_desc_for_end_time;
+	wxString	m_help_desc_for_top_video_image_percent_end;
+	wxString	m_help_desc_for_bottom_video_image_percent_end;
+	wxString	m_help_desc_for_left_video_image_percent_end;
+	wxString	m_help_desc_for_right_video_image_percent_end;
+	wxString	m_help_desc_for_output_dir;
+	wxString	m_help_desc_for_general_settings;
+	wxString	m_help_desc_for_num_threads;
+	wxString	m_help_desc_for_num_ocr_threads;
+	wxString	m_help_desc_for_help;
+
+	wxString	m_button_clear_folders_text;
+	wxString	m_button_run_search_text;
+	wxString	m_button_test_text;
+	wxString	m_test_result_after_first_filtration_label;
+	wxString	m_test_result_after_second_filtration_label;
+	wxString	m_test_result_after_third_filtration_label;
+	wxString	m_test_result_nedges_points_image_label;
+	wxString	m_test_result_cleared_text_image_label;
+	wxString	m_grid_col_property_label;
+	wxString	m_grid_col_value_label;
+
+	wxColour	m_main_text_colour = wxColour(0, 0, 0);
+	wxColour	m_main_text_ctls_background_colour = wxColour(255, 255, 255);
+	wxColour	m_main_buttons_background_colour = wxColour(225, 225, 225);
+	wxColour	m_main_labels_background_colour = wxColour(127, 255, 0);
+	wxColour	m_main_frame_background_colour = wxColour(171, 171, 171);
+	wxColour	m_notebook_colour = wxColour(240, 240, 240);
+	wxColour	m_notebook_panels_colour = wxColour(170, 170, 170);	
+	wxColour	m_grid_line_colour = wxColour(0, 0, 0);
+	wxColour	m_grid_gropes_colour = wxColour(0, 255, 255);
+	wxColour	m_grid_sub_gropes_colour = wxColour(255, 215, 0);
+	wxColour	m_grid_debug_settings_colour = wxColour(200, 200, 200);
+	wxColour	m_test_result_label_colour = wxColour(127, 255, 212);
+	wxColour	m_video_image_box_background_colour = wxColour(125, 125, 125);
+	wxColour	m_video_image_box_border_colour = wxColour(215, 228, 242);
+	wxColour	m_video_image_box_title_colour = wxColour(255, 255, 225);
+	wxColour	m_video_box_time_colour = wxColour(0, 0, 0);
+	wxColour	m_video_box_time_text_colour = wxColour(255, 255, 255);
+	wxColour	m_video_box_separating_line_colour = wxColour(255, 255, 255);
+	wxColour	m_video_box_separating_line_border_colour = wxColour(0, 0, 0);	
+	wxColour	m_toolbar_bitmaps_border_colour = wxColour(192, 192, 192);
 };
 
 class CMainFrame : public wxFrame
@@ -212,7 +321,6 @@ public:
 	s64			m_BegTime;
 	s64			m_EndTime;
 
-	wxString		m_GeneralSettingsFileName;
 	wxString		m_ErrorFileName;	
 
 	bool		m_blnReopenVideo;
@@ -220,15 +328,10 @@ public:
 	int			m_type;
 
 	bool		m_blnOpenVideoThreadStateFlag;
-	bool		m_blnOpenVideoResult;
-
-	Settings	m_cfg;
+	bool		m_blnOpenVideoResult;	
 
 	wxFont    m_BTNFont;
-	wxFont    m_LBLFont;
-
-	std::map<wxString, wxString> m_general_settings;
-	std::map<wxString, wxString> m_locale_settings;
+	wxFont    m_LBLFont;	
 
 	std::mutex m_mutex;
 
@@ -236,8 +339,6 @@ public:
 	void Init();
 
 	void PauseVideo();
-	void LoadSettings();
-	void SaveSettings();
 	void SaveError(wxString error);
 	void OnFileOpenVideo(int type);
 	void ClearDir(wxString DirName);
@@ -267,13 +368,15 @@ public:
 	void OnQuit(wxCommandEvent& event);
 	void OnFileOpenPreviousVideo(wxCommandEvent& event);
 	void OnAppAbout(wxCommandEvent& event);
+	void OnScaleTextSizeInc(wxCommandEvent& event);
+	void OnScaleTextSizeDec(wxCommandEvent& event);
+	void ScaleTextSize(int dsize);
 	void OnSetPriorityIdle(wxCommandEvent& event);
 	void OnSetPriorityNormal(wxCommandEvent& event);
 	void OnSetPriorityBelownormal(wxCommandEvent& event);
 	void OnSetPriorityAbovenormal(wxCommandEvent& event);
 	void OnSetPriorityHigh(wxCommandEvent& event);
-	wxString ConvertTime(u64 total_milliseconds);
-	void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
+	wxString ConvertTime(u64 total_milliseconds);	
 	void ShowErrorMessage(wxString msg);
 	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
 
@@ -284,18 +387,23 @@ private:
 class MyMessageBox : public wxDialog
 {
 public:
-	MyMessageBox(wxWindow *parent, const wxString& message, const wxString& caption,
+	CMainFrame* m_pMF;
+	wxTextCtrl* m_pDialogText;
+
+	MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
 		const wxPoint& pos = wxDefaultPosition,
-		const wxSize& size = wxDefaultSize) : wxDialog(parent, -1, caption, pos, size)
+		const wxSize& size = wxDefaultSize) : wxDialog(pMF, -1, caption, pos, size)
 	{
-		dialogText = new wxTextCtrl(this, -1, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
+		m_pMF = pMF;
+		m_pDialogText = new wxTextCtrl(this, -1, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
+		m_pDialogText->SetFont(m_pMF->m_LBLFont);
+		m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
+		m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 	}
 
 	~MyMessageBox()
 	{
-	}
-
-	wxTextCtrl * dialogText;
+	}	
 };
 
 wxString ConvertVideoTime(s64 pos);
@@ -307,15 +415,17 @@ void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, double val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name);
 void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name);
+void WriteProperty(wxTextOutputStream& fout, wxColour val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, wxArrayString& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, wxColour& val, wxString Name);
 
 bool IsMMX_and_SSE();
 bool IsSSE2();
 
-void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColor& BColor);
+void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColour& BColor);
 
 extern CMainFrame *g_pMF;

@@ -339,15 +339,20 @@ cd $videosubfinder_source_root_dir
 mkdir -p linux_build
 cd linux_build
 
-# for build with CUDA support in Visual Studio Code :
-cd $videosubfinder_source_root_dir
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-12.0/lib64:/usr/local/cuda-12.0/extras/CUPTI/lib64 PATH=$PATH:/usr/local/cuda-12.0/bin code .
-
 # for build with CUDA support in terminal:
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-12.0/lib64:/usr/local/cuda-12.0/extras/CUPTI/lib64 export PATH=$PATH:/usr/local/cuda-12.0/bin
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cd $videosubfinder_source_root_dir/linux_build
+CUDA_TOOLKIT_PATH=/usr/local/cuda-12.0 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TOOLKIT_PATH/lib64:$CUDA_TOOLKIT_PATH/extras/CUPTI/lib64 PATH=$PATH:$CUDA_TOOLKIT_PATH/bin cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build . --config Release -j 16
 
 # for build without CUDA support in terminal:
+cd $videosubfinder_source_root_dir/linux_build
 cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF ..
 cmake --build . --config Release -j 16
+
+# for build with CUDA support in Visual Studio Code :
+cd $videosubfinder_source_root_dir
+CUDA_TOOLKIT_PATH=/usr/local/cuda-12.0 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TOOLKIT_PATH/lib64:$CUDA_TOOLKIT_PATH/extras/CUPTI/lib64 PATH=$PATH:$CUDA_TOOLKIT_PATH/bin code .
+# Select compiler in the bottom: GCC 9.4.0
+# Select CMake target in the bottom: [Release]
+# Press "Build" in the bottom
+

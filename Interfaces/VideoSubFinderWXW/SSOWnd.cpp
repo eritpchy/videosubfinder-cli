@@ -19,6 +19,30 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+CTabArt::CTabArt(CMainFrame* pMF) : wxAuiGenericTabArt()
+{
+	m_pMF = pMF;
+}
+
+void CTabArt::DrawTab(wxDC& dc,
+	wxWindow* wnd,
+	const wxAuiNotebookPage& pane,
+	const wxRect& inRect,
+	int closeButtonState,
+	wxRect* outTabRect,
+	wxRect* outButtonRect,
+	int* xExtent)
+{	
+	SetColour(g_cfg.m_notebook_colour);
+	SetActiveColour(g_cfg.m_notebook_colour);
+	SetNormalFont(m_pMF->m_LBLFont);
+	SetSelectedFont(m_pMF->m_LBLFont);
+	SetMeasuringFont(m_pMF->m_LBLFont);
+	wxAuiGenericTabArt::DrawTab(dc, wnd, pane, inRect, closeButtonState, outTabRect, outButtonRect, xExtent);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 CSSOWnd::CSSOWnd(CMainFrame* pMF)
 		: wxAuiNotebook(pMF, wxID_ANY, wxDefaultPosition, wxSize(400, 300), 
 		               wxAUI_NB_TOP | wxAUI_NB_TAB_SPLIT | wxAUI_NB_TAB_MOVE | 
@@ -26,6 +50,7 @@ CSSOWnd::CSSOWnd(CMainFrame* pMF)
 {
 	m_pMF = pMF;
 	m_WasInited = false;
+	m_pTabArt = NULL;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -41,6 +66,11 @@ void CSSOWnd::Init()
 	wxString strPClass;
 
 	SaveToReportLog("CSSOWnd::Init(): starting...\n");
+
+	SetBackgroundColour(g_cfg.m_notebook_colour);
+
+	m_pTabArt = new CTabArt(m_pMF);
+	SetArtProvider(m_pTabArt);
 
 	SaveToReportLog("CSSOWnd::Init(): new CSearchPanel(this)...\n");
 	m_pSHPanel = new CSearchPanel(this);
@@ -59,12 +89,9 @@ void CSSOWnd::Init()
 
 	SaveToReportLog("CSSOWnd::Init(): AddPage's...\n");
 
-	this->AddPage(m_pSHPanel, wxT("Search"), false, page_bmp );
-	this->AddPage(m_pSSPanel, wxT("Settings"), false, page_bmp );
-	this->AddPage(m_pOCRPanel, wxT("OCR"), false, page_bmp );
-
-	this->SetFont(m_pMF->m_LBLFont);
-	GetActiveTabCtrl()->SetFont(m_pMF->m_LBLFont);
+	this->AddPage(m_pSHPanel, g_cfg.m_search_panel_title, false, page_bmp );
+	this->AddPage(m_pSSPanel, g_cfg.m_settings_panel_title, false, page_bmp );
+	this->AddPage(m_pOCRPanel, g_cfg.m_ocr_panel_title, false, page_bmp );
 
 	m_WasInited = true;
 
@@ -73,6 +100,4 @@ void CSSOWnd::Init()
 
 void CSSOWnd::RefreshData()
 {
-	this->SetFont(m_pMF->m_LBLFont);
-	GetActiveTabCtrl()->SetFont(m_pMF->m_LBLFont);
 }

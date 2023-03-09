@@ -27,7 +27,7 @@
 class CSeparatingLine : public wxWindow
 {
 public:
-	CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxWindowID id = wxID_ANY);
+	CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxColour main_colour, 	wxColour border_colour,	wxWindowID id = wxID_ANY);
 	~CSeparatingLine();
 
 	int m_w;
@@ -50,6 +50,8 @@ public:
 
 	wxWindow* m_pParent;
 	wxRegion m_rgn;
+	wxColour m_main_colour;
+	wxColour m_border_colour;
 
 	bool	m_bDown;
 

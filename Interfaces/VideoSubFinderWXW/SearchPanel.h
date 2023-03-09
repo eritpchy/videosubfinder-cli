@@ -54,10 +54,6 @@ public:
 	CStaticText  *m_plblBT2;
 	CTextCtrl  *m_plblBTA2;
 	
-	wxColour   m_CLP;
-	wxColour   m_CL1;
-	wxColour   m_CL2;
-
 	CSSOWnd		*m_pParent;
 
 	CMainFrame	*m_pMF;

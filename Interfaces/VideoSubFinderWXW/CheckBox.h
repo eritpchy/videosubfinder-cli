@@ -38,9 +38,9 @@ public:
 	void OnSize(wxSizeEvent& event);
 	void OnCheckBoxEvent(wxCommandEvent& evt);
 	void SetFont(wxFont& font);
+	void SetTextColour(wxColour& colour);
 	void SetLabel(const wxString& label);
-	bool SetBackgroundColour(const wxColour& colour);
-	void SetTextColour(const wxColour& colour);
+	bool SetBackgroundColour(const wxColour& colour);	
 	void RefreshData();
 	
 	wxWindow*		m_pParent;
@@ -51,6 +51,7 @@ public:
 	int				m_cb_offset = 2;
 
 private:
-	wxFont* m_pFont;
+	wxFont* m_pFont = NULL;
+	wxColour* m_pTextColour = NULL;
 	DECLARE_EVENT_TABLE()
 };

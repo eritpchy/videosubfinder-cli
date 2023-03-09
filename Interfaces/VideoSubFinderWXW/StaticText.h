@@ -37,13 +37,14 @@ public:
 
 public:
 	void SetFont(wxFont& font);
+	void SetTextColour(wxColour& colour);
 	void SetLabel(const wxString& label);
-	bool SetBackgroundColour(const wxColour& colour);
-	void SetTextColour(const wxColour& colour);
+	bool SetBackgroundColour(const wxColour& colour);	
 	void OnSize(wxSizeEvent& event);
 	void RefreshData();
 
 private:
-	wxFont *m_pFont;
+	wxFont *m_pFont = NULL;
+	wxColour* m_pTextColour = NULL;
 	DECLARE_EVENT_TABLE()
 };

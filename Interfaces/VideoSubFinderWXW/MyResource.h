@@ -174,5 +174,7 @@
 #define _APS_NEXT_SYMED_VALUE           63
 #define TIMER_ID						64
 #define TIMER_ID_VB						65
+#define ID_SCALE_TEXT_SIZE_INC			66
+#define ID_SCALE_TEXT_SIZE_DEC			67
 
 

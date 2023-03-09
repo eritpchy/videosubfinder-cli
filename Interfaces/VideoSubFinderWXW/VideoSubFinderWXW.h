@@ -20,7 +20,7 @@
 #include "DataTypes.h"
 #include "MainFrm.h"
 
-class CVideoSubFinderApp : public wxApp 
+class CVideoSubFinderApp : public wxApp
 {
 public:
 	~CVideoSubFinderApp();

@@ -45,10 +45,6 @@ void CSearchPanel::Init()
 {
 	SaveToReportLog("CSearchPanel::Init(): starting...\n");
 
-	m_CLP = wxColour(125,125,125);
-	m_CL1 = wxColour(255, 215, 0);
-	m_CL2 = wxColour(127, 255, 0);
-	
 	wxRect rcP1, rcClP1, rcBT1, rcBTA1, rcBT2, rcBTA2, rcClear, rcRun;
 
 	rcBT1.x = 20;
@@ -92,11 +88,11 @@ void CSearchPanel::Init()
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
 
-	m_plblBT1 = new CStaticText( m_pP1, wxID_ANY, wxT("Begin Time:"));
+	m_plblBT1 = new CStaticText( m_pP1, wxID_ANY, g_cfg.m_label_begin_time);
 	m_plblBT1->SetSize(rcBT1);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
-	m_plblBT2 = new CStaticText( m_pP1, wxID_ANY, wxT("End Time:"));
+	m_plblBT2 = new CStaticText( m_pP1, wxID_ANY, g_cfg.m_label_end_time);
 	m_plblBT2->SetSize(rcBT2);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
@@ -109,17 +105,19 @@ void CSearchPanel::Init()
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
 	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR,
-		wxT("Clear Folders"), rcClear.GetPosition(), rcClear.GetSize() );
+		g_cfg.m_button_clear_folders_text, rcClear.GetPosition(), rcClear.GetSize() );
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
 	m_pRun = new CButton( m_pP1, ID_BTN_RUN,
-		wxT("Run Search"), rcRun.GetPosition(), rcRun.GetSize() );
+		g_cfg.m_button_run_search_text, rcRun.GetPosition(), rcRun.GetSize() );
 	
-	m_pP1->SetBackgroundColour( m_CLP );
-	m_plblBT1->SetBackgroundColour( m_CL2 );
-	m_plblBT2->SetBackgroundColour( m_CL2 );
-	m_plblBTA1->SetBackgroundColour( m_CL1 );
-	m_plblBTA2->SetBackgroundColour( m_CL1 );
+	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+	m_plblBT1->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+	m_plblBT2->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+	m_plblBTA1->SetBackgroundColour( g_cfg.m_main_text_ctls_background_colour );
+	m_plblBTA2->SetBackgroundColour( g_cfg.m_main_text_ctls_background_colour );
+	m_pClear->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
+	m_pRun->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	m_plblBT1->SetFont(m_pMF->m_LBLFont);
 	m_plblBT2->SetFont(m_pMF->m_LBLFont);
@@ -127,6 +125,13 @@ void CSearchPanel::Init()
 	m_plblBTA2->SetFont(m_pMF->m_LBLFont);
 	m_pClear->SetFont(m_pMF->m_BTNFont);
 	m_pRun->SetFont(m_pMF->m_BTNFont);
+
+	m_plblBT1->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblBT2->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblBTA1->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblBTA2->SetTextColour(g_cfg.m_main_text_colour);
+	m_pClear->SetTextColour(g_cfg.m_main_text_colour);
+	m_pRun->SetTextColour(g_cfg.m_main_text_colour);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 
@@ -176,8 +181,8 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		if (m_pMF->m_pVideo->SetNullRender())
 		{
 			m_pClear->Disable();
-			m_plblBTA1->Disable();
-			m_plblBTA2->Disable();
+			m_plblBTA1->SetEditable(false);
+			m_plblBTA2->SetEditable(false);
 			g_color_ranges = GetColorRanges(g_use_filter_color);
 			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
@@ -238,6 +243,7 @@ void *ThreadSearchSubtitles::Entry()
 	
 	if (!(g_pMF->m_blnNoGUI))
 	{
+		SaveToReportLog("ThreadSearchSubtitles::Entry: wxPostEvent THREAD_SEARCH_SUBTITLES_END ...\n");
 		wxCommandEvent event(THREAD_SEARCH_SUBTITLES_END); // No specific id
 		wxPostEvent(g_pMF->m_pPanel->m_pSHPanel, event);
 	}
@@ -299,25 +305,14 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 		}
 		else if ((g_RunSubSearch == 1) && g_playback_sound)
 		{
+			SaveToReportLog("ThreadSearchSubtitlesEnd: trying to play sound ...\n");
 			wxString Str = g_app_dir + wxT("/finished.wav");
-#ifdef WIN32
-			if (wxFileExists(Str))
-			{
-				wxSound sound(Str);
-				if (sound.IsOk())
-				{
-					sound.Play();
-				}
-			}
-#else
-			// Unfortunately wxWidgets doesn't play sound
-			system(wxString::Format(wxT("canberra-gtk-play -f \"%s\""), Str).c_str());
-#endif
+			PlaySound(Str);
 		}
 
 		m_pClear->Enable();
-		m_plblBTA1->Enable();
-		m_plblBTA2->Enable();
+		m_plblBTA1->SetEditable(true);
+		m_plblBTA2->SetEditable(true);
 		m_pRun->Enable();
 	}
 

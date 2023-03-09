@@ -32,6 +32,7 @@ public:
 
 	void RefreshData();
 	void SetFont(wxFont& font);
+	void SetTextColour(const wxColour& colour);
 	
 private:
 	wxFont* m_pFont;

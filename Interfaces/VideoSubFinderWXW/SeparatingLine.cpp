@@ -25,13 +25,15 @@ BEGIN_EVENT_TABLE(CSeparatingLine, wxWindow)
 	EVT_MOUSE_CAPTURE_LOST(CSeparatingLine::OnMouseCaptureLost)
 END_EVENT_TABLE()
 
-CSeparatingLine::CSeparatingLine(wxWindow *parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxWindowID id)
+CSeparatingLine::CSeparatingLine(wxWindow* parent, int w, int h, int sw, int sh, int minpos, int maxpos, int offset, int orientation, wxColour main_colour, wxColour border_colour, wxWindowID id)
 		: wxWindow( parent, id, wxDefaultPosition, wxDefaultSize,
 							wxTRANSPARENT_WINDOW | wxWANTS_CHARS
 							)
 {
 	m_bDown = false;
 	m_pParent = parent;
+	m_main_colour = main_colour;
+	m_border_colour = border_colour;
 
 	m_w = w;
 	m_h = h;
@@ -350,17 +352,17 @@ void CSeparatingLine::OnPaint(wxPaintEvent& WXUNUSED(event))
 
 	this->GetClientSize(&w, &h);
 
-	wxBrush blackBrush( wxColour(0, 0, 0) );
-	wxBrush whiteBrush( wxColour(255, 255, 255) );
+	wxBrush borderBrush(m_border_colour);
+	wxBrush mainBrush(m_main_colour);
 
 	dc.SetBackgroundMode(wxTRANSPARENT);
 	dc.DestroyClippingRegion();
 	dc.SetClippingRegion(m_rgn);
 
-	dc.SetBrush(blackBrush);
+	dc.SetBrush(borderBrush);
 	dc.DrawRectangle(0, 0, w, h);
 
-	dc.SetBrush(whiteBrush);
+	dc.SetBrush(mainBrush);
 	if (m_orientation == 0)
 	{
 		dc.DrawRectangle(m_sw, m_sh, m_w, m_h);
@@ -381,17 +383,17 @@ void CSeparatingLine::OnEraseBackground(wxEraseEvent &event)
 
 	this->GetClientSize(&w, &h);
 
-	wxBrush blackBrush( wxColour(0, 0, 0) );
-	wxBrush whiteBrush( wxColour(255, 255, 255) );
+	wxBrush borderBrush(m_border_colour);
+	wxBrush mainBrush(m_main_colour);
 
 	pdc->SetBackgroundMode(wxTRANSPARENT);
 	pdc->DestroyClippingRegion();
 	pdc->SetClippingRegion(m_rgn);
 
-	pdc->SetBrush(blackBrush);
+	pdc->SetBrush(borderBrush);
 	pdc->DrawRectangle(0, 0, w, h);
 
-	pdc->SetBrush(whiteBrush);
+	pdc->SetBrush(mainBrush);
 	if (m_orientation == 0)
 	{
 		pdc->DrawRectangle(m_sw, m_sh, m_w, m_h);

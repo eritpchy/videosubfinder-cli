@@ -33,7 +33,6 @@ CCheckBox::CCheckBox(wxWindow* parent,
 {
 	m_pParent = parent;
 	m_p_val = p_val;
-	m_pFont = NULL;
 
 	m_text_style = text_style;
 	m_check_box_style = check_box_style;
@@ -53,10 +52,16 @@ void CCheckBox::SetFont(wxFont& font)
 	OnSize(event);
 }
 
+void CCheckBox::SetTextColour(wxColour& colour)
+{
+	m_pTextColour = &colour;
+	wxSizeEvent event;
+	OnSize(event);
+}
+
 void CCheckBox::SetLabel(const wxString& label)
 {
 	m_pST->SetLabel(label);
-
 	wxSizeEvent event;
 	OnSize(event);
 }
@@ -65,11 +70,6 @@ bool CCheckBox::SetBackgroundColour(const wxColour& colour)
 {
 	return (wxPanel::SetBackgroundColour(colour) &&
 		m_pST->SetBackgroundColour(colour));
-}
-
-void CCheckBox::SetTextColour(const wxColour& colour)
-{
-	m_pST->SetForegroundColour(colour);
 }
 
 void CCheckBox::RefreshData()
@@ -96,6 +96,7 @@ void CCheckBox::OnSize(wxSizeEvent& event)
 	int w, h, stw, sth, cbw, cbh, x, y, stp_beg_x, stp_end_x, stp_w, cb_x, cb_y = m_cb_offset;
 
 	if (m_pFont) m_pST->SetFont(*m_pFont);	
+	if (m_pTextColour) m_pST->SetForegroundColour(*m_pTextColour);
 
 	this->GetClientSize(&w, &h);
 	m_pST->GetSize(&stw, &sth);

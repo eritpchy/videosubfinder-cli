@@ -35,6 +35,11 @@ void CButton::SetFont(wxFont& font)
 	wxButton::SetFont(*m_pFont);
 }
 
+void CButton::SetTextColour(const wxColour& colour)
+{
+	wxButton::SetForegroundColour(colour);
+}
+
 void CButton::RefreshData()
 {
 	if (m_pFont) wxButton::SetFont(*m_pFont);

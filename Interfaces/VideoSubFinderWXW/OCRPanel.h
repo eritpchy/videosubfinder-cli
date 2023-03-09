@@ -190,9 +190,6 @@ public:
 	CButton	 *m_pCSTXT;
 	wxPanel		 *m_pP3;
 
-	wxColour   m_CLOCR;
-	wxColour   m_CL1;
-
 	CSSOWnd		*m_pParent;
 	CMainFrame	*m_pMF;
 

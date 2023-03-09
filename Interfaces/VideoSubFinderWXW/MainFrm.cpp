@@ -26,6 +26,9 @@
 CMainFrame *g_pMF;
 
 bool g_playback_sound = false;
+Settings g_cfg;
+std::map<wxString, wxString> g_general_settings;
+std::map<wxString, wxString> g_locale_settings;
 
 // const DWORD _MMX_FEATURE_BIT = 0x00800000;
 // const DWORD _SSE2_FEATURE_BIT = 0x04000000;
@@ -197,6 +200,8 @@ BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
 	EVT_MENU(ID_FILE_EXIT, CMainFrame::OnQuit)
 	EVT_MENU(ID_FILE_OPENPREVIOUSVIDEO, CMainFrame::OnFileOpenPreviousVideo)
 	EVT_MENU(ID_APP_ABOUT, CMainFrame::OnAppAbout)
+	EVT_MENU(ID_SCALE_TEXT_SIZE_INC, CMainFrame::OnScaleTextSizeInc)
+	EVT_MENU(ID_SCALE_TEXT_SIZE_DEC, CMainFrame::OnScaleTextSizeDec)
 	EVT_MENU(ID_SETPRIORITY_IDLE, CMainFrame::OnSetPriorityIdle)
 	EVT_MENU(ID_SETPRIORITY_NORMAL, CMainFrame::OnSetPriorityNormal)
 	EVT_MENU(ID_SETPRIORITY_BELOWNORMAL, CMainFrame::OnSetPriorityBelownormal)
@@ -244,8 +249,6 @@ CMainFrame::CMainFrame(const wxString& title)
 	m_dt = 0;
 
 	m_type = 0;
-
-	m_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
 }
 
 CMainFrame::~CMainFrame()
@@ -259,6 +262,9 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): starting...\n");
 
 	m_blnNoGUI = false;
+
+	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
+	LoadSettings();
 
 	wxMenuBar *pMenuBar = new wxMenuBar;	
 
@@ -276,79 +282,81 @@ void CMainFrame::Init()
 	cnt = pMenuBar->GetMenuCount();
 
 	wxMenu *pMenu5 = new wxMenu;
-	pMenu5->Append(ID_SETPRIORITY_HIGH, _T("HIGH"), _T(""), wxITEM_CHECK);
-	pMenu5->Append(ID_SETPRIORITY_ABOVENORMAL, _T("ABOVE NORMAL"), _T(""), wxITEM_CHECK);
-	pMenu5->Append(ID_SETPRIORITY_NORMAL, _T("NORMAL"), _T(""), wxITEM_CHECK);
-	pMenu5->Append(ID_SETPRIORITY_BELOWNORMAL, _T("BELOW NORMAL"), _T(""), wxITEM_CHECK);
-	pMenu5->Append(ID_SETPRIORITY_IDLE, _T("IDLE"), _T(""), wxITEM_CHECK);
+	pMenu5->Append(ID_SETPRIORITY_HIGH, g_cfg.m_menu_setpriority_high, _T(""), wxITEM_CHECK);
+	pMenu5->Append(ID_SETPRIORITY_ABOVENORMAL, g_cfg.m_menu_setpriority_abovenormal, _T(""), wxITEM_CHECK);
+	pMenu5->Append(ID_SETPRIORITY_NORMAL, g_cfg.m_menu_setpriority_normal, _T(""), wxITEM_CHECK);
+	pMenu5->Append(ID_SETPRIORITY_BELOWNORMAL, g_cfg.m_menu_setpriority_belownormal, _T(""), wxITEM_CHECK);
+	pMenu5->Append(ID_SETPRIORITY_IDLE, g_cfg.m_menu_setpriority_idle, _T(""), wxITEM_CHECK);
 
 	wxMenu *pMenu1 = new wxMenu;	
-	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, _T("Open Video (OpenCV)"));
-	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, _T("Open Video (FFMPEG)"));
-	pMenu1->Append(ID_FILE_REOPENVIDEO, _T("Reopen Video"));
-	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, _T("Open Or Continue Previous Video"));
+	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, g_cfg.m_menu_file_open_video_opencv);
+	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, g_cfg.m_menu_file_open_video_ffmpeg);
+	pMenu1->Append(ID_FILE_REOPENVIDEO, g_cfg.m_menu_file_reopenvideo);
+	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, g_cfg.m_menu_file_openpreviousvideo);
 	pMenu1->AppendSeparator();
-	pMenu1->AppendSubMenu( pMenu5, _T("Set Priority"));
-	pMenu1->Append(ID_FILE_SAVESETTINGS, _T("Save Settings\tCtrl+S"));
-	pMenu1->Append(ID_FILE_SAVESETTINGSAS, _T("Save Settings As..."));
-	pMenu1->Append(ID_FILE_LOADSETTINGS, _T("Load Settings..."));
+	pMenu1->AppendSubMenu( pMenu5, g_cfg.m_menu_setpriority);
+	pMenu1->Append(ID_FILE_SAVESETTINGS, g_cfg.m_menu_file_savesettings + wxT("\tCtrl+S"));
+	pMenu1->Append(ID_FILE_SAVESETTINGSAS, g_cfg.m_menu_file_savesettingsas);
+	pMenu1->Append(ID_FILE_LOADSETTINGS, g_cfg.m_menu_file_loadsettings);
 	pMenu1->AppendSeparator();
-	pMenu1->Append(ID_FILE_EXIT, _T("E&xit"));
-	pMenuBar->Append(pMenu1, _T("&File"));
+	pMenu1->Append(ID_FILE_EXIT, g_cfg.m_menu_file_exit);
+	pMenuBar->Append(pMenu1, g_cfg.m_menu_file);
 
 	wxMenu *pMenu2 = new wxMenu;
-	pMenu2->Append(ID_EDIT_SETBEGINTIME, _T("Set Begin Time\tCtrl+Z"));
-	pMenu2->Append(ID_EDIT_SETENDTIME, _T("Set End Time\tCtrl+X"));
-	pMenuBar->Append(pMenu2, _T("&Edit"));
+	pMenu2->Append(ID_EDIT_SETBEGINTIME, g_cfg.m_menu_edit_setbegintime + wxT("\tCtrl+Z"));
+	pMenu2->Append(ID_EDIT_SETENDTIME, g_cfg.m_menu_edit_setendtime + wxT("\tCtrl+X"));
+	pMenuBar->Append(pMenu2, g_cfg.m_menu_edit);
+
+	wxMenu* pMenuView = new wxMenu;
+	pMenuView->Append(ID_SCALE_TEXT_SIZE_INC, g_cfg.m_menu_scale_text_size_inc + wxT("   Ctrl+Mouse Wheel"));
+	pMenuView->Append(ID_SCALE_TEXT_SIZE_DEC, g_cfg.m_menu_scale_text_size_dec + wxT("   Ctrl+Mouse Wheel"));
+	pMenuBar->Append(pMenuView, g_cfg.m_menu_view);
 
 	wxMenu *pMenu3 = new wxMenu;
-	pMenu3->Append(ID_PLAY_PAUSE, _T("Play/Pause   Space"));
-	pMenu3->Append(ID_PLAY_STOP, _T("Stop"));
-	pMenuBar->Append(pMenu3, _T("&Play"));
+	pMenu3->Append(ID_PLAY_PAUSE, g_cfg.m_menu_play_pause + wxT("   Space"));
+	pMenu3->Append(ID_PLAY_STOP, g_cfg.m_menu_play_stop);
+	pMenuBar->Append(pMenu3, g_cfg.m_menu_play);
 
 	wxMenu *pMenu4 = new wxMenu;
-	pMenu4->Append(ID_APP_ABOUT, _T("&About..."));
-	pMenuBar->Append(pMenu4, _T("&Help"));
+	pMenu4->Append(ID_APP_ABOUT, g_cfg.m_menu_app_about);
+	pMenuBar->Append(pMenu4, g_cfg.m_menu_help);
 
 	cnt = pMenuBar->GetMenuCount();			
 
 	// CSeparatingLine *pHSL = new CSeparatingLine(this, 200, 3, 7, 3, 100, 110, 50, 0);
 	// pHSL->m_pos = 0;
 	// pHSL->Raise();
-	// return;
+	// return;	
 
-	wxColor bc(215, 228, 242);
+	this->SetBackgroundColour(g_cfg.m_main_frame_background_colour);
 
 	SaveToReportLog("CMainFrame::Init(): new CImageBox(this)...\n");
 	m_pImageBox = new CImageBox(this);
 
 	SaveToReportLog("CMainFrame::Init(): m_pImageBox->Init()...\n");
 	m_pImageBox->Init();
-	m_pImageBox->SetBackgroundColour(bc);
+	m_pImageBox->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 	
 	SaveToReportLog("CMainFrame::Init(): new CVideoBox(this)...\n");
-	m_pVideoBox = new CVideoBox(this, bc);
+	m_pVideoBox = new CVideoBox(this, g_cfg.m_video_image_box_border_colour);
 
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Init()...\n");
 	m_pVideoBox->Init();
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Bind...\n");
-	//m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);
-	
-	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
-	LoadSettings();
+	//m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);	
 
 #ifdef WIN32
-	if (m_cfg.process_affinity_mask > 0)
+	if (g_cfg.process_affinity_mask > 0)
 	{
 		HANDLE process = GetCurrentProcess();
 		DWORD_PTR dwProcessAffinityMask, dwSystemAffinityMask;
 
 		GetProcessAffinityMask(process, &dwProcessAffinityMask, &dwSystemAffinityMask);
 
-		dwProcessAffinityMask = (DWORD_PTR)m_cfg.process_affinity_mask & dwSystemAffinityMask;
+		dwProcessAffinityMask = (DWORD_PTR)g_cfg.process_affinity_mask & dwSystemAffinityMask;
 		BOOL success = SetProcessAffinityMask(process, dwProcessAffinityMask);
 
 		SaveToReportLog(wxString::Format(wxT("CMainFrame::Init(): SetProcessAffinityMask(%d) == %d\n"), (int)dwProcessAffinityMask, (int)success));
@@ -358,14 +366,14 @@ void CMainFrame::Init()
 	bool find_fount_size_lbl = false;
 	bool find_fount_size_btn = false;
 
-	if (m_cfg.m_fount_size_lbl == -1)
+	if (g_cfg.m_fount_size_lbl == -1)
 	{
-		m_cfg.m_fount_size_lbl = 8;
+		g_cfg.m_fount_size_lbl = 8;
 		find_fount_size_lbl = true;
 	}
-	if (m_cfg.m_fount_size_btn == -1)
+	if (g_cfg.m_fount_size_btn == -1)
 	{
-		m_cfg.m_fount_size_btn = 10;
+		g_cfg.m_fount_size_btn = 10;
 		find_fount_size_btn = true;
 	}
 
@@ -373,15 +381,15 @@ void CMainFrame::Init()
 	// wxFONTFAMILY_SWISS / A sans - serif font.
 
 	SaveToReportLog("CMainFrame::Init(): init m_BTNFont...\n");
-	m_BTNFont = wxFont(m_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+	m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 
 	SaveToReportLog("CMainFrame::Init(): init m_LBLFont...\n");
-	m_LBLFont = wxFont(m_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+	m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 
 	SaveToReportLog("CMainFrame::Init(): new CSSOWnd(this)...\n");
-	m_pPanel = new CSSOWnd(this);
+	m_pPanel = new CSSOWnd(this);	
 
-	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");
+	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");	
 	this->SetMenuBar(pMenuBar);
 
 	SaveToReportLog("CMainFrame::Init(): this->SetSize(..)...\n");
@@ -402,11 +410,11 @@ void CMainFrame::Init()
 
 		int cw, ch;
 		m_pPanel->m_pSSPanel->m_plblPixelColor->GetClientSize(&cw, &ch);
-		m_cfg.m_fount_size_lbl = GetOptimalFontSize(cw, ch, m_cfg.m_label_pixel_color, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+		g_cfg.m_fount_size_lbl = GetOptimalFontSize(cw, ch, g_cfg.m_label_pixel_color, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 		
-		if (m_cfg.m_fount_size_lbl > 10)
+		if (g_cfg.m_fount_size_lbl > 10)
 		{
-			m_cfg.m_fount_size_lbl = 10;
+			g_cfg.m_fount_size_lbl = 10;
 		}
 	}
 
@@ -417,11 +425,11 @@ void CMainFrame::Init()
 
 		int cw, ch;
 		m_pPanel->m_pOCRPanel->m_pCSCTI->GetClientSize(&cw, &ch);
-		m_cfg.m_fount_size_btn = GetOptimalFontSize(cw, ch, m_cfg.m_ocr_button_cesfcti_text, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+		g_cfg.m_fount_size_btn = GetOptimalFontSize(cw, ch, g_cfg.m_ocr_button_cesfcti_text, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 
-		if (m_cfg.m_fount_size_btn > 13)
+		if (g_cfg.m_fount_size_btn > 13)
 		{
-			m_cfg.m_fount_size_btn = 13;
+			g_cfg.m_fount_size_btn = 13;
 		}
 	}
 
@@ -443,11 +451,14 @@ void CMainFrame::Init()
 	if (find_fount_size_lbl || find_fount_size_btn)
 	{
 		SaveToReportLog("CMainFrame::Init(): reinit m_BTNFont...\n");
-		m_BTNFont = wxFont(m_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+		m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 
 		SaveToReportLog("CMainFrame::Init(): reinit m_LBLFont...\n");
-		m_LBLFont = wxFont(m_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+		m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 	}
+
+	this->GetMenuBar()->SetFont(m_LBLFont);
+	this->GetMenuBar()->Refresh();
 		
 	CControl::RefreshAllControlsData();
 	this->Refresh();
@@ -491,31 +502,59 @@ int CMainFrame::GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily 
 	return font_size;
 }
 
+void CMainFrame::OnScaleTextSizeInc(wxCommandEvent& event)
+{
+	ScaleTextSize(1);
+}
+
+void CMainFrame::OnScaleTextSizeDec(wxCommandEvent& event)
+{
+	ScaleTextSize(-1);
+}
+
 void CMainFrame::OnMouseWheel(wxMouseEvent& event)
 {
 	if (wxGetKeyState(WXK_CONTROL))
 	{
 		if (event.m_wheelRotation > 0)
 		{
-			m_cfg.m_fount_size_btn++;
-			m_cfg.m_fount_size_lbl++;
+			ScaleTextSize(1);
 		}
 		else
 		{
-			if ((m_cfg.m_fount_size_btn > 1) && (m_cfg.m_fount_size_lbl > 1))
+			ScaleTextSize(-1);
+		}
+	}
+}
+
+void CMainFrame::ScaleTextSize(int dsize)
+{
+	if (dsize != 0)
+	{
+		if (dsize > 0)
+		{
+			g_cfg.m_fount_size_btn += dsize;
+			g_cfg.m_fount_size_lbl += dsize;
+		}
+		else
+		{
+			if ((g_cfg.m_fount_size_btn > -dsize) && (g_cfg.m_fount_size_lbl > -dsize))
 			{
-				m_cfg.m_fount_size_btn--;
-				m_cfg.m_fount_size_lbl--;
+				g_cfg.m_fount_size_btn += dsize;
+				g_cfg.m_fount_size_lbl += dsize;
 			}
 		}
 
-		m_BTNFont = wxFont(m_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+		m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
 			wxFONTWEIGHT_BOLD, false /* !underlined */,
 			wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
 
-		m_LBLFont = wxFont(m_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+		m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
 			wxFONTWEIGHT_NORMAL, false /* !underlined */,
 			wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
+
+		this->GetMenuBar()->SetFont(m_LBLFont);
+		this->GetMenuBar()->Refresh();
 
 		CControl::RefreshAllControlsData();
 		this->Refresh();
@@ -598,8 +637,8 @@ void CMainFrame::OnFileOpenVideo(int type)
 		// https://en.wikipedia.org/wiki/Video_file_format
 		wxString all_video_formats("*.3g2;*.3gp;*.amv;*.asf;*.avi;*.drc;*.flv;*.f4v;*.f4p;*.f4a;*.f4b;*.gif;*.gifv;*.m4p;*.m4v;*.m4v;*.mkv;*.mng;*.mov;*.qt;*.mp4;*.mpg;*.mp2;*.mpeg;*.mpe;*.mpv;*.mpg;*.mpeg;*.m2v;*.mts;*.m2ts;*.ts;*.mxf;*.nsv;*.ogv;*.ogg;*.rm;*.rmvb;*.roq;*.svi;*.viv;*.vob;*.webm;*.wmv;*.yuv;*.avs");
 
-		wxFileDialog fd(this, wxT("Open Video File"),
-						wxEmptyString, wxEmptyString, wxString::Format(wxT("Video Files (%s)|%s|All Files (*.*)|*.*"), all_video_formats, all_video_formats), wxFD_OPEN);
+		wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_video_file,
+						wxEmptyString, wxEmptyString, wxString::Format(g_cfg.m_file_dialog_title_open_video_file_wild_card, all_video_formats, all_video_formats), wxFD_OPEN);
 
 		if(fd.ShowModal() != wxID_OK)
 		{
@@ -861,7 +900,7 @@ void CMainFrame::PauseVideo()
 	}
 }
 
-void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& settings)
+void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings)
 {
 	wxFileInputStream ffin(file_name);
 
@@ -906,109 +945,130 @@ void CMainFrame::ReadSettings(wxString file_name, std::map<wxString, wxString>& 
 	}
 }
 
-void CMainFrame::LoadSettings()
+void LoadSettings()
 {
 	SaveToReportLog("CMainFrame::LoadSettings(): starting...\n");
 
-	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(m_GeneralSettingsFileName, m_general_settings)...\n");
-	ReadSettings(m_GeneralSettingsFileName, m_general_settings);
+	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(g_GeneralSettingsFileName, g_general_settings)...\n");
+	ReadSettings(g_GeneralSettingsFileName, g_general_settings);
 	
-	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_general_settings...\n");
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings...\n");
 
-	ReadProperty(m_general_settings, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
-	ReadProperty(m_general_settings, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_colour, "main_text_colour");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_background_colour, "main_buttons_background_colour");	
+	ReadProperty(g_general_settings, g_cfg.m_main_labels_background_colour, "main_labels_background_colour");	
+	ReadProperty(g_general_settings, g_cfg.m_main_frame_background_colour, "main_frame_background_colour");
+	ReadProperty(g_general_settings, g_cfg.m_notebook_colour, "notebook_colour");
+	ReadProperty(g_general_settings, g_cfg.m_notebook_panels_colour, "notebook_panels_colour");
+	ReadProperty(g_general_settings, g_cfg.m_grid_line_colour, "grid_line_colour");
+	ReadProperty(g_general_settings, g_cfg.m_grid_gropes_colour, "grid_gropes_colour");
+	ReadProperty(g_general_settings, g_cfg.m_grid_sub_gropes_colour, "grid_sub_gropes_colour");
+	ReadProperty(g_general_settings, g_cfg.m_grid_debug_settings_colour, "grid_debug_settings_colour");
+	ReadProperty(g_general_settings, g_cfg.m_test_result_label_colour, "test_result_label_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_image_box_background_colour, "video_image_box_background_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_image_box_border_colour, "video_image_box_border_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_image_box_title_colour, "video_image_box_title_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_box_time_colour, "video_box_time_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_box_time_text_colour, "video_box_time_text_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_box_separating_line_colour, "video_box_separating_line_colour");
+	ReadProperty(g_general_settings, g_cfg.m_video_box_separating_line_border_colour, "video_box_separating_line_border_colour");
+	ReadProperty(g_general_settings, g_cfg.m_toolbar_bitmaps_border_colour, "toolbar_bitmaps_border_colour");
 
-	ReadProperty(m_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
-	ReadProperty(m_general_settings, g_show_results, "dump_debug_images");
-	ReadProperty(m_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
-	ReadProperty(m_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
-	ReadProperty(m_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
-	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
-	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
+	ReadProperty(g_general_settings, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
+	ReadProperty(g_general_settings, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
 
-	ReadProperty(m_general_settings, g_use_filter_color, "use_filter_color");
-	ReadProperty(m_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
-	ReadProperty(m_general_settings, g_dL_color, "dL_color");
-	ReadProperty(m_general_settings, g_dA_color, "dA_color");
-	ReadProperty(m_general_settings, g_dB_color, "dB_color");
-	ReadProperty(m_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
+	ReadProperty(g_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
+	ReadProperty(g_general_settings, g_show_results, "dump_debug_images");
+	ReadProperty(g_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
+	ReadProperty(g_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
+	ReadProperty(g_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
+	ReadProperty(g_general_settings, g_use_ocl, "use_ocl");
+	ReadProperty(g_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
 
-	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
-	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
-	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
-	ReadProperty(m_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
+	ReadProperty(g_general_settings, g_use_filter_color, "use_filter_color");
+	ReadProperty(g_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
+	ReadProperty(g_general_settings, g_dL_color, "dL_color");
+	ReadProperty(g_general_settings, g_dA_color, "dA_color");
+	ReadProperty(g_general_settings, g_dB_color, "dB_color");
+	ReadProperty(g_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
 
-	ReadProperty(m_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
-	ReadProperty(m_general_settings, g_mthr, "moderate_threshold");
-	ReadProperty(m_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
-	ReadProperty(m_general_settings, g_segw, "segment_width");
-	ReadProperty(m_general_settings, g_segh, "segment_height");
-	ReadProperty(m_general_settings, g_msegc, "minimum_segments_count");
-	ReadProperty(m_general_settings, g_scd, "min_sum_color_diff");
-	ReadProperty(m_general_settings, g_btd, "between_text_distace");
-	ReadProperty(m_general_settings, g_to, "text_centre_offset");
-	ReadProperty(m_general_settings, g_scale, "image_scale_for_clear_image");
+	ReadProperty(g_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
+	ReadProperty(g_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
+	ReadProperty(g_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
+	ReadProperty(g_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
+
+	ReadProperty(g_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
+	ReadProperty(g_general_settings, g_mthr, "moderate_threshold");
+	ReadProperty(g_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
+	ReadProperty(g_general_settings, g_segw, "segment_width");
+	ReadProperty(g_general_settings, g_segh, "segment_height");
+	ReadProperty(g_general_settings, g_msegc, "minimum_segments_count");
+	ReadProperty(g_general_settings, g_scd, "min_sum_color_diff");
+	ReadProperty(g_general_settings, g_btd, "between_text_distace");
+	ReadProperty(g_general_settings, g_to, "text_centre_offset");
+	ReadProperty(g_general_settings, g_scale, "image_scale_for_clear_image");
 	
-	ReadProperty(m_general_settings, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
-	ReadProperty(m_general_settings, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
+	ReadProperty(g_general_settings, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
 
-	ReadProperty(m_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
-	ReadProperty(m_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
+	ReadProperty(g_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
 
-	ReadProperty(m_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
-	ReadProperty(m_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
-	ReadProperty(m_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");	
+	ReadProperty(g_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
+	ReadProperty(g_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");	
 
-	ReadProperty(m_general_settings, g_mpn, "min_points_number");
-	ReadProperty(m_general_settings, g_mpd, "min_points_density");
-	ReadProperty(m_general_settings, g_msh, "min_symbol_height");
-	ReadProperty(m_general_settings, g_msd, "min_symbol_density");
-	ReadProperty(m_general_settings, g_mpned, "min_NEdges_points_density");				
+	ReadProperty(g_general_settings, g_mpn, "min_points_number");
+	ReadProperty(g_general_settings, g_mpd, "min_points_density");
+	ReadProperty(g_general_settings, g_msh, "min_symbol_height");
+	ReadProperty(g_general_settings, g_msd, "min_symbol_density");
+	ReadProperty(g_general_settings, g_mpned, "min_NEdges_points_density");				
 
-	ReadProperty(m_general_settings, g_clear_txt_folders, "clear_txt_folders");
-	ReadProperty(m_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
+	ReadProperty(g_general_settings, g_clear_txt_folders, "clear_txt_folders");
+	ReadProperty(g_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
 
-	ReadProperty(m_general_settings, g_threads, "threads");
-	ReadProperty(m_general_settings, g_ocr_threads, "ocr_threads");
-	ReadProperty(m_general_settings, g_DL, "sub_frame_length");
-	ReadProperty(m_general_settings, g_tp, "text_percent");
-	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_percent");
-	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");
-	ReadProperty(m_general_settings, g_ilaple, "ila_points_line_error");
+	ReadProperty(g_general_settings, g_threads, "threads");
+	ReadProperty(g_general_settings, g_ocr_threads, "ocr_threads");
+	ReadProperty(g_general_settings, g_DL, "sub_frame_length");
+	ReadProperty(g_general_settings, g_tp, "text_percent");
+	ReadProperty(g_general_settings, g_mtpl, "min_text_len_in_percent");
+	ReadProperty(g_general_settings, g_veple, "vedges_points_line_error");
+	ReadProperty(g_general_settings, g_ilaple, "ila_points_line_error");
 
-	ReadProperty(m_general_settings, g_video_contrast, "video_contrast");
-	ReadProperty(m_general_settings, g_video_gamma, "video_gamma");
+	ReadProperty(g_general_settings, g_video_contrast, "video_contrast");
+	ReadProperty(g_general_settings, g_video_gamma, "video_gamma");
 	
-	ReadProperty(m_general_settings, g_clear_image_logical, "clear_image_logical");
+	ReadProperty(g_general_settings, g_clear_image_logical, "clear_image_logical");
 
-	ReadProperty(m_general_settings, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
+	ReadProperty(g_general_settings, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
 
-	ReadProperty(m_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
+	ReadProperty(g_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
 
-	ReadProperty(m_general_settings, m_cfg.m_prefered_locale, "prefered_locale");
+	ReadProperty(g_general_settings, g_cfg.m_prefered_locale, "prefered_locale");
 
-	ReadProperty(m_general_settings, m_cfg.process_affinity_mask, "process_affinity_mask");
+	ReadProperty(g_general_settings, g_cfg.process_affinity_mask, "process_affinity_mask");
 
-	ReadProperty(m_general_settings, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
-	ReadProperty(m_general_settings, m_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
 	
-	ReadProperty(m_general_settings, m_cfg.m_txt_dw, "txt_dw");
-	ReadProperty(m_general_settings, m_cfg.m_txt_dy, "txt_dy");
+	ReadProperty(g_general_settings, g_cfg.m_txt_dw, "txt_dw");
+	ReadProperty(g_general_settings, g_cfg.m_txt_dy, "txt_dy");
 
-	ReadProperty(m_general_settings, m_cfg.m_fount_size_lbl, "fount_size_lbl");
-	ReadProperty(m_general_settings, m_cfg.m_fount_size_btn, "fount_size_btn");
+	ReadProperty(g_general_settings, g_cfg.m_fount_size_lbl, "fount_size_lbl");
+	ReadProperty(g_general_settings, g_cfg.m_fount_size_btn, "fount_size_btn");	
 
-	ReadProperty(m_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
-	ReadProperty(m_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
-	ReadProperty(m_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
-	ReadProperty(m_general_settings, g_max_dl_down, "max_dl_down");
-	ReadProperty(m_general_settings, g_max_dl_up, "max_dl_up");
+	ReadProperty(g_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
+	ReadProperty(g_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
+	ReadProperty(g_general_settings, g_max_dl_down, "max_dl_down");
+	ReadProperty(g_general_settings, g_max_dl_up, "max_dl_up");
 
-	ReadProperty(m_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
+	ReadProperty(g_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
 
-	ReadProperty(m_general_settings, g_hw_device, "hw_device");
+	ReadProperty(g_general_settings, g_hw_device, "hw_device");
 
-	if (ReadProperty(m_general_settings, g_filter_descr, "filter_descr"))
+	if (ReadProperty(g_general_settings, g_filter_descr, "filter_descr"))
 	{
 		if (g_filter_descr == wxT("none"))
 		{
@@ -1016,173 +1076,261 @@ void CMainFrame::LoadSettings()
 		}
 	}
 
-	ReadProperty(m_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
-	ReadProperty(m_general_settings, g_save_scaled_images, "save_scaled_images");
+	ReadProperty(g_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
+	ReadProperty(g_general_settings, g_save_scaled_images, "save_scaled_images");
 
-	ReadProperty(m_general_settings, g_playback_sound, "playback_sound");
+	ReadProperty(g_general_settings, g_playback_sound, "playback_sound");
 
-	ReadProperty(m_general_settings, g_border_is_darker, "border_is_darker");
+	ReadProperty(g_general_settings, g_border_is_darker, "border_is_darker");
 
-	ReadProperty(m_general_settings, g_text_alignment_string, "text_alignment");
+	ReadProperty(g_general_settings, g_text_alignment_string, "text_alignment");
 
-	ReadProperty(m_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
-	ReadProperty(m_general_settings, g_allow_min_luminance, "allow_min_luminance");
+	ReadProperty(g_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
+	ReadProperty(g_general_settings, g_allow_min_luminance, "allow_min_luminance");
 
-	double double_val;
-	
-	if (ReadProperty(m_general_settings, double_val, "bottom_video_image_percent_end"))
-	{
-		m_pVideoBox->m_pVBox->m_pHSL2->m_pos = 1 - double_val;
-	}
-	if (ReadProperty(m_general_settings, double_val, "top_video_image_percent_end"))
-	{
-		m_pVideoBox->m_pVBox->m_pHSL1->m_pos = 1 - double_val;
-	}
+	ReadProperty(g_general_settings, g_cfg.m_bottom_video_image_percent_end, "bottom_video_image_percent_end");
+	ReadProperty(g_general_settings, g_cfg.m_top_video_image_percent_end, "top_video_image_percent_end");
+	ReadProperty(g_general_settings, g_cfg.m_left_video_image_percent_end, "left_video_image_percent_end");
+	ReadProperty(g_general_settings, g_cfg.m_right_video_image_percent_end, "right_video_image_percent_end");
 
-	ReadProperty(m_general_settings, m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
-	ReadProperty(m_general_settings, m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
-
-	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_general_settings end.\n");
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings end.\n");
 
 	//------------------------------------------------
 
-	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(.., m_locale_settings)...\n");
+	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(.., g_locale_settings)...\n");
 
-	ReadSettings(g_app_dir + wxT("/settings/") + wxString(m_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), m_locale_settings);
+	ReadSettings(g_app_dir + wxT("/settings/") + wxString(g_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), g_locale_settings);
 
-	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_locale_settings...\n");
-
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_join_txt_images_split_line_text, "ocr_label_join_txt_images_split_line_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_join_text, "ocr_button_join_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
-	ReadProperty(m_locale_settings, m_cfg.m_ocr_button_test_text, "ocr_button_test_text");
-
-	ReadProperty(m_locale_settings, m_cfg.m_label_text_alignment, "label_text_alignment");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_hw_device, "ssp_hw_device");
-	ReadProperty(m_locale_settings, m_cfg.m_label_filter_descr, "label_filter_descr");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
-
-	ReadProperty(m_locale_settings, m_cfg.m_label_use_filter_color, "label_use_filter_color");
-	ReadProperty(m_locale_settings, m_cfg.m_label_use_outline_filter_color, "label_use_outline_filter_color");
-	ReadProperty(m_locale_settings, m_cfg.m_label_dL_color, "label_dL_color");
-	ReadProperty(m_locale_settings, m_cfg.m_label_dA_color, "label_dA_color");
-	ReadProperty(m_locale_settings, m_cfg.m_label_dB_color, "label_dB_color");
-
-	ReadProperty(m_locale_settings, m_cfg.m_border_is_darker, "label_border_is_darker");
-	ReadProperty(m_locale_settings, m_cfg.m_extend_by_grey_color, "label_extend_by_grey_color");
-	ReadProperty(m_locale_settings, m_cfg.m_allow_min_luminance, "label_allow_min_luminance");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, "ssp_oi_property_cpu_kmeans_initial_loop_iterations");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, "ssp_oi_property_cpu_kmeans_loop_iterations");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, "ssp_oi_property_generate_cleared_text_images_on_test");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_dump_debug_images, "ssp_oi_property_dump_debug_images");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, "ssp_oi_property_dump_debug_second_filtration_images");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_clear_test_images_folder, "ssp_oi_property_clear_test_images_folder");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_show_transformed_images_only, "ssp_oi_property_show_transformed_images_only");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_moderate_nedges_threshold, "ssp_oi_property_moderate_nedges_threshold");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, "ssp_oi_sub_group_settings_for_color_filtering");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_segment_width, "ssp_oi_property_segment_width");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_segments_count, "ssp_oi_property_min_segments_count");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_sum_color_difference, "ssp_oi_property_min_sum_color_difference");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_secondary_image_processing, "ssp_oi_group_secondary_image_processing");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, "ssp_oi_sub_group_settings_for_linear_filtering");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_line_height, "ssp_oi_property_line_height");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_max_between_text_distance, "ssp_oi_property_max_between_text_distance");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_max_text_center_offset, "ssp_oi_property_max_text_center_offset");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_max_text_center_percent_offset, "ssp_oi_property_max_text_center_percent_offset");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, "ssp_oi_sub_group_settings_for_color_border_points");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_points_number, "ssp_oi_property_min_points_number");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_points_density, "ssp_oi_property_min_points_density");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_symbol_height, "ssp_oi_property_min_symbol_height");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_symbol_density, "ssp_oi_property_min_symbol_density");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_vedges_points_density, "ssp_oi_property_min_vedges_points_density");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_property_min_nedges_points_density, "ssp_oi_property_min_nedges_points_density");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oi_group_tertiary_image_processing, "ssp_oi_group_tertiary_image_processing");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_group_ocr_settings, "ssp_oim_group_ocr_settings");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
-	ReadProperty(m_locale_settings, m_cfg.m_label_combine_to_single_cluster, "label_combine_to_single_cluster");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, "ssp_oim_property_using_ilaimages_for_getting_txt_areas");
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_locale_settings...\n");
 	
-	ReadProperty(m_locale_settings, m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, "label_ILA_images_for_getting_txt_symbols_areas");
-	ReadProperty(m_locale_settings, m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, "label_use_ILA_images_before_clear_txt_images_from_borders");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_video_file, "file_dialog_title_open_video_file");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_video_file_wild_card, "file_dialog_title_open_video_file_wild_card");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_settings_file, "file_dialog_title_open_settings_file");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_settings_file_wild_card, "file_dialog_title_open_settings_file_wild_card");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_save_settings_file, "file_dialog_title_save_settings_file");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_save_settings_file_wild_card, "file_dialog_title_save_settings_file_wild_card");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_save_subtitle_as, "file_dialog_title_save_subtitle_as");
+	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_save_subtitle_as_wild_card, "file_dialog_title_save_subtitle_as_wild_card");
+
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file, "menu_file");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_edit, "menu_edit");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_view, "menu_view");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_play, "menu_play");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_help, "menu_help");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority, "menu_setpriority");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_high, "menu_setpriority_high");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_abovenormal, "menu_setpriority_abovenormal");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_normal, "menu_setpriority_normal");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_belownormal, "menu_setpriority_belownormal");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_idle, "menu_setpriority_idle");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_open_video_opencv, "menu_file_open_video_opencv");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_open_video_ffmpeg, "menu_file_open_video_ffmpeg");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_reopenvideo, "menu_file_reopenvideo");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_openpreviousvideo, "menu_file_openpreviousvideo");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_savesettings, "menu_file_savesettings");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_savesettingsas, "menu_file_savesettingsas");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_loadsettings, "menu_file_loadsettings");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_file_exit, "menu_file_exit");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_edit_setbegintime, "menu_edit_setbegintime");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_edit_setendtime, "menu_edit_setendtime");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_scale_text_size_inc, "menu_scale_text_size_inc");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_scale_text_size_dec, "menu_scale_text_size_dec");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_play_pause, "menu_play_pause");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_play_stop, "menu_play_stop");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_app_about, "menu_app_about");
+
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_app_about, "help_desc_app_about");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_clear_dirs, "help_desc_for_clear_dirs");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_run_search, "help_desc_for_run_search");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_cleared_text_images, "help_desc_for_create_cleared_text_images");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_empty_sub, "help_desc_for_create_empty_sub");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_sub_from_cleared_txt_images, "help_desc_for_create_sub_from_cleared_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_sub_from_txt_results, "help_desc_for_create_sub_from_txt_results");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_input_video, "help_desc_for_input_video");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_open_video_opencv, "help_desc_for_open_video_opencv");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_open_video_ffmpeg, "help_desc_for_open_video_ffmpeg");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_use_cuda, "help_desc_for_use_cuda");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_start_time, "help_desc_for_start_time");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_end_time, "help_desc_for_end_time");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_top_video_image_percent_end, "help_desc_for_top_video_image_percent_end");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_bottom_video_image_percent_end, "help_desc_for_bottom_video_image_percent_end");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_left_video_image_percent_end, "help_desc_for_left_video_image_percent_end");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_right_video_image_percent_end, "help_desc_for_right_video_image_percent_end");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_output_dir, "help_desc_for_output_dir");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_general_settings, "help_desc_for_general_settings");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_num_threads, "help_desc_for_num_threads");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_num_ocr_threads, "help_desc_for_num_ocr_threads");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_help, "help_desc_for_help");
+
+	ReadProperty(g_locale_settings, g_cfg.m_button_clear_folders_text, "button_clear_folders_text");
+	ReadProperty(g_locale_settings, g_cfg.m_button_run_search_text, "button_run_search_text");
+	ReadProperty(g_locale_settings, g_cfg.m_button_test_text, "button_test_text");
+	ReadProperty(g_locale_settings, g_cfg.m_test_result_after_first_filtration_label, "test_result_after_first_filtration_label");
+	ReadProperty(g_locale_settings, g_cfg.m_test_result_after_second_filtration_label, "test_result_after_second_filtration_label");
+	ReadProperty(g_locale_settings, g_cfg.m_test_result_after_third_filtration_label, "test_result_after_third_filtration_label");
+	ReadProperty(g_locale_settings, g_cfg.m_test_result_nedges_points_image_label, "test_result_nedges_points_image_label");
+	ReadProperty(g_locale_settings, g_cfg.m_test_result_cleared_text_image_label, "test_result_cleared_text_image_label");
+	ReadProperty(g_locale_settings, g_cfg.m_grid_col_property_label, "grid_col_property_label");
+	ReadProperty(g_locale_settings, g_cfg.m_grid_col_value_label, "grid_col_value_label");
+	ReadProperty(g_locale_settings, g_cfg.m_label_begin_time, "label_begin_time");
+	ReadProperty(g_locale_settings, g_cfg.m_label_end_time, "label_end_time");
+	ReadProperty(g_locale_settings, g_cfg.m_video_box_title, "video_box_title");
+	ReadProperty(g_locale_settings, g_cfg.m_image_box_title, "image_box_title");
+	ReadProperty(g_locale_settings, g_cfg.m_search_panel_title, "search_panel_title");
+	ReadProperty(g_locale_settings, g_cfg.m_settings_panel_title, "settings_panel_title");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_panel_title, "ocr_panel_title");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_split_line_text, "ocr_label_join_txt_images_split_line_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_join_text, "ocr_button_join_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_test_text, "ocr_button_test_text");
+
+	ReadProperty(g_locale_settings, g_cfg.m_label_text_alignment, "label_text_alignment");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_hw_device, "ssp_hw_device");
+	ReadProperty(g_locale_settings, g_cfg.m_label_filter_descr, "label_filter_descr");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_use_ocl, "ssp_oi_property_use_ocl");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_use_cuda_gpu, "ssp_oi_property_use_cuda_gpu");
+
+	ReadProperty(g_locale_settings, g_cfg.m_label_use_filter_color, "label_use_filter_color");
+	ReadProperty(g_locale_settings, g_cfg.m_label_use_outline_filter_color, "label_use_outline_filter_color");
+	ReadProperty(g_locale_settings, g_cfg.m_label_dL_color, "label_dL_color");
+	ReadProperty(g_locale_settings, g_cfg.m_label_dA_color, "label_dA_color");
+	ReadProperty(g_locale_settings, g_cfg.m_label_dB_color, "label_dB_color");
+
+	ReadProperty(g_locale_settings, g_cfg.m_border_is_darker, "label_border_is_darker");
+	ReadProperty(g_locale_settings, g_cfg.m_extend_by_grey_color, "label_extend_by_grey_color");
+	ReadProperty(g_locale_settings, g_cfg.m_allow_min_luminance, "label_allow_min_luminance");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_ocr_threads, "ssp_ocr_threads");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_image_scale_for_clear_image, "ssp_oi_property_image_scale_for_clear_image");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, "ssp_oi_property_moderate_threshold_for_scaled_image");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, "ssp_oi_property_cuda_kmeans_initial_loop_iterations");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, "ssp_oi_property_cuda_kmeans_loop_iterations");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, "ssp_oi_property_cpu_kmeans_initial_loop_iterations");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, "ssp_oi_property_cpu_kmeans_loop_iterations");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_label_parameters_influencing_image_processing, "ssp_label_parameters_influencing_image_processing");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, "ssp_label_ocl_and_multiframe_image_stream_processing");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_group_global_image_processing_settings, "ssp_oi_group_global_image_processing_settings");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, "ssp_oi_property_generate_cleared_text_images_on_test");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_dump_debug_images, "ssp_oi_property_dump_debug_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, "ssp_oi_property_dump_debug_second_filtration_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_clear_test_images_folder, "ssp_oi_property_clear_test_images_folder");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_show_transformed_images_only, "ssp_oi_property_show_transformed_images_only");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_group_initial_image_processing, "ssp_oi_group_initial_image_processing");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, "ssp_oi_sub_group_settings_for_sobel_operators");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_moderate_threshold, "ssp_oi_property_moderate_threshold");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_moderate_nedges_threshold, "ssp_oi_property_moderate_nedges_threshold");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, "ssp_oi_sub_group_settings_for_color_filtering");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_segment_width, "ssp_oi_property_segment_width");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_segments_count, "ssp_oi_property_min_segments_count");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_sum_color_difference, "ssp_oi_property_min_sum_color_difference");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_group_secondary_image_processing, "ssp_oi_group_secondary_image_processing");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, "ssp_oi_sub_group_settings_for_linear_filtering");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_line_height, "ssp_oi_property_line_height");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_max_between_text_distance, "ssp_oi_property_max_between_text_distance");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_max_text_center_offset, "ssp_oi_property_max_text_center_offset");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_max_text_center_percent_offset, "ssp_oi_property_max_text_center_percent_offset");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, "ssp_oi_sub_group_settings_for_color_border_points");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_points_number, "ssp_oi_property_min_points_number");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_points_density, "ssp_oi_property_min_points_density");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_symbol_height, "ssp_oi_property_min_symbol_height");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_symbol_density, "ssp_oi_property_min_symbol_density");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_vedges_points_density, "ssp_oi_property_min_vedges_points_density");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_property_min_nedges_points_density, "ssp_oi_property_min_nedges_points_density");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oi_group_tertiary_image_processing, "ssp_oi_group_tertiary_image_processing");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_group_ocr_settings, "ssp_oim_group_ocr_settings");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_clear_images_logical, "ssp_oim_property_clear_images_logical");
+	ReadProperty(g_locale_settings, g_cfg.m_label_combine_to_single_cluster, "label_combine_to_single_cluster");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, "ssp_oim_property_clear_rgbimages_after_search_subtitles");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_using_hard_algorithm_for_text_mining, "ssp_oim_property_using_hard_algorithm_for_text_mining");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, "ssp_oim_property_using_isaimages_for_getting_txt_areas");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, "ssp_oim_property_using_ilaimages_for_getting_txt_areas");
 	
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_default_string_for_empty_sub, "ssp_oim_property_default_string_for_empty_sub");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, "ssp_oim_group_settings_for_multiframe_image_processing");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_threads, "ssp_oim_property_threads");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_ila_points_line_error, "ssp_oim_property_ila_points_line_error");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_text_percent, "ssp_oim_property_text_percent");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");
+	ReadProperty(g_locale_settings, g_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, "label_ILA_images_for_getting_txt_symbols_areas");
+	ReadProperty(g_locale_settings, g_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, "label_use_ILA_images_before_clear_txt_images_from_borders");
+	
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, "ssp_oim_property_validate_and_compare_cleared_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, "ssp_oim_property_dont_delete_unrecognized_images_first");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, "ssp_oim_property_dont_delete_unrecognized_images_second");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_default_string_for_empty_sub, "ssp_oim_property_default_string_for_empty_sub");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, "ssp_oim_group_settings_for_multiframe_image_processing");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, "ssp_oim_sub_group_settings_for_sub_detection");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_threads, "ssp_oim_property_threads");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_sub_frames_length, "ssp_oim_property_sub_frames_length");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, "ssp_oim_sub_group_settings_for_comparing_subs");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_vedges_points_line_error, "ssp_oim_property_vedges_points_line_error");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_ila_points_line_error, "ssp_oim_property_ila_points_line_error");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, "ssp_oim_sub_group_settings_for_checking_sub");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_text_percent, "ssp_oim_property_text_percent");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_min_text_length, "ssp_oim_property_min_text_length");
 
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, "ssp_oim_sub_group_settings_for_update_video_color");
-	ReadProperty(m_locale_settings, m_cfg.m_label_video_contrast, "label_video_contrast");
-	ReadProperty(m_locale_settings, m_cfg.m_label_video_gamma, "label_video_gamma");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, "ssp_oim_sub_group_settings_for_update_video_color");
+	ReadProperty(g_locale_settings, g_cfg.m_label_video_contrast, "label_video_contrast");
+	ReadProperty(g_locale_settings, g_cfg.m_label_video_gamma, "label_video_gamma");
 
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, "ssp_oim_property_use_ILA_images_for_search_subtitles");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, "ssp_oim_property_replace_ISA_by_filtered_version");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_max_dl_down, "ssp_oim_property_max_dl_down");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_max_dl_up, "ssp_oim_property_max_dl_up");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, "ssp_oim_property_use_ISA_images_for_search_subtitles");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, "ssp_oim_property_use_ILA_images_for_search_subtitles");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, "ssp_oim_property_replace_ISA_by_filtered_version");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_max_dl_down, "ssp_oim_property_max_dl_down");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_max_dl_up, "ssp_oim_property_max_dl_up");
 
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, "ssp_oim_property_use_gradient_images_for_clear_txt_images");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, "ssp_oim_property_clear_txt_images_by_main_color");
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, "ssp_oim_property_use_gradient_images_for_clear_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, "ssp_oim_property_clear_txt_images_by_main_color");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, "ssp_oim_property_use_ILA_images_for_clear_txt_images");
 
-	ReadProperty(m_locale_settings, m_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
+	ReadProperty(g_locale_settings, g_cfg.m_ssp_oim_property_remove_wide_symbols, "ssp_oim_property_remove_wide_symbols");
 
-	ReadProperty(m_locale_settings, m_cfg.m_label_settings_file, "label_settings_file");
-	ReadProperty(m_locale_settings, m_cfg.m_label_pixel_color, "label_pixel_color");
+	ReadProperty(g_locale_settings, g_cfg.m_label_settings_file, "label_settings_file");
+	ReadProperty(g_locale_settings, g_cfg.m_label_pixel_color, "label_pixel_color");
 
-	ReadProperty(m_locale_settings, m_cfg.m_playback_sound, "label_playback_sound");
+	ReadProperty(g_locale_settings, g_cfg.m_playback_sound, "label_playback_sound");
 
-	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from m_locale_settings end.\n");
+	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_locale_settings end.\n");
 
 	SaveToReportLog("CMainFrame::LoadSettings(): finished.\n");
 }
 
-void CMainFrame::SaveSettings()
+void SaveSettings()
 {
-	wxFFileOutputStream ffout(m_GeneralSettingsFileName);
+	wxFFileOutputStream ffout(g_GeneralSettingsFileName);
 	wxTextOutputStream fout(ffout);
 
-	m_pPanel->m_pSSPanel->m_pOI->SaveEditControlValue();
-	m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
+	g_pMF->m_pPanel->m_pSSPanel->m_pOI->SaveEditControlValue();
+	g_pMF->m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
 
-	WriteProperty(fout, m_cfg.m_prefered_locale, "prefered_locale");
+	WriteProperty(fout, g_cfg.m_prefered_locale, "prefered_locale");
 
-	WriteProperty(fout, m_cfg.process_affinity_mask, "process_affinity_mask");
+	WriteProperty(fout, g_cfg.process_affinity_mask, "process_affinity_mask");
 
-	WriteProperty(fout, m_cfg.m_fount_size_lbl, "fount_size_lbl");
-	WriteProperty(fout, m_cfg.m_fount_size_btn, "fount_size_btn");
+	WriteProperty(fout, g_cfg.m_fount_size_lbl, "fount_size_lbl");
+	WriteProperty(fout, g_cfg.m_fount_size_btn, "fount_size_btn");
+	
+	WriteProperty(fout, g_cfg.m_main_text_colour, "main_text_colour");
+	WriteProperty(fout, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
+	WriteProperty(fout, g_cfg.m_main_buttons_background_colour, "main_buttons_background_colour");
+	WriteProperty(fout, g_cfg.m_main_labels_background_colour, "main_labels_background_colour");
+	WriteProperty(fout, g_cfg.m_main_frame_background_colour, "main_frame_background_colour");
+	WriteProperty(fout, g_cfg.m_notebook_colour, "notebook_colour");
+	WriteProperty(fout, g_cfg.m_notebook_panels_colour, "notebook_panels_colour");
+	WriteProperty(fout, g_cfg.m_grid_line_colour, "grid_line_colour");
+	WriteProperty(fout, g_cfg.m_grid_gropes_colour, "grid_gropes_colour");
+	WriteProperty(fout, g_cfg.m_grid_sub_gropes_colour, "grid_sub_gropes_colour");
+	WriteProperty(fout, g_cfg.m_grid_debug_settings_colour, "grid_debug_settings_colour");
+	WriteProperty(fout, g_cfg.m_test_result_label_colour, "test_result_label_colour");
+	WriteProperty(fout, g_cfg.m_video_image_box_background_colour, "video_image_box_background_colour");
+	WriteProperty(fout, g_cfg.m_video_image_box_border_colour, "video_image_box_border_colour");
+	WriteProperty(fout, g_cfg.m_video_image_box_title_colour, "video_image_box_title_colour");
+	WriteProperty(fout, g_cfg.m_video_box_time_colour, "video_box_time_colour");
+	WriteProperty(fout, g_cfg.m_video_box_time_text_colour, "video_box_time_text_colour");
+	WriteProperty(fout, g_cfg.m_video_box_separating_line_colour, "video_box_separating_line_colour");
+	WriteProperty(fout, g_cfg.m_video_box_separating_line_border_colour, "video_box_separating_line_border_colour");
+	WriteProperty(fout, g_cfg.m_toolbar_bitmaps_border_colour, "toolbar_bitmaps_border_colour");
 
 	WriteProperty(fout, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
 	WriteProperty(fout, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
@@ -1254,11 +1402,11 @@ void CMainFrame::SaveSettings()
 
 	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
 
-	WriteProperty(fout, m_cfg.m_ocr_min_sub_duration, "min_sub_duration");
-	WriteProperty(fout, m_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
+	WriteProperty(fout, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
 
-	WriteProperty(fout, m_cfg.m_txt_dw, "txt_dw");
-	WriteProperty(fout, m_cfg.m_txt_dy, "txt_dy");
+	WriteProperty(fout, g_cfg.m_txt_dw, "txt_dw");
+	WriteProperty(fout, g_cfg.m_txt_dy, "txt_dy");
 
 	WriteProperty(fout, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
 	WriteProperty(fout, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
@@ -1288,13 +1436,13 @@ void CMainFrame::SaveSettings()
 
 	double double_val;
 
-	double_val = 1 - m_pVideoBox->m_pVBox->m_pHSL2->m_pos;
+	double_val = 1 - g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos;
 	WriteProperty(fout, double_val, "bottom_video_image_percent_end");
-	double_val = 1 - m_pVideoBox->m_pVBox->m_pHSL1->m_pos;
+	double_val = 1 - g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos;
 	WriteProperty(fout, double_val, "top_video_image_percent_end");
 	
-	WriteProperty(fout, m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
-	WriteProperty(fout, m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
+	WriteProperty(fout, g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
+	WriteProperty(fout, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
 
 	fout.Flush();
 	ffout.Close();
@@ -1341,16 +1489,16 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 {
 	if (m_blnReopenVideo == false)
 	{
-		wxFileDialog fd(this, _T("Open Settings File"),
-			g_work_dir, wxEmptyString, wxT("*.cfg"), wxFD_OPEN);
+		wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_settings_file,
+			g_work_dir, wxEmptyString, g_cfg.m_file_dialog_title_open_settings_file_wild_card, wxFD_OPEN);
 
 		if(fd.ShowModal() != wxID_OK)
 		{
 			return;
 		}
 
-		m_GeneralSettingsFileName = fd.GetPath();
-		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(m_GeneralSettingsFileName + wxT(" "));
+		g_GeneralSettingsFileName = fd.GetPath();
+		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_GeneralSettingsFileName + wxT(" "));
 
 		LoadSettings();
 
@@ -1360,8 +1508,8 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 {
-	wxFileDialog fd(this, _T("Save Settings File"),
-		g_work_dir, wxEmptyString, wxT("Settings Files (*.cfg)|*.cfg"), wxFD_SAVE);
+	wxFileDialog fd(this, g_cfg.m_file_dialog_title_save_settings_file,
+		g_work_dir, wxEmptyString, g_cfg.m_file_dialog_title_save_settings_file_wild_card, wxFD_SAVE);
 
 	if (m_blnReopenVideo == false)
 	{
@@ -1370,9 +1518,9 @@ void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 			return;
 		}
 
-		m_GeneralSettingsFileName = fd.GetPath();
+		g_GeneralSettingsFileName = fd.GetPath();
 
-		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(m_GeneralSettingsFileName + wxT(" "));
+		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_GeneralSettingsFileName + wxT(" "));
 
 		SaveSettings();
 	}
@@ -1636,8 +1784,8 @@ void CMainFrame::OnAppAbout(wxCommandEvent& event)
 	wxSize cl_size = this->GetClientSize();
 	wxSize msg_size(600, 600);
 	MyMessageBox msg_dlg(this,
-		"This program was written by Simeon Kosnitsky. \nPublished under public domain license.\n\nSupported command line options:\n" + g_parser.GetUsageString(),
-		"VideoSubFinder " VSF_VERSION " Version",
+		g_cfg.m_help_desc_app_about + g_pParser->GetUsageString(),
+		wxT("VideoSubFinder " VSF_VERSION " Version"),
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);
 	msg_dlg.ShowModal();
@@ -1723,16 +1871,16 @@ void CMainFrame::OnSetPriorityHigh(wxCommandEvent& event)
 #endif
 }
 
-void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColor& BColor)
+void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColour& BColor)
 {
 	bmp = wxBitmap(wxImage(path));
-	const wxColor ColorDef(192, 192, 192);
+	const wxColour ColorDef = g_cfg.m_toolbar_bitmaps_border_colour;
 
     if ( bmp.IsOk() )
     {
 		int w = bmp.GetWidth();
 		int h = bmp.GetHeight();
-		wxColor Color;
+		wxColour Color;
 
 		wxMemoryDC dc;
         dc.SelectObject(bmp);
@@ -1782,6 +1930,11 @@ void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name)
 	{
 		fout << Name << " = none\n";
 	}
+}
+
+void WriteProperty(wxTextOutputStream& fout, wxColour val, wxString Name)
+{
+	fout << Name << " = " << wxString::Format(wxT("%d,%d,%d"), (int)val.Red(), (int)val.Green(), (int)val.Blue()) << '\n';
 }
 
 bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
@@ -1861,6 +2014,25 @@ bool ReadProperty(std::map<wxString, wxString>& settings, wxArrayString& val, wx
 			val = wxSplit(search->second, ';');
 		}
 		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, wxColour& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		wxString data = search->second;
+		
+		wxRegEx re(wxT("^[[:space:]]*([[:digit:]]+)[[:space:]]*,[[:space:]]*([[:digit:]]+)[[:space:]]*,[[:space:]]*([[:digit:]]+)[[:space:]]*$"));
+		if (re.Matches(data))
+		{
+			val = wxColour(wxAtoi(re.GetMatch(data, 1)), wxAtoi(re.GetMatch(data, 2)), wxAtoi(re.GetMatch(data, 3)));
+			res = true;
+		}		
 	}
 
 	return res;

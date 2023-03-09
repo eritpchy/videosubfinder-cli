@@ -29,7 +29,6 @@ CTextCtrl::CTextCtrl(wxWindow* parent, wxWindowID id,
 	const wxValidator& validator,
 	const wxString& name) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
 {
-	m_pFont = NULL;
 }
 
 CTextCtrl::CTextCtrl(wxWindow* parent,
@@ -40,7 +39,6 @@ CTextCtrl::CTextCtrl(wxWindow* parent,
 	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
 {
 	m_p_str_val = p_str_val;
-	m_pFont = NULL;
 	ChangeValue(*m_p_str_val);
 }
 
@@ -77,9 +75,16 @@ void CTextCtrl::SetFont(wxFont& font)
 	wxTextCtrl::SetFont(*m_pFont);
 }
 
+void CTextCtrl::SetTextColour(wxColour& colour)
+{
+	m_pTextColour = &colour;
+	wxTextCtrl::SetForegroundColour(*m_pTextColour);
+}
+
 void CTextCtrl::RefreshData()
 {
 	if (m_pFont) wxTextCtrl::SetFont(*m_pFont);
+	if (m_pTextColour) wxTextCtrl::SetForegroundColour(*m_pTextColour);
 
 	if (m_p_str_val)
 	{

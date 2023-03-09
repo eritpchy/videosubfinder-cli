@@ -40,6 +40,7 @@ typedef long long	                s64;
 
 wxString get_add_info();
 
+extern void PlaySound(wxString path);
 extern void SaveToReportLog(wxString msg, wxString mode = wxT("ab"));
 extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, char* det);
 

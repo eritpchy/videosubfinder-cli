@@ -39,9 +39,12 @@ public:
 class CDataGrid : public wxGrid, public CControl
 {
 public:
-	CDataGrid ( wxWindow* parent,				
+	CDataGrid ( wxWindow* parent,
+				wxString& grid_col_property_label,
+				wxString& grid_col_value_label,
 				wxWindowID id = wxID_ANY,
 				wxFont* pFont = NULL,
+				wxColour* pTextColour = NULL,
 				const wxPoint& pos = wxDefaultPosition,
 				const wxSize& size = wxDefaultSize );		
 	~CDataGrid();
@@ -50,6 +53,9 @@ public:
 	int m_w;
 	int m_h;
 	wxFont* m_pFont;
+	wxColour* m_pTextColour;
+	wxString* m_p_grid_col_property_label;
+	wxString* m_p_grid_col_value_label;
 	vector<DataGridGroup> m_DataGridGroups;
 	vector<DataGridGroup> m_DataGridSubGroup;
 

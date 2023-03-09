@@ -77,18 +77,15 @@ void CImageBox::Init()
 	wxString strIBClass;
 	wxString strIBXClass;
 
-	m_IWColor = wxColour(125, 125, 125);
-
-	m_CL1Color = wxColour(255, 255, 225);
-
-	m_plblIB = new CStaticText( this, ID_LBL_IB, wxT("Image Box") );
+	m_plblIB = new CStaticText( this, ID_LBL_IB, g_cfg.m_image_box_title);
 	m_IBColor = m_plblIB->GetBackgroundColour();
 	m_plblIB->SetSize(0, 0, 390, 30);
 	m_plblIB->SetFont(m_pMF->m_LBLFont);
-	m_plblIB->SetBackgroundColour( m_CL1Color );
+	m_plblIB->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblIB->SetBackgroundColour(g_cfg.m_video_image_box_title_colour);
 
 	m_pIW = new CImageWnd(this);
-	m_pIW->SetBackgroundColour(m_IWColor);
+	m_pIW->SetBackgroundColour(g_cfg.m_video_image_box_background_colour);
 
 	this->SetBackgroundColour(m_IBColor);
 	this->SetSize(20,20,402,300);

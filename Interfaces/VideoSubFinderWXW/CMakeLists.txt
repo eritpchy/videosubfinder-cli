@@ -22,7 +22,7 @@ target_include_directories(VideoSubFinderWXW PUBLIC
 
 if (WIN32)
 	target_link_directories(VideoSubFinderWXW  PUBLIC
-		${VideoSubFinderWXW_LINK_DIRS}
+		${VideoSubFinderWXW_LINK_DIRS}		
 	)
 
 	target_link_libraries(VideoSubFinderWXW PUBLIC
@@ -63,7 +63,8 @@ else()
 	target_compile_options(VideoSubFinderWXW PRIVATE ${wxWidgets_CXX_FLAGS})
 
 	target_link_directories(VideoSubFinderWXW  PUBLIC
-		"${wxWidgets_LIBRARY_DIRS}"
+		${wxWidgets_LIBRARY_DIRS}
+		${CUDA_LINK_DIRS}
 	)
 
 	target_link_libraries(VideoSubFinderWXW PUBLIC

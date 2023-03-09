@@ -24,7 +24,6 @@ CStaticBox::CStaticBox(wxWindow* parent, wxWindowID id,
     long style,
     const wxString& name) : wxStaticBox(parent, id, label, pos, size, style, name)
 {
-	m_pFont = NULL;
 }
 
 void CStaticBox::SetFont(wxFont& font)
@@ -33,7 +32,14 @@ void CStaticBox::SetFont(wxFont& font)
 	wxStaticBox::SetFont(*m_pFont);
 }
 
+void CStaticBox::SetTextColour(wxColour& colour)
+{
+    m_pTextColour = &colour;
+    wxStaticBox::SetForegroundColour(*m_pTextColour);
+}
+
 void CStaticBox::RefreshData()
 {
 	if (m_pFont) wxStaticBox::SetFont(*m_pFont);
+    if (m_pTextColour) wxStaticBox::SetForegroundColour(*m_pTextColour);
 }

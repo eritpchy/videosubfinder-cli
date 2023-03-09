@@ -200,11 +200,8 @@ void COCRPanel::Init()
 {
 	SaveToReportLog("COCRPanel::Init(): starting...\n");
 
-	m_CL1 = wxColour(255, 215, 0);
-	m_CLOCR = wxColour(170, 170, 170);
-
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJTXTSL, reJTXTSL, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
-	int w, h, cbh, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
+	int w, h, cbh, dw, dh, txt_dw = g_cfg.m_txt_dw, txt_dy = g_cfg.m_txt_dy;
 	const int dx = 20;
 	const int dy = 20;
 	const int BTNW = 410;
@@ -307,78 +304,98 @@ void COCRPanel::Init()
 	SaveToReportLog("COCRPanel::Init(): init m_pP3...\n");
 	m_pP3 = new wxPanel( this, wxID_ANY, rcP3.GetPosition(), rcP3.GetSize() );
 	m_pP3->SetMinSize(rcP3.GetSize());
-	m_pP3->SetBackgroundColour( m_CLOCR );
+	m_pP3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_plblMSD...\n");
-	m_plblMSD = new CStaticText(m_pP3, wxID_ANY, m_pMF->m_cfg.m_ocr_label_msd_text);
+	m_plblMSD = new CStaticText(m_pP3, wxID_ANY, g_cfg.m_ocr_label_msd_text);
 	m_plblMSD->SetSize(rlMSD);
 	m_plblMSD->SetFont(m_pMF->m_LBLFont);
-	m_plblMSD->SetBackgroundColour( m_CL1 );
+	m_plblMSD->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblMSD->SetBackgroundColour( g_cfg.m_main_labels_background_colour );
 
 	SaveToReportLog("COCRPanel::Init(): init m_pMSD...\n");
 	m_pMSD = new CTextCtrl(m_pP3, wxID_ANY,
-		&(m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
+		&(g_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
 	m_pMSD->SetFont(m_pMF->m_LBLFont);
+	m_pMSD->SetTextColour(g_cfg.m_main_text_colour);
+	m_pMSD->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_plblJTXTSL...\n");
-	m_plblJTXTSL = new CStaticText(m_pP3, wxID_ANY, m_pMF->m_cfg.m_ocr_label_join_txt_images_split_line_text);
+	m_plblJTXTSL = new CStaticText(m_pP3, wxID_ANY, g_cfg.m_ocr_label_join_txt_images_split_line_text);
 	m_plblJTXTSL->SetSize(rlJTXTSL);
 	m_plblJTXTSL->SetFont(m_pMF->m_LBLFont);
-	m_plblJTXTSL->SetBackgroundColour(m_CL1);
+	m_plblJTXTSL->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblJTXTSL->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pJTXTSL...\n");
 	m_pJTXTSL = new CTextCtrl(m_pP3, wxID_ANY,
-		&(m_pMF->m_cfg.m_ocr_join_txt_images_split_line), reJTXTSL.GetPosition(), reJTXTSL.GetSize());
+		&(g_cfg.m_ocr_join_txt_images_split_line), reJTXTSL.GetPosition(), reJTXTSL.GetSize());
 	m_pJTXTSL->SetFont(m_pMF->m_LBLFont);
+	m_pJTXTSL->SetTextColour(g_cfg.m_main_text_colour);
+	m_pJTXTSL->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbJSACT...\n");
 	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
-		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize());
+		g_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize());
 	m_pcbJSACT->SetFont(m_pMF->m_LBLFont);
-	m_pcbJSACT->SetBackgroundColour(m_CL1);
+	m_pcbJSACT->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbJSACT->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbCTXTF...\n");
 	m_pcbCTXTF = new CCheckBox(m_pP3, wxID_ANY, &g_clear_txt_folders,
-		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize());
+		g_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize());
 	m_pcbCTXTF->SetFont(m_pMF->m_LBLFont);
-	m_pcbCTXTF->SetBackgroundColour(m_CL1);
+	m_pcbCTXTF->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbCTXTF->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbSESS...\n");
 	m_pcbSESS = new CCheckBox(m_pP3, wxID_ANY, &g_save_each_substring_separately,
-		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize());
+		g_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize());
 	m_pcbSESS->SetFont(m_pMF->m_LBLFont);
-	m_pcbSESS->SetBackgroundColour(m_CL1);
+	m_pcbSESS->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbSESS->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pcbSSI...\n");
 	m_pcbSSI = new CCheckBox(m_pP3, wxID_ANY, &g_save_scaled_images,
-		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize());
+		g_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize());
 	m_pcbSSI->SetFont(m_pMF->m_LBLFont);
-	m_pcbSSI->SetBackgroundColour(m_CL1);
+	m_pcbSSI->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbSSI->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCCTI...\n");
 	m_pCCTI = new CButton(m_pP3, ID_BTN_CCTI,
-		m_pMF->m_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
+		g_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
 	m_pCCTI->SetFont(m_pMF->m_BTNFont);
+	m_pCCTI->SetTextColour(g_cfg.m_main_text_colour);
+	m_pCCTI->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSTXT...\n");
 	m_pCSTXT = new CButton(m_pP3, ID_BTN_CSTXT,
-		m_pMF->m_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
+		g_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
 	m_pCSTXT->SetFont(m_pMF->m_BTNFont);
+	m_pCSTXT->SetTextColour(g_cfg.m_main_text_colour);
+	m_pCSTXT->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSCTI...\n");
 	m_pCSCTI = new CButton(m_pP3, ID_BTN_CSCTI,
-		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
+		g_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_pMF->m_BTNFont);
+	m_pCSCTI->SetTextColour(g_cfg.m_main_text_colour);
+	m_pCSCTI->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
 	m_pCES = new CButton( m_pP3, ID_BTN_CES,
-		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
+		g_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
 	m_pCES->SetFont(m_pMF->m_BTNFont);
+	m_pCES->SetTextColour(g_cfg.m_main_text_colour);
+	m_pCES->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 	
 	SaveToReportLog("COCRPanel::Init(): init m_pJOIN...\n");
 	m_pJOIN = new CButton(m_pP3, ID_BTN_JOIN,
-		m_pMF->m_cfg.m_ocr_button_join_text, rcJOIN.GetPosition(), rcJOIN.GetSize());
+		g_cfg.m_ocr_button_join_text, rcJOIN.GetPosition(), rcJOIN.GetSize());
 	m_pJOIN->SetFont(m_pMF->m_BTNFont);
+	m_pJOIN->SetTextColour(g_cfg.m_main_text_colour);
+	m_pJOIN->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 
@@ -416,6 +433,8 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 
         res = dir.GetNext(&filename);
     }
+
+	if (FileNamesVector.size() == 0) return;
 	
 	for (i=0; i<(int)FileNamesVector.size()-1; i++)
 	for (j=i+1; j<(int)FileNamesVector.size(); j++)
@@ -428,7 +447,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		}
 	}	
 
-	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	for(k=0; k<(int)FileNamesVector.size(); k++)
 	{
@@ -564,6 +583,8 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
         res = dir.GetNext(&filename);
     }
 
+	if (FileNamesVector.size() == 0) return;
+
 	for (i=0; i<(int)FileNamesVector.size()-1; i++)
 	for (j=i+1; j<(int)FileNamesVector.size(); j++)
 	{
@@ -575,7 +596,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		}
 	}
 
-	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	k = 0;
 	while (k < (int)FileNamesVector.size())
@@ -708,8 +729,8 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 	{
 		wxString sub_name = (m_pMF->m_FileName.size() > 0) ? GetFileName(m_pMF->m_FileName) : wxT("sub");
 		m_sub_path.Clear();
-		wxFileDialog fd(m_pMF, wxT("Save subtitle as..."),
-			g_work_dir, sub_name, wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass|All Files (*.*)|*.*"), wxFD_SAVE);
+		wxFileDialog fd(m_pMF, g_cfg.m_file_dialog_title_save_subtitle_as,
+			g_work_dir, sub_name, g_cfg.m_file_dialog_title_save_subtitle_as_wild_card, wxFD_SAVE);
 		int res = fd.ShowModal();
 
 		if (res == wxID_OK)
@@ -785,7 +806,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		}
 	}
 
-	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 	
 	int W, H;
     
@@ -1035,7 +1056,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			{
 				w_prev = w;
 
-				if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
+				if (!g_cfg.m_ocr_join_txt_images_split_line.empty())
 				{
 					dh = (w / 16);
 				}
@@ -1066,7 +1087,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 		dc.SelectObject(bitmap);
 		wxSize text_size;
 
-		if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
+		if (!g_cfg.m_ocr_join_txt_images_split_line.empty())
 		{			
 			int font_size = 0;
 
@@ -1100,7 +1121,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			file_name = FileNamesVector[fi];
 			file_path = dir_path + file_name;
 
-			if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
+			if (!g_cfg.m_ocr_join_txt_images_split_line.empty())
 			{
 				wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 				u64 bt, et;
@@ -1123,7 +1144,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 				wxString str_bt = VideoTimeToStr2(bt);
 				wxString str_et = VideoTimeToStr2(et);
 
-				Str = m_pMF->m_cfg.m_ocr_join_txt_images_split_line;
+				Str = g_cfg.m_ocr_join_txt_images_split_line;
 
 				wxRegEx re_bt(wxT("\\[begin_time\\]"));
 				wxRegEx re_et(wxT("\\[end_time\\]"));
@@ -1721,6 +1742,7 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	if (!(m_pMF->m_blnNoGUI))
 	{
+		SaveToReportLog("ThreadCreateClearedTextImages::Entry: wxPostEvent THREAD_CCTI_END ...\n");
 		wxCommandEvent event(THREAD_CCTI_END);
 		wxPostEvent(m_pMF->m_pPanel->m_pOCRPanel, event);
 	}
@@ -1747,20 +1769,9 @@ void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 
 	if ((g_RunCreateClearedTextImages == 1) && g_playback_sound)
 	{
+		SaveToReportLog("ThreadCreateClearedTextImagesEnd: trying to play sound ...\n");
 		wxString Str = g_app_dir + wxT("/finished.wav");
-#ifdef WIN32
-		if (wxFileExists(Str))
-		{
-			wxSound sound(Str);
-			if (sound.IsOk())
-			{
-				sound.Play();
-			}
-		}
-#else
-		// Unfortunately wxWidgets doesn't play sound
-		system(wxString::Format(wxT("canberra-gtk-play -f \"%s\""), Str).c_str());		
-#endif
+		PlaySound(Str);
 	}
 
 	g_IsCreateClearedTextImages = 0;

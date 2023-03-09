@@ -30,7 +30,6 @@ CStaticText::CStaticText(  wxWindow* parent,
 		:wxPanel( parent, id, pos, size, panel_style, wxT(""))
 {
 	m_pParent = parent;
-	m_pFont = NULL;
 
 	m_pST = new wxStaticText(this, wxID_ANY, label, wxDefaultPosition, wxDefaultSize, text_style, wxStaticTextNameStr);
 
@@ -44,6 +43,13 @@ CStaticText::~CStaticText()
 void CStaticText::SetFont(wxFont& font)
 {
 	m_pFont = &font;
+	wxSizeEvent event;
+	OnSize(event);
+}
+
+void CStaticText::SetTextColour(wxColour& colour)
+{
+	m_pTextColour = &colour;
 	wxSizeEvent event;
 	OnSize(event);
 }
@@ -68,16 +74,12 @@ bool CStaticText::SetBackgroundColour(const wxColour& colour)
 		     m_pST->SetBackgroundColour(colour) );
 }
 
-void CStaticText::SetTextColour(const wxColour& colour)
-{
-	m_pST->SetForegroundColour(colour);
-}
-
 void CStaticText::OnSize(wxSizeEvent& event)
 {
 	int w, h, tw, th, x, y;
 
 	if (m_pFont) m_pST->SetFont(*m_pFont);
+	if (m_pTextColour) m_pST->SetForegroundColour(*m_pTextColour);
 
     this->GetClientSize(&w, &h);
 	m_pST->GetSize(&tw, &th);

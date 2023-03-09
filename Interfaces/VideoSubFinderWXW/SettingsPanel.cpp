@@ -37,11 +37,11 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 
 	m_n = 5;
 	StrFN.resize(m_n);
-	StrFN[0] = wxT("After First Filtration");
-	StrFN[1] = wxT("After Second Filtration");
-	StrFN[2] = wxT("After Third Filtration");
-	StrFN[3] = wxT("NEdges Points Image");
-	StrFN[4] = wxT("Cleared Text Image");
+	StrFN[0] = g_cfg.m_test_result_after_first_filtration_label;
+	StrFN[1] = g_cfg.m_test_result_after_second_filtration_label;
+	StrFN[2] = g_cfg.m_test_result_after_third_filtration_label;
+	StrFN[3] = g_cfg.m_test_result_nedges_points_image_label;
+	StrFN[4] = g_cfg.m_test_result_cleared_text_image_label;
 	m_cn = 4;
 }
 
@@ -64,14 +64,6 @@ void CSettingsPanel::Init()
 	const int TESTW = 170;
 	const int dx = 5;
 	int GB12W;
-
-	m_CLDBG = wxColour(200, 200, 200);
-	m_CLSP = wxColour(170,170,170);
-	m_CL1 = wxColour(255, 215, 0);
-	m_CL2 = wxColour(127, 255, 0);
-	m_CL3 = wxColour(127, 255, 212);
-	m_CL4 = wxColour(255, 255, 0);
-	m_CLGG = wxColour(0, 255, 255);
 
 	rcP2 = this->GetRect();
 
@@ -143,7 +135,7 @@ void CSettingsPanel::Init()
 	SaveToReportLog("CSettingsPanel::Init(): init m_pP2...\n");
 	m_pP2 = new wxPanel( this, wxID_ANY, rcP2.GetPosition(), rcP2.GetSize() );
 	m_pP2->SetMinSize(rcP2.GetSize());
-	m_pP2->SetBackgroundColour( m_CLSP );
+	m_pP2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init top_sizer...\n");
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
@@ -159,23 +151,31 @@ void CSettingsPanel::Init()
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB1...\n");
 	m_pGB1 = new CStaticBox( m_pP2, wxID_ANY,
-		m_pMF->m_cfg.m_ssp_label_parameters_influencing_image_processing, rcGB1.GetPosition(), rcGB1.GetSize() );
+		g_cfg.m_ssp_label_parameters_influencing_image_processing, rcGB1.GetPosition(), rcGB1.GetSize() );
 	m_pGB1->SetFont(m_pMF->m_LBLFont);
+	m_pGB1->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGB1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB2...\n");
 	m_pGB2 = new CStaticBox( m_pP2, wxID_ANY,
-		m_pMF->m_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, rcGB2.GetPosition(), rcGB2.GetSize() );
+		g_cfg.m_ssp_label_ocl_and_multiframe_image_stream_processing, rcGB2.GetPosition(), rcGB2.GetSize() );
 	m_pGB2->SetFont(m_pMF->m_LBLFont);
+	m_pGB2->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGB2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB3...\n");
 	m_pGB3 = new CStaticBox( m_pP2, wxID_ANY,
 		wxT(""), rcGB3.GetPosition(), rcGB3.GetSize() );
 	m_pGB3->SetFont(m_pMF->m_LBLFont);
+	m_pGB3->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGB3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pTest...\n");
 	m_pTest = new CButton( m_pP2, ID_TEST,
-		wxT("Test"), rcTEST.GetPosition(), rcTEST.GetSize() );
+		g_cfg.m_button_test_text, rcTEST.GetPosition(), rcTEST.GetSize() );
 	m_pTest->SetFont(m_pMF->m_BTNFont);
+	m_pTest->SetTextColour(g_cfg.m_main_text_colour);
+	m_pTest->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 	
 	bmp_na = wxImage(g_app_dir + "/bitmaps/left_na.bmp");
 	bmp_od = wxImage(g_app_dir + "/bitmaps/left_od.bmp");
@@ -194,140 +194,151 @@ void CSettingsPanel::Init()
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblIF...\n");
 	m_plblIF = new CStaticText( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
 	m_plblIF->SetFont(m_pMF->m_LBLFont);
-	m_plblIF->SetBackgroundColour( m_CL3 );
+	m_plblIF->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblIF->SetBackgroundColour(g_cfg.m_test_result_label_colour);
 	m_plblIF->SetSize(rlIF);
 
-	SaveToReportLog("CSettingsPanel::Init(): init m_pOI...\n");
-	m_pOI = new CDataGrid( m_pP2, ID_OI, &(m_pMF->m_LBLFont),
+	SaveToReportLog("CSettingsPanel::Init(): init m_pOI...\n");	
+	m_pOI = new CDataGrid( m_pP2, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OI, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
                            rcOI.GetPosition(), rcOI.GetSize() );
-
+	m_pOI->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
+	m_pOI->SetBackgroundColour(g_cfg.m_notebook_colour);
+	m_pOI->SetDefaultCellBackgroundColour(g_cfg.m_notebook_colour);
+	m_pOI->SetLabelBackgroundColour(g_cfg.m_notebook_colour);		
+	m_pOI->SetGridLineColour(g_cfg.m_grid_line_colour);
+	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_global_image_processing_settings...\n");
-    m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_global_image_processing_settings, m_CLGG);	
+    m_pOI->AddGroup(g_cfg.m_ssp_oi_group_global_image_processing_settings, g_cfg.m_grid_gropes_colour);	
 	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_text_alignment, m_CL2, m_CL4, &g_text_alignment_string, GetAvailableTextAlignments());
+	m_pOI->AddProperty(g_cfg.m_label_text_alignment, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_text_alignment_string, GetAvailableTextAlignments());
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_filter_color, m_CL2, m_CL4, &g_use_filter_color);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_use_outline_filter_color, m_CL2, m_CL4, &g_use_outline_filter_color);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dL_color, m_CL2, m_CL4, &g_dL_color, 0, 255);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dA_color, m_CL2, m_CL4, &g_dA_color, 0, 255);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_dB_color, m_CL2, m_CL4, &g_dB_color, 0, 255);	
+	m_pOI->AddProperty(g_cfg.m_label_use_filter_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_filter_color);
+	m_pOI->AddProperty(g_cfg.m_label_use_outline_filter_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_outline_filter_color);
+	m_pOI->AddProperty(g_cfg.m_label_dL_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_dL_color, 0, 255);
+	m_pOI->AddProperty(g_cfg.m_label_dA_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_dA_color, 0, 255);
+	m_pOI->AddProperty(g_cfg.m_label_dB_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_dB_color, 0, 255);	
 	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_hw_device, m_CL2, m_CL4, &g_hw_device, GetAvailableHWDeviceTypes());
+	m_pOI->AddProperty(g_cfg.m_ssp_hw_device, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_hw_device, GetAvailableHWDeviceTypes());
 	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_label_filter_descr, m_CL2, m_CL4, &g_filter_descr);
+	m_pOI->AddProperty(g_cfg.m_label_filter_descr, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_filter_descr);
 
 #ifdef USE_CUDA
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu, m_CL2, m_CL4, &g_use_cuda_gpu);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_use_cuda_gpu, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_cuda_gpu);
 #else
-	//m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_cuda_gpu + " (only on x64 is supported)", m_CLSP, m_CLSP, &g_use_cuda_gpu);
+	//m_pOI->AddProperty(g_cfg.m_ssp_oi_property_use_cuda_gpu + " (only on x64 is supported)", g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_use_cuda_gpu);
 	//m_pOI->SetReadOnly(m_pOI->GetNumberRows() - 1, 1, true);
 #endif
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_use_ocl, m_CL2, m_CL4, &g_use_ocl);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_use_ocl, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ocl);
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_playback_sound, m_CL2, m_CL4, &g_playback_sound);
+	m_pOI->AddProperty(g_cfg.m_playback_sound, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_playback_sound);
 
 	// debug settings
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, m_CLDBG, m_CLDBG, &g_generate_cleared_text_images_on_test);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_images, m_CLDBG, m_CLDBG, &g_show_results);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, m_CLDBG, m_CLDBG, &g_show_sf_results);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_clear_test_images_folder, m_CLDBG, m_CLDBG, &g_clear_test_images_folder);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_show_transformed_images_only, m_CLDBG, m_CLDBG, &g_show_transformed_images_only);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_generate_cleared_text_images_on_test, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_generate_cleared_text_images_on_test);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_dump_debug_images, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_show_results);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_dump_debug_second_filtration_images, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_show_sf_results);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_clear_test_images_folder, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_clear_test_images_folder);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_show_transformed_images_only, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_show_transformed_images_only);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_initial_image_processing...\n");
-	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_initial_image_processing, m_CLGG);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, m_CL1);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold, m_CL2, m_CL4, &g_mthr, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_nedges_threshold, m_CL2, m_CL4, &g_mnthr, 0.0, 1.0);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, m_CL1);	
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_segment_width, m_CL2, m_CL4, &g_segw, 4, 50);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_segments_count, m_CL2, m_CL4, &g_msegc, 1, 10);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_sum_color_difference, m_CL2, m_CL4, &g_scd, 0, 10000);
+	m_pOI->AddGroup(g_cfg.m_ssp_oi_group_initial_image_processing, g_cfg.m_grid_gropes_colour);
+	m_pOI->AddSubGroup(g_cfg.m_ssp_oi_sub_group_settings_for_sobel_operators, g_cfg.m_grid_sub_gropes_colour);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_moderate_threshold, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_mthr, 0.0, 1.0);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_moderate_nedges_threshold, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_mnthr, 0.0, 1.0);
+	m_pOI->AddSubGroup(g_cfg.m_ssp_oi_sub_group_settings_for_color_filtering, g_cfg.m_grid_sub_gropes_colour);	
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_segment_width, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_segw, 4, 50);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_segments_count, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_msegc, 1, 10);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_sum_color_difference, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_scd, 0, 10000);
 
-	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_secondary_image_processing, m_CLGG);
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, m_CL1);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_line_height, m_CL2, m_CL4, &g_segh, 1, 50);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_between_text_distance, m_CL2, m_CL4, &g_btd, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_max_text_center_offset, m_CL2, m_CL4, &g_to, 0.0, 1.0);	
-	m_pOI->AddSubGroup(m_pMF->m_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, m_CL1);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_number, m_CL2, m_CL4, &g_mpn, 0, 10000);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_points_density, m_CL2, m_CL4, &g_mpd, 0.0, 1.0);	
+	m_pOI->AddGroup(g_cfg.m_ssp_oi_group_secondary_image_processing, g_cfg.m_grid_gropes_colour);
+	m_pOI->AddSubGroup(g_cfg.m_ssp_oi_sub_group_settings_for_linear_filtering, g_cfg.m_grid_sub_gropes_colour);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_line_height, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_segh, 1, 50);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_max_between_text_distance, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_btd, 0.0, 1.0);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_max_text_center_offset, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_to, 0.0, 1.0);	
+	m_pOI->AddSubGroup(g_cfg.m_ssp_oi_sub_group_settings_for_color_border_points, g_cfg.m_grid_sub_gropes_colour);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_points_number, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_mpn, 0, 10000);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_points_density, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_mpd, 0.0, 1.0);	
 
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_nedges_points_density, m_CL2, m_CL4, &g_mpned, 0.0, 1.0);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_nedges_points_density, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_mpned, 0.0, 1.0);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_tertiary_image_processing...\n");
-	m_pOI->AddGroup(m_pMF->m_cfg.m_ssp_oi_group_tertiary_image_processing, m_CLGG);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_height, m_CL2, m_CL4, &g_msh, 0.0, 1.0);
-	m_pOI->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_min_symbol_density, m_CL2, m_CL4, &g_msd, 0.0, 1.0);
+	m_pOI->AddGroup(g_cfg.m_ssp_oi_group_tertiary_image_processing, g_cfg.m_grid_gropes_colour);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_symbol_height, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_msh, 0.0, 1.0);
+	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_symbol_density, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_msd, 0.0, 1.0);
 
 	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.65);
-	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.35);
+	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.35);	
 
 	////////////////////////////////////////////////////////////////////////
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM...\n");
-	m_pOIM = new CDataGrid( m_pP2, ID_OIM, &(m_pMF->m_LBLFont),
+	m_pOIM = new CDataGrid( m_pP2, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OIM, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
                            rcOIM.GetPosition(), rcOIM.GetSize() );
+	m_pOIM->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
+	m_pOIM->SetBackgroundColour(g_cfg.m_notebook_colour);
+	m_pOIM->SetDefaultCellBackgroundColour(g_cfg.m_notebook_colour);
+	m_pOIM->SetLabelBackgroundColour(g_cfg.m_notebook_colour);
+	m_pOIM->SetGridLineColour(g_cfg.m_grid_line_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_ocr_settings...\n");
-	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_ocr_settings, m_CLGG);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_border_is_darker, m_CL2, m_CL4, &g_border_is_darker);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_extend_by_grey_color, m_CL2, m_CL4, &g_extend_by_grey_color);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_allow_min_luminance, m_CL2, m_CL4, &g_allow_min_luminance, 0, 255);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_ocr_threads, m_CL2, m_CL4, &g_ocr_threads, -1, 100);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_image_scale_for_clear_image, m_CL2, m_CL4, &g_scale, 1, 4);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, m_CL2, m_CL4, &g_smthr, 0.0, 1.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, m_CL2, m_CL4, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, m_CL2, m_CL4, &g_cpu_kmeans_loop_iterations, 1, 1000);
+	m_pOIM->AddGroup(g_cfg.m_ssp_oim_group_ocr_settings, g_cfg.m_grid_gropes_colour);
+	m_pOIM->AddProperty(g_cfg.m_border_is_darker, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_border_is_darker);
+	m_pOIM->AddProperty(g_cfg.m_extend_by_grey_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_extend_by_grey_color);
+	m_pOIM->AddProperty(g_cfg.m_allow_min_luminance, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_allow_min_luminance, 0, 255);
+	m_pOIM->AddProperty(g_cfg.m_ssp_ocr_threads, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_ocr_threads, -1, 100);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_image_scale_for_clear_image, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_scale, 1, 4);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_moderate_threshold_for_scaled_image, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_smthr, 0.0, 1.0);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_cpu_kmeans_initial_loop_iterations, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_cpu_kmeans_initial_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_cpu_kmeans_loop_iterations, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_cpu_kmeans_loop_iterations, 1, 1000);
 #ifdef USE_CUDA
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CL2, m_CL4, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CL2, m_CL4, &g_cuda_kmeans_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_cuda_kmeans_loop_iterations, 1, 1000);
 #else
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, m_CLSP, m_CLSP, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
-	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, m_CLSP, m_CLSP, &g_cuda_kmeans_loop_iterations, 1, 1000);
-	m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
+	//m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_cuda_kmeans_initial_loop_iterations, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_cuda_kmeans_initial_loop_iterations, 1, 1000);
+	//m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
+	//m_pOIM->AddProperty(g_cfg.m_ssp_oi_property_cuda_kmeans_loop_iterations, g_cfg.m_grid_debug_settings_colour, g_cfg.m_grid_debug_settings_colour, &g_cuda_kmeans_loop_iterations, 1, 1000);
+	//m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 #endif
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, m_CL2, m_CL4, &g_CLEAN_RGB_IMAGES);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_images_logical, m_CL2, m_CL4, &g_clear_image_logical);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_combine_to_single_cluster, m_CL2, m_CL4, &g_combine_to_single_cluster);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, m_CL2, m_CL4, &g_use_ISA_images_for_get_txt_area);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, m_CL2, m_CL4, &g_use_ILA_images_for_get_txt_area);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, m_CL2, m_CL4, &g_use_gradient_images_for_clear_txt_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, m_CL2, m_CL4, &g_use_ILA_images_for_getting_txt_symbols_areas);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, m_CL2, m_CL4, &g_use_ILA_images_before_clear_txt_images_from_borders);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, m_CL2, m_CL4, &g_use_ILA_images_for_clear_txt_images);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, m_CL2, m_CL4, &g_clear_txt_images_by_main_color);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_remove_wide_symbols, m_CL2, m_CL4, &g_remove_wide_symbols);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_clear_rgbimages_after_search_subtitles, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_CLEAN_RGB_IMAGES);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_clear_images_logical, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_clear_image_logical);
+	m_pOIM->AddProperty(g_cfg.m_label_combine_to_single_cluster, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_combine_to_single_cluster);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_using_isaimages_for_getting_txt_areas, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ISA_images_for_get_txt_area);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_using_ilaimages_for_getting_txt_areas, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ILA_images_for_get_txt_area);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_use_gradient_images_for_clear_txt_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_gradient_images_for_clear_txt_images);
+	m_pOIM->AddProperty(g_cfg.m_label_ILA_images_for_getting_txt_symbols_areas, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ILA_images_for_getting_txt_symbols_areas);
+	m_pOIM->AddProperty(g_cfg.m_label_use_ILA_images_before_clear_txt_images_from_borders, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ILA_images_before_clear_txt_images_from_borders);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_use_ILA_images_for_clear_txt_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ILA_images_for_clear_txt_images);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_clear_txt_images_by_main_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_clear_txt_images_by_main_color);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_remove_wide_symbols, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_remove_wide_symbols);
 
-	//m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, &g_ValidateAndCompareTXTImages);
+	//m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_validate_and_compare_cleared_txt_images, m_CLSP, m_CLSP, &g_ValidateAndCompareTXTImages);
 	//m_pOIM->SetReadOnly(m_pOIM->GetNumberRows() - 1, 1, true);
 
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, m_CL2, m_CL4, &g_DontDeleteUnrecognizedImages1);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, m_CL2, m_CL4, &g_DontDeleteUnrecognizedImages2);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_default_string_for_empty_sub, m_CL2, m_CL4, &g_DefStringForEmptySub);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_first, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_DontDeleteUnrecognizedImages1);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_dont_delete_unrecognized_images_second, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_DontDeleteUnrecognizedImages2);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_default_string_for_empty_sub, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_DefStringForEmptySub);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_settings_for_multiframe_image_processing...\n");
-	m_pOIM->AddGroup(m_pMF->m_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, m_CLGG);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_threads, m_CL2, m_CL4, &g_threads, -1, 100);
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, m_CL1);		
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_sub_frames_length, m_CL2, m_CL4, &g_DL, 1, 100);
+	m_pOIM->AddGroup(g_cfg.m_ssp_oim_group_settings_for_multiframe_image_processing, g_cfg.m_grid_gropes_colour);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_threads, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_threads, -1, 100);
+	m_pOIM->AddSubGroup(g_cfg.m_ssp_oim_sub_group_settings_for_sub_detection, g_cfg.m_grid_sub_gropes_colour);		
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_sub_frames_length, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_DL, 1, 100);
 
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, m_CL2, m_CL4, &g_use_ILA_images_for_search_subtitles);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, m_CL2, m_CL4, &g_use_ISA_images_for_search_subtitles);	
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, m_CL2, m_CL4, &g_replace_ISA_by_filtered_version);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_down, m_CL2, m_CL4, &g_max_dl_down, 0, 255);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_max_dl_up, m_CL2, m_CL4, &g_max_dl_up, 0, 255);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_use_ILA_images_for_search_subtitles, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ILA_images_for_search_subtitles);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_use_ISA_images_for_search_subtitles, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_ISA_images_for_search_subtitles);	
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_replace_ISA_by_filtered_version, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_replace_ISA_by_filtered_version);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_max_dl_down, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_max_dl_down, 0, 255);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_max_dl_up, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_max_dl_up, 0, 255);
 
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, m_CL1);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_vedges_points_line_error, m_CL2, m_CL4, &g_veple, 0.0, 10.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_ila_points_line_error, m_CL2, m_CL4, &g_ilaple, 0.0, 10.0);
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, m_CL1);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_text_percent, m_CL2, m_CL4, &g_tp, 0.0, 1.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_ssp_oim_property_min_text_length, m_CL2, m_CL4, &g_mtpl, 0.0, 1.0);
+	m_pOIM->AddSubGroup(g_cfg.m_ssp_oim_sub_group_settings_for_comparing_subs, g_cfg.m_grid_sub_gropes_colour);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_vedges_points_line_error, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_veple, 0.0, 10.0);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_ila_points_line_error, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_ilaple, 0.0, 10.0);
+	m_pOIM->AddSubGroup(g_cfg.m_ssp_oim_sub_group_settings_for_checking_sub, g_cfg.m_grid_sub_gropes_colour);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_text_percent, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_tp, 0.0, 1.0);
+	m_pOIM->AddProperty(g_cfg.m_ssp_oim_property_min_text_length, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_mtpl, 0.0, 1.0);
 
-	m_pOIM->AddSubGroup(m_pMF->m_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, m_CL1);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_contrast, m_CL2, m_CL4, &g_video_contrast, 0.0, 10.0);
-	m_pOIM->AddProperty(m_pMF->m_cfg.m_label_video_gamma, m_CL2, m_CL4, &g_video_gamma, 0.0, 10.0);
+	m_pOIM->AddSubGroup(g_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, g_cfg.m_grid_sub_gropes_colour);
+	m_pOIM->AddProperty(g_cfg.m_label_video_contrast, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_video_contrast, 0.0, 10.0);
+	m_pOIM->AddProperty(g_cfg.m_label_video_gamma, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_video_gamma, 0.0, 10.0);
 
 	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x * 0.65);
 	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x * 0.35);
@@ -358,36 +369,44 @@ void CSettingsPanel::Init()
 	rcPixelColorExample.height = rcPixelColorRGB.GetBottom() - rcPixelColorLab.y + 1;	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
-	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_settings_file);
+	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, g_cfg.m_label_settings_file);
 	m_plblGSFN->SetFont(m_pMF->m_LBLFont);
-	m_plblGSFN->SetBackgroundColour(m_CL1);
+	m_plblGSFN->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblGSFN->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblGSFN->SetSize(rlGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGSFN...\n");
-	m_pGSFN = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_GeneralSettingsFileName + wxT(" "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);	
+	m_pGSFN = new CStaticText(m_pP2, wxID_ANY, g_GeneralSettingsFileName + wxT(" "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);	
 	m_pGSFN->SetFont(m_pMF->m_LBLFont);
-	m_pGSFN->SetBackgroundColour(wxColour(255, 255, 255));
+	m_pGSFN->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGSFN->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 	m_pGSFN->SetSize(rcGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblPixelColor...\n");
-	m_plblPixelColor = new CStaticText(m_pP2, wxID_ANY, m_pMF->m_cfg.m_label_pixel_color);
+	m_plblPixelColor = new CStaticText(m_pP2, wxID_ANY, g_cfg.m_label_pixel_color);
 	m_plblPixelColor->SetFont(m_pMF->m_LBLFont);
-	m_plblPixelColor->SetBackgroundColour(m_CL1);
+	m_plblPixelColor->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblPixelColor->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblPixelColor->SetSize(rlPixelColor);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorRGB...\n");
 	m_pPixelColorRGB = new CTextCtrl(m_pP2, wxID_ANY,
-		&(m_pMF->m_cfg.m_pixel_color_bgr), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
+		&(g_cfg.m_pixel_color_bgr), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
 	m_pPixelColorRGB->SetFont(m_pMF->m_LBLFont);
+	m_pPixelColorRGB->SetTextColour(g_cfg.m_main_text_colour);
+	m_pPixelColorRGB->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorLab...\n");
 	m_pPixelColorLab = new CTextCtrl(m_pP2, wxID_ANY,
-		&(m_pMF->m_cfg.m_pixel_color_lab), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
+		&(g_cfg.m_pixel_color_lab), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
 	m_pPixelColorLab->SetFont(m_pMF->m_LBLFont);
+	m_pPixelColorLab->SetTextColour(g_cfg.m_main_text_colour);
+	m_pPixelColorLab->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorExample...\n");
 	m_pPixelColorExample = new CStaticText(m_pP2, wxID_ANY, wxT(""));
 	m_pPixelColorExample->SetFont(m_pMF->m_LBLFont);
+	m_pPixelColorExample->SetTextColour(g_cfg.m_main_text_colour);
 	m_pPixelColorExample->SetBackgroundColour(wxColour(255, 255, 255));
 	m_pPixelColorExample->SetSize(rcPixelColorExample);
 
@@ -495,6 +514,10 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			{
 				m_ImF[4].copy_data(res.m_ImClearedText, res.m_ImClearedText.m_size);
 			}
+		}
+		else
+		{
+			return;
 		}
 	}	
 	
