@@ -24,18 +24,29 @@ public:
 	CBitmapButton(wxWindow* parent,
 		wxWindowID id,
 		const wxImage& image,
+		const wxImage& image_focused,
+		const wxImage& image_selected,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
+
+	CBitmapButton(wxWindow* parent,
+		wxWindowID id,
+		const wxImage& image,
 		const wxImage& image_selected,
 		const wxPoint& pos = wxDefaultPosition,
 		const wxSize& size = wxDefaultSize);
 
 	void OnLButtonDown( wxMouseEvent& event );
 	void OnLButtonUp( wxMouseEvent& event );
-	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
+	void OnMouseEnter(wxMouseEvent& event);
+	void OnMouseLeave(wxMouseEvent& event);
+	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);	
 	void OnPaint(wxPaintEvent& event);
 	void SetBitmapSelected(const wxBitmap& bitmap);
 
 	bool	m_bDown;
 	wxImage m_image;
+	wxImage m_image_focused;
 	wxImage m_image_selected;
 	wxWindow* m_parent;
 

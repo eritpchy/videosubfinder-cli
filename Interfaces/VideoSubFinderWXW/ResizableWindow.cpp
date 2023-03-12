@@ -31,7 +31,6 @@ CResizableWindow::CResizableWindow(wxWindow* parent, wxWindowID id,
 	const wxSize& size)
 	: wxWindow(parent, id, pos, size, wxCLIP_CHILDREN | wxWANTS_CHARS)
 {
-	m_border_size = m_border_size;
 }
 
 CResizableWindow::~CResizableWindow()

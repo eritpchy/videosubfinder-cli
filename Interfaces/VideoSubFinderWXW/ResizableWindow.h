@@ -33,7 +33,7 @@ public:
 	
 	void UpdateCursor(int x, int y);
 
-	int m_border_size = 10;
+	int m_border_size = 4;
 	int m_move_border_size = 40;
 	bool m_bDownResize = false;
 	bool m_bDownFromLeft = false;

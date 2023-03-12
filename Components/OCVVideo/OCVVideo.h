@@ -56,7 +56,6 @@ public:
     s64     m_st;
 	int		m_type; //video open type
 	bool	m_show_video;
-	bool	m_play_video;
 	wxBitmap	*m_pBmp;	
 	wxBitmap	*m_pBmpScaled;
 	double m_frameNumbers;

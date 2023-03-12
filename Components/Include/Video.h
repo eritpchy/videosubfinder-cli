@@ -39,7 +39,9 @@ public:
 	{
 	}
 	
-public:	
+public:
+	bool		m_play_video;
+
 	wxString	m_MovieName;
 	bool		m_Inited;
 

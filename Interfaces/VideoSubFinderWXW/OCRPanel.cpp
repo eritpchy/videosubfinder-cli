@@ -1506,9 +1506,9 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 
 					m_pMF->m_ct = -1;
 
-					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+					m_pMF->m_pVideoBox->m_pButtonPause->Disable();
+					m_pMF->m_pVideoBox->m_pButtonRun->Disable();
+					m_pMF->m_pVideoBox->m_pButtonStop->Disable();
 					m_pMF->m_pImageBox->ClearScreen();
 					m_pMF->m_pVideo->SetNullRender();
 				}

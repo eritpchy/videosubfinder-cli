@@ -813,9 +813,11 @@ void CMainFrame::OnFileOpenVideo(int type)
 	m_pVideo->Pause();
 
 	m_vs = Pause;
-	m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-	m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, true);
-	m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+	m_pVideoBox->m_pButtonPause->Enable();
+	m_pVideoBox->m_pButtonRun->Enable();
+	m_pVideoBox->m_pButtonStop->Enable();
+	m_pVideoBox->m_pButtonPause->Hide();
+	m_pVideoBox->m_pButtonRun->Show();
 
 	//m_pPanel->m_pSSPanel->OnBnClickedTest();
 
@@ -854,17 +856,16 @@ void CMainFrame::OnPlayPause(wxCommandEvent& event)
 		{
 			m_vs = Pause;
 			m_pVideo->Pause();
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, true);
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+
+			m_pVideoBox->m_pButtonPause->Hide();
+			m_pVideoBox->m_pButtonRun->Show();
 		}
 		else
 		{
 			m_vs = Play;
 			m_pVideo->Run();
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, true);
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pVideoBox->m_pButtonRun->Hide();
+			m_pVideoBox->m_pButtonPause->Show();
 		}
 	}
 }
@@ -879,9 +880,8 @@ void CMainFrame::OnStop(wxCommandEvent& event)
 		{
 			m_vs = Stop;
 			m_pVideo->StopFast();
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-			m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, true);
+			m_pVideoBox->m_pButtonPause->Hide();
+			m_pVideoBox->m_pButtonRun->Show();
 		}
 	}
 }
@@ -894,9 +894,8 @@ void CMainFrame::PauseVideo()
 	{
 		m_vs = Pause;
 		m_pVideo->Pause();
-		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, true);
-		m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pVideoBox->m_pButtonPause->Hide();
+		m_pVideoBox->m_pButtonRun->Show();
 	}
 }
 
@@ -1591,6 +1590,19 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 
 		m_ct = Cur;
 	}
+	else
+	{
+		if (g_RunSubSearch == 0)
+		{
+			if ((m_vs == Play) && (m_pVideo->m_play_video == false))
+			{
+				m_vs = Pause;
+				m_pVideo->Pause();
+				m_pVideoBox->m_pButtonPause->Hide();
+				m_pVideoBox->m_pButtonRun->Show();
+			}
+		}
+	}
 
 	m_pVideoBox->m_pSB->SetScrollPos((int)Cur);
 
@@ -1869,34 +1881,6 @@ void CMainFrame::OnSetPriorityHigh(wxCommandEvent& event)
 	HANDLE m_hCurrentProcess = GetCurrentProcess();
 	BOOL res = SetPriorityClass(m_hCurrentProcess, HIGH_PRIORITY_CLASS);
 #endif
-}
-
-void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColour& BColor)
-{
-	bmp = wxBitmap(wxImage(path));
-	const wxColour ColorDef = g_cfg.m_toolbar_bitmaps_border_colour;
-
-    if ( bmp.IsOk() )
-    {
-		int w = bmp.GetWidth();
-		int h = bmp.GetHeight();
-		wxColour Color;
-
-		wxMemoryDC dc;
-        dc.SelectObject(bmp);
-        dc.SetPen(wxPen(BColor));
-
-		for (int y=0; y < h; y++)
-		for (int x=0; x < w; x++)
-		{
-			dc.GetPixel(x, y, &Color);
-
-			if (Color == ColorDef)
-			{
-				dc.DrawPoint(x, y);
-			}
-		}
-    }
 }
 
 void WriteProperty(wxTextOutputStream& fout, int val, wxString Name)

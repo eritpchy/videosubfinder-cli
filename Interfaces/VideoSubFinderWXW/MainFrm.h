@@ -426,6 +426,4 @@ bool ReadProperty(std::map<wxString, wxString>& settings, wxColour& val, wxStrin
 bool IsMMX_and_SSE();
 bool IsSSE2();
 
-void LoadToolBarImage(wxBitmap& bmp, const wxString& path, const wxColour& BColor);
-
 extern CMainFrame *g_pMF;

@@ -66,8 +66,7 @@ public:
     bool    m_ImageGeted;
     s64     m_st;
 	int		m_type; //video open type
-	bool	m_show_video;
-	bool	m_play_video;
+	bool	m_show_video;	
 	double		m_frameNumbers;
 	double		m_fps;
 	long		m_origWidth;

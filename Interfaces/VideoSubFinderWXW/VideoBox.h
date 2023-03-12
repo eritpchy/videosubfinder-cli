@@ -25,6 +25,7 @@
 #include "ScrollBar.h"
 #include "SeparatingLine.h"
 #include "ResizableWindow.h"
+#include "BitmapButton.h"
 
 class CVideoBox;
 class CVideoWindow;
@@ -88,7 +89,9 @@ public:
 	CVideoBox(CMainFrame* pMF, wxColour	bc);
 	~CVideoBox();
 
-	wxToolBar		*m_pVBar;
+	CBitmapButton	*m_pButtonRun;
+	CBitmapButton	*m_pButtonPause;
+	CBitmapButton	*m_pButtonStop;
 	CStaticText		*m_plblVB;
 	CStaticText		*m_plblTIME;
 	CVideoWindow	*m_pVBox;

@@ -530,9 +530,9 @@ void CVideoWindow::OnSize(wxSizeEvent& event)
 
 BEGIN_EVENT_TABLE(CVideoBox, CResizableWindow)
 	EVT_SIZE(CVideoBox::OnSize)
-	EVT_MENU(ID_TB_RUN, CVideoBox::OnBnClickedRun)
-	EVT_MENU(ID_TB_PAUSE, CVideoBox::OnBnClickedPause)
-	EVT_MENU(ID_TB_STOP, CVideoBox::OnBnClickedStop)
+	EVT_BUTTON(ID_TB_RUN, CVideoBox::OnBnClickedRun)
+	EVT_BUTTON(ID_TB_PAUSE, CVideoBox::OnBnClickedPause)
+	EVT_BUTTON(ID_TB_STOP, CVideoBox::OnBnClickedStop)
 	EVT_KEY_DOWN(CVideoBox::OnKeyDown)
 	EVT_KEY_UP(CVideoBox::OnKeyUp)
 	EVT_MOUSEWHEEL(CVideoBox::OnMouseWheel)
@@ -560,11 +560,54 @@ CVideoBox::~CVideoBox()
 	}
 }
 
+void ReplaceColour(wxBitmap& bmp, wxColour orig_colour, wxColour repl_colour)
+{
+	if (bmp.IsOk())
+	{
+		int w = bmp.GetWidth();
+		int h = bmp.GetHeight();
+		wxColour Colour;
+
+		wxMemoryDC dc;
+		dc.SelectObject(bmp);
+		dc.SetPen(wxPen(repl_colour));
+
+		for (int y = 0; y < h; y++)
+		{
+			for (int x = 0; x < w; x++)
+			{
+				dc.GetPixel(x, y, &Colour);
+
+				if (Colour == orig_colour)
+				{
+					dc.DrawPoint(x, y);
+				}
+			}
+		}
+	}
+}
+
+void LoadToolBarImage(wxImage& image, wxImage& image_focused, wxImage& image_selected, const wxString& path,
+						wxColour border_colour, wxColour border_colour_focused, wxColour border_colour_selected)
+{
+	wxBitmap bmp = wxBitmap(wxImage(path));
+	wxBitmap bmp_focused = bmp;
+	wxBitmap bmp_selected = bmp;
+
+	ReplaceColour(bmp, g_cfg.m_toolbar_bitmaps_border_colour, border_colour);
+	ReplaceColour(bmp_focused, g_cfg.m_toolbar_bitmaps_border_colour, border_colour_focused);
+	ReplaceColour(bmp_selected, g_cfg.m_toolbar_bitmaps_border_colour, border_colour_selected);
+
+	image = bmp.ConvertToImage();
+	image_focused = bmp_focused.ConvertToImage();
+	image_selected = bmp_selected.ConvertToImage();	
+}
+
 void CVideoBox::Init()
 {
 	//wxString strVBClass;
 	//wxString strVBXClass;
-	wxBitmap bmp;
+	wxImage image, image_focused, image_selected;
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
@@ -576,22 +619,21 @@ void CVideoBox::Init()
 
 	this->SetBackgroundColour(m_bc);
 
-	m_pVBar = new wxToolBar(this, wxID_ANY,
-                               wxDefaultPosition, wxSize(30, 30), 
-							   wxTB_HORIZONTAL | wxTB_BOTTOM | 
-							   /*wxTB_NO_TOOLTIPS |*/ wxTB_FLAT );
-	m_pVBar->SetMargins(4, 4);
+	wxColour border_colour_focused(((int)m_bc.Red()) * 9 / 10, ((int)m_bc.Green()) * 9 / 10, ((int)m_bc.Blue()) * 9 / 10);
+	wxColour border_colour_selected(((int)m_bc.Red()) * 2 / 3, ((int)m_bc.Green()) * 2 / 3, ((int)m_bc.Blue()) * 2 / 3);
 
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_run.bmp", m_bc);
-	m_pVBar->AddTool(ID_TB_RUN, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
+	LoadToolBarImage(image, image_focused, image_selected, g_app_dir + "/bitmaps/tb_run.bmp", m_bc, border_colour_focused, border_colour_selected);
+	m_pButtonRun = new CBitmapButton(this, ID_TB_RUN, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_pause.bmp", m_bc);
-	m_pVBar->AddTool(ID_TB_PAUSE, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
-	
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_stop.bmp", m_bc);
-	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);	
+	LoadToolBarImage(image, image_focused, image_selected, g_app_dir + "/bitmaps/tb_pause.bmp", m_bc, border_colour_focused, border_colour_selected);
+	m_pButtonPause = new CBitmapButton(this, ID_TB_PAUSE, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
-	m_pVBar->SetBackgroundColour(m_bc);
+	LoadToolBarImage(image, image_focused, image_selected, g_app_dir + "/bitmaps/tb_stop.bmp", m_bc, border_colour_focused, border_colour_selected);
+	m_pButtonStop = new CBitmapButton(this, ID_TB_STOP, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
+
+	m_pButtonPause->Disable();
+	m_pButtonRun->Disable();
+	m_pButtonStop->Disable();
 
 	m_plblVB = new CStaticText( this, ID_LBL_VB, g_cfg.m_video_box_title);
 	m_plblVB->SetSize(0, 0, 390, 30);
@@ -600,7 +642,7 @@ void CVideoBox::Init()
 	m_plblVB->SetBackgroundColour(g_cfg.m_video_image_box_title_colour);
 	
 	m_plblTIME = new CStaticText( this, ID_LBL_TIME, 
-									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxTB_BOTTOM);
+									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxTB_BOTTOM);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_pMF->m_LBLFont);
 	m_plblTIME->SetTextColour(g_cfg.m_video_box_time_text_colour);
@@ -615,8 +657,6 @@ void CVideoBox::Init()
 	m_pSB->SetScrollRange(0, 255);
 
 	this->SetSize(20,20,402,300);
-
-	m_pVBar->Realize();
 
 	m_plblVB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblVB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
@@ -647,7 +687,7 @@ void CVideoBox::Init()
 void CVideoBox::OnSize(wxSizeEvent& event)
 {
 	int w, h, sbw, sbh, csbw, csbh;
-	wxRect rlVB, rlTIME, rcSB, rcVBOX, rcVBAR;
+	wxRect rlVB, rlTIME, rcSB, rcVBOX, rcButtonRunPause, rcButtonStop;
 
 	this->GetClientSize(&w, &h);
 	
@@ -656,38 +696,42 @@ void CVideoBox::OnSize(wxSizeEvent& event)
 	rlVB.y = 0;
 	rlVB.height = 28;
 
-	int vbw, vbh;
-	m_pVBar->GetBestSize(&vbw, &vbh);
+	int bw, bh;
+	m_pButtonRun->GetSize(&bw, &bh);
 
-	rcVBAR.width = vbw;
-	rcVBAR.height = vbh;
-	rcVBAR.x = 2;
-	rcVBAR.y = h - rcVBAR.height - 2;
+	rcButtonRunPause.width = bw;
+	rcButtonRunPause.height = bh;
+	rcButtonRunPause.x = 4;
+	rcButtonRunPause.y = h - bh - rcButtonRunPause.x;
+
+	rcButtonStop = rcButtonRunPause;
+	rcButtonStop.x = rcButtonRunPause.x + rcButtonRunPause.width + 2;
 
 	m_pSB->GetClientSize(&csbw, &csbh);
 	m_pSB->GetSize(&sbw, &sbh);
 
-	rcSB.x = 2;
+	rcSB.x = rcButtonRunPause.x;
 	rcSB.width = w - rcSB.x*2;
 	rcSB.height = (sbh-csbh) + m_pSB->m_SBLA.GetHeight();
-	rcSB.y = rcVBAR.y - rcSB.height - 1;	
+	rcSB.y = rcButtonRunPause.y - rcSB.height - 1;
 	
-	rcVBOX.x = 0;
-	rcVBOX.width = w;
+	rcVBOX.x = rcButtonRunPause.x;
+	rcVBOX.width = w - rcVBOX.x*2;
 	rcVBOX.y = rlVB.GetBottom() + 1;
 	rcVBOX.height = rcSB.y - rcVBOX.y - 2;
 
 	m_plblVB->SetSize(rlVB);
 	m_pVBox->SetSize(rcVBOX);
-	m_pSB->SetSize(rcSB);
-	m_pVBar->SetSize(rcVBAR);
-
-	//m_pVBar->GetSize(&w, &h);
-
-	rlTIME.width = w - rcVBAR.width - rcVBAR.x - 2;
-	rlTIME.height = 22;
-	rlTIME.x = rcVBAR.x + rcVBAR.width;
-	rlTIME.y = rcVBAR.y + (rcVBAR.height - rlTIME.height)/2;
+	m_pSB->SetSize(rcSB);	
+	m_pButtonPause->SetSize(rcButtonRunPause);
+	m_pButtonPause->Hide();
+	m_pButtonRun->SetSize(rcButtonRunPause);
+	m_pButtonStop->SetSize(rcButtonStop);
+	
+	rlTIME.x = rcButtonStop.x + rcButtonStop.width + 2;
+	rlTIME.y = rcButtonStop.y;
+	rlTIME.width = w - rlTIME.x - rcButtonRunPause.x;
+	rlTIME.height = rcButtonStop.height;
 
 	m_plblTIME->SetSize(rlTIME);
 
@@ -706,17 +750,16 @@ void CVideoBox::OnBnClickedRun(wxCommandEvent& event)
 		if (m_pMF->m_vs != m_pMF->Play)
 		{
 			m_pMF->m_vs = m_pMF->Play;
-			m_pVBar->ToggleTool(ID_TB_RUN, true);
-			m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-			m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pButtonRun->Hide();
+			m_pButtonPause->Show();
 			m_pMF->m_pVideo->Run();
 		}
 	}
 	else
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pButtonPause->Disable();
+		m_pButtonRun->Disable();
+		m_pButtonStop->Disable();
 	}
 }
 
@@ -728,18 +771,17 @@ void CVideoBox::OnBnClickedPause(wxCommandEvent& event)
 	{
 		if (m_pMF->m_vs != m_pMF->Pause)
 		{
-			m_pMF->m_vs = m_pMF->Pause;
-			m_pVBar->ToggleTool(ID_TB_RUN, false);
-			m_pVBar->ToggleTool(ID_TB_PAUSE, true);
-			m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pMF->m_vs = m_pMF->Pause;			
+			m_pButtonPause->Hide();
+			m_pButtonRun->Show();
 			m_pMF->m_pVideo->Pause();
 		}
 	}
 	else
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pButtonPause->Disable();
+		m_pButtonRun->Disable();
+		m_pButtonStop->Disable();
 	}
 }
 
@@ -752,9 +794,9 @@ void CVideoBox::OnBnClickedStop(wxCommandEvent& event)
 	}
 	else
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pButtonPause->Disable();
+		m_pButtonRun->Disable();
+		m_pButtonStop->Disable();
 	}
 }
 

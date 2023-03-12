@@ -22,12 +22,15 @@ BEGIN_EVENT_TABLE(CBitmapButton, wxWindow)
 	EVT_PAINT(CBitmapButton::OnPaint)
 	EVT_LEFT_DOWN(CBitmapButton::OnLButtonDown)
 	EVT_LEFT_UP(CBitmapButton::OnLButtonUp)
+	EVT_ENTER_WINDOW(CBitmapButton::OnMouseEnter)
+	EVT_LEAVE_WINDOW(CBitmapButton::OnMouseLeave)
 	EVT_MOUSE_CAPTURE_LOST(CBitmapButton::OnMouseCaptureLost)
 END_EVENT_TABLE()
 
 CBitmapButton::CBitmapButton(wxWindow* parent,
 	wxWindowID id,
 	const wxImage& image,
+	const wxImage& image_focused,
 	const wxImage& image_selected,
 	const wxPoint& pos,
 	const wxSize& size) : wxWindow(parent, id, pos, size, wxCLIP_CHILDREN | wxWANTS_CHARS)
@@ -35,7 +38,17 @@ CBitmapButton::CBitmapButton(wxWindow* parent,
 	m_parent = parent;
 	m_bDown = false;
 	m_image = image;
+	m_image_focused = image_focused;
 	m_image_selected = image_selected;
+}
+
+CBitmapButton::CBitmapButton(wxWindow* parent,
+	wxWindowID id,
+	const wxImage& image,
+	const wxImage& image_selected,
+	const wxPoint& pos,
+	const wxSize& size) : CBitmapButton(parent, id, image, image, image_selected, pos, size)
+{
 }
 
 void CBitmapButton::OnLButtonDown( wxMouseEvent& event )
@@ -56,6 +69,16 @@ void CBitmapButton::OnLButtonUp( wxMouseEvent& event )
 		this->ReleaseMouse();		
 		this->Refresh(true);
 	}
+}
+
+void CBitmapButton::OnMouseEnter(wxMouseEvent& event)
+{
+	this->Refresh(true);
+}
+
+void CBitmapButton::OnMouseLeave(wxMouseEvent& event)
+{
+	this->Refresh(true);
 }
 
 void CBitmapButton::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
@@ -79,6 +102,21 @@ void CBitmapButton::OnPaint(wxPaintEvent& event)
 	}
 	else
 	{
-		dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch)), 0, 0);
+		wxPoint clao = GetClientAreaOrigin();
+		wxPoint mp = wxGetMousePosition() - GetScreenPosition() - clao;
+		int w, h;
+		this->GetClientSize(&w, &h);
+
+		if ((mp.x >= 0) &&
+			(mp.x < w) &&
+			(mp.y >= 0) &&
+			(mp.y < h))
+		{
+			dc.DrawBitmap(wxBitmap(m_image_focused.Scale(cw, ch)), 0, 0);
+		}
+		else
+		{
+			dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch)), 0, 0);
+		}
 	}
 }

@@ -1190,6 +1190,7 @@ void *FFMPEGThreadRunVideo::Entry()
 		m_pVideo->OneStep();
 		if (!m_pVideo->m_ImageGeted)
 		{
+			m_pVideo->m_play_video = false;
 			break;
 		}
 		int dt = (int)(1000.0 / m_pVideo->m_fps) - (int)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_t).count());
