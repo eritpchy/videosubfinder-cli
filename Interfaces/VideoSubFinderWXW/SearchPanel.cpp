@@ -85,6 +85,7 @@ void CSearchPanel::Init()
 	SaveToReportLog("CSearchPanel::Init(): init m_pP1...\n");
 	m_pP1 = new wxPanel( this, wxID_ANY, rcP1.GetPosition(), rcP1.GetSize() );
 	m_pP1->SetMinSize(rcP1.GetSize());
+	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
 
@@ -104,20 +105,17 @@ void CSearchPanel::Init()
 		wxT(""), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
-	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR,
+	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_clear_folders_text, rcClear.GetPosition(), rcClear.GetSize() );
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
-	m_pRun = new CButton( m_pP1, ID_BTN_RUN,
+	m_pRun = new CButton( m_pP1, ID_BTN_RUN, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_run_search_text, rcRun.GetPosition(), rcRun.GetSize() );
-	
-	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+		
 	m_plblBT1->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblBT2->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblBTA1->SetBackgroundColour( g_cfg.m_main_text_ctls_background_colour );
 	m_plblBTA2->SetBackgroundColour( g_cfg.m_main_text_ctls_background_colour );
-	m_pClear->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
-	m_pRun->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	m_plblBT1->SetFont(m_pMF->m_LBLFont);
 	m_plblBT2->SetFont(m_pMF->m_LBLFont);

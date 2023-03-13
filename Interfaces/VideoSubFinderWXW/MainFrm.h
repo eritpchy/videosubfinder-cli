@@ -255,7 +255,10 @@ public:
 
 	wxColour	m_main_text_colour = wxColour(0, 0, 0);
 	wxColour	m_main_text_ctls_background_colour = wxColour(255, 255, 255);
-	wxColour	m_main_buttons_background_colour = wxColour(225, 225, 225);
+	wxColour	m_main_buttons_colour = wxColour(252, 252, 252);
+	wxColour	m_main_buttons_colour_focused = wxColour(242, 242, 242);
+	wxColour	m_main_buttons_colour_selected = wxColour(211, 211, 211);
+	wxColour	m_main_buttons_border_colour = wxColour(196, 196, 196);
 	wxColour	m_main_labels_background_colour = wxColour(127, 255, 0);
 	wxColour	m_main_frame_background_colour = wxColour(171, 171, 171);
 	wxColour	m_notebook_colour = wxColour(240, 240, 240);

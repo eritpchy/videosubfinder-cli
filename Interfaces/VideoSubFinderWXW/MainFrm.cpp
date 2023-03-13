@@ -955,7 +955,10 @@ void LoadSettings()
 
 	ReadProperty(g_general_settings, g_cfg.m_main_text_colour, "main_text_colour");
 	ReadProperty(g_general_settings, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
-	ReadProperty(g_general_settings, g_cfg.m_main_buttons_background_colour, "main_buttons_background_colour");	
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour, "main_buttons_colour");	
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour_focused, "main_buttons_colour_focused");
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour_selected, "main_buttons_colour_selected");
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_border_colour, "main_buttons_border_colour");	
 	ReadProperty(g_general_settings, g_cfg.m_main_labels_background_colour, "main_labels_background_colour");	
 	ReadProperty(g_general_settings, g_cfg.m_main_frame_background_colour, "main_frame_background_colour");
 	ReadProperty(g_general_settings, g_cfg.m_notebook_colour, "notebook_colour");
@@ -1312,7 +1315,10 @@ void SaveSettings()
 	
 	WriteProperty(fout, g_cfg.m_main_text_colour, "main_text_colour");
 	WriteProperty(fout, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
-	WriteProperty(fout, g_cfg.m_main_buttons_background_colour, "main_buttons_background_colour");
+	WriteProperty(fout, g_cfg.m_main_buttons_colour, "main_buttons_colour");
+	WriteProperty(fout, g_cfg.m_main_buttons_colour_focused, "main_buttons_colour_focused");
+	WriteProperty(fout, g_cfg.m_main_buttons_colour_selected, "main_buttons_colour_selected");
+	WriteProperty(fout, g_cfg.m_main_buttons_border_colour, "main_buttons_border_colour");
 	WriteProperty(fout, g_cfg.m_main_labels_background_colour, "main_labels_background_colour");
 	WriteProperty(fout, g_cfg.m_main_frame_background_colour, "main_frame_background_colour");
 	WriteProperty(fout, g_cfg.m_notebook_colour, "notebook_colour");

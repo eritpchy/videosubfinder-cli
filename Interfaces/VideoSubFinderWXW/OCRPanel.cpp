@@ -363,39 +363,34 @@ void COCRPanel::Init()
 	m_pcbSSI->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCCTI...\n");
-	m_pCCTI = new CButton(m_pP3, ID_BTN_CCTI,
+	m_pCCTI = new CButton(m_pP3, ID_BTN_CCTI, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
 	m_pCCTI->SetFont(m_pMF->m_BTNFont);
 	m_pCCTI->SetTextColour(g_cfg.m_main_text_colour);
-	m_pCCTI->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSTXT...\n");
-	m_pCSTXT = new CButton(m_pP3, ID_BTN_CSTXT,
+	m_pCSTXT = new CButton(m_pP3, ID_BTN_CSTXT, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
 	m_pCSTXT->SetFont(m_pMF->m_BTNFont);
 	m_pCSTXT->SetTextColour(g_cfg.m_main_text_colour);
-	m_pCSTXT->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSCTI...\n");
-	m_pCSCTI = new CButton(m_pP3, ID_BTN_CSCTI,
+	m_pCSCTI = new CButton(m_pP3, ID_BTN_CSCTI, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_pMF->m_BTNFont);
 	m_pCSCTI->SetTextColour(g_cfg.m_main_text_colour);
-	m_pCSCTI->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
-	m_pCES = new CButton( m_pP3, ID_BTN_CES,
+	m_pCES = new CButton( m_pP3, ID_BTN_CES, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
 	m_pCES->SetFont(m_pMF->m_BTNFont);
 	m_pCES->SetTextColour(g_cfg.m_main_text_colour);
-	m_pCES->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 	
 	SaveToReportLog("COCRPanel::Init(): init m_pJOIN...\n");
-	m_pJOIN = new CButton(m_pP3, ID_BTN_JOIN,
+	m_pJOIN = new CButton(m_pP3, ID_BTN_JOIN, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_ocr_button_join_text, rcJOIN.GetPosition(), rcJOIN.GetSize());
 	m_pJOIN->SetFont(m_pMF->m_BTNFont);
 	m_pJOIN->SetTextColour(g_cfg.m_main_text_colour);
-	m_pJOIN->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
 
 	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
 

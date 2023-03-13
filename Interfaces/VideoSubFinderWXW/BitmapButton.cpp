@@ -40,6 +40,7 @@ CBitmapButton::CBitmapButton(wxWindow* parent,
 	m_image = image;
 	m_image_focused = image_focused;
 	m_image_selected = image_selected;
+	m_bImagesDefined = true;
 }
 
 CBitmapButton::CBitmapButton(wxWindow* parent,
@@ -49,6 +50,27 @@ CBitmapButton::CBitmapButton(wxWindow* parent,
 	const wxPoint& pos,
 	const wxSize& size) : CBitmapButton(parent, id, image, image, image_selected, pos, size)
 {
+}
+
+CBitmapButton::CBitmapButton(wxWindow* parent,
+	wxWindowID id,
+	const wxPoint& pos,
+	const wxSize& size) : wxWindow(parent, id, pos, size, wxCLIP_CHILDREN | wxWANTS_CHARS)
+{
+	m_parent = parent;
+	m_bDown = false;
+	m_bImagesDefined = false;
+}
+
+void CBitmapButton::SetBitmaps(const wxImage& image,
+	const wxImage& image_focused,
+	const wxImage& image_selected)
+{
+	m_image = image;
+	m_image_focused = image_focused;
+	m_image_selected = image_selected;
+	m_bImagesDefined = true;
+	this->Refresh(true);
 }
 
 void CBitmapButton::OnLButtonDown( wxMouseEvent& event )
@@ -92,31 +114,34 @@ void CBitmapButton::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
 
 void CBitmapButton::OnPaint(wxPaintEvent& event)
 {
-	wxPaintDC dc(this);
-	int cw, ch;
-	this->GetClientSize(&cw, &ch);
-	
-	if (m_bDown)
+	if (m_bImagesDefined)
 	{
-		dc.DrawBitmap(wxBitmap(m_image_selected.Scale(cw, ch)), 0, 0);
-	}
-	else
-	{
-		wxPoint clao = GetClientAreaOrigin();
-		wxPoint mp = wxGetMousePosition() - GetScreenPosition() - clao;
-		int w, h;
-		this->GetClientSize(&w, &h);
+		wxPaintDC dc(this);
+		int cw, ch;
+		this->GetClientSize(&cw, &ch);
 
-		if ((mp.x >= 0) &&
-			(mp.x < w) &&
-			(mp.y >= 0) &&
-			(mp.y < h))
+		if (m_bDown)
 		{
-			dc.DrawBitmap(wxBitmap(m_image_focused.Scale(cw, ch)), 0, 0);
+			dc.DrawBitmap(wxBitmap(m_image_selected.Scale(cw, ch)), 0, 0);
 		}
 		else
 		{
-			dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch)), 0, 0);
+			wxPoint clao = GetClientAreaOrigin();
+			wxPoint mp = wxGetMousePosition() - GetScreenPosition() - clao;
+			int w, h;
+			this->GetClientSize(&w, &h);
+
+			if ((mp.x >= 0) &&
+				(mp.x < w) &&
+				(mp.y >= 0) &&
+				(mp.y < h))
+			{
+				dc.DrawBitmap(wxBitmap(m_image_focused.Scale(cw, ch)), 0, 0);
+			}
+			else
+			{
+				dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch)), 0, 0);
+			}
 		}
 	}
 }

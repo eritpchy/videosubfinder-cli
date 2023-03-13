@@ -171,12 +171,11 @@ void CSettingsPanel::Init()
 	m_pGB3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pTest...\n");
-	m_pTest = new CButton( m_pP2, ID_TEST,
+	m_pTest = new CButton( m_pP2, ID_TEST, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_test_text, rcTEST.GetPosition(), rcTEST.GetSize() );
 	m_pTest->SetFont(m_pMF->m_BTNFont);
 	m_pTest->SetTextColour(g_cfg.m_main_text_colour);
-	m_pTest->SetBackgroundColour(g_cfg.m_main_buttons_background_colour);
-	
+
 	bmp_na = wxImage(g_app_dir + "/bitmaps/left_na.bmp");
 	bmp_od = wxImage(g_app_dir + "/bitmaps/left_od.bmp");
 
