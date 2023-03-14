@@ -27,6 +27,11 @@ public:
 		CControl::m_all_controls.push_back(this);
 	}
 
+	~CControl()
+	{		
+		CControl::m_all_controls.erase(find(CControl::m_all_controls.begin(), CControl::m_all_controls.end(), this));
+	}
+
 	static void RefreshAllControlsData()
 	{
 		for (int i = 0; i < m_all_controls.size(); i++)

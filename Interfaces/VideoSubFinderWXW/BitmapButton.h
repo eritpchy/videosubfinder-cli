@@ -20,6 +20,8 @@
 
 class CBitmapButton : public wxWindow
 {
+	enum ShownBitmap { Default, Focused, Selected };
+
 public:
 	CBitmapButton(wxWindow* parent,
 		wxWindowID id,
@@ -45,6 +47,7 @@ public:
 	void OnLButtonUp( wxMouseEvent& event );
 	void OnMouseEnter(wxMouseEvent& event);
 	void OnMouseLeave(wxMouseEvent& event);
+	void OnMouseMove(wxMouseEvent& event);
 	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);	
 	void OnPaint(wxPaintEvent& event);
 	void SetBitmaps(const wxImage& image,
@@ -52,12 +55,13 @@ public:
 		const wxImage& image_selected);
 
 private:
-	bool	m_bDown;
-	bool	m_bImagesDefined;
-	wxImage m_image;
-	wxImage m_image_focused;
-	wxImage m_image_selected;
-	wxWindow* m_parent;
+	ShownBitmap m_ShownBitmap = ShownBitmap::Default;
+	bool		m_bDown;
+	bool		m_bImagesDefined;
+	wxImage 	m_image;
+	wxImage 	m_image_focused;
+	wxImage 	m_image_selected;
+	wxWindow*	m_parent;
 
 	DECLARE_EVENT_TABLE()
 };

@@ -24,6 +24,7 @@ BEGIN_EVENT_TABLE(CBitmapButton, wxWindow)
 	EVT_LEFT_UP(CBitmapButton::OnLButtonUp)
 	EVT_ENTER_WINDOW(CBitmapButton::OnMouseEnter)
 	EVT_LEAVE_WINDOW(CBitmapButton::OnMouseLeave)
+	EVT_MOTION(CBitmapButton::OnMouseMove)
 	EVT_MOUSE_CAPTURE_LOST(CBitmapButton::OnMouseCaptureLost)
 END_EVENT_TABLE()
 
@@ -103,6 +104,14 @@ void CBitmapButton::OnMouseLeave(wxMouseEvent& event)
 	this->Refresh(true);
 }
 
+void CBitmapButton::OnMouseMove(wxMouseEvent& event)
+{
+	if (m_ShownBitmap != ShownBitmap::Focused)
+	{
+		this->Refresh(true);
+	}
+}
+
 void CBitmapButton::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
 {
 	if (m_bDown == true) 
@@ -122,6 +131,7 @@ void CBitmapButton::OnPaint(wxPaintEvent& event)
 
 		if (m_bDown)
 		{
+			m_ShownBitmap = ShownBitmap::Selected;
 			dc.DrawBitmap(wxBitmap(m_image_selected.Scale(cw, ch)), 0, 0);
 		}
 		else
@@ -136,10 +146,12 @@ void CBitmapButton::OnPaint(wxPaintEvent& event)
 				(mp.y >= 0) &&
 				(mp.y < h))
 			{
+				m_ShownBitmap = ShownBitmap::Focused;
 				dc.DrawBitmap(wxBitmap(m_image_focused.Scale(cw, ch)), 0, 0);
 			}
 			else
 			{
+				m_ShownBitmap = ShownBitmap::Default;
 				dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch)), 0, 0);
 			}
 		}

@@ -1,7 +1,7 @@
 
-#########################################################################################################
+#######################################################################################
 About Program
-#########################################################################################################
+#######################################################################################
 
 The main purpose of this program is to provide functionality for extract hardcoded text (hardsub) from video.
 
@@ -9,14 +9,19 @@ It provides two main features:
 1) Autodetection of frames with hardcoded text (hardsub) on video with saving info about timing positions.
 2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader or Subtitle Edit) to generate complete subtitle with original text and timing.
 
-For working of this program will be required "Microsoft Visual C++ Redistributable for Visual Studio 2015, 2017 and 2019": https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
-x64: https://aka.ms/vs/16/release/vc_redist.x64.exe
-x86: https://aka.ms/vs/16/release/vc_redist.x86.exe
-Latest versions were built and tested on: Windows 10
+For working of this program on Windows will be required "Microsoft Visual C++ Redistributable runtime libraries 2022":
+https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
-#########################################################################################################
+For working of this program on Ubuntu 20.04.5 LTS will be required libgtk-3-0:
+sudo apt install libgtk-3-0
+
+Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS
+
+For faster support in case of bug fixes please contact me in: https://vk.com/skosnits
+
+#######################################################################################
 Quick Start Guide
-#########################################################################################################
+#######################################################################################
 How to use without deep details:
 1) Click in menu "File->Open Video" (any variant)
 2) Check boundary box in "Video Box" where most subs will appear (for that you can move split lines in it): by default it is whole video.
@@ -31,7 +36,7 @@ For this you need:
 * - if there are many subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
 5) Click "Run Search" in the first tab page, if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub",
 found original images with subtitles will be located in "RGBImages" folder.
-6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
+6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken,
 which is possible if you use too strong Color Filters or subtitles pop-up on video and disappear, in this case it is better to change program settings or delete such ILA Images.
 7) [MOST IMPORTANT PART IF YOU DON’T USE COLOR FILTERING]
 Before continue: Check does subtitles has darker border color then subtitles text color.
@@ -47,9 +52,9 @@ One of most recommended by them are:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 
-#########################################################################################################
+#######################################################################################
 Known Issues
-#########################################################################################################
+#######################################################################################
 
 1) Different timing in OpenCV vs FFMPEG video open but now they are very close with difference ~ 000-001 milliseconds.
 2) In case of Center alignment, which is by default, take into the note that if whole subtitle will be in right half part of selected boundary box it will be removed.
@@ -57,9 +62,9 @@ Known Issues
 4) For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 5) For playback sound on Linux currently is used "canberra-gtk-play", so it will be required if you wish to have finish work sound. (Unfortunately wxWidgets doesn't play sound on Ubuntu 20.04.5 LTS)
 
-#########################################################################################################
+#######################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
-#########################################################################################################
+#######################################################################################
 
 1) For getting best results during "Run Search" and "Create Cleared TXTImages":
 --------------------------------
@@ -130,7 +135,7 @@ For this you need:
 * - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
 * - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-*) Use not too strong color filtering if subtitles are mostly stable and have same colors: 
+*) Use not too strong color filtering if subtitles are mostly stable and have same colors:
 "Use Filter Colors" - inline color - color of subtitles symbols, located in "Settings" tab in left panel.
 Example of values which are working in most case of white subtitles:
 Lab: l:180-255 a:108-148 b:108-148  (mostly working in all cases)
@@ -209,7 +214,7 @@ In this case you can use "Use Filter Colors" with define all of used colors in s
 In case of logo present or some other issues program now support also AviSynth+ scripts by opening *.avs script like video file with FFPMEG CPU device video decoding:
 https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
 NOTE1: HW Acceleration (GPU) doesn't support AviSynth. So you need to set CPU device in "FFMPEG HW Devices" in "Settings" tab (which is by default).
-NOTE2: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use 
+NOTE2: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use
 FFmpegSource or LSMASHSource plugin usage in which it was tested and worked without issues.
 Examples of avs scripts for DeLogo purpose you can find in:
 https://sourceforge.net/p/videosubfinder/discussion/684990/thread/bddff843f5/?page=2
@@ -241,9 +246,9 @@ A process affinity mask is a bit vector in which each bit represents a logical p
 By default it is set to '-1' == threads on all logical processors is allowed to run.
 https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask
 
-#########################################################################################################
+#######################################################################################
 Used terms:
-#########################################################################################################
+#######################################################################################
 
 *) ISAImages - Intersected Subtitles Areas (by multiframe usage)
 *) ILAImages - Intersected Luminance Areas (by multiframe usage), the areas where pixels are not change too much in luminance in range:
@@ -252,9 +257,9 @@ Used terms:
 First image of DL sequence (~12 nearest frames in video) are taked as reference, all next images in DL sequence are compared with it by luminance change.
 On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (First image of DL sequence).
 
-#########################################################################################################
+#######################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:
-#########################################################################################################
+#######################################################################################
 
 NOTE:
 For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
@@ -293,7 +298,7 @@ https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line
 You can try to write a program in python with usage baidu ocr api for ocr images.
 
 Useful links:
-http://www.baidu.com 
+http://www.baidu.com
 https://rapidapi.com/blog/directory/baidu-ocr-text-recognition/
 https://github.com/Baidu-AIP/python-sdk
 https://programmer.ink/think/5d35803c404e4.html
@@ -309,9 +314,9 @@ https://cloud.google.com/vision
 Some possible solution is described in bottom:
 https://sourceforge.net/p/videosubfinder/discussion/684990/thread/352389f0e9/
 
-#########################################################################################################
+#######################################################################################
 OUTDATED OLD INFORMATION:
-#########################################################################################################
+#######################################################################################
 
 How to use in details:
 1) Run VideoSubFinder.exe
@@ -348,19 +353,19 @@ How to use in details:
    After After Filtration, After Second Filtration, VEdgesPointsImage
    they can be viewed by clicking the buttons in the left and in the right above the Test button,
    and also in the TSTImages folder.
-   
+
    "After First Filtration" is the resulting image as a result
    initial processing of the frame, the result of the processing is affected by all the "Settings for
    Operators Sobel "except one H-Vertical Threshold, all" Settings For
    Color Filter "except for one Sum Multiple Color Diff.
-   
+
    "After Second Filtration" is the resulting image as a result
    secondary image processing (processing applied to the image
    resulting from "After First Filtration"), the result of processing
    affect all the "Settings for Linear Filtering", all "Settings for Points
    Color Borders ", all" Settings for Color Filter "except one
    Sum Color Diff.
- 
+
    "VEdgesPointsImage" is translated as an image obtained from points
    vertical color boundaries. This image is obtained by converting
    frame into a black and white image, then applying a horizontal
@@ -496,7 +501,7 @@ studied and implemented in this program), namely, the main used
    and Seeded Region Growing 2001.
    Jianping Fan, David. K. Y. Yau, Member, IEEE, Ahmed. K. Elmagarmid,
    Senior Member, IEEE, and Walid G. Aref, Member, IEEE
- 
+
 3) Automatic Location of Text in Video Frames.
    Xian-Sheng Hua, Xiang-Rong Chen, Liu Wenyin, Hong-Jiang Zhang
    Microsoft Research China

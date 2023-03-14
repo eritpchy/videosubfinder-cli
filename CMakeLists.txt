@@ -3,11 +3,10 @@ cmake_minimum_required(VERSION 3.13)
 project(VideoSubFinderWXW LANGUAGES CXX)
 
 if(WIN32)
-	find_package(IntelDPCPP REQUIRED)
-
 	option(WIN64 "Make x64 build" ON)
 
 	if(WIN64)
+		find_package(IntelDPCPP REQUIRED)
 		option(USE_CUDA "Build with CUDA support" ON)
 		add_definitions(-DWIN64)
 		set(wxWidgets_INCLUDE_DIRS "$ENV{WX_WIDGETS_PATH}/lib/vc_x64_lib/mswu;$ENV{WX_WIDGETS_PATH}/include" CACHE STRING "Paths to OpenCV include dirs")

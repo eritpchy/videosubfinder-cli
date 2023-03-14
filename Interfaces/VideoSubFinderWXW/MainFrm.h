@@ -217,6 +217,10 @@ public:
 	wxString	m_menu_scale_text_size_dec;
 	wxString	m_menu_play_pause;
 	wxString	m_menu_play_stop;
+	wxString	m_menu_next_frame;
+	wxString	m_menu_previous_frame;
+	wxString	m_menu_app_cmd_args_info;
+	wxString	m_menu_app_usage_docs;
 	wxString	m_menu_app_about;
 
 	wxString	m_help_desc_app_about;
@@ -358,6 +362,8 @@ public:
 	void OnSize(wxSizeEvent& event);
 	void OnPlayPause(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
+	void OnNextFrame(wxCommandEvent& event);
+	void OnPreviousFrame(wxCommandEvent& event);
 	void OnFileReOpenVideo(wxCommandEvent& event);
 	void OnFileOpenVideoOpenCV(wxCommandEvent& event);
 	void OnFileOpenVideoFFMPEG(wxCommandEvent& event);
@@ -370,6 +376,8 @@ public:
 	void OnClose(wxCloseEvent& event);
 	void OnQuit(wxCommandEvent& event);
 	void OnFileOpenPreviousVideo(wxCommandEvent& event);
+	void OnAppCMDArgsInfo(wxCommandEvent& event);
+	void OnAppUsageDocs(wxCommandEvent& event);
 	void OnAppAbout(wxCommandEvent& event);
 	void OnScaleTextSizeInc(wxCommandEvent& event);
 	void OnScaleTextSizeDec(wxCommandEvent& event);
@@ -379,7 +387,7 @@ public:
 	void OnSetPriorityBelownormal(wxCommandEvent& event);
 	void OnSetPriorityAbovenormal(wxCommandEvent& event);
 	void OnSetPriorityHigh(wxCommandEvent& event);
-	wxString ConvertTime(u64 total_milliseconds);	
+	wxString ConvertTime(u64 total_milliseconds);
 	void ShowErrorMessage(wxString msg);
 	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
 
@@ -387,7 +395,7 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class MyMessageBox : public wxDialog
+class MyMessageBox : public wxDialog, public CControl
 {
 public:
 	CMainFrame* m_pMF;
@@ -395,18 +403,14 @@ public:
 
 	MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
 		const wxPoint& pos = wxDefaultPosition,
-		const wxSize& size = wxDefaultSize) : wxDialog(pMF, -1, caption, pos, size)
-	{
-		m_pMF = pMF;
-		m_pDialogText = new wxTextCtrl(this, -1, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
-		m_pDialogText->SetFont(m_pMF->m_LBLFont);
-		m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
-		m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
-	}
+		const wxSize& size = wxDefaultSize);
 
 	~MyMessageBox()
 	{
-	}	
+	}
+
+	void OnKeyDown(wxKeyEvent& event);
+	void RefreshData();
 };
 
 wxString ConvertVideoTime(s64 pos);

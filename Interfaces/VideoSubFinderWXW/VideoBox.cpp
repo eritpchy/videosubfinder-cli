@@ -997,20 +997,15 @@ void CVideoBox::OnMouseWheel(wxMouseEvent& event)
 {
 	if (m_pMF->m_VIsOpen)
 	{
-		s64 Cur;
+		wxCommandEvent cmd_event;
 
 		if (event.m_wheelRotation > 0)
 		{
-			m_pMF->PauseVideo();
-			m_pMF->m_pVideo->OneStep();
+			m_pMF->OnNextFrame(cmd_event);
 		}
 		else
 		{
-			m_pMF->PauseVideo();
-			Cur = m_pMF->m_pVideo->GetPos();
-			Cur -= m_pMF->m_dt;
-			if (Cur < 0) Cur = 0;
-			m_pMF->m_pVideo->SetPosFast(Cur);
+			m_pMF->OnPreviousFrame(cmd_event);
 		}
 	}
 	else

@@ -199,9 +199,13 @@ BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
 	EVT_CLOSE(CMainFrame::OnClose) 
 	EVT_MENU(ID_FILE_EXIT, CMainFrame::OnQuit)
 	EVT_MENU(ID_FILE_OPENPREVIOUSVIDEO, CMainFrame::OnFileOpenPreviousVideo)
+	EVT_MENU(ID_APP_CMD_ARGS_INFO, CMainFrame::OnAppCMDArgsInfo)
+	EVT_MENU(ID_APP_USAGE_DOCS, CMainFrame::OnAppUsageDocs)
 	EVT_MENU(ID_APP_ABOUT, CMainFrame::OnAppAbout)
 	EVT_MENU(ID_SCALE_TEXT_SIZE_INC, CMainFrame::OnScaleTextSizeInc)
 	EVT_MENU(ID_SCALE_TEXT_SIZE_DEC, CMainFrame::OnScaleTextSizeDec)
+	EVT_MENU(ID_NEXT_FRAME, CMainFrame::OnNextFrame)
+	EVT_MENU(ID_PREVIOUS_FRAME, CMainFrame::OnPreviousFrame)
 	EVT_MENU(ID_SETPRIORITY_IDLE, CMainFrame::OnSetPriorityIdle)
 	EVT_MENU(ID_SETPRIORITY_NORMAL, CMainFrame::OnSetPriorityNormal)
 	EVT_MENU(ID_SETPRIORITY_BELOWNORMAL, CMainFrame::OnSetPriorityBelownormal)
@@ -295,6 +299,7 @@ void CMainFrame::Init()
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, g_cfg.m_menu_file_openpreviousvideo);
 	pMenu1->AppendSeparator();
 	pMenu1->AppendSubMenu( pMenu5, g_cfg.m_menu_setpriority);
+	pMenu1->AppendSeparator();
 	pMenu1->Append(ID_FILE_SAVESETTINGS, g_cfg.m_menu_file_savesettings + wxT("\tCtrl+S"));
 	pMenu1->Append(ID_FILE_SAVESETTINGSAS, g_cfg.m_menu_file_savesettingsas);
 	pMenu1->Append(ID_FILE_LOADSETTINGS, g_cfg.m_menu_file_loadsettings);
@@ -313,15 +318,21 @@ void CMainFrame::Init()
 	pMenuBar->Append(pMenuView, g_cfg.m_menu_view);
 
 	wxMenu *pMenu3 = new wxMenu;
+
 	pMenu3->Append(ID_PLAY_PAUSE, g_cfg.m_menu_play_pause + wxT("   Space"));
 	pMenu3->Append(ID_PLAY_STOP, g_cfg.m_menu_play_stop);
+	pMenu3->Append(ID_NEXT_FRAME, g_cfg.m_menu_next_frame + wxT("   Mouse Wheel / Right"));
+	pMenu3->Append(ID_PREVIOUS_FRAME, g_cfg.m_menu_previous_frame + wxT("   Mouse Wheel / Left"));
 	pMenuBar->Append(pMenu3, g_cfg.m_menu_play);
 
 	wxMenu *pMenu4 = new wxMenu;
-	pMenu4->Append(ID_APP_ABOUT, g_cfg.m_menu_app_about);
+	pMenu4->Append(ID_APP_CMD_ARGS_INFO, g_cfg.m_menu_app_cmd_args_info);
+	pMenu4->AppendSeparator();
+	pMenu4->Append(ID_APP_USAGE_DOCS, g_cfg.m_menu_app_usage_docs);
+	pMenu4->Append(ID_APP_ABOUT, g_cfg.m_menu_app_about + wxT("\tF1"));
 	pMenuBar->Append(pMenu4, g_cfg.m_menu_help);
 
-	cnt = pMenuBar->GetMenuCount();			
+	cnt = pMenuBar->GetMenuCount();
 
 	// CSeparatingLine *pHSL = new CSeparatingLine(this, 200, 3, 7, 3, 100, 110, 50, 0);
 	// pHSL->m_pos = 0;
@@ -886,6 +897,28 @@ void CMainFrame::OnStop(wxCommandEvent& event)
 	}
 }
 
+void CMainFrame::OnNextFrame(wxCommandEvent& event)
+{
+	if (m_VIsOpen)
+	{
+		PauseVideo();
+		m_pVideo->OneStep();
+	}
+}
+
+void CMainFrame::OnPreviousFrame(wxCommandEvent& event)
+{
+	if (m_VIsOpen)
+	{
+		s64 Cur;
+		PauseVideo();
+		Cur = m_pVideo->GetPos();
+		Cur -= m_dt;
+		if (Cur < 0) Cur = 0;
+		m_pVideo->SetPosFast(Cur);
+	}
+}
+
 void CMainFrame::PauseVideo()
 {
 	const std::lock_guard<std::mutex> lock(m_play_mutex);
@@ -1139,6 +1172,10 @@ void LoadSettings()
 	ReadProperty(g_locale_settings, g_cfg.m_menu_scale_text_size_dec, "menu_scale_text_size_dec");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_play_pause, "menu_play_pause");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_play_stop, "menu_play_stop");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_next_frame, "menu_next_frame");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_previous_frame, "menu_previous_frame");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_app_cmd_args_info, "menu_app_cmd_args_info");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_app_usage_docs, "menu_app_usage_docs");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_app_about, "menu_app_about");
 
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_app_about, "help_desc_app_about");
@@ -1797,12 +1834,101 @@ void CMainFrame::ShowErrorMessage(wxString msg)
 	wxMessageBox(msg, wxT("Error Info"), wxOK | wxICON_ERROR);
 }
 
+MyMessageBox::MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
+	const wxPoint& pos,
+	const wxSize& size) : wxDialog(pMF, wxID_ANY, caption, pos, size)
+{
+	m_pMF = pMF;
+	m_pDialogText = new wxTextCtrl(this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
+	m_pDialogText->SetFont(m_pMF->m_LBLFont);
+	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
+	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	Bind(wxEVT_KEY_DOWN, &MyMessageBox::OnKeyDown, this);	
+	m_pDialogText->Bind(wxEVT_KEY_DOWN, &MyMessageBox::OnKeyDown, this);
+	Bind(wxEVT_MOUSEWHEEL, &CMainFrame::OnMouseWheel, m_pMF);
+	m_pDialogText->SetInsertionPoint(0);
+}
+
+void MyMessageBox::OnKeyDown(wxKeyEvent& event)
+{	
+	if (event.GetKeyCode() == WXK_ESCAPE)
+	{
+		EndModal(0);
+	}
+	else
+	{
+		switch (event.GetKeyCode())
+		{
+			case 'C':
+			case 'c':
+				if (wxGetKeyState(WXK_CONTROL))
+				{
+					wxCommandEvent evt(wxEVT_KEY_DOWN, wxID_ANY);
+					m_pDialogText->OnCopy(evt);
+				}
+				break;
+		}
+	}
+}
+
+void MyMessageBox::RefreshData()
+{
+	m_pDialogText->SetFont(m_pMF->m_LBLFont);
+	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
+	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	m_pDialogText->Refresh(true);
+}
+
+void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
+{
+	wxSize cl_size = this->GetClientSize();
+	wxSize msg_size(1000, 520);
+	MyMessageBox msg_dlg(this, g_pParser->GetUsageString(),
+		wxT("VideoSubFinder " VSF_VERSION " Version"),
+		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
+		msg_size);
+	msg_dlg.ShowModal();
+}
+
+void CMainFrame::OnAppUsageDocs(wxCommandEvent& event)
+{
+	wxSize cl_size = this->GetClientSize();
+	wxSize msg_size(1000, 600);
+	wxString docs_sub_parth = wxString(wxT("/Docs/readme_")) + g_cfg.m_prefered_locale + wxT(".txt");
+	wxString docs_full_parth = g_app_dir + docs_sub_parth;
+
+	if (wxFileExists(docs_full_parth))
+	{
+		wxString str;
+
+		{
+			wxFileInputStream ffin(docs_full_parth);
+			wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
+
+			while (ffin.IsOk() && !ffin.Eof())
+			{
+				str += fin.ReadLine();
+				if (ffin.IsOk() && !ffin.Eof())
+				{
+					str += wxT("\n");
+				}
+			}
+		}
+
+		MyMessageBox msg_dlg(this, g_cfg.m_menu_app_usage_docs + wxT(": ") + docs_sub_parth + wxT("\n\n") + str,
+			wxT("VideoSubFinder " VSF_VERSION " Version"),
+			wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
+			msg_size);
+		msg_dlg.ShowModal();
+	}
+}
+
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
 	wxSize cl_size = this->GetClientSize();
-	wxSize msg_size(600, 600);
+	wxSize msg_size(800, 220);
 	MyMessageBox msg_dlg(this,
-		g_cfg.m_help_desc_app_about + g_pParser->GetUsageString(),
+		g_cfg.m_help_desc_app_about,
 		wxT("VideoSubFinder " VSF_VERSION " Version"),
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);

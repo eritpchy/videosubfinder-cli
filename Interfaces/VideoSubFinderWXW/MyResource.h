@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"5.70"
+#define VSF_VERSION	"5.80"
 
 #define ID_APP_ABOUT                    1100
 
@@ -176,5 +176,7 @@
 #define TIMER_ID_VB						65
 #define ID_SCALE_TEXT_SIZE_INC			66
 #define ID_SCALE_TEXT_SIZE_DEC			67
-
-
+#define ID_NEXT_FRAME                   68
+#define ID_PREVIOUS_FRAME               69
+#define ID_APP_CMD_ARGS_INFO            70
+#define ID_APP_USAGE_DOCS               71
