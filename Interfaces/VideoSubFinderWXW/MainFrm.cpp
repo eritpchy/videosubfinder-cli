@@ -1728,13 +1728,7 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		m_timer.Stop();
 	}
 
-	if (g_IsCreateClearedTextImages == 1)
-	{
-		g_RunCreateClearedTextImages = 0;
-		//SetThreadPriority(m_pPanel->m_OCRPanel.m_hSearchThread, THREAD_PRIORITY_HIGHEST);
-	}
-
-	if ( (g_IsSearching == 0) && (m_FileName.size() > 0) )
+	if (m_FileName.size() > 0)
 	{
 		wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
 		wxFFileOutputStream ffout(pvi_path);
@@ -1751,25 +1745,29 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		ffout.Close();
 	}
 
-	if (g_IsSearching == 1)
 	{
-		g_IsClose = 1;
-		g_RunSubSearch = 0;
-		//m_pPanel->m_pSHPanel->m_pSearchThread->SetPriority(90); //THREAD_PRIORITY_HIGHEST
+		std::unique_lock<std::mutex> lock(m_pPanel->m_pSHPanel->m_rs_mutex);
+		if (g_IsSearching == 1)
+		{
+			g_IsClose = 1;
+			g_RunSubSearch = 0;
+			if (m_pPanel->m_pSHPanel->m_SearchThread.joinable())
+			{
+				m_pPanel->m_pSHPanel->m_SearchThread.join();
+			}
+		}
 	}
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> start_t = std::chrono::high_resolution_clock::now();
-
-	while( ((int)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_t).count()) < 2000) && ( (g_IsSearching == 1) || (g_IsCreateClearedTextImages == 1) ) ){}
-
-	if (g_IsSearching == 1)
 	{
-		m_pPanel->m_pSHPanel->m_pSearchThread->Delete();
-	}
-
-	if (g_IsCreateClearedTextImages == 1)
-	{
-		//TerminateThread(m_pPanel->m_OCRPanel.m_hSearchThread, 0);
+		std::unique_lock<std::mutex> lock(m_pPanel->m_pOCRPanel->m_ccti_mutex);
+		if (g_IsCreateClearedTextImages == 1)
+		{
+			g_RunCreateClearedTextImages = 0;
+			if (m_pPanel->m_pOCRPanel->m_CCTIThread.joinable())
+			{
+				m_pPanel->m_pOCRPanel->m_CCTIThread.join();
+			}
+		}
 	}
 
 	Destroy();

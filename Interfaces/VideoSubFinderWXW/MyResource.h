@@ -107,6 +107,11 @@
 
 #define ID_BTN_JOIN					    1281
 
+#define ID_LBL_BEGIN_TIME               1282
+
+#define ID_LBL_END_TIME                 1283
+
+
 ///////////////////////////////////////////////////////////
 
 #define IDR_MAINFRAME                   1

@@ -153,17 +153,7 @@ public:
 	wxString  m_Name;
 };
 
-class ThreadCreateClearedTextImages : public wxThread
-{
-public:
-    ThreadCreateClearedTextImages(CMainFrame *pMF, vector<wxString> &FileNamesVector, wxThreadKind kind = wxTHREAD_DETACHED);
-
-    virtual void *Entry();
-
-public:
-    CMainFrame	*m_pMF;
-	vector<wxString> m_FileNamesVector;
-};
+void CreateClearedTextImages(vector<wxString>& FileNamesVector);
 
 class COCRPanel : public wxPanel
 {
@@ -171,7 +161,7 @@ public:
 	COCRPanel(CSSOWnd* pParent);
 	~COCRPanel();
 
-	std::mutex m_mutex;
+	std::mutex m_ccti_mutex;
 
 	wxString m_sub_path;
 
@@ -193,7 +183,7 @@ public:
 	CSSOWnd		*m_pParent;
 	CMainFrame	*m_pMF;
 
-	ThreadCreateClearedTextImages *m_pSearchThread;
+	std::thread m_CCTIThread;
 
 	void Init();
 

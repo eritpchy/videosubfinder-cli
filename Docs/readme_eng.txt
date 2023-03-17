@@ -12,10 +12,9 @@ It provides two main features:
 For working of this program on Windows will be required "Microsoft Visual C++ Redistributable runtime libraries 2022":
 https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
-For working of this program on Ubuntu 20.04.5 LTS will be required libgtk-3-0:
-sudo apt install libgtk-3-0
+For working of this program on Linux possibly will be required libraries for gtk3.0.
 
-Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS
+Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS, EndeavourOS Cassini_Nova-03-2023
 
 For faster support in case of bug fixes please contact me in: https://vk.com/skosnits
 

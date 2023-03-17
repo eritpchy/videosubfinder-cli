@@ -37,7 +37,7 @@ __itt_string_handle* shSubFound = __itt_string_handle_create(L"SubFound");
 #endif
 
 std::chrono::time_point<std::chrono::high_resolution_clock> g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();
-int		g_RunSubSearch = 0;
+int		g_RunSubSearch = 1;
 
 int    g_threads = -1;
 
@@ -1116,7 +1116,7 @@ public:
 	}
 };
 
-s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
+s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 {
 	//NOTE: FastSearchSubtitles doesn't use cv:: at all
 	// in case of x86 cv::ocl::setUseOpenCL(g_use_ocl) breack ffmpeg cuda usage
@@ -1142,8 +1142,7 @@ s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 
 	//g_disable_save_images = true;
 	
-	g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();
-	g_RunSubSearch = 1;
+	g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();	
 
 	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 
@@ -1191,6 +1190,7 @@ s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 
 	threads = g_threads;
 
+	pbf = -2;
 	bf = -2;
 	ef = -2;
 	et = -2;
@@ -1233,12 +1233,6 @@ s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 
 	while (((CurPos < End) || (End < 0)) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
-		if (pThr->TestDestroy())
-		{
-			g_RunSubSearch = 0;
-			break;
-		}
-
 		int create_new_threads = threads;	
 
 #ifdef CUSTOM_TA

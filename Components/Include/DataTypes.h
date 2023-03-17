@@ -348,7 +348,7 @@ public:
 
 	shared_custom_task & operator= (const shared_custom_task& other)
 	{
-		custom_assert(static_cast<bool>(m_data) == false, "shared_custom_task: 'operator= &&' m_data != false");
+		custom_assert(static_cast<bool>(m_data) == false, "shared_custom_task: 'operator= &' m_data != false");
 
 		if (other.m_data)
 		{

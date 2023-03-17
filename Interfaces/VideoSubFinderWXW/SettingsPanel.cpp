@@ -390,17 +390,19 @@ void CSettingsPanel::Init()
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorRGB...\n");
 	m_pPixelColorRGB = new CTextCtrl(m_pP2, wxID_ANY,
-		&(g_cfg.m_pixel_color_bgr), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
+		&(g_cfg.m_pixel_color_bgr), wxString(), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
 	m_pPixelColorRGB->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorRGB->SetTextColour(g_cfg.m_main_text_colour);
 	m_pPixelColorRGB->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	m_pPixelColorRGB->SetEditable(false);	
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorLab...\n");
 	m_pPixelColorLab = new CTextCtrl(m_pP2, wxID_ANY,
-		&(g_cfg.m_pixel_color_lab), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
+		&(g_cfg.m_pixel_color_lab), wxString(), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
 	m_pPixelColorLab->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorLab->SetTextColour(g_cfg.m_main_text_colour);
 	m_pPixelColorLab->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	m_pPixelColorLab->SetEditable(false);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorExample...\n");
 	m_pPixelColorExample = new CStaticText(m_pP2, wxID_ANY, wxT(""));

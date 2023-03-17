@@ -18,27 +18,44 @@
 #include "TextCtrl.h"
 
 BEGIN_EVENT_TABLE(CTextCtrl, wxTextCtrl)
-	EVT_TEXT(wxID_ANY, CTextCtrl::OnTextCtrlEvent)
+	EVT_TEXT(wxID_ANY, CTextCtrl::OnText)
+	EVT_TEXT_ENTER(wxID_ANY, CTextCtrl::OnTextEnter)
+	EVT_KILL_FOCUS(CTextCtrl::OnKillFocus)
 END_EVENT_TABLE()
 
-CTextCtrl::CTextCtrl(wxWindow* parent, wxWindowID id,
-	const wxString& value,
+void CTextCtrl::OnKillFocus(wxFocusEvent& event)
+{
+	if (m_re_expr.size() > 0)
+	{
+		wxString val = GetValue();
+		ValidateAndSaveData(val);
+	}
+	event.Skip();
+}
+
+CTextCtrl::CTextCtrl(wxWindow* parent,
+	wxWindowID id,
+	wxString str_val,
+	wxString  re_expr,
 	const wxPoint& pos,
 	const wxSize& size,
-	long style,
-	const wxValidator& validator,
-	const wxString& name) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
+	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style | wxTE_PROCESS_ENTER), m_re(re_expr)
 {
+	m_str_val = str_val;
+	m_re_expr = re_expr;
+	ChangeValue(str_val);
 }
 
 CTextCtrl::CTextCtrl(wxWindow* parent,
 	wxWindowID id,
 	wxString* p_str_val,
+	wxString  re_expr,
 	const wxPoint& pos,
 	const wxSize& size,
-	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
+	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style | wxTE_PROCESS_ENTER), m_re(re_expr)
 {
 	m_p_str_val = p_str_val;
+	m_re_expr = re_expr;
 	ChangeValue(*m_p_str_val);
 }
 
@@ -53,19 +70,74 @@ CTextCtrl::CTextCtrl(wxWindow* parent,
 	ChangeValue(wxString::Format(wxT("%f"), *m_p_f_val));
 }
 
-void CTextCtrl::OnTextCtrlEvent(wxCommandEvent& evt)
+void CTextCtrl::OnTextEnter(wxCommandEvent& evt)
 {
-	if (m_p_str_val)
+	if (m_re_expr.size() > 0)
 	{
-		*m_p_str_val = GetValue();
+		wxString val = GetValue();
+		ValidateAndSaveData(val);
 	}
-	else if (m_p_f_val)
+}
+
+bool CTextCtrl::ValidateAndSaveData(wxString val)
+{
+	bool res = true;
+
+	if (m_re_expr.size() > 0)
 	{
-		double value;
-		if (GetValue().ToDouble(&value))
+		if (m_p_str_val)
 		{
-			*m_p_f_val = value;
-		}		
+			if (m_re.Matches(val))
+			{
+				*m_p_str_val = val;
+			}
+			else
+			{
+				res = false;
+				ChangeValue(*m_p_str_val);
+			}
+		}
+		else
+		{
+			if (m_re.Matches(val))
+			{
+				m_str_val = val;
+			}
+			else
+			{
+				res = false;
+				ChangeValue(m_str_val);
+			}
+		}
+	}
+
+	return res;
+}
+
+void CTextCtrl::OnText(wxCommandEvent& evt)
+{
+	if (m_re_expr.size() == 0)
+	{
+		if (m_p_str_val)
+		{
+			*m_p_str_val = GetValue();
+		}
+		else if (m_p_f_val)
+		{
+			double value;
+			if (GetValue().ToDouble(&value))
+			{
+				*m_p_f_val = value;
+			}
+		}
+	}
+}
+
+void CTextCtrl::SetValue(const wxString& value)
+{
+	if (ValidateAndSaveData(value))
+	{
+		ChangeValue(value);
 	}
 }
 

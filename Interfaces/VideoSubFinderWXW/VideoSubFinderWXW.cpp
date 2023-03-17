@@ -401,10 +401,10 @@ bool CVideoSubFinderApp::OnInit()
 						m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
 						m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread = new ThreadSearchSubtitles(m_pMainWnd, wxTHREAD_JOINABLE);
-					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Create();
-					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Run();
-					m_pMainWnd->m_pPanel->m_pSHPanel->m_pSearchThread->Wait();
+					g_IsSearching = 1;
+					g_RunSubSearch = 1;
+					m_pMainWnd->m_pPanel->m_pSHPanel->m_SearchThread = std::thread(ThreadSearchSubtitles);
+					m_pMainWnd->m_pPanel->m_pSHPanel->m_SearchThread.join();
 				}
 			}
 		}
@@ -423,7 +423,6 @@ bool CVideoSubFinderApp::OnInit()
 		m_pMainWnd->m_blnNoGUI = true;
 		SaveToReportLog("setting: m_pMainWnd->m_blnNoGUI = true\n");
 		m_pMainWnd->m_pPanel->m_pOCRPanel->OnBnClickedCreateClearedTextImages(bn_event);
-		m_pMainWnd->m_pPanel->m_pOCRPanel->m_pSearchThread->Wait();
 		blnNeedToExit = true;
 	}
 

@@ -18,6 +18,8 @@
 #include <wx/panel.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
+#include <thread>
+#include <mutex>
 #include "SSOWnd.h"
 #include "Button.h"
 #include "StaticText.h"
@@ -30,19 +32,15 @@ class CSSOWnd;
 extern int g_IsSearching;
 extern int g_IsClose;
 
-class ThreadSearchSubtitles : public wxThread
-{
-public:
-    ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind = wxTHREAD_DETACHED);
-
-    virtual void *Entry();
-};
+void ThreadSearchSubtitles();
 
 class CSearchPanel : public wxPanel
 {
 public:
 	CSearchPanel(CSSOWnd* pParent);
 	~CSearchPanel();
+
+	std::mutex m_rs_mutex;
 
 	CButton	*m_pClear;
 	CButton	*m_pRun;
@@ -58,7 +56,7 @@ public:
 
 	CMainFrame	*m_pMF;
 
-	ThreadSearchSubtitles *m_pSearchThread;
+	std::thread m_SearchThread;
 
 	void Init();
 
@@ -66,6 +64,7 @@ public:
 	//HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	void OnBnClickedRun(wxCommandEvent& event);
 	void OnBnClickedClear(wxCommandEvent& event);
+	void OnTimeTextEnter(wxCommandEvent& evt);
 	void ThreadSearchSubtitlesEnd(wxCommandEvent& event);
 
 private:

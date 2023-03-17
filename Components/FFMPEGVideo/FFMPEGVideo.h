@@ -84,7 +84,7 @@ public:
 	AVBufferRef *hw_device_ctx = NULL;		
 	AVCodecContext *decoder_ctx = NULL;		
 	AVStream *video = NULL;
-#ifdef WIN32
+#if LIBAVFORMAT_VERSION_MAJOR > 58
 	const AVCodec *decoder = NULL;
 #else
 	 AVCodec *decoder = NULL;

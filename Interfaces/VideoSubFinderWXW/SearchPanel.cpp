@@ -97,12 +97,14 @@ void CSearchPanel::Init()
 	m_plblBT2->SetSize(rcBT2);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
-	m_plblBTA1 = new CTextCtrl(m_pP1, wxID_ANY,
-		wxT(""), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_plblBTA1 = new CTextCtrl(m_pP1, ID_LBL_BEGIN_TIME,
+		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_plblBTA1->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA2...\n");
-	m_plblBTA2 = new CTextCtrl( m_pP1, wxID_ANY,
-		wxT(""), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+	m_plblBTA2 = new CTextCtrl( m_pP1, ID_LBL_END_TIME,
+		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+	m_plblBTA2->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
 	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
@@ -144,8 +146,45 @@ void CSearchPanel::Init()
 	SaveToReportLog("CSearchPanel::Init(): finished.\n");
 }
 
+void CSearchPanel::OnTimeTextEnter(wxCommandEvent& evt)
+{
+	int id = evt.GetId();
+	CTextCtrl* pTimeTextCtrl;
+	s64* pTime;
+
+	if (id == ID_LBL_BEGIN_TIME)
+	{
+		pTimeTextCtrl = m_plblBTA1;
+		pTime = &(m_pMF->m_BegTime);
+	}
+	else
+	{
+		pTimeTextCtrl = m_plblBTA2;
+		pTime = &(m_pMF->m_EndTime);
+	}
+
+	pTimeTextCtrl->OnTextEnter(evt);
+	if (m_pMF->m_VIsOpen)
+	{
+		*pTime = GetVideoTime(pTimeTextCtrl->GetValue());
+
+		if (*pTime > m_pMF->m_pVideo->m_Duration)
+		{
+			*pTime = m_pMF->m_pVideo->m_Duration;
+			pTimeTextCtrl->SetValue(ConvertVideoTime(*pTime));
+		}
+		
+		if (m_pMF->m_vs != CMainFrame::Play)
+		{
+			m_pMF->m_pVideo->SetPos(*pTime);
+		}
+	}
+}
+
 void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_rs_mutex);
+
 	if (m_pMF->m_VIsOpen)
 	{
 		wxCommandEvent event;
@@ -173,8 +212,8 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		m_pMF->m_pImageBox->ClearScreen();
 
-		m_pMF->m_BegTime = GetVideoTime(wxString(m_plblBTA1->GetValue()));
-		m_pMF->m_EndTime = GetVideoTime(wxString(m_plblBTA2->GetValue()));
+		m_pMF->m_BegTime = GetVideoTime(m_plblBTA1->GetValue());
+		m_pMF->m_EndTime = GetVideoTime(m_plblBTA2->GetValue());
 
 		if (m_pMF->m_pVideo->SetNullRender())
 		{
@@ -189,22 +228,21 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
 			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 
-			m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
-			m_pSearchThread->Create();
-			m_pSearchThread->Run();
+			g_IsSearching = 1;
+			g_RunSubSearch = 1;
+			m_SearchThread = std::thread(ThreadSearchSubtitles);
 		}
 	}
 	else
 	{
-		if (g_RunSubSearch == 1) 
+		if (g_IsSearching == 1)
 		{
-			m_pRun->Disable();
-
 			m_pMF->m_timer.Stop();
 			wxTimerEvent event;
 			m_pMF->OnTimer(event);
 
 			g_RunSubSearch = 0;
+			m_SearchThread.join();
 		}
 	}
 }
@@ -220,28 +258,20 @@ void CSearchPanel::OnBnClickedClear(wxCommandEvent& event)
 	m_pMF->ClearDir(g_work_dir + "/TXTResults");
 }
 
-ThreadSearchSubtitles::ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind)
-        : wxThread(kind)
-{
-	g_pMF = pMF;
-}
-
-void ThreadSearchSubtitlesRun(wxThread *pThr);
-
-void *ThreadSearchSubtitles::Entry()
+void ThreadSearchSubtitles()
 {
 	try
 	{
-		ThreadSearchSubtitlesRun(this);
+		g_pMF->m_BegTime = FastSearchSubtitles(g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun() ") + wxString(e.what()));
+		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles() ") + wxString(e.what()));
 	}
 	
 	if (!(g_pMF->m_blnNoGUI))
 	{
-		SaveToReportLog("ThreadSearchSubtitles::Entry: wxPostEvent THREAD_SEARCH_SUBTITLES_END ...\n");
+		SaveToReportLog("ThreadSearchSubtitles: wxPostEvent THREAD_SEARCH_SUBTITLES_END ...\n");
 		wxCommandEvent event(THREAD_SEARCH_SUBTITLES_END); // No specific id
 		wxPostEvent(g_pMF->m_pPanel->m_pSHPanel, event);
 	}
@@ -250,30 +280,20 @@ void *ThreadSearchSubtitles::Entry()
 		g_IsSearching = 0;
 		g_RunSubSearch = 0;
 	}
-
-	return 0;
-}
-
-void ThreadSearchSubtitlesRun(wxThread *pThr)
-{
-	g_IsSearching = 1;
-
-	try
-	{
-		g_pMF->m_BegTime = FastSearchSubtitles(pThr, g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
-	}
-	catch (const exception& e)
-	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + wxString(e.what()));
-	}
 }
 
 void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_rs_mutex);
+
+	if (m_SearchThread.joinable())
+	{
+		m_SearchThread.join();
+	}
+
 	if (g_IsClose == 1) 
 	{
 		g_IsSearching = 0;
-		m_pMF->Close();
 		return;
 	}
 
@@ -311,7 +331,6 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 		m_pClear->Enable();
 		m_plblBTA1->SetEditable(true);
 		m_plblBTA2->SetEditable(true);
-		m_pRun->Enable();
 	}
 
 	g_IsSearching = 0;
