@@ -14,9 +14,20 @@ https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-d
 
 For working of this program on Linux possibly will be required libraries for gtk3.0.
 
-Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS, EndeavourOS Cassini_Nova-03-2023
+Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS, Arch Linux (EndeavourOS Cassini Nova 03-2023)
 
 For faster support in case of bug fixes please contact me in: https://vk.com/skosnits
+
+#######################################################################################
+Used Terms:
+#######################################################################################
+
+*) ISAImages - Intersected (detected) Subtitles Areas (by using frames in video on which subtitle was detected)
+*) ILAImages - Intersected Luminance Areas (by using frames in video on which subtitle was detected), the areas where pixels are not change too much in luminance in range:
+"Max luminance diff from down for IL image generation"
+"Max luminance diff from up for IL image generation"
+First image of "Sub Frames Length" sequence (~8-12 (dependently from settings) nearest frames in video on which subtitle was detected) are taked as reference, all next images in "Sub Frames Length" sequence are compared with it by luminance change.
+On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (first image of "Sub Frames Length" sequence).
 
 #######################################################################################
 Quick Start Guide
@@ -244,17 +255,6 @@ this can also increase performance ~x2.
 A process affinity mask is a bit vector in which each bit represents a logical processor on which the threads of the process are allowed to run.
 By default it is set to '-1' == threads on all logical processors is allowed to run.
 https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask
-
-#######################################################################################
-Used terms:
-#######################################################################################
-
-*) ISAImages - Intersected Subtitles Areas (by multiframe usage)
-*) ILAImages - Intersected Luminance Areas (by multiframe usage), the areas where pixels are not change too much in luminance in range:
-"Max luminance diff from down for IL image generation"
-"Max luminance diff from up for IL image generation"
-First image of DL sequence (~12 nearest frames in video) are taked as reference, all next images in DL sequence are compared with it by luminance change.
-On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (First image of DL sequence).
 
 #######################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:

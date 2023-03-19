@@ -836,47 +836,24 @@ void COCRPanel::CreateSubFromTXTResults()
 		{
 			Name = g_work_dir + wxT("/TXTResults/") + FileNamesVector[k];
 
-			/*
 			wxFileInputStream ffin(Name);
 			size_t size = ffin.GetSize();
-			custom_buffer<char> data(size);
+			custom_buffer<char> data(size+1);
 			ffin.ReadAll(data.m_pData, size);
-			wxString str(data.m_pData, wxCSConv(wxT("GB2312")), size);
-			*/
+			data.m_pData[size] = '\0';
 
 			wxString str;
+			wxWCharBuffer buf = wxConvUTF8.cMB2WX(data.m_pData);
+			if (buf.length() > 0)
+				str = wxString(buf);
+			else
+				str = wxString(data.m_pData, wxConvLocal);			
 
-			{
-				wxFileInputStream ffin(Name);
-				wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
-
-				while (ffin.IsOk() && !ffin.Eof())
-				{
-					str += fin.ReadLine();
-					if (ffin.IsOk() && !ffin.Eof())
-					{
-						str += wxT("\n");
-					}
-				}
-			}
-
-			if (str.size() == 0)
-			{
-				wxFileInputStream ffin(Name);
-				wxTextInputStream fin(ffin, wxT("\x09"), wxConvLocal);
-
-				while (ffin.IsOk() && !ffin.Eof())
-				{
-					str += fin.ReadLine();
-					if (ffin.IsOk() && !ffin.Eof())
-					{
-						str += wxT("\n");
-					}
-				}
-			}
+			str.Replace(wxString(wxT("\r")), wxString(), true);
+			str.Trim(true);
 
 			if (str.size() > 0)
-			{
+			{				
 				if (i > 0) Str += wxT("\n");
 				Str += str;
 				i++;
