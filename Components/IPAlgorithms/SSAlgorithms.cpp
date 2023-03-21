@@ -1989,7 +1989,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		return CurPos;
 	}
 
-	return 0;
+	return Begin;
 }
 
 int AnalyseImage(simple_buffer<u8>& Im, simple_buffer<u16>* pImILA, int w, int h)
