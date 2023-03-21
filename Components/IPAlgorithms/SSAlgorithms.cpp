@@ -37,7 +37,7 @@ __itt_string_handle* shSubFound = __itt_string_handle_create(L"SubFound");
 #endif
 
 std::chrono::time_point<std::chrono::high_resolution_clock> g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();
-int		g_RunSubSearch = 1;
+int		g_RunSubSearch = 0;
 
 int    g_threads = -1;
 
@@ -1143,8 +1143,6 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	//g_disable_save_images = true;
 	
 	g_StartTimeRunSubSearch = std::chrono::high_resolution_clock::now();	
-
-	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 
 	g_pV = pV;
 

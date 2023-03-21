@@ -112,7 +112,6 @@ extern bool     g_save_scaled_images;
 extern bool		g_border_is_darker;
 
 extern TextAlignment g_text_alignment;
-extern wxString g_text_alignment_string;
 
 extern bool g_extend_by_grey_color;
 extern int g_allow_min_luminance;
@@ -126,10 +125,6 @@ void YUVToBGR(u8 y, u8 u, u8 v, u8& b, u8& g, u8& r);
 
 void BGRToLab(u8 b, u8 g, u8 r, u8* p_l_lab, u8* p_a_lab, u8* p_b_lab);
 void LabToBGR(u8 l_lab, u8 a_lab, u8 b_lab, u8& b, u8& g, u8& r);
-
-wxArrayString GetAvailableTextAlignments();
-wxString ConvertTextAlignmentToString(TextAlignment val);
-TextAlignment ConvertStringToTextAlignment(wxString val);
 
 template <class T>
 void FindAndApplyLocalThresholding(simple_buffer<T>& Im, int dw, int dh, int w, int h);

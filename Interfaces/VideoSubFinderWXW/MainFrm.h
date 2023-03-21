@@ -41,10 +41,15 @@ extern bool g_playback_sound;
 extern wxCmdLineParser *g_pParser;
 extern Settings	g_cfg;
 extern wxString g_GeneralSettingsFileName;
+extern wxString g_text_alignment_string;
 
 class CSSOWnd;
 class CVideoBox;
 class CImageBox;
+
+wxArrayString GetAvailableTextAlignments();
+wxString ConvertTextAlignmentToString(TextAlignment val);
+TextAlignment ConvertStringToTextAlignment(wxString val);
 
 void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings);
 void LoadSettings();
@@ -78,6 +83,7 @@ public:
 	wxString	m_ocr_button_ces_text;
 	wxString	m_ocr_button_join_text;
 	wxString	m_ocr_button_ccti_text;
+	wxString	m_ocr_button_ccti_stop_text;
 	wxString	m_ocr_button_csftr_text;
 	wxString	m_ocr_button_cesfcti_text;
 	wxString	m_ocr_button_test_text;
@@ -175,6 +181,9 @@ public:
 	double		m_top_video_image_percent_end = 1;
 	double		m_left_video_image_percent_end = 0;
 	double		m_right_video_image_percent_end = 1;
+	wxString	m_run_search_progress_format_string;
+	wxString	m_ccti_start_progress_format_string;
+	wxString	m_ccti_progress_format_string;
 	wxString	m_video_box_title;
 	wxString	m_image_box_title;
 	wxString	m_search_panel_title;
@@ -197,6 +206,7 @@ public:
 	wxString	m_menu_view;
 	wxString	m_menu_play;
 	wxString	m_menu_help;
+	wxString	m_menu_localization;
 	wxString	m_menu_setpriority;
 	wxString	m_menu_setpriority_high;
 	wxString	m_menu_setpriority_abovenormal;
@@ -248,6 +258,7 @@ public:
 
 	wxString	m_button_clear_folders_text;
 	wxString	m_button_run_search_text;
+	wxString	m_button_run_search_stop_text;
 	wxString	m_button_test_text;
 	wxString	m_test_result_after_first_filtration_label;
 	wxString	m_test_result_after_second_filtration_label;
@@ -256,6 +267,11 @@ public:
 	wxString	m_test_result_cleared_text_image_label;
 	wxString	m_grid_col_property_label;
 	wxString	m_grid_col_value_label;
+
+	wxString	m_text_alignment_center;
+	wxString	m_text_alignment_left;
+	wxString	m_text_alignment_right;
+	wxString	m_text_alignment_any;
 
 	wxColour	m_main_text_colour = wxColour(0, 0, 0);
 	wxColour	m_main_text_ctls_background_colour = wxColour(255, 255, 255);
@@ -362,6 +378,7 @@ public:
 	void OnSize(wxSizeEvent& event);
 	void OnPlayPause(wxCommandEvent& event);
 	void OnStop(wxCommandEvent& event);
+	void OnLocalization(wxCommandEvent& event);
 	void OnNextFrame(wxCommandEvent& event);
 	void OnPreviousFrame(wxCommandEvent& event);
 	void OnFileReOpenVideo(wxCommandEvent& event);

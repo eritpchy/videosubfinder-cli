@@ -203,7 +203,7 @@ void CSettingsPanel::Init()
 	m_pOI->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
 	m_pOI->SetBackgroundColour(g_cfg.m_notebook_colour);
 	m_pOI->SetDefaultCellBackgroundColour(g_cfg.m_notebook_colour);
-	m_pOI->SetLabelBackgroundColour(g_cfg.m_notebook_colour);		
+	m_pOI->SetLabelBackgroundColour(g_cfg.m_notebook_colour);
 	m_pOI->SetGridLineColour(g_cfg.m_grid_line_colour);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_global_image_processing_settings...\n");
@@ -498,7 +498,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 				g_pViewBGRImage[0](ImTMP_BGR, m_W, m_H);
 			}
 
-			m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + ImgName + "\"");
+			m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title + wxT(" \"") + ImgName + wxT("\""));
 
 			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 

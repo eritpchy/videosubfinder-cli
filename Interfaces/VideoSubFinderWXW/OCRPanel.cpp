@@ -1457,7 +1457,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 
 			if (!(m_pMF->m_blnNoGUI))
 			{
-				m_pCCTI->SetLabel("Stop CCTXTImages");
+				m_pCCTI->SetLabel(g_cfg.m_ocr_button_ccti_stop_text);
 
 				m_pCES->Disable();
 				m_pJOIN->Disable();
@@ -1485,7 +1485,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 					m_pMF->m_pVideo->SetNullRender();
 				}
 
-				m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox");
+				m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title);
 				m_pMF->m_pVideoBox->m_plblTIME->SetLabel("");
 
 				m_pMF->m_pPanel->m_pSSPanel->Disable();
@@ -1510,7 +1510,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 				m_pMF->m_pImageBox->ClearScreen();
 
 				wxString str;
-				str.Printf(wxT("progress: 0%%   |   0 : %.5d   "), NImages);
+				str.Printf(g_cfg.m_ccti_start_progress_format_string + wxT("   "), NImages);
 				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
 			}
 
@@ -1668,11 +1668,11 @@ void CreateClearedTextImages(vector<wxString>& FileNamesVector)
 
 					ProgressData pd;
 
-					pd.m_ProgressStr.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, g_pMF->ConvertTime(eta), g_pMF->ConvertTime(run_time), k + 1, NImages);
+					pd.m_ProgressStr.Printf(g_cfg.m_ccti_progress_format_string + wxT("   "), progress, g_pMF->ConvertTime(eta), g_pMF->ConvertTime(run_time), k + 1, NImages);
 					
 					Str = FileNamesVector[k];
 					Str = GetFileName(Str);
-					pd.m_VBLabel = wxString(wxT("VideoBox \"")) + Str + wxT("\"");
+					pd.m_VBLabel = wxString(g_cfg.m_video_box_title + wxT(" \"")) + Str + wxT("\"");
 
 					pd.m_SBpos = k + 1;
 
@@ -1729,7 +1729,7 @@ void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 		m_CCTIThread.join();
 	}
 
-	m_pCCTI->SetLabel("Create Cleared TXT Images");
+	m_pCCTI->SetLabel(g_cfg.m_ocr_button_ccti_text);
 
 	m_pMF->m_pPanel->m_pSHPanel->Enable();
 	m_pMF->m_pPanel->m_pSSPanel->Enable();

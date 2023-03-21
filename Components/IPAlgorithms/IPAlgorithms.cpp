@@ -167,7 +167,6 @@ bool g_extend_by_grey_color = false;
 int g_allow_min_luminance = 100;
 
 TextAlignment g_text_alignment = TextAlignment::Center;
-wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
 
 int ClearImageLogical(simple_buffer<u8>& Im, int w, int h, int W, int H, int real_im_x_center, int yb, int ye, u8 white, wxString iter_det)
 {
@@ -662,60 +661,6 @@ bool PixelColorIsInRange(std::vector<color_range>& color_ranges, simple_buffer<u
 		}
 	}
 
-	return res;
-}
-
-wxArrayString GetAvailableTextAlignments()
-{
-	wxArrayString res;
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Center));
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Left));
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Right));
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Any));
-	return res;
-}
-
-wxString ConvertTextAlignmentToString(TextAlignment val)
-{
-	wxString res;
-	switch (val)
-	{
-	case TextAlignment::Center:
-		res = wxT("Center");
-		break;
-	case TextAlignment::Left:
-		res = wxT("Left");
-		break;
-	case TextAlignment::Right:
-		res = wxT("Right");
-		break;
-	case TextAlignment::Any:
-		res = wxT("Any");
-		break;
-	}
-
-	return res;
-}
-
-TextAlignment ConvertStringToTextAlignment(wxString val)
-{
-	TextAlignment res;
-	if (val == ConvertTextAlignmentToString(TextAlignment::Center))
-	{
-		res = TextAlignment::Center;
-	}
-	else if (val == ConvertTextAlignmentToString(TextAlignment::Left))
-	{
-		res = TextAlignment::Left;
-	}
-	else if (val == ConvertTextAlignmentToString(TextAlignment::Right))
-	{
-		res = TextAlignment::Right;
-	}
-	else if (val == ConvertTextAlignmentToString(TextAlignment::Any))
-	{
-		res = TextAlignment::Any;
-	}
 	return res;
 }
 

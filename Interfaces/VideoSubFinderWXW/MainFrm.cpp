@@ -30,6 +30,12 @@ Settings g_cfg;
 std::map<wxString, wxString> g_general_settings;
 std::map<wxString, wxString> g_locale_settings;
 
+wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
+
+wxArrayString g_localizations;
+std::map<wxString, int> g_localization_id;
+std::map<int, wxString> g_id_localization;
+
 // const DWORD _MMX_FEATURE_BIT = 0x00800000;
 // const DWORD _SSE2_FEATURE_BIT = 0x04000000;
 
@@ -42,6 +48,109 @@ wxDEFINE_EVENT(VIEW_GREYSCALE_IMAGE_IN_VIDEO_BOX, wxThreadEvent);
 wxDEFINE_EVENT(VIEW_BGR_IMAGE_IN_IMAGE_BOX, wxThreadEvent);
 wxDEFINE_EVENT(VIEW_BGR_IMAGE_IN_VIDEO_BOX, wxThreadEvent);
 wxDEFINE_EVENT(VIEW_RGB_IMAGE, wxThreadEvent);
+
+void LoadLocaleSettings(wxString settings_path);
+
+/////////////////////////////////////////////////////////////////////////////
+
+wxArrayString GetAvailableLocalizations()
+{
+	wxArrayString localizations;
+	wxString settings_dir = g_app_dir + wxT("/settings/");
+
+	wxDir dir(settings_dir);
+	wxString filename;
+	bool res;
+
+	res = dir.GetFirst(&filename, wxEmptyString, wxDIR_DIRS);
+	while (res)
+	{
+		if (wxFileExists(settings_dir + filename + wxT("/locale.cfg")))
+		{
+			localizations.Add(filename);
+		}		
+		res = dir.GetNext(&filename);
+	}
+
+	for (int i = 0; i < (int)localizations.size() - 1; i++)
+	for (int j = i + 1; j < (int)localizations.size(); j++)
+	{
+		if (localizations[i] > localizations[j])
+		{
+			filename = localizations[i];
+			localizations[i] = localizations[j];
+			localizations[j] = filename;
+		}
+	}
+
+	for (int i = 0; i < (int)localizations.size(); i++)
+	{
+		g_localization_id[localizations[i]] = FIRST_ID_FOR_LOCALIZATIONS + i;
+		g_id_localization[FIRST_ID_FOR_LOCALIZATIONS + i] = localizations[i];
+	}
+
+	return localizations;
+}
+ 
+/////////////////////////////////////////////////////////////////////////////
+
+wxArrayString GetAvailableTextAlignments()
+{
+	wxArrayString res;
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Center));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Left));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Right));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Any));
+	return res;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+wxString ConvertTextAlignmentToString(TextAlignment val)
+{
+	wxString res;
+	switch (val)
+	{
+	case TextAlignment::Center:
+		res = g_cfg.m_text_alignment_center;
+		break;
+	case TextAlignment::Left:
+		res = g_cfg.m_text_alignment_left;
+		break;
+	case TextAlignment::Right:
+		res = g_cfg.m_text_alignment_right;
+		break;
+	case TextAlignment::Any:
+		res = g_cfg.m_text_alignment_any;
+		break;
+	}
+
+	return res;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+TextAlignment ConvertStringToTextAlignment(wxString val)
+{
+	TextAlignment res;
+	if (val == ConvertTextAlignmentToString(TextAlignment::Center))
+	{
+		res = TextAlignment::Center;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Left))
+	{
+		res = TextAlignment::Left;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Right))
+	{
+		res = TextAlignment::Right;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Any))
+	{
+		res = TextAlignment::Any;
+	}
+	return res;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -291,8 +400,9 @@ void CMainFrame::Init()
 	pMenu5->Append(ID_SETPRIORITY_NORMAL, g_cfg.m_menu_setpriority_normal, _T(""), wxITEM_CHECK);
 	pMenu5->Append(ID_SETPRIORITY_BELOWNORMAL, g_cfg.m_menu_setpriority_belownormal, _T(""), wxITEM_CHECK);
 	pMenu5->Append(ID_SETPRIORITY_IDLE, g_cfg.m_menu_setpriority_idle, _T(""), wxITEM_CHECK);
+	pMenu5->Check(ID_SETPRIORITY_NORMAL, true);
 
-	wxMenu *pMenu1 = new wxMenu;	
+	wxMenu *pMenu1 = new wxMenu;
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, g_cfg.m_menu_file_open_video_opencv);
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, g_cfg.m_menu_file_open_video_ffmpeg);
 	pMenu1->Append(ID_FILE_REOPENVIDEO, g_cfg.m_menu_file_reopenvideo);
@@ -312,7 +422,19 @@ void CMainFrame::Init()
 	pMenu2->Append(ID_EDIT_SETENDTIME, g_cfg.m_menu_edit_setendtime + wxT("\tCtrl+X"));
 	pMenuBar->Append(pMenu2, g_cfg.m_menu_edit);
 
+	wxMenu* pMenuLocalization = new wxMenu;
+	g_localizations = GetAvailableLocalizations();
+
+	for (wxString localization : g_localizations)
+	{
+		pMenuLocalization->Append(g_localization_id[localization], localization, _T(""), wxITEM_CHECK);
+		this->Bind(wxEVT_MENU, &CMainFrame::OnLocalization, this, g_localization_id[localization]);
+	}
+	pMenuLocalization->Check(g_localization_id[g_cfg.m_prefered_locale], true);
+
 	wxMenu* pMenuView = new wxMenu;
+	pMenuView->AppendSubMenu(pMenuLocalization, g_cfg.m_menu_localization);
+	pMenuView->AppendSeparator();
 	pMenuView->Append(ID_SCALE_TEXT_SIZE_INC, g_cfg.m_menu_scale_text_size_inc + wxT("   Ctrl+Mouse Wheel"));
 	pMenuView->Append(ID_SCALE_TEXT_SIZE_DEC, g_cfg.m_menu_scale_text_size_dec + wxT("   Ctrl+Mouse Wheel"));
 	pMenuBar->Append(pMenuView, g_cfg.m_menu_view);
@@ -697,7 +819,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	if (m_blnOpenVideoResult == false) 
 	{
 		m_VIsOpen = false;
-		m_pVideoBox->m_plblVB->SetLabel("VideoBox");
+		m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title);
 		m_FileName = "";
 		m_blnReopenVideo = false;
 
@@ -717,7 +839,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 		m_pVideoBox->m_pSB->Disable();
 	}
 
-	m_pVideoBox->m_plblVB->SetLabel("VideoBox \"" + GetFileName(csFileName) + "\"");
+	m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title + wxT(" \"") + GetFileName(csFileName) + wxT("\""));
 
 	if (m_blnReopenVideo == false) 
 	{
@@ -897,6 +1019,12 @@ void CMainFrame::OnStop(wxCommandEvent& event)
 	}
 }
 
+void CMainFrame::OnLocalization(wxCommandEvent& event)
+{
+	g_cfg.m_prefered_locale = g_id_localization[event.GetId()];
+	LoadLocaleSettings(g_app_dir + wxT("/settings/") + g_cfg.m_prefered_locale + wxT("/locale.cfg"));
+}
+
 void CMainFrame::OnNextFrame(wxCommandEvent& event)
 {
 	if (m_VIsOpen)
@@ -983,16 +1111,16 @@ void LoadSettings()
 
 	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(g_GeneralSettingsFileName, g_general_settings)...\n");
 	ReadSettings(g_GeneralSettingsFileName, g_general_settings);
-	
+
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings...\n");
 
 	ReadProperty(g_general_settings, g_cfg.m_main_text_colour, "main_text_colour");
 	ReadProperty(g_general_settings, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
-	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour, "main_buttons_colour");	
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour, "main_buttons_colour");
 	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour_focused, "main_buttons_colour_focused");
 	ReadProperty(g_general_settings, g_cfg.m_main_buttons_colour_selected, "main_buttons_colour_selected");
-	ReadProperty(g_general_settings, g_cfg.m_main_buttons_border_colour, "main_buttons_border_colour");	
-	ReadProperty(g_general_settings, g_cfg.m_main_labels_background_colour, "main_labels_background_colour");	
+	ReadProperty(g_general_settings, g_cfg.m_main_buttons_border_colour, "main_buttons_border_colour");
+	ReadProperty(g_general_settings, g_cfg.m_main_labels_background_colour, "main_labels_background_colour");
 	ReadProperty(g_general_settings, g_cfg.m_main_frame_background_colour, "main_frame_background_colour");
 	ReadProperty(g_general_settings, g_cfg.m_notebook_colour, "notebook_colour");
 	ReadProperty(g_general_settings, g_cfg.m_notebook_panels_colour, "notebook_panels_colour");
@@ -1029,9 +1157,9 @@ void LoadSettings()
 	ReadProperty(g_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
 
 	ReadProperty(g_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
-	ReadProperty(g_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");		
+	ReadProperty(g_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
 	ReadProperty(g_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
-	ReadProperty(g_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");	
+	ReadProperty(g_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
 
 	ReadProperty(g_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
 	ReadProperty(g_general_settings, g_mthr, "moderate_threshold");
@@ -1043,7 +1171,7 @@ void LoadSettings()
 	ReadProperty(g_general_settings, g_btd, "between_text_distace");
 	ReadProperty(g_general_settings, g_to, "text_centre_offset");
 	ReadProperty(g_general_settings, g_scale, "image_scale_for_clear_image");
-	
+
 	ReadProperty(g_general_settings, g_use_ISA_images_for_get_txt_area, "use_ISA_images");
 	ReadProperty(g_general_settings, g_use_ILA_images_for_get_txt_area, "use_ILA_images");
 
@@ -1052,13 +1180,13 @@ void LoadSettings()
 
 	ReadProperty(g_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
 	ReadProperty(g_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
-	ReadProperty(g_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");	
+	ReadProperty(g_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");
 
 	ReadProperty(g_general_settings, g_mpn, "min_points_number");
 	ReadProperty(g_general_settings, g_mpd, "min_points_density");
 	ReadProperty(g_general_settings, g_msh, "min_symbol_height");
 	ReadProperty(g_general_settings, g_msd, "min_symbol_density");
-	ReadProperty(g_general_settings, g_mpned, "min_NEdges_points_density");				
+	ReadProperty(g_general_settings, g_mpned, "min_NEdges_points_density");
 
 	ReadProperty(g_general_settings, g_clear_txt_folders, "clear_txt_folders");
 	ReadProperty(g_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
@@ -1073,7 +1201,7 @@ void LoadSettings()
 
 	ReadProperty(g_general_settings, g_video_contrast, "video_contrast");
 	ReadProperty(g_general_settings, g_video_gamma, "video_gamma");
-	
+
 	ReadProperty(g_general_settings, g_clear_image_logical, "clear_image_logical");
 
 	ReadProperty(g_general_settings, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
@@ -1086,12 +1214,12 @@ void LoadSettings()
 
 	ReadProperty(g_general_settings, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");
 	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
-	
+
 	ReadProperty(g_general_settings, g_cfg.m_txt_dw, "txt_dw");
 	ReadProperty(g_general_settings, g_cfg.m_txt_dy, "txt_dy");
 
 	ReadProperty(g_general_settings, g_cfg.m_fount_size_lbl, "fount_size_lbl");
-	ReadProperty(g_general_settings, g_cfg.m_fount_size_btn, "fount_size_btn");	
+	ReadProperty(g_general_settings, g_cfg.m_fount_size_btn, "fount_size_btn");
 
 	ReadProperty(g_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
 	ReadProperty(g_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
@@ -1132,12 +1260,23 @@ void LoadSettings()
 
 	//------------------------------------------------
 
-	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(.., g_locale_settings)...\n");
+	SaveToReportLog("CMainFrame::LoadSettings(): LoadLocaleSettings(.. g_cfg.m_prefered_locale ..)...\n");
 
-	ReadSettings(g_app_dir + wxT("/settings/") + wxString(g_cfg.m_prefered_locale.mb_str()) + wxT("/locale.cfg"), g_locale_settings);
+	LoadLocaleSettings(g_app_dir + wxT("/settings/") + wxString(g_cfg.m_prefered_locale) + wxT("/locale.cfg"));
 
-	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_locale_settings...\n");
+}
+
+void LoadLocaleSettings(wxString settings_path)
+{
+	SaveToReportLog(wxString::Format(wxT("CMainFrame::LoadLocaleSettings(): reading properties from \"%s\" ...\n"), settings_path));
+
+	ReadSettings(settings_path, g_locale_settings);
 	
+	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_center, "text_alignment_center");
+	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_left, "text_alignment_left");
+	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_right, "text_alignment_right");
+	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_any, "text_alignment_any");
+
 	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_video_file, "file_dialog_title_open_video_file");
 	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_video_file_wild_card, "file_dialog_title_open_video_file_wild_card");
 	ReadProperty(g_locale_settings, g_cfg.m_file_dialog_title_open_settings_file, "file_dialog_title_open_settings_file");
@@ -1152,6 +1291,7 @@ void LoadSettings()
 	ReadProperty(g_locale_settings, g_cfg.m_menu_view, "menu_view");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_play, "menu_play");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_help, "menu_help");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_localization, "menu_localization");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority, "menu_setpriority");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_high, "menu_setpriority_high");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_setpriority_abovenormal, "menu_setpriority_abovenormal");
@@ -1203,6 +1343,7 @@ void LoadSettings()
 
 	ReadProperty(g_locale_settings, g_cfg.m_button_clear_folders_text, "button_clear_folders_text");
 	ReadProperty(g_locale_settings, g_cfg.m_button_run_search_text, "button_run_search_text");
+	ReadProperty(g_locale_settings, g_cfg.m_button_run_search_stop_text, "button_run_search_stop_text");
 	ReadProperty(g_locale_settings, g_cfg.m_button_test_text, "button_test_text");
 	ReadProperty(g_locale_settings, g_cfg.m_test_result_after_first_filtration_label, "test_result_after_first_filtration_label");
 	ReadProperty(g_locale_settings, g_cfg.m_test_result_after_second_filtration_label, "test_result_after_second_filtration_label");
@@ -1213,6 +1354,9 @@ void LoadSettings()
 	ReadProperty(g_locale_settings, g_cfg.m_grid_col_value_label, "grid_col_value_label");
 	ReadProperty(g_locale_settings, g_cfg.m_label_begin_time, "label_begin_time");
 	ReadProperty(g_locale_settings, g_cfg.m_label_end_time, "label_end_time");
+	ReadProperty(g_locale_settings, g_cfg.m_run_search_progress_format_string, "run_search_progress_format_string");
+	ReadProperty(g_locale_settings, g_cfg.m_ccti_start_progress_format_string, "ccti_start_progress_format_string");
+	ReadProperty(g_locale_settings, g_cfg.m_ccti_progress_format_string, "ccti_progress_format_string");	
 	ReadProperty(g_locale_settings, g_cfg.m_video_box_title, "video_box_title");
 	ReadProperty(g_locale_settings, g_cfg.m_image_box_title, "image_box_title");
 	ReadProperty(g_locale_settings, g_cfg.m_search_panel_title, "search_panel_title");
@@ -1227,6 +1371,7 @@ void LoadSettings()
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_join_text, "ocr_button_join_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ccti_stop_text, "ocr_button_ccti_stop_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_test_text, "ocr_button_test_text");
@@ -1330,9 +1475,7 @@ void LoadSettings()
 
 	ReadProperty(g_locale_settings, g_cfg.m_playback_sound, "label_playback_sound");
 
-	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_locale_settings end.\n");
-
-	SaveToReportLog("CMainFrame::LoadSettings(): finished.\n");
+	SaveToReportLog("CMainFrame::LoadLocaleSettings(): finished.\n");
 }
 
 void SaveSettings()
@@ -1621,14 +1764,14 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 				}
 
 				wxString str;
-				str.Printf(wxT("progress: %s eta : %s run_time : %s   |   "), str_progress, str_eta, ConvertTime(run_time));
+				str.Printf(g_cfg.m_run_search_progress_format_string, str_progress, str_eta, ConvertTime(run_time), ConvertVideoTime(Cur), m_EndTimeStr);
 
-				m_pVideoBox->m_plblTIME->SetLabel(str + ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
+				m_pVideoBox->m_plblTIME->SetLabel(str + wxT("   "));
 			}			
 		}
 		else
 		{
-			m_pVideoBox->m_plblTIME->SetLabel(ConvertVideoTime(Cur) + m_EndTimeStr + "   ");
+			m_pVideoBox->m_plblTIME->SetLabel(ConvertVideoTime(Cur) + m_EndTimeStr + wxT("   "));
 		}
 
 		m_ct = Cur;

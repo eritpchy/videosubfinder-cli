@@ -202,7 +202,7 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		
 		m_pMF->m_timer.Start(1000);
 
-		m_pRun->SetLabel("Stop Search");
+		m_pRun->SetLabel(g_cfg.m_button_run_search_stop_text);
 
 		m_pMF->m_pVideoBox->m_pButtonPause->Disable();
 		m_pMF->m_pVideoBox->m_pButtonRun->Disable();
@@ -262,6 +262,7 @@ void ThreadSearchSubtitles()
 {
 	try
 	{
+		g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 		g_pMF->m_BegTime = FastSearchSubtitles(g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
 	}
 	catch (const exception& e)
@@ -311,7 +312,7 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 			m_pMF->OnFileReOpenVideo(menu_event);
 		}
 
-		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
+		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel(g_cfg.m_button_run_search_text);
 
 		m_pMF->m_pPanel->m_pSSPanel->Enable();
 		m_pMF->m_pPanel->m_pOCRPanel->Enable();

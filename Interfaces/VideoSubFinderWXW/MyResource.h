@@ -185,3 +185,6 @@
 #define ID_PREVIOUS_FRAME               69
 #define ID_APP_CMD_ARGS_INFO            70
 #define ID_APP_USAGE_DOCS               71
+
+// !NOTE: SHOULD BE THE LAST IT
+#define FIRST_ID_FOR_LOCALIZATIONS      72
