@@ -20,6 +20,7 @@
 #include "Video.h"
 #include "opencv2/opencv.hpp"
 #include <wx/wx.h>
+#include "wx.h"
 
 extern "C"
 {

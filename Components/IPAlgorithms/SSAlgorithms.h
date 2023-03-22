@@ -22,6 +22,7 @@
 #include "Video.h"
 #include <wx/string.h>
 #include <chrono>
+#include <vector>
 
 using namespace std;
 
@@ -34,6 +35,8 @@ extern double	g_tp;	 //text percent
 extern double	g_mtpl;  //min text len (in percent)
 extern double	g_veple; //vedges points line error
 extern double	g_ilaple; //ILA points line error
+extern bool     g_save_images;
+extern vector<wxString> g_file_names_vector;
 
 extern bool g_use_ISA_images_for_search_subtitles;
 extern bool g_use_ILA_images_for_search_subtitles;

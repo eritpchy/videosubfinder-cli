@@ -19,6 +19,7 @@
 #include "DataTypes.h"
 #include <vector>
 #include <wx/wx.h>
+#include "wx.h"
 
 using namespace std;
 

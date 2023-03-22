@@ -18,6 +18,7 @@
 #include <math.h>
 #include <emmintrin.h>
 #include <wx/wx.h>
+#include "wx.h"
 #include <wx/regex.h>
 #include <chrono>
 #include <iostream>

@@ -10,4 +10,4 @@
 !.gitignore
 # Or directories
 !*/
-
+.idea

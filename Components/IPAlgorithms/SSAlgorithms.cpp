@@ -55,6 +55,8 @@ int g_max_dl_up = 40;
 
 double	g_video_contrast = 1.0; //1.0 default without change
 double	g_video_gamma = 1.0; //1.0 default without change
+bool g_save_images = true;
+vector<wxString> g_file_names_vector;
 
 CVideo *g_pV;
 
@@ -607,6 +609,12 @@ public:
 		bool convert_to_lab = m_convert_to_lab;
 
 		m_thrs_save_images.emplace_back(shared_custom_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
+                    g_file_names_vector.push_back(name);
+		            fprintf(stderr, "Frame: %s\n", name.ToStdString().c_str());
+                    fflush(stderr);
+                    if (g_save_images == false) {
+            	       return;
+            	    }
 					{
 						simple_buffer<u8> ImTMP_BGR(W * H * 3);
 						ImBGRToNativeSize(ImBGR, ImTMP_BGR, w, h, W, H, xmin, xmax, ymin, ymax);
@@ -1233,7 +1241,7 @@ s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 
 	while (((CurPos < End) || (End < 0)) && (g_RunSubSearch == 1) && (CurPos != prevPos))
 	{
-		if (pThr->TestDestroy())
+		if (pThr && pThr->TestDestroy())
 		{
 			g_RunSubSearch = 0;
 			break;
@@ -1406,7 +1414,6 @@ s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 				create_new_threads = 1;
 			}			
 		}		
-
 		if ((g_RunSubSearch == 0) || (found_sub == 0) || ((CurPos >= End) && (End >= 0)) || (CurPos == prevPos))
 		{
 			break;

@@ -1,7 +1,15 @@
+if (USE_GUI)
 file(GLOB VideoSubFinderWXW_src
      "*.h"
      "*.cpp"
 )
+else()
+SET(VideoSubFinderWXW_src
+    VideoSubFinderWXW.h
+    VideoSubFinderWXW.cpp
+   )
+
+endif (USE_GUI)
 
 if (WIN32)
 	add_executable(VideoSubFinderWXW WIN32 ${VideoSubFinderWXW_src} VideoSubFinderWXW.rc)
@@ -79,8 +87,12 @@ else()
 		swscale
 		avfilter
 		tbb
-		X11
 	)
+	if (USE_GUI)
+        target_link_libraries(VideoSubFinderWXW PUBLIC
+            X11
+        )
+	endif (USE_GUI)
 endif (WIN32)
 
 

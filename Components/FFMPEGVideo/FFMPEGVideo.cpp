@@ -95,6 +95,9 @@ FFMPEGVideo::~FFMPEGVideo()
 
 void FFMPEGVideo::ShowFrame(void *dc)
 {
+#ifndef USE_GUI
+    return;
+#else
 	if ((m_show_video) && (dc != NULL))
 	{
 		int ret;		
@@ -134,6 +137,7 @@ void FFMPEGVideo::ShowFrame(void *dc)
 
 		if (dst_data[0]) av_freep(&dst_data[0]);
 	}
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -343,7 +347,9 @@ void FFMPEGVideo::OneStep()
 
 			if (m_show_video)
 			{
+#ifdef USE_GUI
 				((wxWindow*)m_pVideoWindow)->Refresh(true);
+#endif
 			}
 		}
 		else
@@ -897,7 +903,9 @@ bool FFMPEGVideo::SetVideoWindowPlacement(void *pVideoWindow)
 	m_pVideoWindow ? m_show_video = true : m_show_video = false;
 	if (m_show_video)
 	{
+#ifdef USE_GUI
 		((wxWindow*)m_pVideoWindow)->Refresh(true);
+#endif
 	}
 	return true;
 }

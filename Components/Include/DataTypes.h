@@ -18,6 +18,7 @@
 #include <time.h>
 #include <memory.h>
 #include <wx/wx.h>
+#include "wx.h"
 #include "opencv2/imgcodecs.hpp"
 #include <condition_variable>
 #include <queue>

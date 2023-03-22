@@ -20,8 +20,11 @@
 #include <wx/txtstrm.h>
 
 #ifndef WIN32
+#ifdef USE_GUI
 #include <X11/Xlib.h>
 #endif
+#endif
+#include "DataTypes.h"
 
 static const wxCmdLineEntryDesc cmdLineDesc[] =
 {
@@ -35,7 +38,8 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_SWITCH, "ovocv", "open_video_opencv", "open video by OpenCV (default)" },
 	{ wxCMD_LINE_SWITCH, "ovffmpeg", "open_video_ffmpeg", "open video by FFMPEG" },
 	{ wxCMD_LINE_SWITCH, "uc", "use_cuda", "use cuda" },
-	{ wxCMD_LINE_OPTION, "s", "start_time", "start time, default = 0:00:00:000 (in format hour:min:sec:milisec)" },
+    { wxCMD_LINE_SWITCH, "dsi", "dont_save_images", "Don't save images" },
+    { wxCMD_LINE_OPTION, "s", "start_time", "start time, default = 0:00:00:000 (in format hour:min:sec:milisec)" },
 	{ wxCMD_LINE_OPTION, "e", "end_time", "end time, default = video length" },
 	{ wxCMD_LINE_OPTION, "te", "top_video_image_percent_end", "top video image percent offset from image bottom, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "be", "bottom_video_image_percent_end", "bottom video image percent offset from image bottom, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },	
@@ -45,7 +49,7 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_OPTION, "gs", "general_settings",  "general settings (path to general settings *.cfg file, default = settings/general.cfg)" },
 	{ wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_OPTION, "nocrthr", "num_ocr_threads", "number of threads used for Create Cleared TXT Images", wxCMD_LINE_VAL_NUMBER },
-	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -i \"C:\\test_video.mp4\" -cscti \"C:\\test_video.srt\" -o \"C:\\ResultsDir\" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
+    { wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -i \"C:\\test_video.mp4\" -cscti \"C:\\test_video.srt\" -o \"C:\\ResultsDir\" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
 	{ wxCMD_LINE_NONE }
 };
 
@@ -149,7 +153,9 @@ void test()
 bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 {
 #ifndef WIN32
+#ifdef USE_GUI
 	XInitThreads();
+#endif
 #endif
 
 	wxString Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
@@ -176,8 +182,17 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 	return wxApp::Initialize(argc, argv);
 }
 
-bool CVideoSubFinderApp::OnInit() 
+
+static void CmdlineMain() {
+
+}
+
+bool CVideoSubFinderApp::OnInit()
 {
+#ifndef USE_GUI
+    CmdlineMain();
+    return false;
+#else
     //if ( !wxApp::OnInit() )
     //    return false;
 
@@ -185,7 +200,7 @@ bool CVideoSubFinderApp::OnInit()
     // Many version of wxGTK generate spurious diagnostic messages when
     // destroying wxNotebook (or removing pages from it), allow wxWidgets to
     // suppress them.
-    GTKAllowDiagnosticsControl();	
+    //GTKAllowDiagnosticsControl();	
 #endif // __WXGTK__
 
 	SaveToReportLog("new CMainFrame...\n");
@@ -205,6 +220,9 @@ bool CVideoSubFinderApp::OnInit()
 	m_pMainWnd->Init();	
 	SaveToReportLog("m_pMainWnd->Init was finished.\n");
 
+    if (g_parser.FoundSwitch("dsi")) {
+        g_save_images = false;
+    }
 	long threads;
 	if (g_parser.Found("nthr", &threads))
 	{
@@ -215,7 +233,7 @@ bool CVideoSubFinderApp::OnInit()
 	if (g_parser.Found("nocrthr", &ocr_threads))
 	{
 		g_ocr_threads = ocr_threads;
-	}	
+	}
 
 	if (g_parser.FoundSwitch("ovocv"))
 	{
@@ -245,6 +263,7 @@ bool CVideoSubFinderApp::OnInit()
 		wxStr.Replace("\\", "/");
 		g_work_dir = wxStr;		
 	}
+
 
 	wxFileName::Mkdir(g_work_dir + "/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/ISAImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
@@ -290,7 +309,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						wxMessageBox("ERROR: wrong \"be\" command line option value\n");
+						wxMessageBox1("ERROR: wrong \"be\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL2->m_pos = 1 - double_val;
@@ -300,7 +319,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						wxMessageBox("ERROR: wrong \"te\" command line option value\n");
+						wxMessageBox1("ERROR: wrong \"te\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pHSL1->m_pos = 1 - double_val;
@@ -311,7 +330,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						wxMessageBox("ERROR: wrong \"le\" command line option value\n");
+						wxMessageBox1("ERROR: wrong \"le\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL1->m_pos = double_val;
@@ -321,7 +340,7 @@ bool CVideoSubFinderApp::OnInit()
 				{
 					if ((double_val < 0) || (double_val > 1.0))
 					{
-						wxMessageBox("ERROR: wrong \"re\" command line option value\n");
+						wxMessageBox1("ERROR: wrong \"re\" command line option value\n");
 						return false;
 					}
 					m_pMainWnd->m_pVideoBox->m_pVBox->m_pVSL2->m_pos = double_val;
@@ -346,7 +365,7 @@ bool CVideoSubFinderApp::OnInit()
 		}
 		else
 		{
-			wxMessageBox("ERROR: input video file was not provided\n");
+			wxMessageBox1("ERROR: input video file was not provided\n");
 			return false;
 		}
 
@@ -401,8 +420,8 @@ bool CVideoSubFinderApp::OnInit()
 	if (blnNeedToExit) return false;
 
 	m_pMainWnd->Show(true);
-
 	return true;
+#endif
 }
 
 CVideoSubFinderApp::~CVideoSubFinderApp()

@@ -28,8 +28,10 @@ OCVVideo::OCVVideo()
 
 	m_type = 0;
 
+#ifdef USE_GUI
 	m_pBmp = NULL;
 	m_pBmpScaled = NULL;
+#endif
 
 	m_pVideoWindow = NULL;
 
@@ -48,6 +50,7 @@ OCVVideo::~OCVVideo()
 		m_VC.release();
 	}
 
+#ifdef USE_GUI
 	if (m_pBmp != NULL)
 	{
 		delete m_pBmp;
@@ -59,12 +62,16 @@ OCVVideo::~OCVVideo()
 		delete m_pBmpScaled;
 		m_pBmpScaled = NULL;
 	}
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 void OCVVideo::ShowFrame(cv::Mat &img, void *dc, int left, int top, int width, int height)
 {
+#ifndef USE_GUI
+    return;
+#else
 	if ((!img.empty()) && m_VC.isOpened() && m_show_video && (dc != NULL))
 	{
 		int img_w = img.cols, img_h = img.rows, num_pixels = img_w*img_h;
@@ -109,6 +116,7 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc, int left, int top, int width, i
 			}
 		}
 	}
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -116,9 +124,11 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc, int left, int top, int width, i
 bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 { 
 	cv::String movie_name(csMovieName.ToUTF8());
+
 	m_VC.open(movie_name);
 	bool res = m_VC.isOpened();
-
+    fprintf(stderr, "m_VC.isOpened(): %d path: %s %s\n",res, csMovieName.ToStdString().c_str(), strerror(errno));
+    fflush(stderr);
 	if (res)
 	{
 		m_MovieName = csMovieName;
@@ -164,7 +174,9 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 		if (m_show_video)
 		{
+#ifdef USE_GUI
 			((wxWindow*)m_pVideoWindow)->Refresh(true);
+#endif
 		}
 	}
 
@@ -179,7 +191,9 @@ bool OCVVideo::SetVideoWindowPlacement(void *pVideoWindow)
 	m_pVideoWindow ? m_show_video = true : m_show_video = false;	
 	if (m_show_video)
 	{
+#ifdef USE_GUI
 		((wxWindow*)m_pVideoWindow)->Refresh(true);
+#endif
 	}
 	return true;
 }
@@ -292,8 +306,10 @@ void OCVVideo::OneStep()
 			m_ImageGeted = true;
 
 			if (m_show_video)
-			{				
+			{
+#ifdef USE_GUI
 				((wxWindow*)m_pVideoWindow)->Refresh(true);
+#endif
 			}			
 		}
 		else
@@ -527,7 +543,9 @@ void *ThreadRunVideo::Entry()
 		}
 		m_pVideo->m_Pos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
 		
+#ifdef USE_GUI
 		((wxWindow*)m_pVideo->m_pVideoWindow)->Refresh(true);
+#endif
 		int dt = (m_pVideo->m_Pos - startPos) - (int)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_t).count());
 		if (dt > 0)
 		{

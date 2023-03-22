@@ -18,6 +18,7 @@
 
 #include "Video.h"
 #include <wx/wx.h>
+#include "wx.h"
 
 extern wxString g_hw_device;
 extern wxString g_filter_descr;

@@ -20,6 +20,7 @@
 #include "Video.h"
 #include "opencv2/opencv.hpp"
 #include <wx/wx.h>
+#include "wx.h"
 #include <mutex>
 
 class OCVVideo;
@@ -57,8 +58,10 @@ public:
 	int		m_type; //video open type
 	bool	m_show_video;
 	bool	m_play_video;
+#ifdef USE_GUI
 	wxBitmap	*m_pBmp;	
 	wxBitmap	*m_pBmpScaled;
+#endif
 	double m_frameNumbers;
 	double m_fps;
 	cv::Mat m_cur_frame;

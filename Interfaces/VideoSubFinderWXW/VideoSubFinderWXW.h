@@ -18,14 +18,26 @@
 
 #include "wx/wx.h"
 #include "DataTypes.h"
+#ifdef USE_GUI
 #include "MainFrm.h"
+#else
+#include <execution>
+#include <wx/cmdline.h>
+#include <wx/filename.h>
+#include "OCVVideoLoader.h"
+#include "FFMPEGVideoLoader.h"
+#include "SSAlgorithms.h"
+#include "IPAlgorithms.h"
+#endif
 
-class CVideoSubFinderApp : public wxApp 
+class CVideoSubFinderApp : public wxApp
 {
 public:
 	~CVideoSubFinderApp();
 
-	CMainFrame* m_pMainWnd;	
+#ifdef USE_GUI
+	CMainFrame* m_pMainWnd;
+#endif
 
 public:
 	virtual bool OnInit();
