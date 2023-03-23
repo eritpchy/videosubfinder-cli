@@ -841,9 +841,18 @@ void COCRPanel::CreateSubFromTXTResults()
 			custom_buffer<char> data(size+1);
 			ffin.ReadAll(data.m_pData, size);
 			data.m_pData[size] = '\0';
+			int offset = 0;
+
+			// removing UTF-8 BOM bytes
+			if ((data.m_pData[0] == '\xEF') &&
+				(data.m_pData[1] == '\xBB') &&
+				(data.m_pData[2] == '\xBF'))
+			{
+				offset = 3;
+			}			
 
 			wxString str;
-			wxWCharBuffer buf = wxConvUTF8.cMB2WX(data.m_pData);
+			wxWCharBuffer buf = wxConvUTF8.cMB2WX(data.m_pData + offset);
 			if (buf.length() > 0)
 				str = wxString(buf);
 			else
