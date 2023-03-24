@@ -33,6 +33,7 @@ CCheckBox::CCheckBox(wxWindow* parent,
 {
 	m_pParent = parent;
 	m_p_val = p_val;
+	m_p_label = &label;
 
 	m_text_style = text_style;
 	m_check_box_style = check_box_style;
@@ -61,7 +62,8 @@ void CCheckBox::SetTextColour(wxColour& colour)
 
 void CCheckBox::SetLabel(const wxString& label)
 {
-	m_pST->SetLabel(label);
+	m_p_label = &label;
+	m_pST->SetLabel(*m_p_label);
 	wxSizeEvent event;
 	OnSize(event);
 }
@@ -74,6 +76,7 @@ bool CCheckBox::SetBackgroundColour(const wxColour& colour)
 
 void CCheckBox::RefreshData()
 {
+	m_pST->SetLabel(*m_p_label);
 	m_pCB->SetValue(*m_p_val);
 	wxSizeEvent event;
 	OnSize(event);

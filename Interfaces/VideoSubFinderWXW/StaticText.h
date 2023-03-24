@@ -22,13 +22,22 @@
 class CStaticText : public wxPanel, public CControl
 {
 public:
-	CStaticText (wxWindow* parent,
-				   wxWindowID id = wxID_ANY,				   
-				   const wxString& label = "",
+	CStaticText(wxWindow* parent,
+				   const wxString& label,
+				   wxWindowID id = wxID_ANY,
 				   long text_style = wxALIGN_CENTER,
-				   long panel_style = wxTAB_TRAVERSAL | wxBORDER,				   
+				   long panel_style = wxTAB_TRAVERSAL | wxBORDER,
 				   const wxPoint& pos = wxDefaultPosition,
-				   const wxSize& size = wxDefaultSize);		
+				   const wxSize& size = wxDefaultSize);
+	
+	CStaticText(wxWindow* parent,
+		const wxString&& label,
+		wxWindowID id = wxID_ANY,
+		long text_style = wxALIGN_CENTER,
+		long panel_style = wxTAB_TRAVERSAL | wxBORDER,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize) = delete;
+
 	~CStaticText();
 	
 	wxWindow		*m_pParent;
@@ -39,11 +48,13 @@ public:
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
 	void SetLabel(const wxString& label);
+	void SetLabel(const wxString&& label) = delete;
 	bool SetBackgroundColour(const wxColour& colour);	
 	void OnSize(wxSizeEvent& event);
 	void RefreshData();
 
 private:
+	const wxString* m_p_label;
 	wxFont *m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
 	DECLARE_EVENT_TABLE()

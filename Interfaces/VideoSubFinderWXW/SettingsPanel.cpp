@@ -18,8 +18,6 @@
 #include "SettingsPanel.h"
 #include "OCRPanel.h"
 
-vector<wxString> StrFN;
-
 BEGIN_EVENT_TABLE(CSettingsPanel, wxPanel)
 	EVT_BUTTON(ID_TEST, CSettingsPanel::OnBnClickedTest)
 	EVT_BUTTON(ID_SP_LEFT, CSettingsPanel::OnBnClickedLeft)
@@ -35,14 +33,8 @@ CSettingsPanel::CSettingsPanel(CSSOWnd* pParent)
 	m_pParent = pParent;
 	m_pMF = pParent->m_pMF;
 
-	m_n = 5;
-	StrFN.resize(m_n);
-	StrFN[0] = g_cfg.m_test_result_after_first_filtration_label;
-	StrFN[1] = g_cfg.m_test_result_after_second_filtration_label;
-	StrFN[2] = g_cfg.m_test_result_after_third_filtration_label;
-	StrFN[3] = g_cfg.m_test_result_nedges_points_image_label;
-	StrFN[4] = g_cfg.m_test_result_cleared_text_image_label;
-	m_cn = 4;
+	m_pMF->get_StrFN();
+	m_cn = g_cfg.m_StrFN.size() - 1;
 }
 
 CSettingsPanel::~CSettingsPanel()
@@ -164,8 +156,9 @@ void CSettingsPanel::Init()
 	m_pGB2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB3...\n");
+	g_cfg.m_ssp_GB3_label = wxT("");
 	m_pGB3 = new CStaticBox( m_pP2, wxID_ANY,
-		wxT(""), rcGB3.GetPosition(), rcGB3.GetSize() );
+		g_cfg.m_ssp_GB3_label, rcGB3.GetPosition(), rcGB3.GetSize() );
 	m_pGB3->SetFont(m_pMF->m_LBLFont);
 	m_pGB3->SetTextColour(g_cfg.m_main_text_colour);
 	m_pGB3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
@@ -191,7 +184,7 @@ void CSettingsPanel::Init()
 		bmp_na, bmp_od, rcRight.GetPosition(), rcRight.GetSize() );
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblIF...\n");
-	m_plblIF = new CStaticText( m_pP2, wxID_ANY, wxString(StrFN[m_cn]));
+	m_plblIF = new CStaticText(m_pP2, g_cfg.m_StrFN[m_cn], wxID_ANY);
 	m_plblIF->SetFont(m_pMF->m_LBLFont);
 	m_plblIF->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblIF->SetBackgroundColour(g_cfg.m_test_result_label_colour);
@@ -209,7 +202,8 @@ void CSettingsPanel::Init()
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_global_image_processing_settings...\n");
     m_pOI->AddGroup(g_cfg.m_ssp_oi_group_global_image_processing_settings, g_cfg.m_grid_gropes_colour);	
 	
-	m_pOI->AddProperty(g_cfg.m_label_text_alignment, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_text_alignment_string, GetAvailableTextAlignments());
+	m_pMF->get_available_text_alignments();
+	m_pOI->AddProperty(g_cfg.m_label_text_alignment, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_text_alignment_string, g_cfg.m_available_text_alignments);
 
 	m_pOI->AddProperty(g_cfg.m_label_use_filter_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_filter_color);
 	m_pOI->AddProperty(g_cfg.m_label_use_outline_filter_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_use_outline_filter_color);
@@ -217,7 +211,8 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(g_cfg.m_label_dA_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_dA_color, 0, 255);
 	m_pOI->AddProperty(g_cfg.m_label_dB_color, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_dB_color, 0, 255);	
 	
-	m_pOI->AddProperty(g_cfg.m_ssp_hw_device, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_hw_device, GetAvailableHWDeviceTypes());
+	g_cfg.m_available_hw_device_types = GetAvailableHWDeviceTypes();
+	m_pOI->AddProperty(g_cfg.m_ssp_hw_device, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_hw_device, g_cfg.m_available_hw_device_types);
 	
 	m_pOI->AddProperty(g_cfg.m_label_filter_descr, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_filter_descr);
 
@@ -368,21 +363,22 @@ void CSettingsPanel::Init()
 	rcPixelColorExample.height = rcPixelColorRGB.GetBottom() - rcPixelColorLab.y + 1;	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
-	m_plblGSFN = new CStaticText(m_pP2, wxID_ANY, g_cfg.m_label_settings_file);
+	m_plblGSFN = new CStaticText(m_pP2, g_cfg.m_label_settings_file, wxID_ANY);
 	m_plblGSFN->SetFont(m_pMF->m_LBLFont);
 	m_plblGSFN->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblGSFN->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblGSFN->SetSize(rlGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGSFN...\n");
-	m_pGSFN = new CStaticText(m_pP2, wxID_ANY, g_GeneralSettingsFileName + wxT(" "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);	
+	g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
+	m_pGSFN = new CStaticText(m_pP2, g_cfg.m_ssp_GSFN_label, wxID_ANY, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
 	m_pGSFN->SetFont(m_pMF->m_LBLFont);
 	m_pGSFN->SetTextColour(g_cfg.m_main_text_colour);
 	m_pGSFN->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 	m_pGSFN->SetSize(rcGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblPixelColor...\n");
-	m_plblPixelColor = new CStaticText(m_pP2, wxID_ANY, g_cfg.m_label_pixel_color);
+	m_plblPixelColor = new CStaticText(m_pP2, g_cfg.m_label_pixel_color, wxID_ANY);
 	m_plblPixelColor->SetFont(m_pMF->m_LBLFont);
 	m_plblPixelColor->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblPixelColor->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
@@ -405,7 +401,8 @@ void CSettingsPanel::Init()
 	m_pPixelColorLab->SetEditable(false);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorExample...\n");
-	m_pPixelColorExample = new CStaticText(m_pP2, wxID_ANY, wxT(""));
+	g_cfg.m_pixel_color_example = wxT("");
+	m_pPixelColorExample = new CStaticText(m_pP2, g_cfg.m_pixel_color_example, wxID_ANY);
 	m_pPixelColorExample->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorExample->SetTextColour(g_cfg.m_main_text_colour);
 	m_pPixelColorExample->SetBackgroundColour(wxColour(255, 255, 255));
@@ -459,7 +456,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			return;
 		}		
 
-		m_ImF = custom_buffer<simple_buffer<u8>>(m_n, simple_buffer<u8>(m_w * m_h, 0));
+		m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));
 
 		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
@@ -498,12 +495,14 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 				g_pViewBGRImage[0](ImTMP_BGR, m_W, m_H);
 			}
 
-			m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title + wxT(" \"") + ImgName + wxT("\""));
+			g_cfg.m_on_test_image_name = ImgName;
+			m_pMF->get_video_box_lblVB_on_test_title();
+			m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_on_test_title);
 
 			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
 
 			FindTextLinesRes res;
-			m_ImF = custom_buffer<simple_buffer<u8>>(m_n, simple_buffer<u8>(m_w * m_h, 0));
+			m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));
 			res.m_pImFF = &m_ImF[0];
 			res.m_pImSF = &m_ImF[1];
 			res.m_pImTF = &m_ImF[2];
@@ -529,7 +528,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 void CSettingsPanel::ViewCurImF()
 {
-	m_plblIF->SetLabel(StrFN[m_cn]);
+	m_plblIF->SetLabel(g_cfg.m_StrFN[m_cn]);
 
 	simple_buffer<u8> ImTMP_F(m_W * m_H);
 	ImToNativeSize(m_ImF[m_cn], ImTMP_F, m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax);
@@ -540,7 +539,7 @@ void CSettingsPanel::ViewCurImF()
 void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 {
 	m_cn--;
-	if (m_cn < 0) m_cn = m_n-1;
+	if (m_cn < 0) m_cn = g_cfg.m_StrFN.size() - 1;
 	
 	if (m_ImF.m_size > 0)
 	{
@@ -551,7 +550,7 @@ void CSettingsPanel::OnBnClickedLeft(wxCommandEvent& event)
 void CSettingsPanel::OnBnClickedRight(wxCommandEvent& event)
 {
 	m_cn++;
-	if (m_cn > m_n-1) m_cn = 0;
+	if (m_cn > g_cfg.m_StrFN.size() - 1) m_cn = 0;
 
 	if (m_ImF.m_size > 0)
 	{

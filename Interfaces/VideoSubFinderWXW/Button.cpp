@@ -35,7 +35,7 @@ CButton::CButton(wxWindow* parent,
 	m_pParent = parent;
 	m_pFont = NULL;
 	m_p_text_colour = NULL;
-	m_label = label;
+	m_p_label = &label;
 	m_p_button_color = &button_color;
 	m_p_button_color_focused = &button_color_focused;
 	m_p_button_color_selected = &button_color_selected;
@@ -78,13 +78,13 @@ void CButton::FillButtonBitmap(wxBitmap& bmp, wxColour parent_colour, wxColour b
 	dc.DrawLine(0, cr, 0, h - cr);
 	dc.DrawLine(w - 1, cr, w - 1, h - cr);
 
-	if (m_label.size() > 0)
+	if (m_p_label->size() > 0)
 	{
 		if (m_pFont) dc.SetFont(*m_pFont);		
 		if (m_p_text_colour) dc.SetTextForeground(*m_p_text_colour);
-		wxSize ts = dc.GetTextExtent(m_label);
+		wxSize ts = dc.GetTextExtent(*m_p_label);
 
-		dc.DrawText(m_label, (w - ts.x) / 2, (h - ts.y) / 2);
+		dc.DrawText(*m_p_label, (w - ts.x) / 2, (h - ts.y) / 2);
 	}
 }
 
@@ -107,7 +107,7 @@ void CButton::OnSize(wxSizeEvent& event)
 
 void CButton::SetLabel(const wxString& label)
 {
-	m_label = label;
+	m_p_label = &label;
 	wxSizeEvent event;
 	this->OnSize(event);
 }

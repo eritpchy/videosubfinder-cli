@@ -57,7 +57,6 @@ public:
 	CStaticText* m_pPixelColorExample;
 
 	int		m_cn;
-	int		m_n;
 	
 	int		m_W = 0;
 	int		m_H = 0;

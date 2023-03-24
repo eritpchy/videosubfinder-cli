@@ -47,7 +47,8 @@ class CSSOWnd;
 class CVideoBox;
 class CImageBox;
 
-wxArrayString GetAvailableTextAlignments();
+void SetParserDescription();
+
 wxString ConvertTextAlignmentToString(TextAlignment val);
 TextAlignment ConvertStringToTextAlignment(wxString val);
 
@@ -73,6 +74,7 @@ public:
 
 	wxString	m_pixel_color_bgr;
 	wxString	m_pixel_color_lab;
+	wxString	m_pixel_color_example;
 
 	wxString	m_ocr_label_msd_text;
 	wxString	m_ocr_label_join_txt_images_split_line_text;
@@ -296,6 +298,22 @@ public:
 	wxColour	m_video_box_separating_line_colour = wxColour(255, 255, 255);
 	wxColour	m_video_box_separating_line_border_colour = wxColour(0, 0, 0);	
 	wxColour	m_toolbar_bitmaps_border_colour = wxColour(192, 192, 192);
+
+	//dynamic settings dependent from others and etc, can be updated by UpdateDynamicSettings()
+	wxString	m_video_box_lblVB_open_video_title;
+	wxString	m_video_box_lblVB_on_test_title;
+	wxString	m_video_box_lblTIME_run_search_label;
+	wxString	m_video_box_lblTIME_label;
+	wxString	m_ssp_GSFN_label;
+	wxString	m_ssp_GB3_label;
+	wxString	m_on_test_image_name;
+	wxString	m_run_search_str_progress;
+	wxString	m_run_search_str_eta;
+	wxString	m_run_search_run_time;
+	wxString	m_run_search_cur_time;
+	wxArrayString	m_available_text_alignments;
+	wxArrayString	m_available_hw_device_types;
+	vector<wxString> m_StrFN;
 };
 
 class CMainFrame : public wxFrame
@@ -407,6 +425,13 @@ public:
 	wxString ConvertTime(u64 total_milliseconds);
 	void ShowErrorMessage(wxString msg);
 	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
+	wxMenuBar* CreateMenuBar();	
+	void get_video_box_lblTIME_run_search_label();
+	void get_video_box_lblVB_open_video_title();
+	void get_video_box_lblVB_on_test_title();
+	void get_available_text_alignments();
+	void get_StrFN();
+	void UpdateDynamicSettings();
 
 private:
    DECLARE_EVENT_TABLE()

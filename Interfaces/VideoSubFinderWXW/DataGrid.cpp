@@ -17,6 +17,7 @@
 #include "DataGrid.h"
 #include "Control.h"
 #include <wx/dcclient.h>
+#include <numeric>
 
 class CGridCellTextEditor: public wxGridCellTextEditor, public CControl
 {
@@ -115,16 +116,16 @@ public:
 class CGridCellChoiceEditor : public wxGridCellChoiceEditor, public CControl
 {
 public:
-	CGridCellChoiceEditor(int row, int col, CDataGrid* grid, wxString *pstr, wxArrayString vals) : wxGridCellChoiceEditor(vals)
+	CGridCellChoiceEditor(int row, int col, CDataGrid* grid, wxString *pstr, wxArrayString& vals) : wxGridCellChoiceEditor(vals)
 	{
 		m_row = row;
 		m_col = col;
 		m_grid = grid;
-		
+		m_p_vals = &vals;
 		m_pstr = pstr;
 
 		bool found = false;
-		for (auto && v : vals)
+		for (auto && v : *m_p_vals)
 		{
 			if (*m_pstr == v)
 			{				
@@ -134,7 +135,7 @@ public:
 		}
 		if (!found)
 		{
-			*m_pstr = vals[0];
+			*m_pstr = (*m_p_vals)[0];
 		}
 		grid->SetCellValue(row, col, *m_pstr);
 	}
@@ -162,6 +163,31 @@ public:
 	{
 		if (m_grid->m_pFont) m_grid->SetCellFont(m_row, m_col, *(m_grid->m_pFont));
 		if (m_grid->m_pTextColour) m_grid->SetCellTextColour(m_row, m_col, *(m_grid->m_pTextColour));
+
+		bool found = false;
+		int pos;
+		for (pos = 0; pos < m_choices.size(); pos++)
+		{
+			if (*m_pstr == m_choices[pos])
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			custom_assert(found, "CGridCellChoiceEditor::EndEdit not: found");
+			pos = 0;
+		}
+
+		wxString params = std::accumulate(std::begin(*m_p_vals), std::end(*m_p_vals), wxString(),
+			[](wxString& ss, wxString& s)
+			{
+				return ss.empty() ? s : ss + wxT(",") + s;
+			});
+		this->SetParameters(params);
+
+		*m_pstr = (*m_p_vals)[pos];
 		m_grid->SetCellValue(m_row, m_col, *m_pstr);
 	}
 
@@ -170,6 +196,7 @@ public:
 	CDataGrid* m_grid;
 
 	wxString *m_pstr;
+	wxArrayString *m_p_vals;
 };
 
 class CGridCellNumberEditor: public wxGridCellNumberEditor, public CControl
@@ -415,8 +442,7 @@ CDataGrid::CDataGrid(	wxWindow* parent,
 
 	this->SetColLabelSize(20);
 	this->SetColLabelAlignment(wxALIGN_LEFT, wxALIGN_CENTRE);
-	this->SetColLabelValue(0, wxString(wxT(" ")) + *m_p_grid_col_property_label);
-	this->SetColLabelValue(1, wxString(wxT(" ")) + *m_p_grid_col_value_label);
+	SetGridColLaberls();
 
 	if (m_pFont) this->SetLabelFont(*m_pFont);
 	if (m_pTextColour) this->SetLabelTextColour(*m_pTextColour);
@@ -424,6 +450,12 @@ CDataGrid::CDataGrid(	wxWindow* parent,
 
 CDataGrid::~CDataGrid()
 {
+}
+
+void CDataGrid::SetGridColLaberls()
+{
+	this->SetColLabelValue(0, wxString(wxT(" ")) + *m_p_grid_col_property_label);
+	this->SetColLabelValue(1, wxString(wxT(" ")) + *m_p_grid_col_value_label);
 }
 
 void CDataGrid::OnGridCellChanging(wxGridEvent& event)
@@ -459,6 +491,8 @@ void CDataGrid::OnSize(wxSizeEvent& event)
 
 void CDataGrid::RefreshData()
 {
+	SetGridColLaberls();
+
 	if (m_pFont)
 	{
 		wxClientDC dc(this);
@@ -504,7 +538,7 @@ void CDataGrid::RefreshData()
 	}
 }
 
-void CDataGrid::AddGroup(wxString label, wxColour colour)
+void CDataGrid::AddGroup(wxString& label, wxColour colour)
 {
 	int index;
 	this->AppendRows(1);
@@ -515,14 +549,12 @@ void CDataGrid::AddGroup(wxString label, wxColour colour)
 	this->SetCellSize(index, 0, 1, 2);
 	this->SetCellAlignment(index, 0, wxALIGN_CENTRE, wxALIGN_CENTRE);
 	
-	this->SetCellValue( index, 0, label );
 	this->SetCellBackgroundColour( index, 0, colour );
     this->SetReadOnly( index, 0 );
-	if (m_pFont) this->SetCellFont( index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 }
 
-void CDataGrid::AddSubGroup(wxString label, wxColour colour)
+void CDataGrid::AddSubGroup(wxString& label, wxColour colour)
 {
 	int index;
 	this->AppendRows(1);
@@ -533,14 +565,12 @@ void CDataGrid::AddSubGroup(wxString label, wxColour colour)
 	this->SetCellSize(index, 0, 1, 2);
 	this->SetCellAlignment(index, 0, wxALIGN_CENTRE, wxALIGN_CENTRE);
 	
-	this->SetCellValue( index, 0, label );
 	this->SetCellBackgroundColour( index, 0, colour );
     this->SetReadOnly( index, 0 );
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 }
 
-void CDataGrid::AddProperty( wxString label, 
+void CDataGrid::AddProperty(wxString& label, 
 							 wxColour colour1, wxColour colour2,							 
 							 wxString *pstr )
 {
@@ -551,11 +581,9 @@ void CDataGrid::AddProperty( wxString label,
 	index = this->GetNumberRows()-1;
 
 	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);	
-	this->SetCellValue( index, 0, label );	
     this->SetReadOnly( index, 0 );
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
 	this->SetCellBackgroundColour( index, 0, colour1 );
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 
 	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_CENTRE);	
 	if (m_pFont) this->SetCellFont(index, 1, *m_pFont);
@@ -564,9 +592,9 @@ void CDataGrid::AddProperty( wxString label,
     this->SetCellEditor( index, 1, new CGridCellTextEditor(index, 1, this, pstr));
 }
 
-void CDataGrid::AddProperty(wxString label,
+void CDataGrid::AddProperty(wxString& label,
 							wxColour colour1, wxColour colour2,							
-							wxString *pstr, wxArrayString vals)
+							wxString *pstr, wxArrayString& vals)
 {
 	int index;
 	wxString Str;
@@ -575,11 +603,9 @@ void CDataGrid::AddProperty(wxString label,
 	index = this->GetNumberRows() - 1;
 
 	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);
-	this->SetCellValue(index, 0, label);
 	this->SetReadOnly(index, 0);
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
 	this->SetCellBackgroundColour(index, 0, colour1);
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 
 	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_CENTRE);
 	if (m_pFont) this->SetCellFont(index, 1, *m_pFont);
@@ -588,7 +614,7 @@ void CDataGrid::AddProperty(wxString label,
 	this->SetCellEditor(index, 1, new CGridCellChoiceEditor(index, 1, this, pstr, vals));
 }
 
-void CDataGrid::AddProperty(wxString label,
+void CDataGrid::AddProperty(wxString& label,
 	wxColour colour1, wxColour colour2,
 	wxArrayString* pstr)
 {
@@ -599,11 +625,9 @@ void CDataGrid::AddProperty(wxString label,
 	index = this->GetNumberRows() - 1;	
 
 	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);
-	this->SetCellValue(index, 0, label);
 	this->SetReadOnly(index, 0);
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
 	this->SetCellBackgroundColour(index, 0, colour1);
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 
 	this->SetRowSize(index, 16 * 3);
 
@@ -616,7 +640,7 @@ void CDataGrid::AddProperty(wxString label,
 }
 
 
-void CDataGrid::AddProperty( wxString label, 
+void CDataGrid::AddProperty(wxString& label,
 							 wxColour colour1, wxColour colour2,
 							 int *pval, int val_min, int val_max )
 {
@@ -627,11 +651,9 @@ void CDataGrid::AddProperty( wxString label,
 	index = this->GetNumberRows()-1;
 
 	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);	
-	this->SetCellValue( index, 0, label );	
     this->SetReadOnly( index, 0 );
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
 	this->SetCellBackgroundColour( index, 0, colour1 );
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 
 	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_CENTRE);	
 	if (m_pFont) this->SetCellFont(index, 1, *m_pFont);
@@ -640,7 +662,7 @@ void CDataGrid::AddProperty( wxString label,
 	this->SetCellEditor( index, 1, new CGridCellNumberEditor(index, 1, this, pval, val_min, val_max) );
 }
 
-void CDataGrid::AddProperty( wxString label, 
+void CDataGrid::AddProperty(wxString& label,
 							 wxColour colour1, wxColour colour2,
 							 double *pval, double val_min, double val_max )
 {
@@ -651,11 +673,9 @@ void CDataGrid::AddProperty( wxString label,
 	index = this->GetNumberRows()-1;
 
 	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);	
-	this->SetCellValue( index, 0, label );	
     this->SetReadOnly( index, 0 );
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
 	this->SetCellBackgroundColour( index, 0, colour1 );
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 
 	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_CENTRE);	
 	if (m_pFont) this->SetCellFont(index, 1, *m_pFont);
@@ -664,7 +684,7 @@ void CDataGrid::AddProperty( wxString label,
 	this->SetCellEditor( index, 1, new CGridCellFloatEditor(index, 1, this, pval, val_min, val_max) );
 }
 
-void CDataGrid::AddProperty( wxString label, 
+void CDataGrid::AddProperty(wxString& label,
 							 wxColour colour1, wxColour colour2,
 							 bool *pbln )
 {
@@ -675,11 +695,9 @@ void CDataGrid::AddProperty( wxString label,
 	index = this->GetNumberRows()-1;
 
 	this->SetCellAlignment(index, 0, wxALIGN_LEFT, wxALIGN_CENTRE);	
-	this->SetCellValue( index, 0, label );	
     this->SetReadOnly( index, 0 );
-	if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-	if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
-	this->SetCellBackgroundColour( index, 0, colour1 );
+	this->SetCellBackgroundColour( index, 0, colour1 );	
+	this->SetCellEditor(index, 0, new CGridCellTextEditor(index, 0, this, &label));
 
 	this->SetCellAlignment(index, 1, wxALIGN_LEFT, wxALIGN_CENTRE);	
 	this->SetCellBackgroundColour( index, 1, colour2 );

@@ -89,11 +89,11 @@ void CSearchPanel::Init()
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
 
-	m_plblBT1 = new CStaticText( m_pP1, wxID_ANY, g_cfg.m_label_begin_time);
+	m_plblBT1 = new CStaticText(m_pP1, g_cfg.m_label_begin_time, wxID_ANY);
 	m_plblBT1->SetSize(rcBT1);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
-	m_plblBT2 = new CStaticText( m_pP1, wxID_ANY, g_cfg.m_label_end_time);
+	m_plblBT2 = new CStaticText( m_pP1, g_cfg.m_label_end_time, wxID_ANY);
 	m_plblBT2->SetSize(rcBT2);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");

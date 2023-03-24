@@ -635,14 +635,14 @@ void CVideoBox::Init()
 	m_pButtonRun->Disable();
 	m_pButtonStop->Disable();
 
-	m_plblVB = new CStaticText( this, ID_LBL_VB, g_cfg.m_video_box_title);
+	m_plblVB = new CStaticText(this, g_cfg.m_video_box_title, ID_LBL_VB);
 	m_plblVB->SetSize(0, 0, 390, 30);
 	m_plblVB->SetFont(m_pMF->m_LBLFont);
 	m_plblVB->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblVB->SetBackgroundColour(g_cfg.m_video_image_box_title_colour);
 	
-	m_plblTIME = new CStaticText( this, ID_LBL_TIME, 
-									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxTB_BOTTOM);
+	g_cfg.m_video_box_lblTIME_label = wxT("00:00:00,000/00:00:00,000   ");
+	m_plblTIME = new CStaticText(this, g_cfg.m_video_box_lblTIME_label, ID_LBL_TIME, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxTB_BOTTOM);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_pMF->m_LBLFont);
 	m_plblTIME->SetTextColour(g_cfg.m_video_box_time_text_colour);

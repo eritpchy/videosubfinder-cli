@@ -28,11 +28,22 @@ public:
 		wxColour& button_color_focused,
 		wxColour& button_color_selected,
 		wxColour& buttons_border_colour,
-		const wxString& label = wxEmptyString,
+		const wxString& label,
 		const wxPoint& pos = wxDefaultPosition,
 		const wxSize& size = wxDefaultSize);
 
+	CButton(wxWindow* parent,
+		wxWindowID id,
+		wxColour& button_color,
+		wxColour& button_color_focused,
+		wxColour& button_color_selected,
+		wxColour& buttons_border_colour,
+		const wxString&& label,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize) = delete;
+
 	void SetLabel(const wxString& label);
+	void SetLabel(const wxString&& label) = delete;
 	void RefreshData();
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
@@ -48,7 +59,7 @@ private:
 	wxColour* m_p_button_color_selected;
 	wxColour* m_p_buttons_border_colour;
 	wxColour* m_p_text_colour;
-	wxString m_label;
+	const wxString* m_p_label;
 
 	void FillButtonBitmap(wxBitmap& bmp, wxColour parent_colour, wxColour button_colour, wxColour button_border_colour);
 

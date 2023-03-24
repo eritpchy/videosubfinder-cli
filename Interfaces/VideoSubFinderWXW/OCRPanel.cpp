@@ -42,7 +42,7 @@ bool g_ValidateAndCompareTXTImages = false;
 bool g_DontDeleteUnrecognizedImages1 = true;
 bool g_DontDeleteUnrecognizedImages2 = true;
 
-wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
+wxString g_DefStringForEmptySub;
 
 bool g_CLEAN_RGB_IMAGES = false;
 
@@ -307,7 +307,7 @@ void COCRPanel::Init()
 	m_pP3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_plblMSD...\n");
-	m_plblMSD = new CStaticText(m_pP3, wxID_ANY, g_cfg.m_ocr_label_msd_text);
+	m_plblMSD = new CStaticText(m_pP3, g_cfg.m_ocr_label_msd_text, wxID_ANY);
 	m_plblMSD->SetSize(rlMSD);
 	m_plblMSD->SetFont(m_pMF->m_LBLFont);
 	m_plblMSD->SetTextColour(g_cfg.m_main_text_colour);
@@ -321,7 +321,7 @@ void COCRPanel::Init()
 	m_pMSD->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_plblJTXTSL...\n");
-	m_plblJTXTSL = new CStaticText(m_pP3, wxID_ANY, g_cfg.m_ocr_label_join_txt_images_split_line_text);
+	m_plblJTXTSL = new CStaticText(m_pP3, g_cfg.m_ocr_label_join_txt_images_split_line_text, wxID_ANY);
 	m_plblJTXTSL->SetSize(rlJTXTSL);
 	m_plblJTXTSL->SetFont(m_pMF->m_LBLFont);
 	m_plblJTXTSL->SetTextColour(g_cfg.m_main_text_colour);
@@ -509,9 +509,9 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 
 		SubStr = g_DefStringForEmptySub;
 
-		if (g_DefStringForEmptySub.Contains("%sub_duration%"))
+		if (g_DefStringForEmptySub.Contains("[sub_duration]"))
 		{			
-			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
+			SubStr.Replace("[sub_duration]", sec1 + "," + msec1);
 		}
 
 		srt_sub << (k+1) << wxT("\n") << Str << wxT("\n") << SubStr << "\n\n";
@@ -1495,7 +1495,8 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 				}
 
 				m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title);
-				m_pMF->m_pVideoBox->m_plblTIME->SetLabel("");
+				g_cfg.m_video_box_lblTIME_label = wxT("");
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
 
 				m_pMF->m_pPanel->m_pSSPanel->Disable();
 				m_pMF->m_pPanel->m_pSHPanel->Disable();

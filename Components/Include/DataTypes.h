@@ -94,8 +94,8 @@ struct color_range
 	ColorSpace m_color_space;
 };
 
-enum TextAlignment {
-	Center,
+enum TextAlignment : int {
+	Center = 0,
 	Left,
 	Right,	
 	Any

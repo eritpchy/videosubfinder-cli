@@ -35,6 +35,16 @@ public:
 		long text_style = wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL,
 		long panel_style = wxTAB_TRAVERSAL | wxBORDER);
 
+	CCheckBox(wxWindow* parent,
+		wxWindowID id,
+		bool* p_val,
+		const wxString&& label,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize,
+		long check_box_style = wxALIGN_RIGHT | wxCHK_2STATE | wxALIGN_CENTER_VERTICAL,
+		long text_style = wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL,
+		long panel_style = wxTAB_TRAVERSAL | wxBORDER) = delete;
+
 	void OnSize(wxSizeEvent& event);
 	void OnCheckBoxEvent(wxCommandEvent& evt);
 	void SetFont(wxFont& font);
@@ -53,5 +63,6 @@ public:
 private:
 	wxFont* m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
+	const wxString* m_p_label;
 	DECLARE_EVENT_TABLE()
 };

@@ -30,7 +30,7 @@ Settings g_cfg;
 std::map<wxString, wxString> g_general_settings;
 std::map<wxString, wxString> g_locale_settings;
 
-wxString g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
+wxString g_text_alignment_string;
 
 wxArrayString g_localizations;
 std::map<wxString, int> g_localization_id;
@@ -92,18 +92,6 @@ wxArrayString GetAvailableLocalizations()
 	return localizations;
 }
  
-/////////////////////////////////////////////////////////////////////////////
-
-wxArrayString GetAvailableTextAlignments()
-{
-	wxArrayString res;
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Center));
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Left));
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Right));
-	res.Add(ConvertTextAlignmentToString(TextAlignment::Any));
-	return res;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 wxString ConvertTextAlignmentToString(TextAlignment val)
@@ -368,33 +356,14 @@ CMainFrame::~CMainFrame()
 {
 }
 
-void CMainFrame::Init()
+wxMenuBar* CMainFrame::CreateMenuBar()
 {
-	int cnt;	
+	SaveToReportLog("CMainFrame::CreateMenuBar(): starting ...\n");
 
-	SaveToReportLog("CMainFrame::Init(): starting...\n");
+	wxMenuBar* pMenuBar = new wxMenuBar;	
 
-	m_blnNoGUI = false;
+	wxMenu* pMenu5 = new wxMenu;
 
-	SaveToReportLog("CMainFrame::Init(): LoadSettings()...\n");
-	LoadSettings();
-
-	wxMenuBar *pMenuBar = new wxMenuBar;	
-
-	m_ErrorFileName = g_work_dir + wxT("/error.log");
-
-	SaveToReportLog("CMainFrame::Init(): InitCUDADevice...\n");
-
-	if (!InitCUDADevice())
-	{
-		g_use_cuda_gpu = false;
-	}
-
-	SaveToReportLog("CMainFrame::Init(): Init Menu Bar...\n");
-
-	cnt = pMenuBar->GetMenuCount();
-
-	wxMenu *pMenu5 = new wxMenu;
 	pMenu5->Append(ID_SETPRIORITY_HIGH, g_cfg.m_menu_setpriority_high, _T(""), wxITEM_CHECK);
 	pMenu5->Append(ID_SETPRIORITY_ABOVENORMAL, g_cfg.m_menu_setpriority_abovenormal, _T(""), wxITEM_CHECK);
 	pMenu5->Append(ID_SETPRIORITY_NORMAL, g_cfg.m_menu_setpriority_normal, _T(""), wxITEM_CHECK);
@@ -402,13 +371,13 @@ void CMainFrame::Init()
 	pMenu5->Append(ID_SETPRIORITY_IDLE, g_cfg.m_menu_setpriority_idle, _T(""), wxITEM_CHECK);
 	pMenu5->Check(ID_SETPRIORITY_NORMAL, true);
 
-	wxMenu *pMenu1 = new wxMenu;
+	wxMenu* pMenu1 = new wxMenu;
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_OPENCV, g_cfg.m_menu_file_open_video_opencv);
 	pMenu1->Append(ID_FILE_OPEN_VIDEO_FFMPEG, g_cfg.m_menu_file_open_video_ffmpeg);
 	pMenu1->Append(ID_FILE_REOPENVIDEO, g_cfg.m_menu_file_reopenvideo);
 	pMenu1->Append(ID_FILE_OPENPREVIOUSVIDEO, g_cfg.m_menu_file_openpreviousvideo);
 	pMenu1->AppendSeparator();
-	pMenu1->AppendSubMenu( pMenu5, g_cfg.m_menu_setpriority);
+	pMenu1->AppendSubMenu(pMenu5, g_cfg.m_menu_setpriority);
 	pMenu1->AppendSeparator();
 	pMenu1->Append(ID_FILE_SAVESETTINGS, g_cfg.m_menu_file_savesettings + wxT("\tCtrl+S"));
 	pMenu1->Append(ID_FILE_SAVESETTINGSAS, g_cfg.m_menu_file_savesettingsas);
@@ -417,7 +386,7 @@ void CMainFrame::Init()
 	pMenu1->Append(ID_FILE_EXIT, g_cfg.m_menu_file_exit);
 	pMenuBar->Append(pMenu1, g_cfg.m_menu_file);
 
-	wxMenu *pMenu2 = new wxMenu;
+	wxMenu* pMenu2 = new wxMenu;
 	pMenu2->Append(ID_EDIT_SETBEGINTIME, g_cfg.m_menu_edit_setbegintime + wxT("\tCtrl+Z"));
 	pMenu2->Append(ID_EDIT_SETENDTIME, g_cfg.m_menu_edit_setendtime + wxT("\tCtrl+X"));
 	pMenuBar->Append(pMenu2, g_cfg.m_menu_edit);
@@ -439,7 +408,7 @@ void CMainFrame::Init()
 	pMenuView->Append(ID_SCALE_TEXT_SIZE_DEC, g_cfg.m_menu_scale_text_size_dec + wxT("   Ctrl+Mouse Wheel"));
 	pMenuBar->Append(pMenuView, g_cfg.m_menu_view);
 
-	wxMenu *pMenu3 = new wxMenu;
+	wxMenu* pMenu3 = new wxMenu;
 
 	pMenu3->Append(ID_PLAY_PAUSE, g_cfg.m_menu_play_pause + wxT("   Space"));
 	pMenu3->Append(ID_PLAY_STOP, g_cfg.m_menu_play_stop);
@@ -447,14 +416,34 @@ void CMainFrame::Init()
 	pMenu3->Append(ID_PREVIOUS_FRAME, g_cfg.m_menu_previous_frame + wxT("   Mouse Wheel / Left"));
 	pMenuBar->Append(pMenu3, g_cfg.m_menu_play);
 
-	wxMenu *pMenu4 = new wxMenu;
+	wxMenu* pMenu4 = new wxMenu;
 	pMenu4->Append(ID_APP_CMD_ARGS_INFO, g_cfg.m_menu_app_cmd_args_info);
 	pMenu4->AppendSeparator();
 	pMenu4->Append(ID_APP_USAGE_DOCS, g_cfg.m_menu_app_usage_docs);
 	pMenu4->Append(ID_APP_ABOUT, g_cfg.m_menu_app_about + wxT("\tF1"));
 	pMenuBar->Append(pMenu4, g_cfg.m_menu_help);
 
-	cnt = pMenuBar->GetMenuCount();
+	pMenuBar->SetFont(m_LBLFont);
+
+	SaveToReportLog("CMainFrame::CreateMenuBar(): end.\n");
+
+	return pMenuBar;
+}
+
+void CMainFrame::Init()
+{
+	SaveToReportLog("CMainFrame::Init(): starting...\n");
+
+	m_blnNoGUI = false;	
+
+	m_ErrorFileName = g_work_dir + wxT("/error.log");
+
+	SaveToReportLog("CMainFrame::Init(): InitCUDADevice...\n");
+
+	if (!InitCUDADevice())
+	{
+		g_use_cuda_gpu = false;
+	}	
 
 	// CSeparatingLine *pHSL = new CSeparatingLine(this, 200, 3, 7, 3, 100, 110, 50, 0);
 	// pHSL->m_pos = 0;
@@ -522,9 +511,6 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): new CSSOWnd(this)...\n");
 	m_pPanel = new CSSOWnd(this);	
 
-	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");	
-	this->SetMenuBar(pMenuBar);
-
 	SaveToReportLog("CMainFrame::Init(): this->SetSize(..)...\n");
 
 #ifdef WIN32
@@ -590,8 +576,11 @@ void CMainFrame::Init()
 		m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
 	}
 
-	this->GetMenuBar()->SetFont(m_LBLFont);
-	this->GetMenuBar()->Refresh();
+	SaveToReportLog("CMainFrame::Init(): CreateMenuBar() ...\n");
+	wxMenuBar* pMenuBar = CreateMenuBar();
+
+	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");
+	this->SetMenuBar(pMenuBar);
 		
 	CControl::RefreshAllControlsData();
 	this->Refresh();
@@ -739,6 +728,76 @@ void CMainFrame::OnFileOpenVideoFFMPEG(wxCommandEvent& event)
 	OnFileOpenVideo(1);
 }
 
+void CMainFrame::get_video_box_lblTIME_run_search_label()
+{
+	if (g_cfg.m_run_search_str_progress.size() > 0)
+	{
+		wxString str;
+		str.Printf(g_cfg.m_run_search_progress_format_string, g_cfg.m_run_search_str_progress, g_cfg.m_run_search_str_eta, g_cfg.m_run_search_run_time, g_cfg.m_run_search_cur_time, m_EndTimeStr);
+		g_cfg.m_video_box_lblTIME_run_search_label = str + wxT("   ");
+	}
+	else
+	{
+		g_cfg.m_video_box_lblTIME_run_search_label = wxT("");
+	}
+}
+
+void CMainFrame::get_video_box_lblVB_open_video_title()
+{
+	if (m_FileName.size() > 0)
+	{
+		g_cfg.m_video_box_lblVB_open_video_title = g_cfg.m_video_box_title + wxT(" \"") + GetFileName(m_FileName) + wxT("\"");
+	}
+	else
+	{
+		g_cfg.m_video_box_lblVB_open_video_title = wxT("");
+	}
+}
+
+void CMainFrame::get_video_box_lblVB_on_test_title()
+{
+	if (g_cfg.m_on_test_image_name.size() > 0)
+	{
+		g_cfg.m_video_box_lblVB_on_test_title = g_cfg.m_video_box_title + wxT(" \"") + g_cfg.m_on_test_image_name + wxT("\"");
+	}
+	else
+	{
+		g_cfg.m_video_box_lblVB_on_test_title = wxT("");
+	}
+}
+
+void CMainFrame::get_available_text_alignments()
+{
+	wxArrayString res;
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Center));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Left));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Right));
+	res.Add(ConvertTextAlignmentToString(TextAlignment::Any));
+	g_cfg.m_available_text_alignments = res;
+}
+
+void CMainFrame::get_StrFN()
+{
+	g_cfg.m_StrFN.resize(5);
+	g_cfg.m_StrFN[0] = g_cfg.m_test_result_after_first_filtration_label;
+	g_cfg.m_StrFN[1] = g_cfg.m_test_result_after_second_filtration_label;
+	g_cfg.m_StrFN[2] = g_cfg.m_test_result_after_third_filtration_label;
+	g_cfg.m_StrFN[3] = g_cfg.m_test_result_nedges_points_image_label;
+	g_cfg.m_StrFN[4] = g_cfg.m_test_result_cleared_text_image_label;
+}
+
+void CMainFrame::UpdateDynamicSettings()
+{
+	get_video_box_lblTIME_run_search_label();
+	get_video_box_lblVB_open_video_title();
+	get_video_box_lblVB_on_test_title();
+	get_available_text_alignments();
+	get_StrFN();
+	delete g_pParser;
+	g_pParser = new wxCmdLineParser();
+	SetParserDescription();
+}
+
 void CMainFrame::OnFileOpenVideo(int type)
 {
 	wxString csFileName;
@@ -839,7 +898,8 @@ void CMainFrame::OnFileOpenVideo(int type)
 		m_pVideoBox->m_pSB->Disable();
 	}
 
-	m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title + wxT(" \"") + GetFileName(csFileName) + wxT("\""));
+	get_video_box_lblVB_open_video_title();
+	m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_open_video_title);
 
 	if (m_blnReopenVideo == false) 
 	{
@@ -1021,8 +1081,65 @@ void CMainFrame::OnStop(wxCommandEvent& event)
 
 void CMainFrame::OnLocalization(wxCommandEvent& event)
 {
-	g_cfg.m_prefered_locale = g_id_localization[event.GetId()];
+	SaveToReportLog("CMainFrame::OnLocalization(): starting ...\n");
+
+	int selected_loc_id = event.GetId();
+	g_cfg.m_prefered_locale = g_id_localization[selected_loc_id];
+
+	SaveToReportLog(wxString::Format(wxT("CMainFrame::OnLocalization(): initializing locale \"%s\" ...\n"), g_cfg.m_prefered_locale));
+
 	LoadLocaleSettings(g_app_dir + wxT("/settings/") + g_cfg.m_prefered_locale + wxT("/locale.cfg"));
+
+	//SaveToReportLog("CMainFrame::OnLocalization(): deleting current Menu Bar ...\n");
+	//this->GetMenuBar()->Destroy();	
+
+	SaveToReportLog("CMainFrame::OnLocalization(): CreateMenuBar() ...\n");
+	wxMenuBar* pMenuBar = CreateMenuBar();	
+
+	SaveToReportLog("CMainFrame::OnLocalization(): this->SetMenuBar(pMenuBar) ...\n");
+	this->SetMenuBar(pMenuBar);
+
+	for (wxString localization : g_localizations)
+	{
+		int loc_id = g_localization_id[localization];
+
+		if (loc_id == selected_loc_id)
+		{
+			pMenuBar->Check(loc_id, true);
+		}
+		else
+		{
+			pMenuBar->Check(loc_id, false);
+		}
+	}
+
+	UpdateDynamicSettings();
+	CControl::RefreshAllControlsData();
+	this->Refresh();
+
+	custom_buffer<char> data;
+	{
+		wxFileInputStream ffin(g_GeneralSettingsFileName);
+		size_t size = ffin.GetSize();
+		data.set_size(size + 1);
+		ffin.ReadAll(data.m_pData, size);
+		data.m_pData[size] = '\0';
+	}
+
+	wxString str = wxString(data.m_pData, wxConvUTF8);
+	str.Replace(wxString(wxT("\r")), wxString(), true);
+
+	wxRegEx re_bt(wxT("prefered_locale[[:space:]]*=[[:space:]]*[a-z]+"));
+	if (re_bt.Matches(str))
+	{
+		re_bt.Replace(&str, wxT("prefered_locale = ") + g_cfg.m_prefered_locale);
+
+		wxFFileOutputStream ffout(g_GeneralSettingsFileName);
+		wxTextOutputStream fout(ffout);
+		fout << str;
+		fout.Flush();
+		ffout.Close();
+	}
 }
 
 void CMainFrame::OnNextFrame(wxCommandEvent& event)
@@ -1246,7 +1363,9 @@ void LoadSettings()
 
 	ReadProperty(g_general_settings, g_border_is_darker, "border_is_darker");
 
-	ReadProperty(g_general_settings, g_text_alignment_string, "text_alignment");
+	int text_alignment;
+	ReadProperty(g_general_settings, text_alignment, "text_alignment");
+	g_text_alignment = (TextAlignment)text_alignment;	
 
 	ReadProperty(g_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
 	ReadProperty(g_general_settings, g_allow_min_luminance, "allow_min_luminance");
@@ -1264,10 +1383,20 @@ void LoadSettings()
 
 	LoadLocaleSettings(g_app_dir + wxT("/settings/") + wxString(g_cfg.m_prefered_locale) + wxT("/locale.cfg"));
 
+	g_text_alignment_string = ConvertTextAlignmentToString(g_text_alignment);
 }
 
 void LoadLocaleSettings(wxString settings_path)
 {
+	SaveToReportLog(wxString::Format(wxT("CMainFrame::LoadLocaleSettings(): starting for \"%s\" ...\n"), settings_path));
+
+	wxString main_up_to_date_locale_path = g_app_dir + wxT("/settings/eng/locale.cfg");
+	if ( (settings_path != main_up_to_date_locale_path) && wxFileExists(main_up_to_date_locale_path) )
+	{
+		SaveToReportLog(wxString::Format(wxT("CMainFrame::LoadLocaleSettings(): loading main up to date locale data from \"%s\" ...\n"), main_up_to_date_locale_path));
+		LoadLocaleSettings(main_up_to_date_locale_path);
+	}
+
 	SaveToReportLog(wxString::Format(wxT("CMainFrame::LoadLocaleSettings(): reading properties from \"%s\" ...\n"), settings_path));
 
 	ReadSettings(settings_path, g_locale_settings);
@@ -1583,11 +1712,11 @@ void SaveSettings()
 
 	WriteProperty(fout, g_clear_image_logical, "clear_image_logical");
 
-	WriteProperty(fout, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");
-
-	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
+	WriteProperty(fout, g_CLEAN_RGB_IMAGES, "clean_rgb_images_after_run");	
 
 	WriteProperty(fout, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");
+
+	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
 	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
 
 	WriteProperty(fout, g_cfg.m_txt_dw, "txt_dw");
@@ -1607,7 +1736,8 @@ void SaveSettings()
 	(g_filter_descr == wxT("")) ? wxstr_val = wxT("none") : wxstr_val = g_filter_descr;
 	WriteProperty(fout, wxstr_val, "filter_descr");
 
-	WriteProperty(fout, g_text_alignment_string, "text_alignment");
+	g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
+	WriteProperty(fout, (int)g_text_alignment, "text_alignment");
 
 	WriteProperty(fout, g_save_each_substring_separately, "save_each_substring_separately");
 	WriteProperty(fout, g_save_scaled_images, "save_scaled_images");
@@ -1683,7 +1813,8 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 		}
 
 		g_GeneralSettingsFileName = fd.GetPath();
-		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_GeneralSettingsFileName + wxT(" "));
+		g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
+		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
 
 		LoadSettings();
 
@@ -1705,7 +1836,8 @@ void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 
 		g_GeneralSettingsFileName = fd.GetPath();
 
-		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_GeneralSettingsFileName + wxT(" "));
+		g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
+		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
 
 		SaveSettings();
 	}
@@ -1747,31 +1879,31 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 			{
 				std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
 				u64 run_time = std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - g_StartTimeRunSubSearch).count();
-				
-				wxString str_progress, str_eta;
-
+								
 				if (m_EndTime >= 0)
 				{
 					double progress = std::min<double>(((double)(Cur - m_BegTime) / (double)(m_EndTime - m_BegTime)) * 100.0, 100.0);
 					u64 eta = (u64)((double)run_time * (100.0 - progress) / progress);
-					str_progress.Printf(wxT("%%%2.2f"), progress);
-					str_eta = ConvertTime(eta);
+					g_cfg.m_run_search_str_progress.Printf(wxT("%%%2.2f"), progress);
+					g_cfg.m_run_search_str_eta = ConvertTime(eta);
 				}
 				else				
 				{
-					str_progress = wxT("%%N/A");
-					str_eta = wxT("N/A");
+					g_cfg.m_run_search_str_progress = wxT("%%N/A");
+					g_cfg.m_run_search_str_eta = wxT("N/A");
 				}
 
-				wxString str;
-				str.Printf(g_cfg.m_run_search_progress_format_string, str_progress, str_eta, ConvertTime(run_time), ConvertVideoTime(Cur), m_EndTimeStr);
+				g_cfg.m_run_search_run_time = ConvertTime(run_time);
+				g_cfg.m_run_search_cur_time = ConvertVideoTime(Cur);
 
-				m_pVideoBox->m_plblTIME->SetLabel(str + wxT("   "));
+				get_video_box_lblTIME_run_search_label();				
+				m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_run_search_label);
 			}			
 		}
 		else
 		{
-			m_pVideoBox->m_plblTIME->SetLabel(ConvertVideoTime(Cur) + m_EndTimeStr + wxT("   "));
+			g_cfg.m_video_box_lblTIME_label = ConvertVideoTime(Cur) + m_EndTimeStr + wxT("   ");
+			m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
 		}
 
 		m_ct = Cur;
@@ -2025,7 +2157,7 @@ void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
 	wxSize cl_size = this->GetClientSize();
 	wxSize msg_size(1000, 520);
 	MyMessageBox msg_dlg(this, g_pParser->GetUsageString(),
-		wxT("VideoSubFinder " VSF_VERSION " Version"),
+		wxT("VideoSubFinder " VSF_VERSION),
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);
 	msg_dlg.ShowModal();
@@ -2057,7 +2189,7 @@ void CMainFrame::OnAppUsageDocs(wxCommandEvent& event)
 		}
 
 		MyMessageBox msg_dlg(this, g_cfg.m_menu_app_usage_docs + wxT(": ") + docs_sub_parth + wxT("\n\n") + str,
-			wxT("VideoSubFinder " VSF_VERSION " Version"),
+			wxT("VideoSubFinder " VSF_VERSION),
 			wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 			msg_size);
 		msg_dlg.ShowModal();
@@ -2070,7 +2202,7 @@ void CMainFrame::OnAppAbout(wxCommandEvent& event)
 	wxSize msg_size(800, 220);
 	MyMessageBox msg_dlg(this,
 		g_cfg.m_help_desc_app_about,
-		wxT("VideoSubFinder " VSF_VERSION " Version"),
+		wxT("VideoSubFinder " VSF_VERSION),
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);
 	msg_dlg.ShowModal();

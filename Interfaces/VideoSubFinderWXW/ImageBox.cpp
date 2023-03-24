@@ -77,7 +77,7 @@ void CImageBox::Init()
 	wxString strIBClass;
 	wxString strIBXClass;
 
-	m_plblIB = new CStaticText( this, ID_LBL_IB, g_cfg.m_image_box_title);
+	m_plblIB = new CStaticText(this, g_cfg.m_image_box_title, ID_LBL_IB);
 	m_IBColor = m_plblIB->GetBackgroundColour();
 	m_plblIB->SetSize(0, 0, 390, 30);
 	m_plblIB->SetFont(m_pMF->m_LBLFont);
