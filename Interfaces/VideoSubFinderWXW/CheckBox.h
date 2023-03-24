@@ -51,6 +51,7 @@ public:
 	void SetTextColour(wxColour& colour);
 	void SetLabel(const wxString& label);
 	bool SetBackgroundColour(const wxColour& colour);	
+	void SetMinSize(wxSize& size);
 	void RefreshData();
 	
 	wxWindow*		m_pParent;
@@ -61,6 +62,7 @@ public:
 	int				m_cb_offset = 2;
 
 private:
+	wxSize m_min_size;
 	wxFont* m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
 	const wxString* m_p_label;

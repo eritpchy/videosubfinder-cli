@@ -452,6 +452,30 @@ void CMainFrame::Init()
 
 	this->SetBackgroundColour(g_cfg.m_main_frame_background_colour);
 
+	if (g_cfg.m_fount_size_lbl == -1)
+	{
+		g_cfg.m_fount_size_lbl = 10;
+	}
+	if (g_cfg.m_fount_size_btn == -1)
+	{
+		g_cfg.m_fount_size_btn = 13;
+	}
+
+	// https://docs.wxwidgets.org/stable/interface_2wx_2font_8h.html#a0cd7bfd21a4f901245d3c86d8ea0c080
+	// wxFONTFAMILY_SWISS / A sans - serif font.
+
+	SaveToReportLog("CMainFrame::Init(): init m_BTNFont...\n");
+	m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+
+	SaveToReportLog("CMainFrame::Init(): init m_LBLFont...\n");
+	m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+
+	SaveToReportLog("CMainFrame::Init(): CreateMenuBar() ...\n");
+	wxMenuBar* pMenuBar = CreateMenuBar();
+
+	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");
+	this->SetMenuBar(pMenuBar);
+
 	SaveToReportLog("CMainFrame::Init(): new CImageBox(this)...\n");
 	m_pImageBox = new CImageBox(this);
 
@@ -468,7 +492,6 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Init()...\n");
 	m_pVideoBox->Init();
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Bind...\n");
-	//m_pVideoBox->Bind(wxEVT_CHAR_HOOK, &CVideoBox::OnKeyDown, m_pVideoBox);	
 
 #ifdef WIN32
 	if (g_cfg.process_affinity_mask > 0)
@@ -485,29 +508,6 @@ void CMainFrame::Init()
 	}
 #endif
 
-	bool find_fount_size_lbl = false;
-	bool find_fount_size_btn = false;
-
-	if (g_cfg.m_fount_size_lbl == -1)
-	{
-		g_cfg.m_fount_size_lbl = 8;
-		find_fount_size_lbl = true;
-	}
-	if (g_cfg.m_fount_size_btn == -1)
-	{
-		g_cfg.m_fount_size_btn = 10;
-		find_fount_size_btn = true;
-	}
-
-	// https://docs.wxwidgets.org/stable/interface_2wx_2font_8h.html#a0cd7bfd21a4f901245d3c86d8ea0c080
-	// wxFONTFAMILY_SWISS / A sans - serif font.
-
-	SaveToReportLog("CMainFrame::Init(): init m_BTNFont...\n");
-	m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-
-	SaveToReportLog("CMainFrame::Init(): init m_LBLFont...\n");
-	m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-
 	SaveToReportLog("CMainFrame::Init(): new CSSOWnd(this)...\n");
 	m_pPanel = new CSSOWnd(this);	
 
@@ -522,36 +522,6 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
 	m_pPanel->Init();
 
-	// Finding Optimal Font Size For Labels
-	if (find_fount_size_lbl)
-	{
-		SaveToReportLog("CMainFrame::Init(): GetOptimalFontSize(..) for Labels...\n");
-
-		int cw, ch;
-		m_pPanel->m_pSSPanel->m_plblPixelColor->GetClientSize(&cw, &ch);
-		g_cfg.m_fount_size_lbl = GetOptimalFontSize(cw, ch, g_cfg.m_label_pixel_color, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-		
-		if (g_cfg.m_fount_size_lbl > 10)
-		{
-			g_cfg.m_fount_size_lbl = 10;
-		}
-	}
-
-	// Finding Optimal Font Size For Buttons
-	if (find_fount_size_btn)
-	{
-		SaveToReportLog("CMainFrame::Init(): GetOptimalFontSize(..) for Buttons...\n");
-
-		int cw, ch;
-		m_pPanel->m_pOCRPanel->m_pCSCTI->GetClientSize(&cw, &ch);
-		g_cfg.m_fount_size_btn = GetOptimalFontSize(cw, ch, g_cfg.m_ocr_button_cesfcti_text, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-
-		if (g_cfg.m_fount_size_btn > 13)
-		{
-			g_cfg.m_fount_size_btn = 13;
-		}
-	}
-
 	int cw, ch;
 	this->GetClientSize(&cw, &ch);	
 
@@ -565,24 +535,10 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Show(true)...\n");	
 	m_pVideoBox->Show(true);	
 
-	m_WasInited = true;
-
-	if (find_fount_size_lbl || find_fount_size_btn)
-	{
-		SaveToReportLog("CMainFrame::Init(): reinit m_BTNFont...\n");
-		m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-
-		SaveToReportLog("CMainFrame::Init(): reinit m_LBLFont...\n");
-		m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-	}
-
-	SaveToReportLog("CMainFrame::Init(): CreateMenuBar() ...\n");
-	wxMenuBar* pMenuBar = CreateMenuBar();
-
-	SaveToReportLog("CMainFrame::Init(): this->SetMenuBar(pMenuBar)...\n");
-	this->SetMenuBar(pMenuBar);
+	m_WasInited = true;	
 		
 	CControl::RefreshAllControlsData();
+	CControl::UpdateAllControlsSize();
 	this->Refresh();
 
 	this->Bind(VIEW_IMAGE_IN_IMAGE_BOX, &CMainFrame::OnViewImageInImageBox, this);
@@ -679,6 +635,7 @@ void CMainFrame::ScaleTextSize(int dsize)
 		this->GetMenuBar()->Refresh();
 
 		CControl::RefreshAllControlsData();
+		CControl::UpdateAllControlsSize();
 		this->Refresh();
 	}
 }
@@ -1115,6 +1072,7 @@ void CMainFrame::OnLocalization(wxCommandEvent& event)
 
 	UpdateDynamicSettings();
 	CControl::RefreshAllControlsData();
+	CControl::UpdateAllControlsSize();
 	this->Refresh();
 
 	custom_buffer<char> data;
@@ -1802,24 +1760,47 @@ void CMainFrame::OnEditSetEndTime(wxCommandEvent& event)
 
 void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 {
-	if (m_blnReopenVideo == false)
+	SaveToReportLog("CMainFrame::OnFileLoadSettings(): starting ...\n");
+
+	wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_settings_file,
+		g_work_dir, wxEmptyString, g_cfg.m_file_dialog_title_open_settings_file_wild_card, wxFD_OPEN);
+
+	if(fd.ShowModal() != wxID_OK)
 	{
-		wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_settings_file,
-			g_work_dir, wxEmptyString, g_cfg.m_file_dialog_title_open_settings_file_wild_card, wxFD_OPEN);
-
-		if(fd.ShowModal() != wxID_OK)
-		{
-			return;
-		}
-
-		g_GeneralSettingsFileName = fd.GetPath();
-		g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
-		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
-
-		LoadSettings();
-
-		CControl::RefreshAllControlsData();
+		return;
 	}
+
+	g_GeneralSettingsFileName = fd.GetPath();
+	g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
+	this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
+
+	LoadSettings();
+	
+	SaveToReportLog("CMainFrame::OnFileLoadSettings(): CreateMenuBar() ...\n");
+	wxMenuBar* pMenuBar = CreateMenuBar();
+
+	SaveToReportLog("CMainFrame::OnFileLoadSettings(): this->SetMenuBar(pMenuBar) ...\n");
+	this->SetMenuBar(pMenuBar);
+
+	for (wxString localization : g_localizations)
+	{
+		int loc_id = g_localization_id[localization];
+
+		if (localization == g_cfg.m_prefered_locale)
+		{
+			pMenuBar->Check(loc_id, true);
+		}
+		else
+		{
+			pMenuBar->Check(loc_id, false);
+		}
+	}
+
+	CControl::RefreshAllControlsData();
+	CControl::UpdateAllControlsSize();
+	this->Refresh();
+
+	SaveToReportLog("CMainFrame::OnFileLoadSettings(): end.\n");
 }
 
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)

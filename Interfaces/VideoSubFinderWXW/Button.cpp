@@ -17,6 +17,7 @@
 #pragma once
 #include "Button.h"
 #include <wx/dcmemory.h>
+#include <wx/sizer.h>
 
 BEGIN_EVENT_TABLE(CButton, CBitmapButton)
 	EVT_SIZE(CButton::OnSize)
@@ -82,7 +83,7 @@ void CButton::FillButtonBitmap(wxBitmap& bmp, wxColour parent_colour, wxColour b
 	{
 		if (m_pFont) dc.SetFont(*m_pFont);		
 		if (m_p_text_colour) dc.SetTextForeground(*m_p_text_colour);
-		wxSize ts = dc.GetTextExtent(*m_p_label);
+		wxSize ts = dc.GetMultiLineTextExtent(*m_p_label);
 
 		dc.DrawText(*m_p_label, (w - ts.x) / 2, (h - ts.y) / 2);
 	}
@@ -94,13 +95,16 @@ void CButton::OnSize(wxSizeEvent& event)
 
 	this->GetClientSize(&w, &h);
 
-	wxBitmap bmp(w, h), bmp_focused(w, h), bmp_selected(w, h);
-	FillButtonBitmap(bmp, m_pParent->GetBackgroundColour(), *m_p_button_color, *m_p_buttons_border_colour);
-	FillButtonBitmap(bmp_focused, m_pParent->GetBackgroundColour(), *m_p_button_color_focused, *m_p_buttons_border_colour);
-	FillButtonBitmap(bmp_selected, m_pParent->GetBackgroundColour(), *m_p_button_color_selected, *m_p_buttons_border_colour);
-	SetBitmaps(bmp.ConvertToImage(), bmp_focused.ConvertToImage(), bmp_selected.ConvertToImage());
+	if ((w > 0) && (h > 0))
+	{
+		wxBitmap bmp(w, h), bmp_focused(w, h), bmp_selected(w, h);
+		FillButtonBitmap(bmp, m_pParent->GetBackgroundColour(), *m_p_button_color, *m_p_buttons_border_colour);
+		FillButtonBitmap(bmp_focused, m_pParent->GetBackgroundColour(), *m_p_button_color_focused, *m_p_buttons_border_colour);
+		FillButtonBitmap(bmp_selected, m_pParent->GetBackgroundColour(), *m_p_button_color_selected, *m_p_buttons_border_colour);
+		SetBitmaps(bmp.ConvertToImage(), bmp_focused.ConvertToImage(), bmp_selected.ConvertToImage());
 
-	this->Refresh(true);
+		this->Refresh(true);
+	}
 
 	event.Skip();
 }
@@ -126,8 +130,35 @@ void CButton::SetTextColour(wxColour& colour)
 	this->OnSize(event);
 }
 
+void CButton::SetMinSize(wxSize& size)
+{
+	m_min_size = size;
+}
+
 void CButton::RefreshData()
 {
+	wxSizer* pSizer = m_pParent->GetSizer();
+	if (pSizer)
+	{
+		wxMemoryDC dc;
+		if (m_pFont) dc.SetFont(*m_pFont);
+		wxSize best_size = dc.GetMultiLineTextExtent(*m_p_label);
+		wxSize cur_size = this->GetSize();
+		wxSize cur_client_size = this->GetClientSize();
+		wxSize opt_size;
+		best_size.x += cur_size.x - cur_client_size.x + 20;
+		best_size.y += cur_size.y - cur_client_size.y + 10;
+
+		opt_size.x = std::max<int>(best_size.x, m_min_size.x);
+		opt_size.y = std::max<int>(best_size.y, m_min_size.y);
+
+		if (opt_size != cur_size)
+		{
+			pSizer->SetItemMinSize(this, opt_size);
+			pSizer->Layout();
+		}
+	}
+
 	wxSizeEvent event;
 	this->OnSize(event);
 }

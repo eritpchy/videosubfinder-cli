@@ -127,19 +127,7 @@ void CSettingsPanel::Init()
 	SaveToReportLog("CSettingsPanel::Init(): init m_pP2...\n");
 	m_pP2 = new wxPanel( this, wxID_ANY, rcP2.GetPosition(), rcP2.GetSize() );
 	m_pP2->SetMinSize(rcP2.GetSize());
-	m_pP2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
-
-	SaveToReportLog("CSettingsPanel::Init(): init top_sizer...\n");
-	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
-
-	SaveToReportLog("CSettingsPanel::Init(): init button_sizer...\n");
-	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
-
-	button_sizer->Add(m_pP2, 1, wxALIGN_CENTER, 0 );
-
-	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
-	
-	this->SetSizer(top_sizer);
+	m_pP2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB1...\n");
 	m_pGB1 = new CStaticBox( m_pP2, wxID_ANY,
@@ -164,34 +152,36 @@ void CSettingsPanel::Init()
 	m_pGB3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pTest...\n");
-	m_pTest = new CButton( m_pP2, ID_TEST, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
-		g_cfg.m_button_test_text, rcTEST.GetPosition(), rcTEST.GetSize() );
+	m_pTest = new CButton(m_pGB3, ID_TEST, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_button_test_text, wxDefaultPosition, rcTEST.GetSize() );
+	rcTEST.GetPosition();
 	m_pTest->SetFont(m_pMF->m_BTNFont);
 	m_pTest->SetTextColour(g_cfg.m_main_text_colour);
+	m_pTest->SetMinSize(rcTEST.GetSize());
 
 	bmp_na = wxImage(g_app_dir + "/bitmaps/left_na.bmp");
 	bmp_od = wxImage(g_app_dir + "/bitmaps/left_od.bmp");
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pLeft...\n");
-	m_pLeft = new CBitmapButton( m_pP2, ID_SP_LEFT,
+	m_pLeft = new CBitmapButton(m_pGB3, ID_SP_LEFT,
 		bmp_na, bmp_od, rcLeft.GetPosition(), rcLeft.GetSize() );
 
 	bmp_na = wxImage(g_app_dir + "/bitmaps/right_na.bmp");
 	bmp_od = wxImage(g_app_dir + "/bitmaps/right_od.bmp");
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pRight...\n");
-	m_pRight = new CBitmapButton( m_pP2, ID_SP_RIGHT,
+	m_pRight = new CBitmapButton(m_pGB3, ID_SP_RIGHT,
 		bmp_na, bmp_od, rcRight.GetPosition(), rcRight.GetSize() );
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblIF...\n");
-	m_plblIF = new CStaticText(m_pP2, g_cfg.m_StrFN[m_cn], wxID_ANY);
+	m_plblIF = new CStaticText(m_pGB3, g_cfg.m_StrFN[m_cn], wxID_ANY);
 	m_plblIF->SetFont(m_pMF->m_LBLFont);
 	m_plblIF->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblIF->SetBackgroundColour(g_cfg.m_test_result_label_colour);
 	m_plblIF->SetSize(rlIF);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI...\n");	
-	m_pOI = new CDataGrid( m_pP2, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OI, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
+	m_pOI = new CDataGrid(m_pGB1, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OI, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
                            rcOI.GetPosition(), rcOI.GetSize() );
 	m_pOI->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
 	m_pOI->SetBackgroundColour(g_cfg.m_notebook_colour);
@@ -265,7 +255,7 @@ void CSettingsPanel::Init()
 	////////////////////////////////////////////////////////////////////////
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM...\n");
-	m_pOIM = new CDataGrid( m_pP2, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OIM, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
+	m_pOIM = new CDataGrid(m_pGB2, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OIM, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
                            rcOIM.GetPosition(), rcOIM.GetSize() );
 	m_pOIM->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
 	m_pOIM->SetBackgroundColour(g_cfg.m_notebook_colour);
@@ -363,7 +353,7 @@ void CSettingsPanel::Init()
 	rcPixelColorExample.height = rcPixelColorRGB.GetBottom() - rcPixelColorLab.y + 1;	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblGSFN...\n");
-	m_plblGSFN = new CStaticText(m_pP2, g_cfg.m_label_settings_file, wxID_ANY);
+	m_plblGSFN = new CStaticText(m_pGB3, g_cfg.m_label_settings_file, wxID_ANY);
 	m_plblGSFN->SetFont(m_pMF->m_LBLFont);
 	m_plblGSFN->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblGSFN->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
@@ -371,21 +361,36 @@ void CSettingsPanel::Init()
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGSFN...\n");
 	g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
-	m_pGSFN = new CStaticText(m_pP2, g_cfg.m_ssp_GSFN_label, wxID_ANY, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+	m_pGSFN = new CStaticText(m_pGB3, g_cfg.m_ssp_GSFN_label, wxID_ANY, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+	m_pGSFN->m_allow_auto_set_min_width = false;
 	m_pGSFN->SetFont(m_pMF->m_LBLFont);
 	m_pGSFN->SetTextColour(g_cfg.m_main_text_colour);
 	m_pGSFN->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 	m_pGSFN->SetSize(rcGSFN);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_plblPixelColor...\n");
-	m_plblPixelColor = new CStaticText(m_pP2, g_cfg.m_label_pixel_color, wxID_ANY);
+	m_plblPixelColor = new CStaticText(m_pGB3, g_cfg.m_label_pixel_color, wxID_ANY);
 	m_plblPixelColor->SetFont(m_pMF->m_LBLFont);
 	m_plblPixelColor->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblPixelColor->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblPixelColor->SetSize(rlPixelColor);
 
+	wxColour clr(255, 255, 255);
+
+	u8 bgr[3], lab[3], y;
+
+	bgr[0] = clr.Blue();
+	bgr[1] = clr.Green();
+	bgr[2] = clr.Red();
+
+	BGRToYUV(bgr[0], bgr[1], bgr[2], &y);
+	BGRToLab(bgr[0], bgr[1], bgr[2], &(lab[0]), &(lab[1]), &(lab[2]));
+
+	g_cfg.m_pixel_color_bgr = wxString::Format(wxT("RGB: r:%d g:%d b:%d L:%d"), (int)(bgr[2]), (int)(bgr[1]), (int)(bgr[0]), (int)y);
+	g_cfg.m_pixel_color_lab = wxString::Format(wxT("Lab: l:%d a:%d b:%d"), (int)(lab[0]), (int)(lab[1]), (int)(lab[2]));
+
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorRGB...\n");
-	m_pPixelColorRGB = new CTextCtrl(m_pP2, wxID_ANY,
+	m_pPixelColorRGB = new CTextCtrl(m_pGB3, wxID_ANY,
 		&(g_cfg.m_pixel_color_bgr), wxString(), rcPixelColorRGB.GetPosition(), rcPixelColorRGB.GetSize());
 	m_pPixelColorRGB->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorRGB->SetTextColour(g_cfg.m_main_text_colour);
@@ -393,7 +398,7 @@ void CSettingsPanel::Init()
 	m_pPixelColorRGB->SetEditable(false);	
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorLab...\n");
-	m_pPixelColorLab = new CTextCtrl(m_pP2, wxID_ANY,
+	m_pPixelColorLab = new CTextCtrl(m_pGB3, wxID_ANY,
 		&(g_cfg.m_pixel_color_lab), wxString(), rcPixelColorLab.GetPosition(), rcPixelColorLab.GetSize());
 	m_pPixelColorLab->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorLab->SetTextColour(g_cfg.m_main_text_colour);
@@ -402,13 +407,111 @@ void CSettingsPanel::Init()
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pPixelColorExample...\n");
 	g_cfg.m_pixel_color_example = wxT("");
-	m_pPixelColorExample = new CStaticText(m_pP2, g_cfg.m_pixel_color_example, wxID_ANY);
+	m_pPixelColorExample = new CStaticText(m_pGB3, g_cfg.m_pixel_color_example, wxID_ANY);
 	m_pPixelColorExample->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorExample->SetTextColour(g_cfg.m_main_text_colour);
-	m_pPixelColorExample->SetBackgroundColour(wxColour(255, 255, 255));
+	m_pPixelColorExample->SetBackgroundColour(clr);
 	m_pPixelColorExample->SetSize(rcPixelColorExample);
+	m_pPixelColorExample->SetMinSize(rcPixelColorExample.GetSize());
+
+	// m_pP2 location sizer
+	{
+		SaveToReportLog("CSettingsPanel::Init(): init top_sizer...\n");
+		wxBoxSizer* top_sizer = new wxBoxSizer(wxVERTICAL);
+		SaveToReportLog("CSettingsPanel::Init(): init button_sizer...\n");
+		wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
+		button_sizer->Add(m_pP2, 1, wxEXPAND | wxALL);
+		top_sizer->Add(button_sizer, 1, wxEXPAND | wxALL, 4);
+		this->SetSizer(top_sizer);
+	}
+
+	// m_pP2 elements location sizer
+	{
+		int gb_y_offset = std::max<int>(m_pGB1->GetTextExtent(m_pGB1->GetLabel()).GetHeight(), m_pGB2->GetTextExtent(m_pGB1->GetLabel()).GetHeight()) + 2;
+
+		wxBoxSizer* gb1_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* gb1_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+		gb1_hor_box_sizer->Add(m_pOI, 1, wxEXPAND | wxALL);
+		gb1_vert_box_sizer->AddSpacer(gb_y_offset);
+		gb1_vert_box_sizer->Add(gb1_hor_box_sizer, 1, wxEXPAND | wxALL, 4);
+		m_pGB1->SetSizer(gb1_vert_box_sizer);
+
+		wxBoxSizer* gb2_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* gb2_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+		gb2_hor_box_sizer->Add(m_pOIM, 1, wxEXPAND | wxALL);
+		gb2_vert_box_sizer->AddSpacer(gb_y_offset);
+		gb2_vert_box_sizer->Add(gb2_hor_box_sizer, 1, wxEXPAND | wxALL, 4);
+		m_pGB2->SetSizer(gb2_vert_box_sizer);
+
+		wxBoxSizer* gb3_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* gb3_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+		wxBoxSizer* test_result_sizer = new wxBoxSizer(wxHORIZONTAL);
+		test_result_sizer->Add(m_pLeft, 0, wxEXPAND | wxALL);
+		test_result_sizer->Add(m_plblIF, 1, wxEXPAND | wxALL);
+		test_result_sizer->Add(m_pRight, 0, wxEXPAND | wxALL);
+
+		wxBoxSizer* rgb_lab_sizer = new wxBoxSizer(wxVERTICAL);
+		rgb_lab_sizer->Add(m_pPixelColorLab, 0, wxEXPAND | wxALL);
+		rgb_lab_sizer->AddSpacer(2);
+		rgb_lab_sizer->Add(m_pPixelColorRGB, 0, wxEXPAND | wxALL);
+
+		wxBoxSizer* rgb_lab_color_sizer = new wxBoxSizer(wxHORIZONTAL);
+		rgb_lab_color_sizer->Add(rgb_lab_sizer, 1, wxEXPAND | wxALL);
+		rgb_lab_color_sizer->AddSpacer(2);
+		rgb_lab_color_sizer->Add(m_pPixelColorExample, 0, wxEXPAND | wxALL);		
+
+		wxBoxSizer* vert_right_ctrls_sizer = new wxBoxSizer(wxVERTICAL);
+		vert_right_ctrls_sizer->Add(test_result_sizer, 0, wxEXPAND | wxALL);
+		vert_right_ctrls_sizer->AddSpacer(4);
+		vert_right_ctrls_sizer->Add(m_pTest, 0, wxALIGN_CENTER);
+		vert_right_ctrls_sizer->AddSpacer(4);
+		vert_right_ctrls_sizer->Add(m_plblGSFN, 0, wxEXPAND | wxALL);
+		vert_right_ctrls_sizer->AddSpacer(2);
+		vert_right_ctrls_sizer->Add(m_pGSFN, 0, wxEXPAND | wxALL);
+		vert_right_ctrls_sizer->AddSpacer(4);
+		vert_right_ctrls_sizer->Add(m_plblPixelColor, 0, wxEXPAND | wxALL);	
+		vert_right_ctrls_sizer->AddSpacer(2);
+		vert_right_ctrls_sizer->Add(rgb_lab_color_sizer, 0, wxEXPAND | wxALL);
+
+		gb3_hor_box_sizer->Add(vert_right_ctrls_sizer, 0, wxALIGN_CENTER);
+		gb3_vert_box_sizer->AddSpacer(gb_y_offset);
+		gb3_vert_box_sizer->Add(gb3_hor_box_sizer, 0, wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL);
+		m_pGB3->SetSizer(gb3_vert_box_sizer);
+
+		wxGridSizer* grids_boxs_sizer = new wxGridSizer(1, 2, 0, 4);
+		grids_boxs_sizer->Add(m_pGB1, 1, wxEXPAND | wxALL);
+		grids_boxs_sizer->Add(m_pGB2, 1, wxEXPAND | wxALL);
+		
+		wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+		hor_box_sizer->AddSpacer(4);
+		hor_box_sizer->Add(grids_boxs_sizer, 1, wxEXPAND | wxALL);
+		hor_box_sizer->AddSpacer(4);
+		hor_box_sizer->Add(m_pGB3, 0, wxEXPAND | wxALL);
+		hor_box_sizer->AddSpacer(4);
+
+		wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		vert_box_sizer->AddSpacer(2);
+		vert_box_sizer->Add(hor_box_sizer, 1, wxEXPAND | wxALL);
+		vert_box_sizer->AddSpacer(2);
+		m_pP2->SetSizer(vert_box_sizer);		
+	}
 
 	SaveToReportLog("CSettingsPanel::Init(): finished.\n");
+}
+
+void CSettingsPanel::UpdateSize()
+{
+	int gb_y_offset = std::max<int>(m_pGB1->GetTextExtent(m_pGB1->GetLabel()).GetHeight(), m_pGB2->GetTextExtent(m_pGB1->GetLabel()).GetHeight()) + 2;
+	m_pGB1->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
+	m_pGB2->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
+	m_pGB3->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
+}
+
+void CSettingsPanel::RefreshData()
+{
 }
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)

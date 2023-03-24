@@ -16,6 +16,8 @@
 
 #pragma once
 #include "CheckBox.h"
+#include <wx/dcmemory.h>
+#include <wx/sizer.h>
 
 BEGIN_EVENT_TABLE(CCheckBox, wxCheckBox)
 	EVT_SIZE(CCheckBox::OnSize)
@@ -74,10 +76,40 @@ bool CCheckBox::SetBackgroundColour(const wxColour& colour)
 		m_pST->SetBackgroundColour(colour));
 }
 
+void CCheckBox::SetMinSize(wxSize& size)
+{
+	m_min_size = size;
+}
+
 void CCheckBox::RefreshData()
 {
+	if (m_pFont) m_pST->SetFont(*m_pFont);
 	m_pST->SetLabel(*m_p_label);
 	m_pCB->SetValue(*m_p_val);
+
+	wxSizer* pSizer = m_pParent->GetSizer();
+	if (pSizer)
+	{
+		wxMemoryDC dc;
+		if (m_pFont) dc.SetFont(*m_pFont);
+		wxSize best_size = dc.GetMultiLineTextExtent(*m_p_label);
+		wxSize cur_size = this->GetSize();
+		wxSize cur_client_size = this->GetClientSize();
+		wxSize cb_size = m_pCB->GetSize();
+		wxSize opt_size;
+		best_size.x += cur_size.x - cur_client_size.x + 6 + (m_cb_offset * 2) + cb_size.x;
+		best_size.y += cur_size.y - cur_client_size.y + 6;
+
+		opt_size.x = std::max<int>(best_size.x, m_min_size.x);
+		opt_size.y = std::max<int>({best_size.y, m_min_size.y, cb_size.y});
+
+		if (opt_size != cur_size)
+		{
+			pSizer->SetItemMinSize(this, opt_size);
+			pSizer->Layout();
+		}
+	}
+
 	wxSizeEvent event;
 	OnSize(event);
 }

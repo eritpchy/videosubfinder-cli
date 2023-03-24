@@ -374,6 +374,12 @@ How to use in details:
    Are used when checking whether adjacent frames with identical text or
    no)
 
+   VEdges - vertical color boundaries in YUV color space image representation.
+   HEdges - horizontal color boundaries in YUV color space image representation.
+   NEdges - northeast diagonal color boundaries in YUV color space image representation.
+   In all VEdges, HEdges, NEdges mostly used color boundaries from Y component (grayscale image representation) of YUV color space image representation.
+   VEdges, HEdges, NEdges relates to "Automatic Image Segmentation by Integrating Color-Edge Extraction and Seeded Region Growing" article.
+   YUV color space - https://en.wikipedia.org/wiki/YUV
 
 6) At the end of the search for the sub it is desirable to go to the folder RGBImages and delete all
    those frames that are dummy, then on these images you can
@@ -495,11 +501,13 @@ studied and implemented in this program), namely, the main used
    Min Cai, Jiqiang Song, and Michael R. Lyu,
    Department of Computer Science & Engineering
    The Chinese University of Hong Kong Hong Kong SAR, China
+   https://www.cse.cuhk.edu.hk/~lyu/staff/CaiMin/1781_cai_m.pdf
 
-2) Automatic Image Segmentation by Integrating Color-Edge Extraction
-   and Seeded Region Growing 2001.
+2) "Automatic Image Segmentation by Integrating Color-Edge Extraction and Seeded Region Growing"
+   01 Oct 2001
    Jianping Fan, David. K. Y. Yau, Member, IEEE, Ahmed. K. Elmagarmid,
    Senior Member, IEEE, and Walid G. Aref, Member, IEEE
+   https://typeset.io/papers/automatic-image-segmentation-by-integrating-color-edge-y2azjosgo3
 
 3) Automatic Location of Text in Video Frames.
    Xian-Sheng Hua, Xiang-Rong Chen, Liu Wenyin, Hong-Jiang Zhang

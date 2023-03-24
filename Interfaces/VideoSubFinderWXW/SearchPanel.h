@@ -34,7 +34,7 @@ extern int g_IsClose;
 
 void ThreadSearchSubtitles();
 
-class CSearchPanel : public wxPanel
+class CSearchPanel : public wxPanel, public CControl
 {
 public:
 	CSearchPanel(CSSOWnd* pParent);
@@ -66,6 +66,8 @@ public:
 	void OnBnClickedClear(wxCommandEvent& event);
 	void OnTimeTextEnter(wxCommandEvent& evt);
 	void ThreadSearchSubtitlesEnd(wxCommandEvent& event);
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
    DECLARE_EVENT_TABLE()

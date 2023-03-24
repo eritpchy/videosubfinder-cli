@@ -155,7 +155,7 @@ public:
 
 void CreateClearedTextImages(vector<wxString>& FileNamesVector);
 
-class COCRPanel : public wxPanel
+class COCRPanel : public wxPanel, public CControl
 {
 public:
 	COCRPanel(CSSOWnd* pParent);
@@ -198,6 +198,8 @@ public:
 	void OnBnClickedJoinTXTImages(wxCommandEvent& event);
 	void SaveSub(wxString srt_sub, wxString ass_sub);
 	void ThreadCreateClearedTextImagesEnd(wxCommandEvent& event);
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
 	DECLARE_EVENT_TABLE()

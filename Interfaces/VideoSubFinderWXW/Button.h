@@ -47,10 +47,12 @@ public:
 	void RefreshData();
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
+	void SetMinSize(wxSize& size);
 
 	void OnSize(wxSizeEvent& event);
 	
 private:
+	wxSize m_min_size;
 	wxWindow* m_pParent;
 	CBitmapButton* m_pButton;
 	wxFont* m_pFont;

@@ -22,11 +22,12 @@
 class CTextCtrl : public wxTextCtrl, public CControl
 {
 public:
+	wxWindow* m_pParent;
 	wxString* m_p_str_val = NULL;
 	double* m_p_f_val = NULL;
 	wxString m_str_val;
 	wxString m_re_expr = wxString();
-	wxRegEx m_re;	
+	wxRegEx m_re;
 	
 
 	CTextCtrl(wxWindow* parent,
@@ -63,8 +64,10 @@ public:
 
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
+	void SetMinSize(wxSize& size);
 	
 private:
+	wxSize m_min_size;
 	wxFont* m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
 	DECLARE_EVENT_TABLE()

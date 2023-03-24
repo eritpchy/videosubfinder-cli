@@ -353,8 +353,8 @@ public:
 
 	bool	    m_bUpdateSizes = false;
 	int 		m_dx = 20;
-	int 		m_dy = 20;
-	int			m_ph = 288; //panel height
+	int 		m_dy = 10;
+	int			m_ph = 310; //panel height
 
 	s64			m_dt;
 	s64         m_ct;

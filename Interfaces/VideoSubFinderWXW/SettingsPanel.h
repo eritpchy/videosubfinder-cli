@@ -29,7 +29,7 @@
 class CMainFrame;
 class CSSOWnd;
 
-class CSettingsPanel : public wxPanel
+class CSettingsPanel : public wxPanel, public CControl
 {
 public:
 	CSettingsPanel(CSSOWnd* pParent);
@@ -82,9 +82,8 @@ public:
 	void OnBnClickedLeft(wxCommandEvent& event);
 	void OnBnClickedRight(wxCommandEvent& event);
 	void ViewCurImF();
-	//afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
-	//afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	//afx_msg void OnPaint();
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
    DECLARE_EVENT_TABLE()

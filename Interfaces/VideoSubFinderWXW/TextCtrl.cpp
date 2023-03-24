@@ -16,6 +16,7 @@
 
 #pragma once
 #include "TextCtrl.h"
+#include <wx/sizer.h>
 
 BEGIN_EVENT_TABLE(CTextCtrl, wxTextCtrl)
 	EVT_TEXT(wxID_ANY, CTextCtrl::OnText)
@@ -41,6 +42,7 @@ CTextCtrl::CTextCtrl(wxWindow* parent,
 	const wxSize& size,
 	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style | wxTE_PROCESS_ENTER), m_re(re_expr)
 {
+	m_pParent = parent;
 	m_str_val = str_val;
 	m_re_expr = re_expr;
 	ChangeValue(str_val);
@@ -54,6 +56,7 @@ CTextCtrl::CTextCtrl(wxWindow* parent,
 	const wxSize& size,
 	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style | wxTE_PROCESS_ENTER), m_re(re_expr)
 {
+	m_pParent = parent;
 	m_p_str_val = p_str_val;
 	m_re_expr = re_expr;
 	ChangeValue(*m_p_str_val);
@@ -66,6 +69,7 @@ CTextCtrl::CTextCtrl(wxWindow* parent,
 	const wxSize& size,
 	long style) : wxTextCtrl(parent, id, wxEmptyString, pos, size, style)
 {
+	m_pParent = parent;
 	m_p_f_val = p_f_val;
 	ChangeValue(wxString::Format(wxT("%f"), *m_p_f_val));
 }
@@ -153,6 +157,11 @@ void CTextCtrl::SetTextColour(wxColour& colour)
 	wxTextCtrl::SetForegroundColour(*m_pTextColour);
 }
 
+void CTextCtrl::SetMinSize(wxSize& size)
+{
+	m_min_size = size;
+}
+
 void CTextCtrl::RefreshData()
 {
 	if (m_pFont) wxTextCtrl::SetFont(*m_pFont);
@@ -165,5 +174,24 @@ void CTextCtrl::RefreshData()
 	else if (m_p_f_val)
 	{
 		ChangeValue(wxString::Format(wxT("%f"), *m_p_f_val));
+	}
+
+	wxSizer* pSizer = m_pParent->GetSizer();
+	if (pSizer)
+	{
+		wxSize text_size = this->GetTextExtent(this->GetValue());
+		wxSize best_size = this->GetSizeFromTextSize(text_size);
+		wxSize cur_size = this->GetSize();
+		wxSize cur_client_size = this->GetClientSize();
+		wxSize opt_size;
+
+		opt_size.x = std::max<int>(best_size.x, m_min_size.x);
+		opt_size.y = std::max<int>(best_size.y, m_min_size.y);
+
+		if (opt_size != cur_size)
+		{
+			pSizer->SetItemMinSize(this, opt_size);
+			pSizer->Layout();
+		}
 	}
 }

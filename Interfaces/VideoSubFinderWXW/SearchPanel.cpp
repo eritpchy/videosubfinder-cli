@@ -18,6 +18,7 @@
 #include "SearchPanel.h"
 #include <exception>
 #include <wx/sound.h>
+#include <wx/gbsizer.h>
 
 int g_IsSearching = 0;
 int g_IsClose = 0;
@@ -91,28 +92,34 @@ void CSearchPanel::Init()
 
 	m_plblBT1 = new CStaticText(m_pP1, g_cfg.m_label_begin_time, wxID_ANY);
 	m_plblBT1->SetSize(rcBT1);
+	m_plblBT1->SetMinSize(rcBT1.GetSize());
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
 	m_plblBT2 = new CStaticText( m_pP1, g_cfg.m_label_end_time, wxID_ANY);
 	m_plblBT2->SetSize(rcBT2);
+	m_plblBT2->SetMinSize(rcBT2.GetSize());
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
 	m_plblBTA1 = new CTextCtrl(m_pP1, ID_LBL_BEGIN_TIME,
 		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_plblBTA1->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
+	m_plblBTA1->SetMinSize(rcBTA1.GetSize());
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA2...\n");
 	m_plblBTA2 = new CTextCtrl( m_pP1, ID_LBL_END_TIME,
 		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 	m_plblBTA2->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
+	m_plblBTA2->SetMinSize(rcBTA2.GetSize());
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
 	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_clear_folders_text, rcClear.GetPosition(), rcClear.GetSize() );
+	m_pClear->SetMinSize(rcClear.GetSize());
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
 	m_pRun = new CButton( m_pP1, ID_BTN_RUN, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_run_search_text, rcRun.GetPosition(), rcRun.GetSize() );
+	m_pRun->SetMinSize(rcRun.GetSize());
 		
 	m_plblBT1->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblBT2->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
@@ -133,17 +140,56 @@ void CSearchPanel::Init()
 	m_pClear->SetTextColour(g_cfg.m_main_text_colour);
 	m_pRun->SetTextColour(g_cfg.m_main_text_colour);
 
-	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
+	// m_pP1 location sizer
+	{
+		wxBoxSizer* top_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
+		button_sizer->Add(m_pP1, 1, wxALIGN_CENTER, 0);
+		top_sizer->Add(button_sizer, 1, wxALIGN_CENTER);
+		this->SetSizer(top_sizer);
+	}
 
-	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
+	// m_pP1 elements location sizer
+	{
+		wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-	button_sizer->Add(m_pP1, 1, wxALIGN_CENTER, 0 );
+		wxFlexGridSizer* grid_lbls_sizer = new wxFlexGridSizer(2, 2, 6, 4);
+		grid_lbls_sizer->Add(m_plblBT1, 0, wxEXPAND | wxALL);
+		grid_lbls_sizer->Add(m_plblBTA1, 0, wxEXPAND | wxALL);
+		grid_lbls_sizer->Add(m_plblBT2, 0, wxEXPAND | wxALL);
+		grid_lbls_sizer->Add(m_plblBTA2, 0, wxEXPAND | wxALL);
 
-	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
+		wxGridSizer* grid_btns_sizer = new wxGridSizer(1, 2, 0, 30);
+		grid_btns_sizer->Add(m_pClear, 0, wxEXPAND | wxALL);
+		grid_btns_sizer->Add(m_pRun, 0, wxEXPAND | wxALL);
 
-	this->SetSizer(top_sizer);
+		vert_box_sizer->Add(grid_lbls_sizer, 0, wxALIGN_CENTER, 0);
+		vert_box_sizer->AddSpacer(10);
+		vert_box_sizer->Add(grid_btns_sizer, 0, wxALIGN_CENTER, 0);
+
+		hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_CENTER);
+
+		m_pP1->SetSizer(hor_box_sizer);
+	}
 
 	SaveToReportLog("CSearchPanel::Init(): finished.\n");
+}
+
+void CSearchPanel::RefreshData()
+{
+}
+
+void CSearchPanel::UpdateSize()
+{
+	wxSize best_size = m_pP1->GetSizer()->GetMinSize();
+	wxSize cur_size = m_pP1->GetSize();
+	wxSize cur_client_size = m_pP1->GetClientSize();
+	best_size.x += cur_size.x - cur_client_size.x + 20;
+	best_size.y += cur_size.y - cur_client_size.y + 20;
+	
+	this->GetSizer()->SetItemMinSize(m_pP1, best_size);
+	this->GetSizer()->Layout();
 }
 
 void CSearchPanel::OnTimeTextEnter(wxCommandEvent& evt)

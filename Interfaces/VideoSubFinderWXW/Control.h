@@ -40,7 +40,16 @@ public:
 		}
 	}
 
+	static void UpdateAllControlsSize()
+	{
+		for (int i = 0; i < m_all_controls.size(); i++)
+		{
+			m_all_controls[i]->UpdateSize();
+		}
+	}
+
 	virtual void UpdateData(wxString *newval){}
+	virtual void UpdateSize(){}
 
 	virtual void RefreshData() = 0;
 };

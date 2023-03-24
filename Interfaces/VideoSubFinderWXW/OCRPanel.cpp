@@ -202,8 +202,10 @@ void COCRPanel::Init()
 
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJTXTSL, reJTXTSL, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
 	int w, h, cbh, dw, dh, txt_dw = g_cfg.m_txt_dw, txt_dy = g_cfg.m_txt_dy;
-	const int dx = 20;
+	const int dx = 10;
 	const int dy = 20;
+	const int cb_dist = 3;
+	const int btn_dist = 8;
 	const int BTNW = 410;
 	const int LBLW = 250;
 	const int PW = BTNW + LBLW + dx*3;
@@ -222,31 +224,29 @@ void COCRPanel::Init()
 	rcCCTI.height = h;
 
 	rcCSTXT.x = rcCCTI.x;
-	rcCSTXT.y = rcCCTI.GetBottom() + 10;
+	rcCSTXT.y = rcCCTI.GetBottom() + btn_dist;
 	rcCSTXT.width = BTNW;
 	rcCSTXT.height = h;
 
 	rcCSCTI.x = rcCCTI.x;
-	rcCSCTI.y = rcCSTXT.GetBottom() + 10;
+	rcCSCTI.y = rcCSTXT.GetBottom() + btn_dist;
 	rcCSCTI.width = BTNW;
 	rcCSCTI.height = h;
 
 	rcCES.x = rcCCTI.x;
-	rcCES.y = rcCSCTI.GetBottom() + 10;
+	rcCES.y = rcCSCTI.GetBottom() + btn_dist;
 	rcCES.width = BTNW;
 	rcCES.height = h;
 
 	rcJOIN.x = rcCCTI.x;
-	rcJOIN.y = rcCES.GetBottom() + 10;
+	rcJOIN.y = rcCES.GetBottom() + btn_dist;
 	rcJOIN.width = BTNW;
 	rcJOIN.height = h;
 
 	rcTEST.x = rcCCTI.GetRight() + 30;
 	rcTEST.y = rcCCTI.GetBottom() + 5 - h/2;
 	rcTEST.width = 100;
-	rcTEST.height = h;
-
-	int cb_dist = 3;
+	rcTEST.height = h;	
 
 	reMSD.x = rlMSD.x;
 	reMSD.y = rlMSD.GetBottom() + cb_dist;
@@ -392,20 +392,83 @@ void COCRPanel::Init()
 	m_pJOIN->SetFont(m_pMF->m_BTNFont);
 	m_pJOIN->SetTextColour(g_cfg.m_main_text_colour);
 
-	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
-
-	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
-
-	button_sizer->Add(m_pP3, 1, wxALIGN_CENTER, 0 );
-
-	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
-
-	SaveToReportLog("COCRPanel::Init(): this->SetSizer(top_sizer)...\n");
-	this->SetSizer(top_sizer);
-
 	this->Bind(UPDATE_CCTI_PROGRESS, &COCRPanel::OnUpdateCCTIProgress, this);
 
+	// m_pP3 location sizer
+	{
+		wxBoxSizer* top_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
+		button_sizer->Add(m_pP3, 1, wxALIGN_CENTER, 0);
+		top_sizer->Add(button_sizer, 1, wxALIGN_CENTER);
+		SaveToReportLog("COCRPanel::Init(): this->SetSizer(top_sizer)...\n");
+		this->SetSizer(top_sizer);
+	}
+
+	// m_pP3 elements location sizer
+	{
+		wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+		wxBoxSizer* vert_box_settings_sizer = new wxBoxSizer(wxVERTICAL);
+		vert_box_settings_sizer->Add(m_plblMSD, 0, wxEXPAND | wxALL);		
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_pMSD, 0, wxEXPAND | wxALL);
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_plblJTXTSL, 0, wxEXPAND | wxALL);
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_pJTXTSL, 0, wxEXPAND | wxALL);
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_pcbJSACT, 0, wxEXPAND | wxALL);
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_pcbCTXTF, 0, wxEXPAND | wxALL);
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_pcbSESS, 0, wxEXPAND | wxALL);
+		vert_box_settings_sizer->AddSpacer(cb_dist);
+		vert_box_settings_sizer->Add(m_pcbSSI, 0, wxEXPAND | wxALL);
+
+		wxBoxSizer* vert_box_buttons_sizer = new wxBoxSizer(wxVERTICAL);
+		vert_box_buttons_sizer->Add(m_pCCTI, 0, wxEXPAND | wxALL);
+		vert_box_buttons_sizer->AddSpacer(btn_dist);
+		vert_box_buttons_sizer->Add(m_pCSTXT, 0, wxEXPAND | wxALL);
+		vert_box_buttons_sizer->AddSpacer(btn_dist);
+		vert_box_buttons_sizer->Add(m_pCSCTI, 0, wxEXPAND | wxALL);
+		vert_box_buttons_sizer->AddSpacer(btn_dist);
+		vert_box_buttons_sizer->Add(m_pCES, 0, wxEXPAND | wxALL);
+		vert_box_buttons_sizer->AddSpacer(btn_dist);
+		vert_box_buttons_sizer->Add(m_pJOIN, 0, wxEXPAND | wxALL);
+
+		wxBoxSizer* hor_box_all_ctrls_sizer = new wxBoxSizer(wxHORIZONTAL);
+		hor_box_all_ctrls_sizer->Add(vert_box_settings_sizer, 0, wxALIGN_TOP);
+		hor_box_all_ctrls_sizer->AddSpacer(dx);
+		hor_box_all_ctrls_sizer->Add(vert_box_buttons_sizer, 0, wxALIGN_TOP);
+
+		hor_box_sizer->Add(hor_box_all_ctrls_sizer, 0, wxALIGN_CENTER);
+		vert_box_sizer->Add(hor_box_sizer, 1, wxALIGN_CENTER);
+
+		m_pP3->SetSizer(vert_box_sizer);
+	}
+
 	SaveToReportLog("COCRPanel::Init(): finished.\n");
+}
+
+void COCRPanel::UpdateSize()
+{
+	wxSize client_size = this->GetClientSize();
+	wxSize p3_best_size = m_pP3->GetSizer()->GetMinSize();
+	wxSize p3_cur_size = m_pP3->GetSize();
+	wxSize p3_cur_client_size = m_pP3->GetClientSize();
+	p3_best_size.x += p3_cur_size.x - p3_cur_client_size.x + 20;
+	p3_best_size.y += p3_cur_size.y - p3_cur_client_size.y + 20;
+
+	p3_best_size.x = std::min<int>(p3_best_size.x, client_size.x - 8);
+	p3_best_size.y = std::min<int>(p3_best_size.y, client_size.y - 8);
+
+	this->GetSizer()->SetItemMinSize(m_pP3, p3_best_size);
+	this->GetSizer()->Layout();
+}
+
+void COCRPanel::RefreshData()
+{
 }
 
 void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)

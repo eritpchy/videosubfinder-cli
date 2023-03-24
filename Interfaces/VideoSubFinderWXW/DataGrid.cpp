@@ -475,18 +475,7 @@ void CDataGrid::OnGridCellChanging(wxGridEvent& event)
 
 void CDataGrid::OnSize(wxSizeEvent& event)
 {
-	wxRect rcDG;
-	int dw = 18;
-
-	rcDG = this->GetSize();
-
-	if (rcDG.width != m_w)
-	{
-		this->SetColSize(0, (2*(rcDG.width-dw))/3);
-		this->SetColSize(1, (rcDG.width-dw)/3);
-
-		m_w = rcDG.width;
-	}
+	RefreshData();
 }
 
 void CDataGrid::RefreshData()
