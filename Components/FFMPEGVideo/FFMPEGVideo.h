@@ -88,6 +88,8 @@ public:
 	AVStream *video = NULL;
 #ifdef WIN32
 	const AVCodec *decoder = NULL;
+#elif defined(__APPLE__)
+	const AVCodec *decoder = NULL;
 #else
 	 AVCodec *decoder = NULL;
 #endif

@@ -3,12 +3,13 @@ FROM nvidia/cuda:11.7.0-devel-ubuntu20.04 as builder
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
 ARG USE_GUI=0
 RUN --mount=type=cache,target=/var/cache/apt \
-    apt update \
-    && DEBIAN_FRONTEND=noninteractive apt install -y git cmake wget libtbb-dev \
-       libavcodec-dev libgtk-3-dev libavformat-dev libswscale-dev libavfilter-dev \
+    apt update
+RUN --mount=type=cache,target=/var/cache/apt \
+    DEBIAN_FRONTEND=noninteractive apt install -y git cmake wget libtbb-dev \
+      libavcodec-dev libgtk-3-dev libavformat-dev libswscale-dev libavfilter-dev \
     && if [[ "USE_GUI" = "1" ]] ; then DEBIAN_FRONTEND=noninteractive apt install -y \
-          build-essential libgtk-3-dev ffmpeg libavutil-dev libx264-dev \
-       ;fi
+        build-essential libgtk-3-dev ffmpeg libavutil-dev libx264-dev \
+      ;fi
 ENV http_proxy http://192.168.50.86:10801
 ENV https_proxy http://192.168.50.86:10801
 ENV all_proxy http://192.168.50.86:10801
