@@ -2,10 +2,13 @@ FROM ubuntu:20.04 as builder
 # Allow ubuntu to cache package downloads
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
 RUN --mount=type=cache,target=/var/cache/apt \
-    apt update \
-    && DEBIAN_FRONTEND=noninteractive apt install -y git build-essential libgtk-3-dev ffmpeg libavcodec-dev libavformat-dev \
-      libavutil-dev libswscale-dev libx264-dev cmake libavcodec-dev libavformat-dev \
-      libavutil-dev libswscale-dev libavfilter-dev libtbb-dev wget
+    apt update
+RUN --mount=type=cache,target=/var/cache/apt \
+    DEBIAN_FRONTEND=noninteractive apt install -y git cmake wget libtbb-dev \
+      libavcodec-dev libgtk-3-dev libavformat-dev libswscale-dev libavfilter-dev build-essential \
+    && if [[ "USE_GUI" = "1" ]] ; then DEBIAN_FRONTEND=noninteractive apt install -y \
+        libgtk-3-dev ffmpeg libavutil-dev libx264-dev \
+      ;fi
 ENV http_proxy http://192.168.50.86:10801
 ENV https_proxy http://192.168.50.86:10801
 ENV all_proxy http://192.168.50.86:10801

@@ -22,8 +22,14 @@
 #include <wx/string.h>
 #include <wx/wfstream.h>
 #include <fstream>
+#ifdef __APPLE__
+#define _LIBCPP_HAS_PARALLEL_ALGORITHMS
+#include "__pstl_execution"
+#include "__pstl_algorithm"
+#else
 #include <execution>
 #include <algorithm>
+#endif
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
 #include <opencv2/opencv.hpp>

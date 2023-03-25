@@ -37,7 +37,7 @@ else()
     else()
       find_package(wxWidgets REQUIRED COMPONENTS base)
     endif(USE_GUI)
-	find_package(OpenCV REQUIRED)
+	find_package(OpenCV REQUIRED COMPONENTS videoio)
 endif(WIN32)
 
 if(USE_CUDA)

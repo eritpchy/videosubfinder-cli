@@ -1,0 +1,210 @@
+
+name: Build Darwin X64
+
+permissions:
+  contents: write
+# Controls when the action will run.
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+  # schedule:
+  #   - cron: "0 0 * * */3"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'
+
+env:
+  TZ: Asia/Shanghai
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  buildx:
+    runs-on: macos-12
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Get current date
+        id: date
+        run: echo "::set-output name=today::$(date +'%Y%m%d')"
+      -
+        name: Assign release version
+        run: |
+          cat Interfaces/VideoSubFinderWXW/MyResource.h| grep VSF_VERSION | sed -E 's/.+VSF_VERSION.+"(.+)"/release_version=\1/g' >> $GITHUB_ENV
+      -
+        name: Empty Homebrew downloads cache
+        run: rm -rfv ~/Library/Caches/Homebrew/downloads/* || true
+      -
+        name: Restore Homebrew cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads/
+          key: brew-
+      -
+        name: Install dependencies
+        run: HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake wxwidgets@3.2 opencv@4 ffmpeg tbb
+      -
+        name: Save Homebrew cache
+        id: cache-primes-save
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads/
+          key: brew-
+      -
+        name: Build
+        run: |
+          alias nproc="sysctl -n hw.logicalcpu" && \
+          cd Build && \
+          cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ -DLIBCXX_ENABLE_PARALLEL_ALGORITHMS=YES \
+            -DFFMPEG_INCLUDE_DIRS=$(readlink -f /usr/local/Cellar/ffmpeg/5*/include) \
+            -DPSTL_PARALLEL_BACKEND="tbb" -DCMAKE_CXX_FLAGS=-isystem\ $(readlink -f /usr/local/Cellar/tbb/2*/include) ..  && \
+          make VERBOSE=1 -j$(nproc) && \
+          true
+      -
+        name: Copy dependencies
+        run: |
+          cd Build && \
+          mkdir work && \
+          mkdir work/lib && \
+          cd work && \
+          cp -fv /usr/local/lib/libwx_baseu-3.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopencv_videoio.407.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libavcodec.59.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libavformat.59.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libavutil.57.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libswscale.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libavfilter.8.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtbb.12.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libwx_osx_cocoau_core-3.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopencv_imgcodecs.407.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopencv_imgproc.407.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopencv_core.407.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsystem_pthread.dylib lib/ || true; \
+          cp -fv /usr/local/lib/liblzma.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libGIF.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libpcre2-32.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libjpeg.8.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libwebp.7.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libpng16.16.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtiff.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopenjp2.7.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libOpenEXR-3_1.30.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libImath-3_1.30.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libIlmThread-3_1.30.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libIex-3_1.30.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopenblas.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libgfortran.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libgomp.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libquadmath.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libgcc_s.1.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsharpyuv.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libzstd.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libswresample.4.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libvpx.8.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libwebpmux.3.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libaribb24.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libdav1d.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopencore-amrwb.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsnappy.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libaom.3.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libvmaf.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libjxl.0.8.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libmp3lame.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopencore-amrnb.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libopus.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/librav1e.0.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libspeex.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libSvtAv1Enc.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtheoraenc.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtheoradec.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libogg.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libvorbis.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libvorbisenc.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libx264.164.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libx265.199.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsoxr.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libX11.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libxcb.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libXau.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libXdmcp.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libhwy.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libbrotlidec.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libbrotlicommon.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libbrotlienc.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libbluray.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libgnutls.30.dylib lib/ || true; \
+          cp -fv /usr/local/lib/librist.4.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsrt.1.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libzmq.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libfontconfig.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libfreetype.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libintl.8.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libp11-kit.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libidn2.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libunistring.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtasn1.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libnettle.8.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libhogweed.6.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libgmp.10.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libmbedcrypto.13.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libcjson.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libssl.1.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libcrypto.1.1.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsodium.23.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libpostproc.56.dylib lib/ || true; \
+          cp -fv /usr/local/lib/librubberband.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libsamplerate.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtesseract.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libass.9.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libvidstab.1.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libzimg.2.dylib lib/ || true; \
+          cp -fv /usr/local/lib/liblept.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libfribidi.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libharfbuzz.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libunibreak.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libglib-2.0.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libgraphite2.3.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libpcre2-8.0.dylib lib/ || true; \
+          cp -fv ../Interfaces/VideoSubFinderCli/VideoSubFinderCli . && \
+          cp -fv ../Darwin_x64/* . && \
+          true
+      -
+        name: Archive artifacts
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          type: 'tar'
+          filename: 'videosubfinder-cli-darwin-x64.tar.gz'
+          directory: 'Build/work'
+          path: "."
+      -
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: videosubfinder-cli-darwin-x64.tar.gz
+          path: |
+            ./Build/work/videosubfinder-cli-darwin-x64.tar.gz
+      -
+        name: Release draft
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          name: "${{ env.release_version }}"
+          tag_name: "${{ env.release_version }}-ci"
+          files: |
+            ./Build/work/videosubfinder-cli-darwin-x64.tar.gz
+          body: "[Github Action](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})"
