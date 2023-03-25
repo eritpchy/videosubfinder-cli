@@ -6,5 +6,5 @@ RUN --mount=type=cache,target=/var/cache/apt \
     apt update \
     && DEBIAN_FRONTEND=noninteractive apt install -y libavcodec58 \
     libavformat58 libswscale5 libavfilter7 libpcre2-32-0 libtbb2
-ADD build/cuda/VideoSubFinderCli.tar.gz /usr/lib
+ADD build/cuda/videosubfinder-cli-cuda-linux-x64.tar.gz /usr/lib
 RUN ls /usr/lib -l && mv /usr/lib/VideoSubFinderCli /

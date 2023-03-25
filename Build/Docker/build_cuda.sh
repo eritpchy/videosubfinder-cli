@@ -3,9 +3,9 @@ set -e
 cd ${0%/*}
 if [[ "$GITHUB_ACTION" ]]; then
   docker buildx build --cache-from type=gha --cache-to type=gha,mode=max \
-    -t videosubfinder-build:cuda -f build_cuda.Dockerfile ..
+    -t videosubfinder-build:cuda -f build_cuda.Dockerfile ../..
 else
-  docker build -t videosubfinder-build:cuda -f build_cuda.Dockerfile ..
+  docker build -t videosubfinder-build:cuda -f build_cuda.Dockerfile ../..
 fi
 mkdir -p build/cuda/
 docker run --rm -v $PWD/build/cuda/:$PWD/build/cuda/ videosubfinder-build:cuda \

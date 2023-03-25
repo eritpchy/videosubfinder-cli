@@ -1,5 +1,5 @@
 
-name: Build Linux X64
+name: Build CUDA Linux X64
 
 permissions:
   contents: write
@@ -44,19 +44,8 @@ jobs:
         run: |
           cat Interfaces/VideoSubFinderWXW/MyResource.h| grep VSF_VERSION | sed -E 's/.+VSF_VERSION.+"(.+)"/release_version=\1/g' >> $GITHUB_ENV
       -
-        name: Build cpu
-        run: bash ./Build/Docker/build.sh
-      -
         name: Build cuda
         run: bash ./Build/Docker/build_cuda.sh
-      -
-        name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: videosubfinder-cli-cpu-linux-x64.tar.gz
-          path: |
-            ./Build/Docker/build/cpu/videosubfinder-cli-cpu-linux-x64.tar.gz
-            ./Build/Docker/build/cuda/videosubfinder-cli-cuda-linux-x64.tar.gz
       -
         name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -72,6 +61,5 @@ jobs:
           name: "${{ env.release_version }}"
           tag_name: "${{ env.release_version }}-ci"
           files: |
-            ./Build/Docker/build/cpu/videosubfinder-cli-cpu-linux-x64.tar.gz
             ./Build/Docker/build/cuda/videosubfinder-cli-cuda-linux-x64.tar.gz
           body: "[Github Action](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})"
