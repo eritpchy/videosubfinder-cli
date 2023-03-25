@@ -36,7 +36,7 @@ jobs:
       -
         name: Test
         run: |
-          chmod +x ./Build/VideoSubFinderCli.run && \
           chmod +x ./Build/VideoSubFinderCli && \
+          chmod +x ./Build/VideoSubFinderCli.run && \
           ./Build/VideoSubFinderCli.run && \
           true
