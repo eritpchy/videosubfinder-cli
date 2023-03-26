@@ -709,8 +709,17 @@ public:
 						__itt_task_begin(domain, __itt_null, __itt_null, shOneStep);
 #endif
 						custom_set_started(p_events_one_step[fdn + i]);
-						*(pPos[fdn + i]) = pV->OneStepWithTimeout();						
-						pV->GetFrameData(*(pFrameData[fdn + i]));
+
+						if ((fn == 0) && (i == 0))
+						{
+							*(pPos[fdn + i]) = pV->GetPos();
+							pV->GetFrameData(*(pFrameData[fdn + i]));
+						}
+						else
+						{
+							*(pPos[fdn + i]) = pV->OneStepWithTimeout();
+							pV->GetFrameData(*(pFrameData[fdn + i]));
+						}
 #ifdef CUSTOM_TA
 						__itt_task_end(domain);
 #endif
@@ -1226,7 +1235,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 
 	int fn_start;
 		
-	fn_start = fn = 0;
+	fn_start = fn;
 	max_rgb_fn = -1;
 
 	while (((CurPos < End) || (End < 0)) && (g_RunSubSearch == 1) && (CurPos != prevPos))
@@ -1438,7 +1447,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 		pIm = ImForward[0];
 
 		prevPos = rs.GetPos(fn - 1);
-		CurPos = PosForward[0];		
+		CurPos = PosForward[0];
 
 #ifdef CUSTOM_DEBUG
 		{
@@ -1673,7 +1682,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 								}
 #endif
 							}
-							finded_prev = 1;
+							finded_prev = 1;							
 
 #ifdef CUSTOM_DEBUG
 							SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): seting: finded_prev = 1, ImFSP = ImFS [(bln(GetIntersectImages) > 0) && bf != -2 && bln(CompareTwoSubsOptimal(ImIntS..pImInt)) == 0 && pef(%d) - pbf(%d) + 1 >= DL(%d)]\n", (int)__LINE__, fn, pef, pbf, DL));
@@ -1970,6 +1979,19 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 #ifdef CUSTOM_TA 
 		__itt_task_end(domain);
 #endif
+	}
+
+	if (finded_prev == 1)
+	{
+		if (AnalizeImageForSubPresence(ImNESP, ImIntSP, ImYSP, pbt, bf, w, h, W, H, 0, w - 1) == 1)
+		{
+#ifdef CUSTOM_DEBUG
+			SaveToReportLog(wxString::Format("FastSearchSubtitles [line: %d]: fn(%d): finded_prev == 1 saving: ImFSP\n", (int)__LINE__, fn));
+#endif
+
+			Str = VideoTimeToStr(pbt) + wxT("__") + VideoTimeToStr(pet) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h);
+			rs.AddSaveImagesTask(ImFSP, ImIntSP, ImYSP, Str);
+		}
 	}
 
 	g_pV = NULL;
