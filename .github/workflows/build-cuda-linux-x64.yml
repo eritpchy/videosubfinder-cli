@@ -1,0 +1,65 @@
+
+name: Build CUDA Linux X64
+
+permissions:
+  contents: write
+# Controls when the action will run.
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+  # schedule:
+  #   - cron: "0 0 * * */3"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'
+
+env:
+  TZ: Asia/Shanghai
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  buildx:
+    runs-on: ubuntu-22.04
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Get current date
+        id: date
+        run: echo "::set-output name=today::$(date +'%Y%m%d')"
+      -
+        name: Assign release version
+        run: |
+          cat Interfaces/VideoSubFinderWXW/MyResource.h| grep VSF_VERSION | sed -E 's/.+VSF_VERSION.+"(.+)"/release_version=\1/g' >> $GITHUB_ENV
+      -
+        name: Build cuda
+        run: bash ./Build/Docker/build_cuda.sh
+      -
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: videosubfinder-cli-cuda-linux-x64.tar.gz
+          path: |
+            ./Build/Docker/build/cuda/videosubfinder-cli-cuda-linux-x64.tar.gz
+      -
+        name: Release draft
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          name: "${{ env.release_version }}"
+          tag_name: "${{ env.release_version }}-ci"
+          files: |
+            ./Build/Docker/build/cuda/videosubfinder-cli-cuda-linux-x64.tar.gz
+          body: "[Github Action](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})"
