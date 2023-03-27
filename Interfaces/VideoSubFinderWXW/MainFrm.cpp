@@ -1989,13 +1989,11 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
 		wxFFileOutputStream ffout(pvi_path);
 		wxTextOutputStream fout(ffout);
-		fout <<	m_FileName << '\n';
 
-		fout <<	(int)m_BegTime << '\n';
-
-		fout <<	(int)m_EndTime << '\n';
-
-		fout <<	m_type << '\n';
+		WriteProperty(fout, m_FileName, "FileName");
+		WriteProperty(fout, (int)m_BegTime, "BegTime");
+		WriteProperty(fout, (int)m_EndTime, "EndTime");
+		WriteProperty(fout, m_type, "type");
 
 		fout.Flush();
 		ffout.Close();
@@ -2031,24 +2029,20 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 
 void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 {
-	wxString str;
+	int int_val;
 	wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
-	wxFileInputStream ffin(pvi_path);
 
-	if (ffin.IsOk())
+	if (wxFileExists(pvi_path))
 	{
-		wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
-		
-		m_FileName = fin.ReadLine();
+		std::map<wxString, wxString> previous_vido_settings;
+		ReadSettings(pvi_path, previous_vido_settings);
 
-		str = fin.ReadLine();
-		m_BegTime = (s64)wxAtoi(str);
-
-		str = fin.ReadLine();
-		m_EndTime = (s64)wxAtoi(str);
-
-		str = fin.ReadLine();
-		m_type = (s64)wxAtoi(str);
+		ReadProperty(previous_vido_settings, m_FileName, "FileName");
+		ReadProperty(previous_vido_settings, int_val, "BegTime");
+		m_BegTime = int_val;
+		ReadProperty(previous_vido_settings, int_val, "EndTime");
+		m_EndTime = int_val;
+		ReadProperty(previous_vido_settings, m_type, "type");
 
 		m_blnReopenVideo = true;
 

@@ -785,10 +785,30 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 {
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		wxString sub_name = (m_pMF->m_FileName.size() > 0) ? GetFileName(m_pMF->m_FileName) : wxT("sub");
+		wxString last_video_file;
+
+		if (m_pMF->m_FileName.size() > 0)
+		{
+			last_video_file = m_pMF->m_FileName;
+		}
+		else
+		{
+			wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
+
+			if (wxFileExists(pvi_path))
+			{
+				std::map<wxString, wxString> previous_vido_settings;
+				ReadSettings(pvi_path, previous_vido_settings);
+				ReadProperty(previous_vido_settings, last_video_file, "FileName");
+			}
+		}
+
+		wxString sub_name = (last_video_file.size() > 0) ? GetFileName(last_video_file) : wxT("sub");
+		wxString sub_dir = (last_video_file.size() > 0) ? GetFileDir(last_video_file) : g_work_dir;
+
 		m_sub_path.Clear();
 		wxFileDialog fd(m_pMF, g_cfg.m_file_dialog_title_save_subtitle_as,
-			g_work_dir, sub_name, g_cfg.m_file_dialog_title_save_subtitle_as_wild_card, wxFD_SAVE);
+			sub_dir, sub_name, g_cfg.m_file_dialog_title_save_subtitle_as_wild_card, wxFD_SAVE);
 		int res = fd.ShowModal();
 
 		if (res == wxID_OK)
