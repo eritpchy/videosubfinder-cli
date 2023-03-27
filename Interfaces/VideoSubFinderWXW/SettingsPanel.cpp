@@ -249,9 +249,6 @@ void CSettingsPanel::Init()
 	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_symbol_height, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_msh, 0.0, 1.0);
 	m_pOI->AddProperty(g_cfg.m_ssp_oi_property_min_symbol_density, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_msd, 0.0, 1.0);
 
-	m_pOI->SetColSize(0, m_pOI->GetClientSize().x*0.65);
-	m_pOI->SetColSize(1, m_pOI->GetClientSize().x*0.35);	
-
 	////////////////////////////////////////////////////////////////////////
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM...\n");
@@ -323,9 +320,6 @@ void CSettingsPanel::Init()
 	m_pOIM->AddSubGroup(g_cfg.m_ssp_oim_sub_group_settings_for_update_video_color, g_cfg.m_grid_sub_gropes_colour);
 	m_pOIM->AddProperty(g_cfg.m_label_video_contrast, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_video_contrast, 0.0, 10.0);
 	m_pOIM->AddProperty(g_cfg.m_label_video_gamma, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_video_gamma, 0.0, 10.0);
-
-	m_pOIM->SetColSize(0, m_pOIM->GetClientSize().x * 0.65);
-	m_pOIM->SetColSize(1, m_pOIM->GetClientSize().x * 0.35);
 
 	wxRect rlGSFN, rcGSFN, rlPixelColor, rcPixelColorRGB, rcPixelColorLab, rcPixelColorExample;
 	rlGSFN.x = rcLeft.x;
@@ -449,9 +443,9 @@ void CSettingsPanel::Init()
 		wxBoxSizer* gb3_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 		wxBoxSizer* test_result_sizer = new wxBoxSizer(wxHORIZONTAL);
-		test_result_sizer->Add(m_pLeft, 0, wxEXPAND | wxALL);
+		test_result_sizer->Add(m_pLeft, 0, wxEXPAND | wxSHAPED | wxALL);
 		test_result_sizer->Add(m_plblIF, 1, wxEXPAND | wxALL);
-		test_result_sizer->Add(m_pRight, 0, wxEXPAND | wxALL);
+		test_result_sizer->Add(m_pRight, 0, wxEXPAND | wxSHAPED | wxALL);
 
 		wxBoxSizer* rgb_lab_sizer = new wxBoxSizer(wxVERTICAL);
 		rgb_lab_sizer->Add(m_pPixelColorLab, 0, wxEXPAND | wxALL);

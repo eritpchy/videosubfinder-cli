@@ -440,12 +440,10 @@ CDataGrid::CDataGrid(	wxWindow* parent,
 	this->CreateGrid( 0, 2 );
 	this->SetRowLabelSize(0);
 
-	this->SetColLabelSize(20);
-	this->SetColLabelAlignment(wxALIGN_LEFT, wxALIGN_CENTRE);
-	SetGridColLaberls();
-
 	if (m_pFont) this->SetLabelFont(*m_pFont);
 	if (m_pTextColour) this->SetLabelTextColour(*m_pTextColour);
+	
+	SetGridColLaberls();
 }
 
 CDataGrid::~CDataGrid()
@@ -454,8 +452,21 @@ CDataGrid::~CDataGrid()
 
 void CDataGrid::SetGridColLaberls()
 {
-	this->SetColLabelValue(0, wxString(wxT(" ")) + *m_p_grid_col_property_label);
-	this->SetColLabelValue(1, wxString(wxT(" ")) + *m_p_grid_col_value_label);
+	if (m_pFont) this->SetLabelFont(*m_pFont);
+	if (m_pTextColour) this->SetLabelTextColour(*m_pTextColour);
+
+	wxClientDC dc(this);
+	if (m_pFont) dc.SetFont(*m_pFont);
+	if (m_pTextColour) dc.SetTextForeground(*m_pTextColour);
+	
+	wxString label_first = wxString(wxT(" ")) + *m_p_grid_col_property_label;
+	wxString label_second = wxString(wxT(" ")) + *m_p_grid_col_value_label;
+	int label_height = std::max<int>(dc.GetMultiLineTextExtent(label_first).y, dc.GetMultiLineTextExtent(label_second).y) + 6;
+
+	this->SetColLabelSize(label_height);
+	this->SetColLabelAlignment(wxALIGN_LEFT, wxALIGN_CENTRE);
+	this->SetColLabelValue(0, label_first);
+	this->SetColLabelValue(1, label_second);
 }
 
 void CDataGrid::OnGridCellChanging(wxGridEvent& event)
@@ -480,51 +491,58 @@ void CDataGrid::OnSize(wxSizeEvent& event)
 
 void CDataGrid::RefreshData()
 {
+	if (m_pFont) this->SetLabelFont(*m_pFont);
+	if (m_pTextColour) this->SetLabelTextColour(*m_pTextColour);
+
 	SetGridColLaberls();
 
-	if (m_pFont)
+	wxClientDC dc(this);
+	if (m_pFont) dc.SetFont(*m_pFont);
+	if (m_pTextColour) dc.SetTextForeground(*m_pTextColour);
+	int max_text_w = 0;
+	int cw = GetClientSize().x;
+	int first_col_size;
+	int dw = 4;
+	double max_percent = 0.85;
+
+	for (int index = 0; index < this->GetNumberRows(); index++)
 	{
-		wxClientDC dc(this);
-		dc.SetFont(*m_pFont);
-		if (m_pTextColour) dc.SetTextForeground(*m_pTextColour);
-		int max_text_w = 0;
-		int cw = GetClientSize().x;
-		double max_percent = 0.85;
+		if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
+		if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);		
+		wxString label = this->GetCellValue(index, 0);
+		wxSize text_size = dc.GetMultiLineTextExtent(label);
+		this->SetRowSize(index, text_size.GetHeight() + 6);
 
-		for (int index = 0; index < this->GetNumberRows(); index++)
+		int rows, cols;
+		this->GetCellSize(index, 0, &rows, &cols);
+
+		if (cols == 1)
 		{
-			this->SetCellFont(index, 0, *m_pFont);
-			if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);
-			wxString label = this->GetCellValue(index, 0);
-			wxSize text_size = dc.GetMultiLineTextExtent(label);
-			this->SetRowSize(index, text_size.GetHeight() + 6);
-
 			if (text_size.GetWidth() > max_text_w)
 			{
 				max_text_w = text_size.GetWidth();
 			}
 		}
-		max_text_w += 6;
-
-		if (max_text_w <= cw * 0.65)
-		{
-			SetColSize(0, cw * 0.65);
-			SetColSize(1, cw * 0.35);
-		}
-		else if (max_text_w <= cw * max_percent)
-		{
-			SetColSize(0, max_text_w);
-			SetColSize(1, cw - max_text_w);
-		}
-		else
-		{
-			SetColSize(0, cw * max_percent);
-			SetColSize(1, cw * (1.0 - max_percent));
-		}
-
-		this->SetLabelFont(*m_pFont);
-		if (m_pTextColour) this->SetLabelTextColour(*m_pTextColour);
 	}
+	max_text_w += 6;
+
+	if (max_text_w <= cw * 0.65)
+	{
+		first_col_size = cw * 0.65;
+		SetColSize(0, first_col_size);
+		SetColSize(1, cw - first_col_size - dw);
+	}
+	else if (max_text_w <= cw * max_percent)
+	{
+		SetColSize(0, max_text_w);
+		SetColSize(1, cw - max_text_w - dw);
+	}
+	else
+	{
+		first_col_size = cw * max_percent;
+		SetColSize(0, first_col_size);
+		SetColSize(1, cw - first_col_size - dw);
+	}	
 }
 
 void CDataGrid::AddGroup(wxString& label, wxColour colour)
