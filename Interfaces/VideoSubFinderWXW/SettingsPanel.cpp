@@ -555,7 +555,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 		m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));
 
-		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/DebugImages");
 
 		S = GetTransformedImage(ImBGR, m_ImF[0], m_ImF[1], m_ImF[2], m_ImF[3], m_ImF[4], m_w, m_h, m_W, m_H, 0, m_w - 1);
 
@@ -596,7 +596,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			m_pMF->get_video_box_lblVB_on_test_title();
 			m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_on_test_title);
 
-			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/DebugImages");
 
 			FindTextLinesRes res;
 			m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));

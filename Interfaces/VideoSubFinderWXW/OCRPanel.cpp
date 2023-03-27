@@ -1289,9 +1289,9 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 
 			if (g_show_results)
 			{
-				SaveBGRImage(res.m_ImBGR, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImBGR" + g_im_save_format, w, h);
-				SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
-				SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTF" + g_im_save_format, w, h);
+				SaveBGRImage(res.m_ImBGR, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImBGR" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTF" + g_im_save_format, w, h);
 			}
 		}		
 
@@ -1323,7 +1323,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 				{
 					simple_buffer<u8> ImTFOrig(ImTF);
 					LoadBinaryImage(ImTF, Str, w2, h2);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w2, h2);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w2, h2);
 
 					if (h2 != h)
 					{
@@ -1331,22 +1331,22 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 						GreyscaleImageToMat(ImTF, w2, h2, cv_ImGROrig);
 						cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), (double)w/w2, (double)h/h2);
 						BinaryMatToImage(cv_ImGR, w, h, ImTF, (u8)255);
-						if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageScaled" + g_im_save_format, w, h);
+						if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageScaled" + g_im_save_format, w, h);
 					}
 
-					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrig" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrig" + g_im_save_format, w, h);
 					CombineTwoImages(ImTFOrig, ImTF, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrigCombinedWithISAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrigCombinedWithISAImage" + g_im_save_format, w, h);
 
 					RestoreStillExistLines(ImTF, ImTFOrig, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageRestoredStillExistLinesByImTFOrig" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageRestoredStillExistLinesByImTFOrig" + g_im_save_format, w, h);
 
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
 					CombineTwoImages(ImFF, ImTF, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFCombinedWithISAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFCombinedWithISAImage" + g_im_save_format, w, h);
 
 					ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageExtImFF" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageExtImFF" + g_im_save_format, w, h);
 				}
 				else
 				{
@@ -1374,7 +1374,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 				{
 					ImIL.set_size(w * h);
 					LoadBinaryImage(ImIL, wxString(Str), w2, h2);
-					if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImage" + g_im_save_format, w2, h2);
+					if (g_show_results) SaveGreyscaleImage(ImIL, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImage" + g_im_save_format, w2, h2);
 
 					if (h2 != h)
 					{
@@ -1382,16 +1382,16 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 						GreyscaleImageToMat(ImIL, w2, h2, cv_ImGROrig);
 						cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), (double)w / w2, (double)h / h2);
 						BinaryMatToImage(cv_ImGR, w, h, ImIL, (u8)255);
-						if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImageScaled" + g_im_save_format, w, h);
+						if (g_show_results) SaveGreyscaleImage(ImIL, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImageScaled" + g_im_save_format, w, h);
 					}
 
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w, h);
 					IntersectTwoImages(ImTF, ImIL, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageIntILAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageIntILAImage" + g_im_save_format, w, h);
 
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
 					IntersectTwoImages(ImFF, ImIL, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFIntILAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFIntILAImage" + g_im_save_format, w, h);
 				}
 				else
 				{
@@ -1668,7 +1668,7 @@ void CreateClearedTextImages(vector<wxString>& FileNamesVector)
 
 	//t1 = GetTickCount();	
 
-	if (g_clear_test_images_folder) g_pMF->ClearDir(g_work_dir + "/TestImages");
+	if (g_clear_test_images_folder) g_pMF->ClearDir(g_work_dir + "/DebugImages");
 		
 	int NImages = FileNamesVector.size();
 

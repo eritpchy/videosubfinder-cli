@@ -606,7 +606,7 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 		simple_buffer<u8> ImMASK(w * h), ImInside(w * h);
 		GetMaskByPixelColorIsInRange(g_outline_color_ranges, ImMASK, pImBGR, pImLab, w, h);
 
-		if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_01_ImMASK" + g_im_save_format, w, h);
+		if (show_results) SaveGreyscaleImage(ImMASK, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_01_ImMASK" + g_im_save_format, w, h);
 
 		if (extend_outline)
 		{
@@ -632,10 +632,10 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 					}
 				}
 
-				if (show_results) SaveGreyscaleImage(ImMASK, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_02_ImMASKExt" + g_im_save_format, w, h);
-				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+				if (show_results) SaveGreyscaleImage(ImMASK, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_02_ImMASKExt" + g_im_save_format, w, h);
+				if (show_results) SaveBinaryImage(ImRes, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
 				IntersectTwoImages(ImRes, ImMASK, w, h, zero_value);
-				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_04_ImResIntImMSK" + g_im_save_format, w, h, -1, -1, zero_value);
+				if (show_results) SaveBinaryImage(ImRes, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_01_04_ImResIntImMSK" + g_im_save_format, w, h, -1, -1, zero_value);
 			}
 			else
 			{
@@ -649,10 +649,10 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 
 			if (GetImageWithInsideFigures(ImMASK, ImInside, w, h, (u8)255, true, true) > 0)
 			{
-				if (show_results) SaveGreyscaleImage(ImInside, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_02_ImInside" + g_im_save_format, w, h);
-				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+				if (show_results) SaveGreyscaleImage(ImInside, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_02_ImInside" + g_im_save_format, w, h);
+				if (show_results) SaveBinaryImage(ImRes, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_03_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
 				IntersectTwoImages(ImRes, ImInside, w, h, zero_value);
-				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_04_ImResIntImInside" + g_im_save_format, w, h, -1, -1, zero_value);
+				if (show_results) SaveBinaryImage(ImRes, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_04_ImResIntImInside" + g_im_save_format, w, h, -1, -1, zero_value);
 			}
 			else
 			{
@@ -689,7 +689,7 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 					}
 				}
 			}
-			if (show_results) SaveBinaryImage(*pIm, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_05_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
+			if (show_results) SaveBinaryImage(*pIm, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_05_ImRes" + g_im_save_format, w, h, -1, -1, zero_value);
 
 			if (extend_inline)
 			{
@@ -698,7 +698,7 @@ int FilterImageByPixelColorIsInRange(simple_buffer<T>& ImRes, simple_buffer<u8>*
 				cv::dilate(cv_im_gr, cv_im_gr, cv::Mat(), cv::Point(-1, -1), 2);
 				BinaryMatToImage(cv_im_gr, w, h, ImTMP, (T)255);
 				IntersectTwoImages(ImRes, ImTMP, w, h);
-				if (show_results) SaveBinaryImage(ImRes, "/TestImages/FilterImageByPixelColorIsInRange_" + iter_det + "_06_ImResDilate" + g_im_save_format, w, h, -1, -1, zero_value);
+				if (show_results) SaveBinaryImage(ImRes, "/DebugImages/FilterImageByPixelColorIsInRange_" + iter_det + "_06_ImResDilate" + g_im_save_format, w, h, -1, -1, zero_value);
 			}
 
 			if (cnt == 0)
