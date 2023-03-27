@@ -157,6 +157,12 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\x86\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -192,6 +198,12 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\x64\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -228,7 +240,10 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\x86\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|Win32'">
@@ -267,6 +282,12 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\x86\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -307,7 +328,10 @@
       </DataExecutionPrevention>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\x64\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|x64'">
@@ -349,7 +373,10 @@
       </DataExecutionPrevention>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.* $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\x64\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
