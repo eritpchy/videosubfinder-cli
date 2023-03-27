@@ -1035,8 +1035,9 @@ void CVideoBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		m_pVBox->m_pVideoWnd->Refresh(false);
-		m_pVBox->m_pVideoWnd->Update();
+		//m_pVBox->m_pVideoWnd->Refresh(false);
+		//m_pVBox->m_pVideoWnd->Update();
+		m_pVBox->Refresh(false);
 	}
 }
 
@@ -1059,8 +1060,9 @@ void CVideoBox::ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		m_pVBox->m_pVideoWnd->Refresh(false);
-		m_pVBox->m_pVideoWnd->Update();
+		//m_pVBox->m_pVideoWnd->Refresh(false);
+		//m_pVBox->m_pVideoWnd->Update();
+		m_pVBox->Refresh(false);
 	}
 }
 
@@ -1082,8 +1084,9 @@ void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		m_pVBox->m_pVideoWnd->Refresh(false);
-		m_pVBox->m_pVideoWnd->Update();
+		//m_pVBox->m_pVideoWnd->Refresh(false);
+		//m_pVBox->m_pVideoWnd->Update();
+		m_pVBox->Refresh(false);
 	}
 }
 
@@ -1097,7 +1100,8 @@ void CVideoBox::ClearScreen()
 		delete m_pImage;
 		m_pImage = new wxImage(w, h);
 	}
-	m_pVBox->m_pVideoWnd->Refresh(false);
+	//m_pVBox->m_pVideoWnd->Refresh(false);
+	m_pVBox->Refresh(false);
 }
 
 void CVideoBox::OnHScroll(wxScrollEvent& event)

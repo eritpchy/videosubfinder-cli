@@ -333,16 +333,19 @@ void CSeparatingLine::UpdateSL()
 		rc.height = m_h+2*m_sh;
 	}
 
-	//this->Show(false);
+
+#ifdef WIN32
+	this->Show(false);
+#endif
 
 	this->SetSize(rc);
 
-	//this->Show(true);
-
-	//this->Raise();
+#ifdef WIN32
+	this->Show(true);
+	this->Raise();
+#endif
 
 	this->Refresh(true);
-	//this->Update();
 }
 
 void CSeparatingLine::OnPaint(wxPaintEvent& WXUNUSED(event))
@@ -371,8 +374,6 @@ void CSeparatingLine::OnPaint(wxPaintEvent& WXUNUSED(event))
 	{
 		dc.DrawRectangle(m_sw, m_sh, m_w, m_h);
 	}
-
-	//this->Update();
 }
 
 void CSeparatingLine::OnEraseBackground(wxEraseEvent &event)
@@ -402,6 +403,4 @@ void CSeparatingLine::OnEraseBackground(wxEraseEvent &event)
 	{
 		pdc->DrawRectangle(m_sw, m_sh, m_w, m_h);
 	}
-
-	//this->Update();
 }
