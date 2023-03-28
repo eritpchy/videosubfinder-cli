@@ -160,7 +160,7 @@
     <PostBuildEvent>
       <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
 xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
-xcopy /Y ..\..\Settings\x86\general.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
 xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -201,7 +201,7 @@ xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     <PostBuildEvent>
       <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
 xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
-xcopy /Y ..\..\Settings\x64\general.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
 xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -242,7 +242,7 @@ xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     <PostBuildEvent>
       <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
 xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
-xcopy /Y ..\..\Settings\x86\general.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
 xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -285,7 +285,7 @@ xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     <PostBuildEvent>
       <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
 xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
-xcopy /Y ..\..\Settings\x86\general.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
 xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -330,7 +330,7 @@ xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     <PostBuildEvent>
       <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
 xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
-xcopy /Y ..\..\Settings\x64\general.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
 xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -375,7 +375,7 @@ xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     <PostBuildEvent>
       <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
 xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
-xcopy /Y ..\..\Settings\x64\general.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
 xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

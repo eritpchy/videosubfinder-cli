@@ -50,6 +50,7 @@ wxDEFINE_EVENT(VIEW_BGR_IMAGE_IN_VIDEO_BOX, wxThreadEvent);
 wxDEFINE_EVENT(VIEW_RGB_IMAGE, wxThreadEvent);
 
 void LoadLocaleSettings(wxString settings_path);
+void UpdateSettingsInFile(wxString SettingsFilePath, std::map<wxString, wxString> settings);
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -516,8 +517,22 @@ void CMainFrame::Init()
 #ifdef WIN32
 	this->SetSize(0, 0, w, h - 50);
 #else
-	this->SetSize(w/16, h/14, (7*w)/8, (6*h)/7);
+	this->SetSize(w / 16, h / 14, (7 * w) / 8, (6 * h) / 7);
 #endif
+
+	if (g_cfg.m_vsf_is_maximized)
+	{
+		this->Maximize();
+	}
+	else if ((g_cfg.m_vsf_x >= 0) &&
+		(g_cfg.m_vsf_y >= 0) &&
+		(g_cfg.m_vsf_w > 0) &&
+		(g_cfg.m_vsf_h > 0) && 
+		(g_cfg.m_vsf_x + g_cfg.m_vsf_w <= w) &&
+		(g_cfg.m_vsf_y + g_cfg.m_vsf_h <= h) )
+	{
+		this->SetSize(g_cfg.m_vsf_x, g_cfg.m_vsf_y, g_cfg.m_vsf_w, g_cfg.m_vsf_h);
+	}
 
 	SaveToReportLog("CMainFrame::Init(): m_pPanel->Init()...\n");
 	m_pPanel->Init();
@@ -532,7 +547,7 @@ void CMainFrame::Init()
 
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->SetSize(..)...\n");
 	m_pVideoBox->SetSize(m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
-	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Show(true)...\n");	
+	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Show(true)...\n");
 	m_pVideoBox->Show(true);	
 
 	m_WasInited = true;	
@@ -548,10 +563,6 @@ void CMainFrame::Init()
 	this->Bind(VIEW_BGR_IMAGE_IN_IMAGE_BOX, &CMainFrame::OnViewBGRImageInImageBox, this);
 	this->Bind(VIEW_BGR_IMAGE_IN_VIDEO_BOX, &CMainFrame::OnViewBGRImageInVideoBox, this);
 	this->Bind(VIEW_RGB_IMAGE, &CMainFrame::OnViewRGBImage, this);
-
-#ifndef WIN32
-	m_bUpdateSizes = true;
-#endif
 
 	SaveToReportLog("CMainFrame::Init(): finished.\n");
 }
@@ -656,21 +667,16 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 #endif
 	}
 	
-	if (m_bUpdateSizes)
-	{		
-		m_pImageBox->SetSize(cw / 2 + m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
-		m_pVideoBox->SetSize(m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
-		m_bUpdateSizes = false;
-	}
-
 	if (m_pImageBox)
 	{
+		m_pImageBox->SetSize(cw / 2 + m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
 		m_pImageBox->Raise();
 		m_pImageBox->Refresh();
 	}
 
 	if (m_pVideoBox)
 	{
+		m_pVideoBox->SetSize(m_dx, m_dy, cw / 2 - 2 * m_dx, ch - m_ph - 2 * m_dy);
 		m_pVideoBox->Raise();
 		m_pVideoBox->Refresh();
 	}
@@ -1085,29 +1091,7 @@ void CMainFrame::OnLocalization(wxCommandEvent& event)
 	CControl::UpdateAllControlsSize();
 	this->Refresh();
 
-	custom_buffer<char> data;
-	{
-		wxFileInputStream ffin(g_GeneralSettingsFileName);
-		size_t size = ffin.GetSize();
-		data.set_size(size + 1);
-		ffin.ReadAll(data.m_pData, size);
-		data.m_pData[size] = '\0';
-	}
-
-	wxString str = wxString(data.m_pData, wxConvUTF8);
-	str.Replace(wxString(wxT("\r")), wxString(), true);
-
-	wxRegEx re_bt(wxT("prefered_locale[[:space:]]*=[[:space:]]*[a-z]+"));
-	if (re_bt.Matches(str))
-	{
-		re_bt.Replace(&str, wxT("prefered_locale = ") + g_cfg.m_prefered_locale);
-
-		wxFFileOutputStream ffout(g_GeneralSettingsFileName);
-		wxTextOutputStream fout(ffout);
-		fout << str;
-		fout.Flush();
-		ffout.Close();
-	}
+	UpdateSettingsInFile(g_GeneralSettingsFileName, std::map<wxString, wxString>{ {wxString(wxT("prefered_locale")), g_cfg.m_prefered_locale} });
 }
 
 void CMainFrame::OnNextFrame(wxCommandEvent& event)
@@ -1198,6 +1182,12 @@ void LoadSettings()
 	ReadSettings(g_GeneralSettingsFileName, g_general_settings);
 
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings...\n");
+
+	ReadProperty(g_general_settings, g_cfg.m_vsf_is_maximized, "vsf_is_maximized");
+	ReadProperty(g_general_settings, g_cfg.m_vsf_x, "vsf_x");
+	ReadProperty(g_general_settings, g_cfg.m_vsf_y, "vsf_y");
+	ReadProperty(g_general_settings, g_cfg.m_vsf_w, "vsf_w");
+	ReadProperty(g_general_settings, g_cfg.m_vsf_h, "vsf_h");
 
 	ReadProperty(g_general_settings, g_cfg.m_main_text_colour, "main_text_colour");
 	ReadProperty(g_general_settings, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
@@ -1584,6 +1574,13 @@ void SaveSettings()
 	g_pMF->m_pPanel->m_pSSPanel->m_pOIM->SaveEditControlValue();
 
 	WriteProperty(fout, g_cfg.m_prefered_locale, "prefered_locale");
+
+	WriteProperty(fout, g_pMF->IsMaximized(), "vsf_is_maximized");
+	wxRect rcMF = g_pMF->GetRect();
+	WriteProperty(fout, rcMF.x, "vsf_x");
+	WriteProperty(fout, rcMF.y, "vsf_y");
+	WriteProperty(fout, rcMF.width, "vsf_w");
+	WriteProperty(fout, rcMF.height, "vsf_h");
 
 	WriteProperty(fout, g_cfg.process_affinity_mask, "process_affinity_mask");
 
@@ -2009,6 +2006,21 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		ffout.Close();
 	}
 
+	if (!m_blnNoGUI)
+	{
+		wxRect rcMF = g_pMF->GetRect();
+		wxRect rcVB = g_pMF->m_pVideoBox->GetRect();
+		wxRect rcIB = g_pMF->m_pImageBox->GetRect();
+
+		UpdateSettingsInFile(g_GeneralSettingsFileName, std::map<wxString, wxString>{
+			{ wxT("vsf_is_maximized"), wxString::Format(wxString(wxT("%d")), g_pMF->IsMaximized() ? 1 : 0) },
+			{ wxT("vsf_x"), wxString::Format(wxString(wxT("%d")), rcMF.x) },
+			{ wxT("vsf_y"), wxString::Format(wxString(wxT("%d")), rcMF.y) },
+			{ wxT("vsf_w"), wxString::Format(wxString(wxT("%d")), rcMF.width) },
+			{ wxT("vsf_h"), wxString::Format(wxString(wxT("%d")), rcMF.height) }
+		});
+	}
+
 	{
 		std::unique_lock<std::mutex> lock(m_pPanel->m_pSHPanel->m_rs_mutex);
 		if (g_IsSearching == 1)
@@ -2271,6 +2283,37 @@ void CMainFrame::OnSetPriorityHigh(wxCommandEvent& event)
 	HANDLE m_hCurrentProcess = GetCurrentProcess();
 	BOOL res = SetPriorityClass(m_hCurrentProcess, HIGH_PRIORITY_CLASS);
 #endif
+}
+
+void UpdateSettingsInFile(wxString SettingsFilePath, std::map<wxString, wxString> settings)
+{
+	custom_buffer<char> data;
+	{
+		wxFileInputStream ffin(SettingsFilePath);
+		size_t size = ffin.GetSize();
+		data.set_size(size + 1);
+		ffin.ReadAll(data.m_pData, size);
+		data.m_pData[size] = '\0';
+	}
+
+	wxString str = wxString(data.m_pData, wxConvUTF8);
+	str.Replace(wxString(wxT("\r")), wxString(), true);
+
+	for (std::map<wxString, wxString>::const_reference val : settings)
+	{
+		wxString search = wxString::Format(wxT("(^|\n)(%s[[:space:]]*=[^\n]+)"), val.first);
+		wxRegEx re(search);
+		if (re.Matches(str))
+		{
+			re.Replace(&str, re.GetMatch(str, 1) + wxString::Format(wxT("%s = %s"), val.first, val.second), 1);
+		}
+	}
+
+	wxFFileOutputStream ffout(SettingsFilePath);
+	wxTextOutputStream fout(ffout);
+	fout << str;
+	fout.Flush();
+	ffout.Close();
 }
 
 void WriteProperty(wxTextOutputStream& fout, int val, wxString Name)

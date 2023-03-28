@@ -314,6 +314,12 @@ public:
 	wxArrayString	m_available_text_alignments;
 	wxArrayString	m_available_hw_device_types;
 	vector<wxString> m_StrFN;
+
+	bool		m_vsf_is_maximized = false;
+	int			m_vsf_x = -1;
+	int			m_vsf_y = -1;
+	int			m_vsf_w = -1;
+	int			m_vsf_h = -1;
 };
 
 class CMainFrame : public wxFrame
@@ -351,7 +357,6 @@ public:
 	int			m_cw; //client width
 	int			m_ch; //client height
 
-	bool	    m_bUpdateSizes = false;
 	int 		m_dx = 20;
 	int 		m_dy = 10;
 	int			m_ph = 310; //panel height
