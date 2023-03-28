@@ -63,7 +63,8 @@ public:
 	int	m_xmax = 0;
 	int	m_ymax = 0;
 
-	vector<wxString> m_SavedFiles;
+	wxString m_SaveDir;
+	wxString m_BaseImgName;
 	simple_buffer<u8> m_ImBGR;
 	simple_buffer<u8> m_ImClearedText;
 	simple_buffer<u8>* m_pImFF = NULL;
@@ -72,8 +73,9 @@ public:
 	simple_buffer<u8>* m_pImNE = NULL;
 	simple_buffer<u8>* m_pImY = NULL;
 
-	FindTextLinesRes()
+	FindTextLinesRes(wxString SaveDir)
 	{
+		m_SaveDir = SaveDir;
 	}
 };
 
@@ -153,7 +155,7 @@ public:
 	wxString  m_Name;
 };
 
-void CreateClearedTextImages(vector<wxString>& FileNamesVector);
+void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir);
 
 class COCRPanel : public wxPanel, public CControl
 {

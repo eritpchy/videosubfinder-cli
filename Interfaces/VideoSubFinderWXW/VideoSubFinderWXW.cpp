@@ -296,6 +296,8 @@ bool CVideoSubFinderApp::OnInit()
 	wxFileName::Mkdir(g_work_dir + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTImagesJoined", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/TestImages/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/TestImages/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 
 	if (wxCMD_SWITCH_ON == g_pParser->FoundSwitch("c"))
 	{

@@ -1264,7 +1264,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, 
 {
 	try
 	{
-		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SaveDir, res->m_BaseImgName, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
 	}
 	catch (const exception& e)
 	{
@@ -1425,7 +1425,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 			}			
 		}		
 
-		res.m_SavedFiles.push_back(BaseImgName);
+		res.m_BaseImgName = BaseImgName;
 
 		FindTextLinesWithExcFilter(&res, &ImTF, &ImFF, &ImNE, &ImIL);
 
@@ -1607,7 +1607,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
 			}
 
-			m_CCTIThread = std::thread(CreateClearedTextImages, FileNamesVector);
+			m_CCTIThread = std::thread(CreateClearedTextImages, FileNamesVector, wxString(wxT("/TXTImages/")));
 
 			if (m_pMF->m_blnNoGUI)
 			{
@@ -1639,7 +1639,7 @@ void COCRPanel::OnUpdateCCTIProgress(wxThreadEvent& event)
 	m_pMF->m_pVideoBox->m_pSB->SetScrollPos(pd.m_SBpos);
 }
 
-void CreateClearedTextImages(vector<wxString>& FileNamesVector)
+void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir)
 {
 	g_IsCreateClearedTextImages = 1;
 	
@@ -1702,7 +1702,7 @@ void CreateClearedTextImages(vector<wxString>& FileNamesVector)
 
 		for (k = 0; k < NImages; k++)
 		{
-			task_results[k] = new FindTextLinesRes();
+			task_results[k] = new FindTextLinesRes(SaveDir);
 			task_events[k] = new my_event();
 			find_text_queue_data queue_data{ FileNamesVector[k], task_results[k], task_events[k] };
 			task_queue.push(queue_data);

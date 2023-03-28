@@ -5292,7 +5292,7 @@ void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, i
 	}
 }
 
-void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
+void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &FullImIL, simple_buffer<u8> &FullImY, wxString SaveDir, wxString SaveName, wxString iter_det, int N, const int k, simple_buffer<int> LL, simple_buffer<int> LR, simple_buffer<int> LLB, simple_buffer<int> LLE, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
 {
 	int i, j, l, r, x, y, ib, bln, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
 	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
@@ -6333,7 +6333,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 			res.m_mI = mI;
 			res.m_mQ = mQ;
 
-			wxString FullName = wxT("/TXTImages/") + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + res.m_LY, w_orig, res.m_im_h) + g_im_save_format;
+			wxString FullName = SaveDir + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + res.m_LY, w_orig, res.m_im_h) + g_im_save_format;
 			res.m_ImageName = FullName;
 
 			if (g_save_each_substring_separately)
@@ -6352,15 +6352,15 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 	}
 }
 
-inline shared_custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString SaveName, wxString iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
+inline shared_custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF, simple_buffer<u8> &ImNF, simple_buffer<u8> &ImNE, simple_buffer<u8> &ImIL, simple_buffer<u8> &FullImY, wxString SaveDir, wxString SaveName, wxString iter_det, int N, int k, simple_buffer<int> &LL, simple_buffer<int> &LR, simple_buffer<int> &LLB, simple_buffer<int> &LLE, int w_orig, int h_orig, int W_orig, int H_orig, int xmin_orig, int ymin_orig)
 {	
-	return shared_custom_task([&res, &ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
-			FindText(res, ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+	return shared_custom_task([&res, &ImBGR, &ImF, &ImNF, &ImNE, &ImIL, &FullImY, SaveDir, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig]	{
+			FindText(res, ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, iter_det, N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 		}
 	);
 }
 
-int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, vector<wxString>& SavedFiles, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
+int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
 {
 	simple_buffer<int> LL(h_orig, 0), LR(h_orig, 0), LLB(h_orig, 0), LLE(h_orig, 0), LW(h_orig, 0);
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
@@ -6375,15 +6375,12 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	int mY, mI, mQ;
 	int LH, LMAXY;
 	double mthr;
-	wxString SaveName, FullName, Str;
+	wxString FullName, Str;
 	char str[30];
 	int res = 0;
 	int iter = 0;	
 	int min_h = g_min_h * H_orig;
 	
-	SaveName = SavedFiles[0];
-	SavedFiles.clear();
-
 	mthr = 0.3;
 	segh = g_segh;
 
@@ -6536,7 +6533,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	for (k = 0; k < N; k++)
 	{
 		FindTextTasksRes[k] = new FindTextRes();
-		FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, wxString(wxT("l")) + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+		FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, wxString(wxT("l")) + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
 	}
 
 	k = 0;
@@ -6548,16 +6545,14 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 		if (p_ft_res->m_LL.m_size > 0) // ned to split text on 2 parts
 		{
 			FindTextTasksRes.push_back(new FindTextRes());
-			FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[FindTextTasksRes.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+			FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[FindTextTasksRes.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
 			FindTextTasksRes.push_back(new FindTextRes());
-			FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[FindTextTasksRes.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
+			FindTextTasks.emplace_back(TaskFindText(*(FindTextTasksRes[FindTextTasksRes.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig));
 		}
 		else
 		{
 			if (p_ft_res->m_res == 1)
 			{
-				SavedFiles.push_back(p_ft_res->m_ImageName);
-
 				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 				{
 					for (x = 0; x < w_orig; x++, i++)
@@ -6596,7 +6591,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	for (k = 0; k < N; k++)
 	{
 		FindTextTasks[k] = new FindTextRes();
-		FindText(*(FindTextTasks[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+		FindText(*(FindTextTasks[k]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, "l" + std::to_string(k + 1), N, k, LL, LR, LLB, LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 	}
 
 	k = 0;
@@ -6607,16 +6602,14 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 		if (p_ft_res->m_LL.m_size > 0) // ned to split text on 2 parts
 		{
 			FindTextTasks.push_back(new FindTextRes());
-			FindText(*(FindTextTasks[FindTextTasks.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+			FindText(*(FindTextTasks[FindTextTasks.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, p_ft_res->m_iter_det + "_sl1", p_ft_res->m_N, p_ft_res->m_k, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 			FindTextTasks.push_back(new FindTextRes());
-			FindText(*(FindTextTasks[FindTextTasks.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
+			FindText(*(FindTextTasks[FindTextTasks.size() - 1]), ImBGR, ImF, ImNF, ImNE, ImIL, FullImY, SaveDir, SaveName, p_ft_res->m_iter_det + "_sl2", p_ft_res->m_N, p_ft_res->m_k + 1, p_ft_res->m_LL, p_ft_res->m_LR, p_ft_res->m_LLB, p_ft_res->m_LLE, w_orig, h_orig, W_orig, H_orig, xmin_orig, ymin_orig);
 		}
 		else
 		{
 			if (p_ft_res->m_res == 1)
 			{
-				SavedFiles.push_back(p_ft_res->m_ImageName);
-
 				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 				{
 					for (x = 0; x < w_orig; x++, i++)
@@ -6653,7 +6646,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 
 	if (res == 1)
 	{
-		FullName = wxT("/TXTImages/") + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig, w_orig, h_orig) + g_im_save_format;
+		FullName = SaveDir + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig, w_orig, h_orig) + g_im_save_format;
 
 		if (!g_save_each_substring_separately)
 		{

@@ -546,7 +546,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		BaseImgName = GetFileName(m_pMF->m_pVideo->m_MovieName);
 		BaseImgName += " -- " + VideoTimeToStr(CurPos);
 
-		SaveBGRImage(ImBGR, wxT("/RGBImages/") + BaseImgName + wxT("_") + FormatImInfoAddData(m_W, m_H, m_xmin, m_ymin, m_w, m_h) + g_im_save_format, m_w, m_h);
+		SaveBGRImage(ImBGR, wxT("/TestImages/RGBImages/") + BaseImgName + wxT("_") + FormatImInfoAddData(m_W, m_H, m_xmin, m_ymin, m_w, m_h) + g_im_save_format, m_w, m_h);
 
 		if (ImBGR.size() == 0)
 		{
@@ -561,11 +561,9 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 		if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
 		{
-			vector<wxString> SavedFiles;
-			SavedFiles.push_back(BaseImgName);
 			simple_buffer<u8> ImIL;
 
-			FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, SavedFiles, m_w, m_h, m_W, m_H, m_xmin, m_ymin);
+			FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, wxString(wxT("/TestImages/TXTImages/")), BaseImgName, m_w, m_h, m_W, m_H, m_xmin, m_ymin);
 		}
 	}
 	else
@@ -598,7 +596,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/DebugImages");
 
-			FindTextLinesRes res;
+			FindTextLinesRes res(wxT("/TestImages/TXTImages/"));
 			m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));
 			res.m_pImFF = &m_ImF[0];
 			res.m_pImSF = &m_ImF[1];

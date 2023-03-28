@@ -302,6 +302,8 @@ void CSearchPanel::OnBnClickedClear(wxCommandEvent& event)
 	m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
 	m_pMF->ClearDir(g_work_dir + "/DebugImages");
 	m_pMF->ClearDir(g_work_dir + "/TXTResults");
+	m_pMF->ClearDir(g_work_dir + "/TestImages/RGBImages");
+	m_pMF->ClearDir(g_work_dir + "/TestImages/TXTImages");
 }
 
 void ThreadSearchSubtitles()
