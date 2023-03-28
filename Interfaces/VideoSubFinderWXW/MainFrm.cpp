@@ -645,7 +645,7 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 	int cw, ch;
     this->GetClientSize(&cw, &ch);
 	m_cw = cw;
-	m_ch = ch;
+	m_ch = ch;	
 
 	if (m_pPanel)
 	{		
@@ -663,7 +663,17 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 		m_bUpdateSizes = false;
 	}
 
-	//GetClientWindow()->SetSize(0, 0, w, h - m_ph);
+	if (m_pImageBox)
+	{
+		m_pImageBox->Raise();
+		m_pImageBox->Refresh();
+	}
+
+	if (m_pVideoBox)
+	{
+		m_pVideoBox->Raise();
+		m_pVideoBox->Refresh();
+	}
 }
 
 void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)

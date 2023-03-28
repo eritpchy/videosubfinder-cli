@@ -26,6 +26,7 @@
 #include "SeparatingLine.h"
 #include "ResizableWindow.h"
 #include "BitmapButton.h"
+#include "Control.h"
 
 class CVideoBox;
 class CVideoWindow;
@@ -83,7 +84,7 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class CVideoBox : public CResizableWindow
+class CVideoBox : public CResizableWindow, public CControl
 {
 public:
 	CVideoBox(CMainFrame* pMF, wxColour	bc);
@@ -113,6 +114,8 @@ public:
 	void ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h);
 	void ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h);
 	void ClearScreen();
+	void UpdateSize() override;
+	void RefreshData() override;
 
 public:
 	void OnSize(wxSizeEvent& event);	

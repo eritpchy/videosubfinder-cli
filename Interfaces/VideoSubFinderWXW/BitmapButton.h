@@ -53,6 +53,7 @@ public:
 	void SetBitmaps(const wxImage& image,
 		const wxImage& image_focused,
 		const wxImage& image_selected);
+	wxSize GetOptimalSize(int req_w = 0, int req_h = 0);
 
 private:
 	ShownBitmap m_ShownBitmap = ShownBitmap::Default;

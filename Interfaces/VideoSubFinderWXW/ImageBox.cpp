@@ -102,10 +102,22 @@ void CImageBox::Init()
 	m_WasInited = true;
 }
 
+void CImageBox::UpdateSize()
+{
+	wxSizeEvent event;
+	OnSize(event);
+}
+
+void CImageBox::RefreshData()
+{
+}
+
 void CImageBox::OnSize( wxSizeEvent& event )
 {
 	int w, h;
 	wxRect rcClIB, rlIB, rcIW;
+	wxSize lblVB_opt_size = m_pMF->m_pVideoBox ? m_pMF->m_pVideoBox->m_plblVB->GetOptimalSize() : wxSize(0, 0);
+	wxSize lblIB_opt_size = m_plblIB->GetOptimalSize();
 
 	this->GetClientSize(&w, &h);
 	rcClIB.x = rcClIB.y = 0;
@@ -115,7 +127,7 @@ void CImageBox::OnSize( wxSizeEvent& event )
 	rlIB.x = 0;
 	rlIB.y = 0;
 	rlIB.width = rcClIB.width;
-	rlIB.height = 28;
+	rlIB.height = std::max<int>(lblVB_opt_size.y, lblIB_opt_size.y);
 
 	rcIW.x = 9;
 	rcIW.y = rlIB.GetBottom() + 9;

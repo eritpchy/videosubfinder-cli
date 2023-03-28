@@ -74,6 +74,32 @@ void CBitmapButton::SetBitmaps(const wxImage& image,
 	this->Refresh(true);
 }
 
+wxSize CBitmapButton::GetOptimalSize(int req_w, int req_h)
+{
+	wxSize cur_size = this->GetSize();
+	wxSize cur_client_size = this->GetClientSize();
+	wxSize image_size = m_image.GetSize();
+	wxSize opt_size;
+
+	if (req_h > 0)
+	{
+		opt_size.x = (((req_h - (cur_size.y - cur_client_size.y)) * image_size.x) / image_size.y) + (cur_size.x - cur_client_size.x);
+		opt_size.y = req_h;
+	}
+	else if (req_w > 0)
+	{
+		opt_size.x = req_w;
+		opt_size.y = (((req_w - (cur_size.x - cur_client_size.x)) * image_size.y) / image_size.x) + (cur_size.y - cur_client_size.y);
+	}
+	else
+	{
+		opt_size.x = image_size.x + (cur_size.x - cur_client_size.x);
+		opt_size.y = image_size.y + (cur_size.y - cur_client_size.y);
+	}
+
+	return opt_size;
+}
+
 void CBitmapButton::OnLButtonDown( wxMouseEvent& event )
 {
 	m_bDown = true;
@@ -132,7 +158,7 @@ void CBitmapButton::OnPaint(wxPaintEvent& event)
 		if (m_bDown)
 		{
 			m_ShownBitmap = ShownBitmap::Selected;
-			dc.DrawBitmap(wxBitmap(m_image_selected.Scale(cw, ch)), 0, 0);
+			dc.DrawBitmap(wxBitmap(m_image_selected.Scale(cw, ch, wxIMAGE_QUALITY_BILINEAR)), 0, 0);
 		}
 		else
 		{
@@ -147,12 +173,12 @@ void CBitmapButton::OnPaint(wxPaintEvent& event)
 				(mp.y < h))
 			{
 				m_ShownBitmap = ShownBitmap::Focused;
-				dc.DrawBitmap(wxBitmap(m_image_focused.Scale(cw, ch)), 0, 0);
+				dc.DrawBitmap(wxBitmap(m_image_focused.Scale(cw, ch, wxIMAGE_QUALITY_BILINEAR)), 0, 0);
 			}
 			else
 			{
 				m_ShownBitmap = ShownBitmap::Default;
-				dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch)), 0, 0);
+				dc.DrawBitmap(wxBitmap(m_image.Scale(cw, ch, wxIMAGE_QUALITY_BILINEAR)), 0, 0);
 			}
 		}
 	}

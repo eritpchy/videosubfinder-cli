@@ -54,6 +54,7 @@ public:
 	bool SetBackgroundColour(const wxColour& colour);	
 	void OnSize(wxSizeEvent& event);
 	void RefreshData();
+	wxSize GetOptimalSize(int add_gap = 6);
 
 private:
 	wxSize m_min_size;

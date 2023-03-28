@@ -21,6 +21,7 @@
 #include "MainFrm.h"
 #include "StaticText.h"
 #include "ResizableWindow.h"
+#include "Control.h"
 
 class CImageBox;
 
@@ -39,7 +40,7 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class CImageBox : public CResizableWindow
+class CImageBox : public CResizableWindow, public CControl
 {
 public:
 	CImageBox(CMainFrame* pMF);           // protected constructor used by dynamic creation
@@ -65,6 +66,8 @@ public:
 	void ViewImage(simple_buffer<int> &Im, int w, int h);
 	void ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h);
 	void ClearScreen();
+	void UpdateSize() override;
+	void RefreshData() override;
 
 public:
 	void OnSize( wxSizeEvent& event );

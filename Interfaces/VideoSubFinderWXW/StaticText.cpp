@@ -57,6 +57,31 @@ void CStaticText::SetTextColour(wxColour& colour)
 	OnSize(event);
 }
 
+wxSize CStaticText::GetOptimalSize(int add_gap)
+{
+	wxMemoryDC dc;
+	if (m_pFont) dc.SetFont(*m_pFont);
+	wxSize best_size = dc.GetMultiLineTextExtent(*m_p_label);
+	wxSize cur_size = this->GetSize();
+	wxSize cur_client_size = this->GetClientSize();
+	wxSize opt_size = cur_size;
+	best_size.x += cur_size.x - cur_client_size.x + add_gap;
+	best_size.y += cur_size.y - cur_client_size.y + add_gap;
+
+	if (m_allow_auto_set_min_width)
+	{
+		opt_size.x = std::max<int>(best_size.x, m_min_size.x);
+	}
+	else
+	{
+		opt_size.x = 10;
+	}
+
+	opt_size.y = std::max<int>(best_size.y, m_min_size.y);
+	
+	return opt_size;
+}
+
 void CStaticText::RefreshData()
 {
 	if (m_pFont) m_pST->SetFont(*m_pFont);
@@ -64,26 +89,9 @@ void CStaticText::RefreshData()
 
 	wxSizer* pSizer = m_pParent->GetSizer();
 	if (pSizer)
-	{
-		wxMemoryDC dc;
-		if (m_pFont) dc.SetFont(*m_pFont);
-		wxSize best_size = dc.GetMultiLineTextExtent(*m_p_label);
+	{	
 		wxSize cur_size = this->GetSize();
-		wxSize cur_client_size = this->GetClientSize();
-		wxSize opt_size = cur_size;
-		best_size.x += cur_size.x - cur_client_size.x + 6;
-		best_size.y += cur_size.y - cur_client_size.y + 6;
-
-		if (m_allow_auto_set_min_width)
-		{
-			opt_size.x = std::max<int>(best_size.x, m_min_size.x);
-		}
-		else
-		{
-			opt_size.x = 10;
-		}
-
-		opt_size.y = std::max<int>(best_size.y, m_min_size.y);
+		wxSize opt_size = GetOptimalSize();
 
 		if (opt_size != cur_size)
 		{

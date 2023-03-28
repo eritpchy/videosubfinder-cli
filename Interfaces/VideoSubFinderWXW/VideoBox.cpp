@@ -684,20 +684,35 @@ void CVideoBox::Init()
 	m_WasInited = true;
 }
 
+void CVideoBox::UpdateSize()
+{
+	wxSizeEvent event;
+	OnSize(event);
+}
+
+void CVideoBox::RefreshData()
+{
+}
+
 void CVideoBox::OnSize(wxSizeEvent& event)
 {
 	int w, h, sbw, sbh, csbw, csbh;
 	wxRect rlVB, rlTIME, rcSB, rcVBOX, rcButtonRunPause, rcButtonStop;
+	wxSize lblVB_opt_size = m_plblVB->GetOptimalSize();
+	wxSize lblIB_opt_size = m_pMF->m_pImageBox ? m_pMF->m_pImageBox->m_plblIB->GetOptimalSize() : wxSize(0, 0);
+	wxSize lblTIME_opt_size = m_plblTIME->GetOptimalSize(0);
 
 	this->GetClientSize(&w, &h);
 	
 	rlVB.x = 0;
 	rlVB.width = w;
 	rlVB.y = 0;
-	rlVB.height = 28;
+	rlVB.height = std::max<int>(lblVB_opt_size.y, lblIB_opt_size.y);
 
 	int bw, bh;
-	m_pButtonRun->GetSize(&bw, &bh);
+	wxSize opt_bsize = m_pButtonRun->GetOptimalSize(0, lblTIME_opt_size.y);
+	bw = opt_bsize.x;
+	bh = opt_bsize.y;
 
 	rcButtonRunPause.width = bw;
 	rcButtonRunPause.height = bh;
