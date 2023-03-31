@@ -23,11 +23,43 @@ Used Terms:
 #######################################################################################
 
 *) ISAImages - Intersected (detected) Subtitles Areas (by using frames in video on which subtitle was detected)
+
 *) ILAImages - Intersected Luminance Areas (by using frames in video on which subtitle was detected), the areas where pixels are not change too much in luminance in range:
 "Max luminance diff from down for IL image generation"
 "Max luminance diff from up for IL image generation"
-First image of "Sub Frames Length" sequence (~8-12 (dependently from settings) nearest frames in video on which subtitle was detected) are taked as reference, all next images in "Sub Frames Length" sequence are compared with it by luminance change.
-On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (first image of "Sub Frames Length" sequence).
+First image of "Sub Frames Length" sequence (~8-12 (dependently from settings) nearest frames in video on which subtitle was detected) are taked as reference,
+all next images in "Sub Frames Length" sequence are compared with it by luminance change. On produced ILAImages also affect "Use Filter Colors"
+and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (first image of "Sub Frames Length" sequence).
+
+*) kmeans (K-Means Clustering)
+https://docs.opencv.org/3.4/d1/d5c/tutorial_py_kmeans_opencv.html
+https://en.wikipedia.org/wiki/K-means_clustering
+
+*) Sobel Operator
+https://en.wikipedia.org/wiki/Sobel_operator
+Improved Sobel Operator
+"Adding 45 degrees and 135 degrees direction template in a basis of the traditional Sobel operator"
+https://www.atlantis-press.com/article/25867843.pdf
+
+*) (OLD) "VEdgesPointsImage" is translated as an image obtained from points vertical color boundaries. This image is obtained by converting frame into a black and white image,
+then applying a horizontal operator Sobel to determine the strength of the color difference. Then by threshold Filtering (all points whose strength is lower than
+the threshold set in the settings "H-Vertical Threshold" is replaced with black or white). These images Are used when checking whether adjacent frames with identical text or no)
+
+*) VEdges - vertical color boundaries in YUV color space image representation.
+*) HEdges - horizontal color boundaries in YUV color space image representation.
+*) NEdges - northeast diagonal color boundaries in YUV color space image representation.
+*) In all VEdges, HEdges, NEdges mostly used color boundaries from Y component (grayscale image representation) of YUV color space image representation.
+VEdges, HEdges, NEdges relates to "Automatic Image Segmentation by Integrating Color-Edge Extraction and Seeded Region Growing" article.
+https://typeset.io/papers/automatic-image-segmentation-by-integrating-color-edge-y2azjosgo3
+YUV color space - https://en.wikipedia.org/wiki/YUV
+
+*) (OLD) "After First Filtration" is the resulting image as a result
+initial processing of the frame, the result of the processing is affected by all the "Settings for Operators Sobel"
+except one H-Vertical Threshold, all "Settings For Color Filter "except for one Sum Multiple Color Diff.
+
+*) (OLD) ""After Second Filtration" is the resulting image as a result secondary image processing (processing applied to the image resulting from "After First Filtration"),
+the result of processing affect all the "Settings for Linear Filtering", all "Settings for Points Color Borders", all "Settings for Color Filter" except one Sum Color Diff.
+
 
 #######################################################################################
 Quick Start Guide
@@ -353,34 +385,6 @@ How to use in details:
    they can be viewed by clicking the buttons in the left and in the right above the Test button,
    and also in the TSTImages folder.
 
-   "After First Filtration" is the resulting image as a result
-   initial processing of the frame, the result of the processing is affected by all the "Settings for
-   Operators Sobel "except one H-Vertical Threshold, all" Settings For
-   Color Filter "except for one Sum Multiple Color Diff.
-
-   "After Second Filtration" is the resulting image as a result
-   secondary image processing (processing applied to the image
-   resulting from "After First Filtration"), the result of processing
-   affect all the "Settings for Linear Filtering", all "Settings for Points
-   Color Borders ", all" Settings for Color Filter "except one
-   Sum Color Diff.
-
-   "VEdgesPointsImage" is translated as an image obtained from points
-   vertical color boundaries. This image is obtained by converting
-   frame into a black and white image, then applying a horizontal
-   operator Sobel to determine the strength of the color difference. Then by threshold
-   Filtering (all points whose strength is lower than the threshold set in the settings
-   "H-Vertical Threshold" is replaced with black or white). These images
-   Are used when checking whether adjacent frames with identical text or
-   no)
-
-   VEdges - vertical color boundaries in YUV color space image representation.
-   HEdges - horizontal color boundaries in YUV color space image representation.
-   NEdges - northeast diagonal color boundaries in YUV color space image representation.
-   In all VEdges, HEdges, NEdges mostly used color boundaries from Y component (grayscale image representation) of YUV color space image representation.
-   VEdges, HEdges, NEdges relates to "Automatic Image Segmentation by Integrating Color-Edge Extraction and Seeded Region Growing" article.
-   YUV color space - https://en.wikipedia.org/wiki/YUV
-
 6) At the end of the search for the sub it is desirable to go to the folder RGBImages and delete all
    those frames that are dummy, then on these images you can
    create an empty sub with timings, go to the OCR tab and click
@@ -512,6 +516,7 @@ studied and implemented in this program), namely, the main used
 3) Automatic Location of Text in Video Frames.
    Xian-Sheng Hua, Xiang-Rong Chen, Liu Wenyin, Hong-Jiang Zhang
    Microsoft Research China
+   https://www.researchgate.net/publication/2489112_Automatic_Location_of_Text_in_Video_Frames
 
 4) EFFICIENT VIDEO TEXT RECOGNITION USING MULTIPLE FRAME INTEGRATION
    Xian-Sheng Hua, Pei Yin, Hong-Jiang Zhang

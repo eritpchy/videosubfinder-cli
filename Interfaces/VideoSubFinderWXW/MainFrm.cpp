@@ -20,6 +20,7 @@
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
+#include <wx/fontenum.h>
 #include <chrono>
 #include "Control.h"
 
@@ -35,6 +36,10 @@ wxString g_text_alignment_string;
 wxArrayString g_localizations;
 std::map<wxString, int> g_localization_id;
 std::map<int, wxString> g_id_localization;
+
+const int g_max_font_size = 40;
+const int g_def_main_text_font_size = 10;
+const int g_def_buttons_text_font_size = 13;
 
 // const DWORD _MMX_FEATURE_BIT = 0x00800000;
 // const DWORD _SSE2_FEATURE_BIT = 0x04000000;
@@ -299,7 +304,8 @@ BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
 	EVT_MENU(ID_FILE_OPENPREVIOUSVIDEO, CMainFrame::OnFileOpenPreviousVideo)
 	EVT_MENU(ID_APP_CMD_ARGS_INFO, CMainFrame::OnAppCMDArgsInfo)
 	EVT_MENU(ID_APP_USAGE_DOCS, CMainFrame::OnAppUsageDocs)
-	EVT_MENU(ID_APP_ABOUT, CMainFrame::OnAppAbout)
+	EVT_MENU(ID_APP_ABOUT, CMainFrame::OnAppAbout)	
+	EVT_MENU(ID_FONTS, CMainFrame::OnFonts)
 	EVT_MENU(ID_SCALE_TEXT_SIZE_INC, CMainFrame::OnScaleTextSizeInc)
 	EVT_MENU(ID_SCALE_TEXT_SIZE_DEC, CMainFrame::OnScaleTextSizeDec)
 	EVT_MENU(ID_NEXT_FRAME, CMainFrame::OnNextFrame)
@@ -357,6 +363,53 @@ CMainFrame::~CMainFrame()
 {
 }
 
+void CMainFrame::SetFonts()
+{
+	if (g_cfg.m_main_text_font_size == -1)
+	{
+		g_cfg.m_main_text_font_size = g_def_main_text_font_size;
+	}
+	if (g_cfg.m_buttons_text_font_size == -1)
+	{
+		g_cfg.m_buttons_text_font_size = g_def_buttons_text_font_size;
+	}
+
+	// https://docs.wxwidgets.org/stable/interface_2wx_2font_8h.html#a0cd7bfd21a4f901245d3c86d8ea0c080
+	// wxFONTFAMILY_SWISS / A sans - serif font.
+
+	if (g_cfg.m_main_text_font == wxT("default"))
+	{
+		SaveToReportLog("CMainFrame::Init(): init m_LBLFont...\n");
+		m_LBLFont = wxFont(g_cfg.m_main_text_font_size,
+			wxFONTFAMILY_SWISS,
+			g_cfg.m_main_text_font_italic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL,
+			g_cfg.m_main_text_font_bold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL,
+			g_cfg.m_main_text_font_underline,
+			wxEmptyString,
+			wxFONTENCODING_DEFAULT);
+	}
+	else
+	{
+		m_LBLFont = wxFont(wxFontInfo(g_cfg.m_main_text_font_size).FaceName(g_cfg.m_main_text_font).Italic(g_cfg.m_main_text_font_italic).Bold(g_cfg.m_main_text_font_bold).Underlined(g_cfg.m_main_text_font_underline));
+	}
+
+	if (g_cfg.m_buttons_text_font == wxT("default"))
+	{
+		SaveToReportLog("CMainFrame::Init(): init m_BTNFont...\n");
+		m_BTNFont = wxFont(g_cfg.m_buttons_text_font_size,
+			wxFONTFAMILY_SWISS,
+			g_cfg.m_buttons_text_font_italic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL,
+			g_cfg.m_buttons_text_font_bold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL,
+			g_cfg.m_buttons_text_font_underline,
+			wxEmptyString,
+			wxFONTENCODING_DEFAULT);
+	}
+	else
+	{
+		m_BTNFont = wxFont(wxFontInfo(g_cfg.m_buttons_text_font_size).FaceName(g_cfg.m_buttons_text_font).Italic(g_cfg.m_buttons_text_font_italic).Bold(g_cfg.m_buttons_text_font_bold).Underlined(g_cfg.m_buttons_text_font_underline));
+	}
+}
+
 wxMenuBar* CMainFrame::CreateMenuBar()
 {
 	SaveToReportLog("CMainFrame::CreateMenuBar(): starting ...\n");
@@ -405,6 +458,8 @@ wxMenuBar* CMainFrame::CreateMenuBar()
 	wxMenu* pMenuView = new wxMenu;
 	pMenuView->AppendSubMenu(pMenuLocalization, g_cfg.m_menu_localization);
 	pMenuView->AppendSeparator();
+	pMenuView->Append(ID_FONTS, g_cfg.m_menu_fonts);
+	pMenuView->AppendSeparator();
 	pMenuView->Append(ID_SCALE_TEXT_SIZE_INC, g_cfg.m_menu_scale_text_size_inc + wxT("   Ctrl+Mouse Wheel"));
 	pMenuView->Append(ID_SCALE_TEXT_SIZE_DEC, g_cfg.m_menu_scale_text_size_dec + wxT("   Ctrl+Mouse Wheel"));
 	pMenuBar->Append(pMenuView, g_cfg.m_menu_view);
@@ -435,7 +490,7 @@ void CMainFrame::Init()
 {
 	SaveToReportLog("CMainFrame::Init(): starting...\n");
 
-	m_blnNoGUI = false;	
+	m_blnNoGUI = false;
 
 	m_ErrorFileName = g_work_dir + wxT("/error.log");
 
@@ -453,23 +508,7 @@ void CMainFrame::Init()
 
 	this->SetBackgroundColour(g_cfg.m_main_frame_background_colour);
 
-	if (g_cfg.m_fount_size_lbl == -1)
-	{
-		g_cfg.m_fount_size_lbl = 10;
-	}
-	if (g_cfg.m_fount_size_btn == -1)
-	{
-		g_cfg.m_fount_size_btn = 13;
-	}
-
-	// https://docs.wxwidgets.org/stable/interface_2wx_2font_8h.html#a0cd7bfd21a4f901245d3c86d8ea0c080
-	// wxFONTFAMILY_SWISS / A sans - serif font.
-
-	SaveToReportLog("CMainFrame::Init(): init m_BTNFont...\n");
-	m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-
-	SaveToReportLog("CMainFrame::Init(): init m_LBLFont...\n");
-	m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+	SetFonts();
 
 	SaveToReportLog("CMainFrame::Init(): CreateMenuBar() ...\n");
 	wxMenuBar* pMenuBar = CreateMenuBar();
@@ -593,12 +632,12 @@ int CMainFrame::GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily 
 
 void CMainFrame::OnScaleTextSizeInc(wxCommandEvent& event)
 {
-	ScaleTextSize(1);
+	UpdateTextSizes(1);
 }
 
 void CMainFrame::OnScaleTextSizeDec(wxCommandEvent& event)
 {
-	ScaleTextSize(-1);
+	UpdateTextSizes(-1);
 }
 
 void CMainFrame::OnMouseWheel(wxMouseEvent& event)
@@ -607,48 +646,45 @@ void CMainFrame::OnMouseWheel(wxMouseEvent& event)
 	{
 		if (event.m_wheelRotation > 0)
 		{
-			ScaleTextSize(1);
+			UpdateTextSizes(1);
 		}
 		else
 		{
-			ScaleTextSize(-1);
+			UpdateTextSizes(-1);
 		}
 	}
 }
 
-void CMainFrame::ScaleTextSize(int dsize)
+void CMainFrame::ScaleTextSize(int& size, int dsize)
+{
+	size += dsize;
+
+	if (size > g_max_font_size)
+	{
+		size = g_max_font_size;
+	}
+
+	if (size < 1)
+	{
+		size = 1;
+	}
+}
+
+void CMainFrame::UpdateTextSizes(int dsize)
 {
 	if (dsize != 0)
 	{
-		if (dsize > 0)
-		{
-			g_cfg.m_fount_size_btn += dsize;
-			g_cfg.m_fount_size_lbl += dsize;
-		}
-		else
-		{
-			if ((g_cfg.m_fount_size_btn > -dsize) && (g_cfg.m_fount_size_lbl > -dsize))
-			{
-				g_cfg.m_fount_size_btn += dsize;
-				g_cfg.m_fount_size_lbl += dsize;
-			}
-		}
-
-		m_BTNFont = wxFont(g_cfg.m_fount_size_btn, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
-			wxFONTWEIGHT_BOLD, false /* !underlined */,
-			wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-		m_LBLFont = wxFont(g_cfg.m_fount_size_lbl, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
-			wxFONTWEIGHT_NORMAL, false /* !underlined */,
-			wxEmptyString /* facename */, wxFONTENCODING_DEFAULT);
-
-		this->GetMenuBar()->SetFont(m_LBLFont);
-		this->GetMenuBar()->Refresh();
-
-		CControl::RefreshAllControlsData();
-		CControl::UpdateAllControlsSize();
-		this->Refresh();
+		ScaleTextSize(g_cfg.m_main_text_font_size, dsize);
+		ScaleTextSize(g_cfg.m_buttons_text_font_size, dsize);
 	}
+
+	SetFonts();
+	this->GetMenuBar()->SetFont(m_LBLFont);
+	this->GetMenuBar()->Refresh();
+
+	CControl::RefreshAllControlsData();
+	CControl::UpdateAllControlsSize();
+	this->Refresh();
 }
 
 void CMainFrame::OnSize(wxSizeEvent& event)
@@ -1293,8 +1329,17 @@ void LoadSettings()
 	ReadProperty(g_general_settings, g_cfg.m_txt_dw, "txt_dw");
 	ReadProperty(g_general_settings, g_cfg.m_txt_dy, "txt_dy");
 
-	ReadProperty(g_general_settings, g_cfg.m_fount_size_lbl, "fount_size_lbl");
-	ReadProperty(g_general_settings, g_cfg.m_fount_size_btn, "fount_size_btn");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_font, "main_text_font");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_font_bold, "main_text_font_bold");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_font_italic, "main_text_font_italic");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_font_underline, "main_text_font_underline");
+	ReadProperty(g_general_settings, g_cfg.m_main_text_font_size, "main_text_font_size");
+
+	ReadProperty(g_general_settings, g_cfg.m_buttons_text_font, "buttons_text_font");
+	ReadProperty(g_general_settings, g_cfg.m_buttons_text_font_bold, "buttons_text_font_bold");
+	ReadProperty(g_general_settings, g_cfg.m_buttons_text_font_italic, "buttons_text_font_italic");
+	ReadProperty(g_general_settings, g_cfg.m_buttons_text_font_underline, "buttons_text_font_underline");
+	ReadProperty(g_general_settings, g_cfg.m_buttons_text_font_size, "buttons_text_font_size");
 
 	ReadProperty(g_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
 	ReadProperty(g_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
@@ -1358,7 +1403,15 @@ void LoadLocaleSettings(wxString settings_path)
 	SaveToReportLog(wxString::Format(wxT("CMainFrame::LoadLocaleSettings(): reading properties from \"%s\" ...\n"), settings_path));
 
 	ReadSettings(settings_path, g_locale_settings);
-	
+
+	ReadProperty(g_locale_settings, g_cfg.m_fd_main_font_gb_label, "fd_main_font_gb_label");
+	ReadProperty(g_locale_settings, g_cfg.m_fd_buttons_font_gb_label, "fd_buttons_font_gb_label");
+	ReadProperty(g_locale_settings, g_cfg.m_fd_font_size, "fd_font_size");
+	ReadProperty(g_locale_settings, g_cfg.m_fd_font_name, "fd_font_name");
+	ReadProperty(g_locale_settings, g_cfg.m_fd_font_bold, "fd_font_bold");
+	ReadProperty(g_locale_settings, g_cfg.m_fd_font_italic, "fd_font_italic");
+	ReadProperty(g_locale_settings, g_cfg.m_fd_font_underline, "fd_font_underline");
+
 	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_center, "text_alignment_center");
 	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_left, "text_alignment_left");
 	ReadProperty(g_locale_settings, g_cfg.m_text_alignment_right, "text_alignment_right");
@@ -1395,6 +1448,7 @@ void LoadLocaleSettings(wxString settings_path)
 	ReadProperty(g_locale_settings, g_cfg.m_menu_file_exit, "menu_file_exit");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_edit_setbegintime, "menu_edit_setbegintime");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_edit_setendtime, "menu_edit_setendtime");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_fonts, "menu_fonts");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_scale_text_size_inc, "menu_scale_text_size_inc");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_scale_text_size_dec, "menu_scale_text_size_dec");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_play_pause, "menu_play_pause");
@@ -1584,8 +1638,17 @@ void SaveSettings()
 
 	WriteProperty(fout, g_cfg.process_affinity_mask, "process_affinity_mask");
 
-	WriteProperty(fout, g_cfg.m_fount_size_lbl, "fount_size_lbl");
-	WriteProperty(fout, g_cfg.m_fount_size_btn, "fount_size_btn");
+	WriteProperty(fout, g_cfg.m_main_text_font, "main_text_font");
+	WriteProperty(fout, g_cfg.m_main_text_font_bold, "main_text_font_bold");
+	WriteProperty(fout, g_cfg.m_main_text_font_italic, "main_text_font_italic");
+	WriteProperty(fout, g_cfg.m_main_text_font_underline, "main_text_font_underline");
+	WriteProperty(fout, (g_cfg.m_main_text_font_size == g_def_main_text_font_size) ? -1 : g_cfg.m_main_text_font_size, "main_text_font_size");
+
+	WriteProperty(fout, g_cfg.m_buttons_text_font, "buttons_text_font");
+	WriteProperty(fout, g_cfg.m_buttons_text_font_bold, "buttons_text_font_bold");
+	WriteProperty(fout, g_cfg.m_buttons_text_font_italic, "buttons_text_font_italic");
+	WriteProperty(fout, g_cfg.m_buttons_text_font_underline, "buttons_text_font_underline");
+	WriteProperty(fout, (g_cfg.m_buttons_text_font_size == g_def_buttons_text_font_size) ? -1: g_cfg.m_buttons_text_font_size, "buttons_text_font_size");
 	
 	WriteProperty(fout, g_cfg.m_main_text_colour, "main_text_colour");
 	WriteProperty(fout, g_cfg.m_main_text_ctls_background_colour, "main_text_ctls_background_colour");
@@ -2203,6 +2266,302 @@ void CMainFrame::OnAppAbout(wxCommandEvent& event)
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);
 	msg_dlg.ShowModal();
+}
+
+class CFontsDialog : public wxDialog, public CControl
+{
+public:
+	CMainFrame* m_pMF;
+
+	CChoice* m_pMainFontNameChoice;
+	CChoice* m_pMainFontSizeChoice;
+	CStaticBox* m_pGBMainFont;
+	CStaticText* m_plblMainFontSize;
+	CStaticText* m_plblMainFontName;
+	CCheckBox* m_pcbMainFontBold;
+	CCheckBox* m_pcbMainFontItalic;
+	CCheckBox* m_pcbMainFontUnderline;
+
+	CChoice* m_pButtonsFontNameChoice;
+	CChoice* m_pButtonsFontSizeChoice;
+	CStaticBox* m_pGBButtonsFont;
+	CStaticText* m_plblButtonsFontSize;
+	CStaticText* m_plblButtonsFontName;
+	CCheckBox* m_pcbButtonsFontBold;
+	CCheckBox* m_pcbButtonsFontItalic;
+	CCheckBox* m_pcbButtonsFontUnderline;
+
+	CFontsDialog(CMainFrame* pMF, const wxString& caption,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
+
+	~CFontsDialog()
+	{
+	}
+
+	void OnKeyDown(wxKeyEvent& event);
+	void OnChangesEvent(wxCommandEvent& evt);
+
+	void UpdateSize() override;
+	void RefreshData() override;
+};
+
+CFontsDialog::CFontsDialog(CMainFrame* pMF, const wxString& caption,
+	const wxPoint& pos,
+	const wxSize& size) : wxDialog(pMF, wxID_ANY, caption, pos, size)
+{
+	m_pMF = pMF;
+
+	this->SetFont(m_pMF->m_LBLFont);
+	this->SetForegroundColour(g_cfg.m_main_text_colour);
+	this->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+
+	wxArrayString validFaceNames;
+	{
+		wxFontEnumerator fontEnumerator;
+		fontEnumerator.EnumerateFacenames(wxFONTENCODING_DEFAULT, false);
+		wxArrayString sysFaceNames = fontEnumerator.GetFacenames();
+
+		validFaceNames.Add(wxT("default"));
+		for (const wxString& faceName : sysFaceNames)
+		{
+			if (wxFontEnumerator::IsValidFacename(faceName))
+			{
+				validFaceNames.Add(faceName);
+			}
+		}
+	}
+
+	wxArrayString fontSizes;
+	{		
+		for (int font_size = 1; font_size <= g_max_font_size; font_size++)
+		{
+			fontSizes.Add(wxString::Format(wxT("%d"), font_size));
+		}
+	}
+
+	//------------------------------
+	
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pGBMainFont...\n");
+	m_pGBMainFont = new CStaticBox(this, wxID_ANY, g_cfg.m_fd_main_font_gb_label);
+	m_pGBMainFont->SetFont(m_pMF->m_LBLFont);
+	m_pGBMainFont->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGBMainFont->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_plblMainFontSize...\n");
+	m_plblMainFontSize = new CStaticText(m_pGBMainFont, g_cfg.m_fd_font_size, wxID_ANY);
+	m_plblMainFontSize->SetFont(m_pMF->m_LBLFont);
+	m_plblMainFontSize->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblMainFontSize->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_plblMainFontName...\n");
+	m_plblMainFontName = new CStaticText(m_pGBMainFont, g_cfg.m_fd_font_name, wxID_ANY);
+	m_plblMainFontName->SetFont(m_pMF->m_LBLFont);
+	m_plblMainFontName->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblMainFontName->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pcbMainFontBold...\n");
+	m_pcbMainFontBold = new CCheckBox(m_pGBMainFont, wxID_ANY, &g_cfg.m_main_text_font_bold, g_cfg.m_fd_font_bold);
+	m_pcbMainFontBold->SetFont(m_pMF->m_LBLFont);
+	m_pcbMainFontBold->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbMainFontBold->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pcbMainFontItalic...\n");
+	m_pcbMainFontItalic = new CCheckBox(m_pGBMainFont, wxID_ANY, &g_cfg.m_main_text_font_italic, g_cfg.m_fd_font_italic);
+	m_pcbMainFontItalic->SetFont(m_pMF->m_LBLFont);
+	m_pcbMainFontItalic->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbMainFontItalic->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pcbMainFontUnderline...\n");
+	m_pcbMainFontUnderline = new CCheckBox(m_pGBMainFont, wxID_ANY, &g_cfg.m_main_text_font_underline, g_cfg.m_fd_font_underline);
+	m_pcbMainFontUnderline->SetFont(m_pMF->m_LBLFont);
+	m_pcbMainFontUnderline->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbMainFontUnderline->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	m_pMainFontNameChoice = new CChoice(m_pGBMainFont, validFaceNames, &g_cfg.m_main_text_font);
+	m_pMainFontNameChoice->SetFont(m_pMF->m_LBLFont);
+	m_pMainFontNameChoice->SetTextColour(g_cfg.m_main_text_colour);
+	m_pMainFontNameChoice->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+
+	m_pMainFontSizeChoice = new CChoice(m_pGBMainFont, fontSizes, &g_cfg.m_main_text_font_size);
+	m_pMainFontSizeChoice->SetFont(m_pMF->m_LBLFont);
+	m_pMainFontSizeChoice->SetTextColour(g_cfg.m_main_text_colour);
+	m_pMainFontSizeChoice->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+
+	//------------------------------
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pGBButtonsFont...\n");
+	m_pGBButtonsFont = new CStaticBox(this, wxID_ANY, g_cfg.m_fd_buttons_font_gb_label);
+	m_pGBButtonsFont->SetFont(m_pMF->m_LBLFont);
+	m_pGBButtonsFont->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGBButtonsFont->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_plblButtonsFontSize...\n");
+	m_plblButtonsFontSize = new CStaticText(m_pGBButtonsFont, g_cfg.m_fd_font_size, wxID_ANY);
+	m_plblButtonsFontSize->SetFont(m_pMF->m_LBLFont);
+	m_plblButtonsFontSize->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblButtonsFontSize->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_plblButtonsFontName...\n");
+	m_plblButtonsFontName = new CStaticText(m_pGBButtonsFont, g_cfg.m_fd_font_name, wxID_ANY);
+	m_plblButtonsFontName->SetFont(m_pMF->m_LBLFont);
+	m_plblButtonsFontName->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblButtonsFontName->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pcbButtonsFontBold...\n");
+	m_pcbButtonsFontBold = new CCheckBox(m_pGBButtonsFont, wxID_ANY, &g_cfg.m_buttons_text_font_bold, g_cfg.m_fd_font_bold);
+	m_pcbButtonsFontBold->SetFont(m_pMF->m_LBLFont);
+	m_pcbButtonsFontBold->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbButtonsFontBold->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pcbButtonsFontItalic...\n");
+	m_pcbButtonsFontItalic = new CCheckBox(m_pGBButtonsFont, wxID_ANY, &g_cfg.m_buttons_text_font_italic, g_cfg.m_fd_font_italic);
+	m_pcbButtonsFontItalic->SetFont(m_pMF->m_LBLFont);
+	m_pcbButtonsFontItalic->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbButtonsFontItalic->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_pcbButtonsFontUnderline...\n");
+	m_pcbButtonsFontUnderline = new CCheckBox(m_pGBButtonsFont, wxID_ANY, &g_cfg.m_buttons_text_font_underline, g_cfg.m_fd_font_underline);
+	m_pcbButtonsFontUnderline->SetFont(m_pMF->m_LBLFont);
+	m_pcbButtonsFontUnderline->SetTextColour(g_cfg.m_main_text_colour);
+	m_pcbButtonsFontUnderline->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+
+	m_pButtonsFontNameChoice = new CChoice(m_pGBButtonsFont, validFaceNames, &g_cfg.m_buttons_text_font);
+	m_pButtonsFontNameChoice->SetFont(m_pMF->m_LBLFont);
+	m_pButtonsFontNameChoice->SetTextColour(g_cfg.m_main_text_colour);
+	m_pButtonsFontNameChoice->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+
+	m_pButtonsFontSizeChoice = new CChoice(m_pGBButtonsFont, fontSizes, &g_cfg.m_buttons_text_font_size);
+	m_pButtonsFontSizeChoice->SetFont(m_pMF->m_LBLFont);
+	m_pButtonsFontSizeChoice->SetTextColour(g_cfg.m_main_text_colour);
+	m_pButtonsFontSizeChoice->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	
+	//------------------------------
+
+	int gb_y_offset = std::max<int>(m_pGBMainFont->GetTextExtent(m_pGBMainFont->GetLabel()).GetHeight(), m_pGBButtonsFont->GetTextExtent(m_pGBButtonsFont->GetLabel()).GetHeight()) + 2;
+
+	wxFlexGridSizer* main_font_hor_box_sizer_ctrls_1 = new wxFlexGridSizer(1, 4, 0, 2);
+	main_font_hor_box_sizer_ctrls_1->Add(m_plblMainFontName, 0, wxEXPAND | wxALL);
+	main_font_hor_box_sizer_ctrls_1->Add(m_pMainFontNameChoice, 0, wxEXPAND | wxALL);
+	main_font_hor_box_sizer_ctrls_1->Add(m_plblMainFontSize, 0, wxEXPAND | wxALL);
+	main_font_hor_box_sizer_ctrls_1->Add(m_pMainFontSizeChoice, 0, wxEXPAND | wxALL);
+	
+	wxGridSizer* main_font_hor_box_sizer_ctrls_2 = new wxGridSizer(1, 3, 0, 2);
+	main_font_hor_box_sizer_ctrls_2->Add(m_pcbMainFontBold, 0, wxEXPAND | wxALL);
+	main_font_hor_box_sizer_ctrls_2->Add(m_pcbMainFontItalic, 0, wxEXPAND | wxALL);
+	main_font_hor_box_sizer_ctrls_2->Add(m_pcbMainFontUnderline, 0, wxEXPAND | wxALL);
+
+	wxBoxSizer* main_font_vert_box_sizer_all_ctrls = new wxBoxSizer(wxVERTICAL);
+	main_font_vert_box_sizer_all_ctrls->Add(main_font_hor_box_sizer_ctrls_1, 0, wxEXPAND | wxALL);
+	main_font_vert_box_sizer_all_ctrls->AddSpacer(6);
+	main_font_vert_box_sizer_all_ctrls->Add(main_font_hor_box_sizer_ctrls_2, 0, wxEXPAND | wxALL);
+
+	wxBoxSizer* main_font_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer* main_font_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+	main_font_hor_box_sizer->Add(main_font_vert_box_sizer_all_ctrls, 0, wxALIGN_CENTER);
+	main_font_vert_box_sizer->AddSpacer(gb_y_offset);
+	main_font_vert_box_sizer->Add(main_font_hor_box_sizer, 0, wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL);
+	m_pGBMainFont->SetSizer(main_font_vert_box_sizer);
+
+	//------------------------------
+
+	wxBoxSizer* buttons_font_hor_box_sizer_ctrls_1 = new wxBoxSizer(wxHORIZONTAL);
+	buttons_font_hor_box_sizer_ctrls_1->Add(m_plblButtonsFontName, 0, wxEXPAND | wxALL);
+	buttons_font_hor_box_sizer_ctrls_1->AddSpacer(2);
+	buttons_font_hor_box_sizer_ctrls_1->Add(m_pButtonsFontNameChoice, 0, wxEXPAND | wxALL);
+	buttons_font_hor_box_sizer_ctrls_1->AddSpacer(6);
+	buttons_font_hor_box_sizer_ctrls_1->Add(m_plblButtonsFontSize, 0, wxEXPAND | wxALL);
+	buttons_font_hor_box_sizer_ctrls_1->AddSpacer(2);
+	buttons_font_hor_box_sizer_ctrls_1->Add(m_pButtonsFontSizeChoice, 0, wxEXPAND | wxALL);
+
+	wxGridSizer* buttons_font_hor_box_sizer_ctrls_2 = new wxGridSizer(1, 3, 0, 2);
+	buttons_font_hor_box_sizer_ctrls_2->Add(m_pcbButtonsFontBold, 0, wxEXPAND | wxALL);
+	buttons_font_hor_box_sizer_ctrls_2->Add(m_pcbButtonsFontItalic, 0, wxEXPAND | wxALL);
+	buttons_font_hor_box_sizer_ctrls_2->Add(m_pcbButtonsFontUnderline, 0, wxEXPAND | wxALL);
+
+	wxBoxSizer* buttons_font_vert_box_sizer_all_ctrls = new wxBoxSizer(wxVERTICAL);
+	buttons_font_vert_box_sizer_all_ctrls->Add(buttons_font_hor_box_sizer_ctrls_1, 0, wxEXPAND | wxALL);
+	buttons_font_vert_box_sizer_all_ctrls->AddSpacer(6);
+	buttons_font_vert_box_sizer_all_ctrls->Add(buttons_font_hor_box_sizer_ctrls_2, 0, wxEXPAND | wxALL);
+
+	wxBoxSizer* buttons_font_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer* buttons_font_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+	buttons_font_hor_box_sizer->Add(buttons_font_vert_box_sizer_all_ctrls, 0, wxALIGN_CENTER);
+	buttons_font_vert_box_sizer->AddSpacer(gb_y_offset);
+	buttons_font_vert_box_sizer->Add(buttons_font_hor_box_sizer, 0, wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL);
+	m_pGBButtonsFont->SetSizer(buttons_font_vert_box_sizer);
+
+
+	wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+	vert_box_sizer->Add(m_pGBMainFont, 0, wxALIGN_CENTER);
+	vert_box_sizer->AddSpacer(20);
+	vert_box_sizer->Add(m_pGBButtonsFont, 0, wxALIGN_CENTER);
+
+	hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_CENTER);
+
+	this->SetSizer(hor_box_sizer);
+
+	CControl::RefreshAllControlsData();
+	CControl::UpdateAllControlsSize();
+
+	//------------------------------
+
+	Bind(wxEVT_CHAR_HOOK, &CFontsDialog::OnKeyDown, this);
+	Bind(wxEVT_CHECKBOX, &CFontsDialog::OnChangesEvent, this);
+	Bind(wxEVT_CHOICE, &CFontsDialog::OnChangesEvent, this);
+	Bind(wxEVT_MOUSEWHEEL, &CMainFrame::OnMouseWheel, m_pMF);
+}
+
+void CFontsDialog::OnKeyDown(wxKeyEvent& event)
+{
+	if (event.GetKeyCode() == WXK_ESCAPE)
+	{
+		EndModal(0);
+	}
+}
+
+void CFontsDialog::OnChangesEvent(wxCommandEvent& evt)
+{
+	m_pMF->UpdateTextSizes();
+}
+
+void CFontsDialog::UpdateSize()
+{
+	int gb_y_offset = std::max<int>(m_pGBMainFont->GetTextExtent(m_pGBMainFont->GetLabel()).GetHeight(), m_pGBButtonsFont->GetTextExtent(m_pGBButtonsFont->GetLabel()).GetHeight()) + 2;
+	m_pGBMainFont->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
+	m_pGBButtonsFont->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
+
+	wxSize best_size = this->GetSizer()->GetMinSize();
+	wxSize cur_size = GetSize();
+	wxSize cur_client_size = GetClientSize();
+	best_size.x += cur_size.x - cur_client_size.x + 20;
+	best_size.y += cur_size.y - cur_client_size.y + 20;
+
+	this->SetSize(best_size);
+}
+
+void CFontsDialog::RefreshData()
+{
+	this->SetFont(m_pMF->m_LBLFont);
+	this->SetForegroundColour(g_cfg.m_main_text_colour);
+	this->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+}
+
+void CMainFrame::OnFonts(wxCommandEvent& event)
+{
+	wxSize cl_size = this->GetClientSize();
+	wxSize dlg_size(750, 300);
+
+	CFontsDialog dlg(this,
+		wxT("VideoSubFinder " VSF_VERSION),
+		wxPoint((cl_size.x - dlg_size.x) / 2, (cl_size.y - dlg_size.y) / 2),
+		dlg_size);
+
+	dlg.ShowModal();
 }
 
 void CMainFrame::OnSetPriorityIdle(wxCommandEvent& event)

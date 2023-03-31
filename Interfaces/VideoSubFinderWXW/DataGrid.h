@@ -117,7 +117,8 @@ public:
 	void OnGridCellChanging(wxGridEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void SetGridColLaberls();
-	void RefreshData();
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
    DECLARE_EVENT_TABLE()

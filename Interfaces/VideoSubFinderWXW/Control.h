@@ -42,7 +42,7 @@ public:
 
 	static void UpdateAllControlsSize()
 	{
-		for (int i = 0; i < m_all_controls.size(); i++)
+		for (int i = m_all_controls.size() - 1; i >= 0; i--)
 		{
 			m_all_controls[i]->UpdateSize();
 		}

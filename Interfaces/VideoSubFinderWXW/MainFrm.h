@@ -22,6 +22,7 @@
 #include <wx/timer.h>
 #include <wx/filename.h>
 #include <wx/cmdline.h>
+#include <time.h>
 #include "DataTypes.h"
 #include "MyResource.h"
 #include "SSOWnd.h"
@@ -31,7 +32,7 @@
 #include "FFMPEGVideoLoader.h"
 #include "SSAlgorithms.h"
 #include "IPAlgorithms.h"
-#include <time.h>
+#include "Choice.h"
 
 using namespace std;
 
@@ -62,10 +63,27 @@ public:
 	wxString	m_prefered_locale;
 
 	int			m_txt_dw;
-	int			m_txt_dy;
+	int			m_txt_dy;	
 
-	int			m_fount_size_lbl;
-	int			m_fount_size_btn;
+	wxString	m_fd_main_font_gb_label;
+	wxString	m_fd_buttons_font_gb_label;
+	wxString	m_fd_font_size;
+	wxString	m_fd_font_name;
+	wxString	m_fd_font_bold;
+	wxString	m_fd_font_italic;
+	wxString	m_fd_font_underline;
+
+	wxString	m_main_text_font = wxT("default");
+	bool		m_main_text_font_bold = false;
+	bool		m_main_text_font_italic = false;
+	bool		m_main_text_font_underline = false;
+	int			m_main_text_font_size = -1;
+
+	wxString	m_buttons_text_font = wxT("default");
+	bool		m_buttons_text_font_bold = true;
+	bool		m_buttons_text_font_italic = false;
+	bool		m_buttons_text_font_underline = false;
+	int			m_buttons_text_font_size = -1;
 
 	double		m_ocr_min_sub_duration;
 	wxString	m_ocr_join_txt_images_split_line;
@@ -225,6 +243,7 @@ public:
 	wxString	m_menu_file_exit;
 	wxString	m_menu_edit_setbegintime;
 	wxString	m_menu_edit_setendtime;
+	wxString	m_menu_fonts;
 	wxString	m_menu_scale_text_size_inc;
 	wxString	m_menu_scale_text_size_dec;
 	wxString	m_menu_play_pause;
@@ -383,11 +402,23 @@ public:
 
 public:
 	void Init();
-
 	void PauseVideo();
 	void SaveError(wxString error);
 	void OnFileOpenVideo(int type);
 	void ClearDir(wxString DirName);
+	void ScaleTextSize(int& size, int dsize);
+	void UpdateTextSizes(int dsize = 0);
+	wxString ConvertTime(u64 total_milliseconds);
+	void ShowErrorMessage(wxString msg);
+	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
+	wxMenuBar* CreateMenuBar();
+	void SetFonts();
+	void get_video_box_lblTIME_run_search_label();
+	void get_video_box_lblVB_open_video_title();
+	void get_video_box_lblVB_on_test_title();
+	void get_available_text_alignments();
+	void get_StrFN();
+	void UpdateDynamicSettings();
 
 public:
 	void OnViewImageInImageBox(wxThreadEvent& event);
@@ -419,24 +450,14 @@ public:
 	void OnAppCMDArgsInfo(wxCommandEvent& event);
 	void OnAppUsageDocs(wxCommandEvent& event);
 	void OnAppAbout(wxCommandEvent& event);
+	void OnFonts(wxCommandEvent& event);
 	void OnScaleTextSizeInc(wxCommandEvent& event);
 	void OnScaleTextSizeDec(wxCommandEvent& event);
-	void ScaleTextSize(int dsize);
 	void OnSetPriorityIdle(wxCommandEvent& event);
 	void OnSetPriorityNormal(wxCommandEvent& event);
 	void OnSetPriorityBelownormal(wxCommandEvent& event);
 	void OnSetPriorityAbovenormal(wxCommandEvent& event);
 	void OnSetPriorityHigh(wxCommandEvent& event);
-	wxString ConvertTime(u64 total_milliseconds);
-	void ShowErrorMessage(wxString msg);
-	int GetOptimalFontSize(int cw, int ch, wxString label, wxFontFamily family, wxFontStyle style, wxFontWeight weight, bool underlined = false, const wxString& face = wxEmptyString, wxFontEncoding encoding = wxFONTENCODING_DEFAULT);
-	wxMenuBar* CreateMenuBar();	
-	void get_video_box_lblTIME_run_search_label();
-	void get_video_box_lblVB_open_video_title();
-	void get_video_box_lblVB_on_test_title();
-	void get_available_text_alignments();
-	void get_StrFN();
-	void UpdateDynamicSettings();
 
 private:
    DECLARE_EVENT_TABLE()

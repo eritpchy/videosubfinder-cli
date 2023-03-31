@@ -45,7 +45,7 @@ CCheckBox::CCheckBox(wxWindow* parent,
 	
 	m_pCB->SetValue(*m_p_val);
 
-	m_pCB->Bind(wxEVT_CHECKBOX, &CCheckBox::OnCheckBoxEvent, this);
+	m_pCB->Bind(wxEVT_CHECKBOX, &CCheckBox::OnCheckBoxEvent, this);	
 }
 
 void CCheckBox::SetFont(wxFont& font)
@@ -124,6 +124,8 @@ void CCheckBox::OnCheckBoxEvent(wxCommandEvent& evt)
 	{
 		*m_p_val = false;
 	}
+
+	evt.Skip();
 }
 
 void CCheckBox::OnSize(wxSizeEvent& event)

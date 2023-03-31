@@ -486,7 +486,14 @@ void CDataGrid::OnGridCellChanging(wxGridEvent& event)
 
 void CDataGrid::OnSize(wxSizeEvent& event)
 {
-	RefreshData();
+	wxRect rcDG;
+	rcDG = this->GetSize();
+
+	if (rcDG.width != m_w)
+	{
+		UpdateSize();
+		m_w = rcDG.width;
+	}
 }
 
 void CDataGrid::RefreshData()
@@ -495,10 +502,12 @@ void CDataGrid::RefreshData()
 	if (m_pTextColour) this->SetLabelTextColour(*m_pTextColour);
 
 	SetGridColLaberls();
+}
 
+void CDataGrid::UpdateSize()
+{
 	wxClientDC dc(this);
 	if (m_pFont) dc.SetFont(*m_pFont);
-	if (m_pTextColour) dc.SetTextForeground(*m_pTextColour);
 	int max_text_w = 0;
 	int cw = GetClientSize().x;
 	int first_col_size;
@@ -507,8 +516,6 @@ void CDataGrid::RefreshData()
 
 	for (int index = 0; index < this->GetNumberRows(); index++)
 	{
-		if (m_pFont) this->SetCellFont(index, 0, *m_pFont);
-		if (m_pTextColour) this->SetCellTextColour(index, 0, *m_pTextColour);		
 		wxString label = this->GetCellValue(index, 0);
 		wxSize text_size = dc.GetMultiLineTextExtent(label);
 		this->SetRowSize(index, text_size.GetHeight() + 6);
@@ -526,6 +533,10 @@ void CDataGrid::RefreshData()
 	}
 	max_text_w += 6;
 
+	// Note: fix for appeared horizontal scroll bar
+	SetColSize(0, cw / 10);
+	SetColSize(1, cw / 10);
+
 	if (max_text_w <= cw * 0.65)
 	{
 		first_col_size = cw * 0.65;
@@ -542,7 +553,7 @@ void CDataGrid::RefreshData()
 		first_col_size = cw * max_percent;
 		SetColSize(0, first_col_size);
 		SetColSize(1, cw - first_col_size - dw);
-	}	
+	}
 }
 
 void CDataGrid::AddGroup(wxString& label, wxColour colour)
