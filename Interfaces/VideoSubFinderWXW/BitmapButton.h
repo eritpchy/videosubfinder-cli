@@ -55,13 +55,14 @@ public:
 		const wxImage& image_selected);
 	wxSize GetOptimalSize(int req_w = 0, int req_h = 0);
 
+	wxImage 	m_image;
+	wxImage 	m_image_focused;
+	wxImage 	m_image_selected;
+
 private:
 	ShownBitmap m_ShownBitmap = ShownBitmap::Default;
 	bool		m_bDown;
 	bool		m_bImagesDefined;
-	wxImage 	m_image;
-	wxImage 	m_image_focused;
-	wxImage 	m_image_selected;
 	wxWindow*	m_parent;
 
 	DECLARE_EVENT_TABLE()

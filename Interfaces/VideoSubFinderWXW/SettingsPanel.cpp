@@ -183,10 +183,7 @@ void CSettingsPanel::Init()
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI...\n");	
 	m_pOI = new CDataGrid(m_pGB1, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OI, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
                            rcOI.GetPosition(), rcOI.GetSize() );
-	m_pOI->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
 	m_pOI->SetBackgroundColour(g_cfg.m_notebook_colour);
-	m_pOI->SetDefaultCellBackgroundColour(g_cfg.m_notebook_colour);
-	m_pOI->SetLabelBackgroundColour(g_cfg.m_notebook_colour);
 	m_pOI->SetGridLineColour(g_cfg.m_grid_line_colour);
 	
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOI m_ssp_oi_group_global_image_processing_settings...\n");
@@ -254,10 +251,7 @@ void CSettingsPanel::Init()
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM...\n");
 	m_pOIM = new CDataGrid(m_pGB2, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, ID_OIM, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour),
                            rcOIM.GetPosition(), rcOIM.GetSize() );
-	m_pOIM->SetDefaultCellTextColour(g_cfg.m_main_text_colour);
 	m_pOIM->SetBackgroundColour(g_cfg.m_notebook_colour);
-	m_pOIM->SetDefaultCellBackgroundColour(g_cfg.m_notebook_colour);
-	m_pOIM->SetLabelBackgroundColour(g_cfg.m_notebook_colour);
 	m_pOIM->SetGridLineColour(g_cfg.m_grid_line_colour);
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pOIM m_ssp_oim_group_ocr_settings...\n");
@@ -369,13 +363,13 @@ void CSettingsPanel::Init()
 	m_plblPixelColor->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblPixelColor->SetSize(rlPixelColor);
 
-	wxColour clr(255, 255, 255);
+	m_PixelColorExample = wxColour(255, 255, 255);
 
 	u8 bgr[3], lab[3], y;
 
-	bgr[0] = clr.Blue();
-	bgr[1] = clr.Green();
-	bgr[2] = clr.Red();
+	bgr[0] = m_PixelColorExample.Blue();
+	bgr[1] = m_PixelColorExample.Green();
+	bgr[2] = m_PixelColorExample.Red();
 
 	BGRToYUV(bgr[0], bgr[1], bgr[2], &y);
 	BGRToLab(bgr[0], bgr[1], bgr[2], &(lab[0]), &(lab[1]), &(lab[2]));
@@ -404,7 +398,7 @@ void CSettingsPanel::Init()
 	m_pPixelColorExample = new CStaticText(m_pGB3, g_cfg.m_pixel_color_example, wxID_ANY);
 	m_pPixelColorExample->SetFont(m_pMF->m_LBLFont);
 	m_pPixelColorExample->SetTextColour(g_cfg.m_main_text_colour);
-	m_pPixelColorExample->SetBackgroundColour(clr);
+	m_pPixelColorExample->SetBackgroundColour(m_PixelColorExample);
 	m_pPixelColorExample->SetSize(rcPixelColorExample);
 	m_pPixelColorExample->SetMinSize(rcPixelColorExample.GetSize());
 
@@ -506,6 +500,7 @@ void CSettingsPanel::UpdateSize()
 
 void CSettingsPanel::RefreshData()
 {
+	m_pP2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 }
 
 void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)

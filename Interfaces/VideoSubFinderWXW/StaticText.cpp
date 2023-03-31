@@ -46,6 +46,8 @@ CStaticText::~CStaticText()
 void CStaticText::SetFont(wxFont& font)
 {
 	m_pFont = &font;
+	m_pST->SetFont(*m_pFont);
+
 	wxSizeEvent event;
 	OnSize(event);
 }
@@ -53,8 +55,14 @@ void CStaticText::SetFont(wxFont& font)
 void CStaticText::SetTextColour(wxColour& colour)
 {
 	m_pTextColour = &colour;
-	wxSizeEvent event;
-	OnSize(event);
+	m_pST->SetForegroundColour(*m_pTextColour);
+}
+
+void CStaticText::SetBackgroundColour(wxColour& colour)
+{
+	m_pBackgroundColour = &colour;
+	wxPanel::SetBackgroundColour(*m_pBackgroundColour);
+	m_pST->SetBackgroundColour(*m_pBackgroundColour);
 }
 
 wxSize CStaticText::GetOptimalSize(int add_gap)
@@ -84,8 +92,17 @@ wxSize CStaticText::GetOptimalSize(int add_gap)
 
 void CStaticText::RefreshData()
 {
-	if (m_pFont) m_pST->SetFont(*m_pFont);
 	m_pST->SetLabel(*m_p_label);
+
+	if (m_pFont) m_pST->SetFont(*m_pFont);
+	
+	if (m_pTextColour) m_pST->SetForegroundColour(*m_pTextColour);
+	
+	if (m_pBackgroundColour)
+	{
+		wxPanel::SetBackgroundColour(*m_pBackgroundColour);
+		m_pST->SetBackgroundColour(*m_pBackgroundColour);
+	}
 
 	wxSizer* pSizer = m_pParent->GetSizer();
 	if (pSizer)
@@ -117,19 +134,10 @@ void CStaticText::SetLabel(const wxString& label)
 	OnSize(event);
 }
 
-bool CStaticText::SetBackgroundColour(const wxColour& colour)
-{
-	return ( wxPanel::SetBackgroundColour(colour) && 
-		     m_pST->SetBackgroundColour(colour) );
-}
-
 void CStaticText::OnSize(wxSizeEvent& event)
 {
 	int w, h, tw, th, x, y;
 	
-	if (m_pFont) m_pST->SetFont(*m_pFont);
-	if (m_pTextColour) m_pST->SetForegroundColour(*m_pTextColour);
-
     this->GetClientSize(&w, &h);
 	m_pST->GetSize(&tw, &th);
 

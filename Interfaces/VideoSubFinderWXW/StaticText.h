@@ -49,9 +49,9 @@ public:
 	void SetMinSize(wxSize& size);
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
+	void SetBackgroundColour(wxColour& colour);
 	void SetLabel(const wxString& label);
-	void SetLabel(const wxString&& label) = delete;
-	bool SetBackgroundColour(const wxColour& colour);	
+	void SetLabel(const wxString&& label) = delete;	
 	void OnSize(wxSizeEvent& event);
 	void RefreshData();
 	wxSize GetOptimalSize(int add_gap = 6);
@@ -61,5 +61,6 @@ private:
 	const wxString* m_p_label;
 	wxFont *m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
+	wxColour* m_pBackgroundColour = NULL;
 	DECLARE_EVENT_TABLE()
 };

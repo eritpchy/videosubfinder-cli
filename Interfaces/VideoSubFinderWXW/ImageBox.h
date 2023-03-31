@@ -49,8 +49,6 @@ public:
 	CStaticText	*m_plblIB;
 	CImageWnd   *m_pIW;
 
-	wxColour	m_IBColor;
-
 	bool		m_WasInited;
 
 	wxImage		*m_pImage;

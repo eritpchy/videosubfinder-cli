@@ -469,6 +469,7 @@ void COCRPanel::UpdateSize()
 
 void COCRPanel::RefreshData()
 {
+	m_pP3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 }
 
 void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)

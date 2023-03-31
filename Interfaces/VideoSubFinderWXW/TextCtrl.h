@@ -64,11 +64,13 @@ public:
 
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
+	void SetBackgroundColour(wxColour& colour);
 	void SetMinSize(wxSize& size);
 	
 private:
 	wxSize m_min_size;
 	wxFont* m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
+	wxColour* m_pBackgroundColour = NULL;
 	DECLARE_EVENT_TABLE()
 };

@@ -56,6 +56,8 @@ public:
 	CTextCtrl* m_pPixelColorLab;
 	CStaticText* m_pPixelColorExample;
 
+	wxColour m_PixelColorExample;
+
 	int		m_cn;
 	
 	int		m_W = 0;

@@ -104,6 +104,8 @@ void CSSOWnd::Init()
 
 void CSSOWnd::RefreshData()
 {
+	SetBackgroundColour(g_cfg.m_notebook_colour);
+
 	this->SetPageText(0, g_cfg.m_search_panel_title);
 	this->SetPageText(1, g_cfg.m_settings_panel_title);
 	this->SetPageText(2, g_cfg.m_ocr_panel_title);

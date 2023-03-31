@@ -178,6 +178,7 @@ void CSearchPanel::Init()
 
 void CSearchPanel::RefreshData()
 {
+	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 }
 
 void CSearchPanel::UpdateSize()

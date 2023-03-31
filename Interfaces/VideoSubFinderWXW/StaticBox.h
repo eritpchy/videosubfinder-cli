@@ -37,6 +37,7 @@ public:
 	void RefreshData();
 	void SetFont(wxFont& font);
     void SetTextColour(wxColour& colour);
+    void SetBackgroundColour(wxColour& colour);
     void SetLabel(const wxString& label);
     void SetLabel(const wxString&& label) = delete;
     void SetMinSize(wxSize& size);
@@ -47,5 +48,6 @@ private:
     wxWindow* m_pParent;
 	wxFont* m_pFont = NULL;
     wxColour* m_pTextColour = NULL;
+    wxColour* m_pBackgroundColour = NULL;
     const wxString* m_p_label;
 };

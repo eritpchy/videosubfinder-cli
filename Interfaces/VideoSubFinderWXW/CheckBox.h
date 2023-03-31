@@ -50,7 +50,7 @@ public:
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
 	void SetLabel(const wxString& label);
-	bool SetBackgroundColour(const wxColour& colour);	
+	void SetBackgroundColour(wxColour& colour);	
 	void SetMinSize(wxSize& size);
 	void RefreshData();
 	
@@ -65,6 +65,7 @@ private:
 	wxSize m_min_size;
 	wxFont* m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
+	wxColour* m_pBackgroundColour = NULL;
 	const wxString* m_p_label;
 	DECLARE_EVENT_TABLE()
 };

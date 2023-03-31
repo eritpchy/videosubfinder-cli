@@ -87,7 +87,7 @@ private:
 class CVideoBox : public CResizableWindow, public CControl
 {
 public:
-	CVideoBox(CMainFrame* pMF, wxColour	bc);
+	CVideoBox(CMainFrame* pMF);
 	~CVideoBox();
 
 	CBitmapButton	*m_pButtonRun;
@@ -98,7 +98,10 @@ public:
 	CVideoWindow	*m_pVBox;
 	CScrollBar		*m_pSB;
 
-	wxColour	m_bc;
+	wxImage	m_tb_run_origImage;
+	wxImage	m_tb_pause_origImage;
+	wxImage	m_tb_stop_origImage;
+	wxColour m_prevBackgroundColour;
 
 	wxImage	*m_pImage;
 	wxFrame *m_pFullScreenWin;

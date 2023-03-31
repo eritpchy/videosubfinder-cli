@@ -522,13 +522,12 @@ void CMainFrame::Init()
 
 	SaveToReportLog("CMainFrame::Init(): m_pImageBox->Init()...\n");
 	m_pImageBox->Init();
-	m_pImageBox->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 	
 	SaveToReportLog("CMainFrame::Init(): new CVideoBox(this)...\n");
-	m_pVideoBox = new CVideoBox(this, g_cfg.m_video_image_box_border_colour);
+	m_pVideoBox = new CVideoBox(this);
 
 	SaveToReportLog("CMainFrame::Init(): m_pVideoBox->Init()...\n");
 	m_pVideoBox->Init();
@@ -1846,6 +1845,10 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 	this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
 
 	LoadSettings();
+
+	this->SetBackgroundColour(g_cfg.m_main_frame_background_colour);
+
+	SetFonts();	
 	
 	SaveToReportLog("CMainFrame::OnFileLoadSettings(): CreateMenuBar() ...\n");
 	wxMenuBar* pMenuBar = CreateMenuBar();
@@ -1867,6 +1870,7 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 		}
 	}
 
+	UpdateDynamicSettings();
 	CControl::RefreshAllControlsData();
 	CControl::UpdateAllControlsSize();
 	this->Refresh();

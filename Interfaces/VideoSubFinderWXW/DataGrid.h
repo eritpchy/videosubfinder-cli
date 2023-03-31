@@ -22,21 +22,6 @@
 
 using namespace std;
 
-class DataGridGroup
-{
-public:
-	DataGridGroup(int i, int rb, int re)
-	{
-		m_i = i;
-		m_rb = rb;
-		m_re = re;
-	}
-
-	int m_i;
-	int m_rb;
-	int m_re;
-};
-
 class CDataGrid : public wxGrid, public CControl
 {
 public:
@@ -53,70 +38,70 @@ public:
 public:
 	int m_w;
 	int m_h;
-	wxFont* m_pFont;
-	wxColour* m_pTextColour;
+	wxFont* m_pFont = NULL;
+	wxColour* m_pTextColour = NULL;
+	wxColour* m_pGridLineColour = NULL;
+	wxColour* m_pBackgroundColour = NULL;
 	wxString* m_p_grid_col_property_label;
 	wxString* m_p_grid_col_value_label;
 
-	vector<DataGridGroup> m_DataGridGroups;
-	vector<DataGridGroup> m_DataGridSubGroup;
+	void AddGroup(wxString& label, wxColour& colour);
+	void AddGroup(wxString&& label, wxColour& colour) = delete;
 
-	void AddGroup(wxString& label, wxColour colour);
-	void AddGroup(wxString&& label, wxColour colour) = delete;
-
-	void AddSubGroup(wxString& label, wxColour colour);
-	void AddSubGroup(wxString&& label, wxColour colour) = delete;
+	void AddSubGroup(wxString& label, wxColour& colour);
+	void AddSubGroup(wxString&& label, wxColour& colour) = delete;
 	
 	void AddProperty(wxString& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					wxString *pstr);
 	void AddProperty(wxString&& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					wxString* pstr) = delete;
 
 	void AddProperty(wxString& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					wxString *pstr, wxArrayString& vals);
 	void AddProperty(wxString&& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					wxString* pstr, wxArrayString&& vals) = delete;
 
 	void AddProperty(wxString& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					wxArrayString* pstr);
 	void AddProperty(wxString&& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					wxArrayString* pstr) = delete;
 
 	void AddProperty(wxString& label, 
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					int *pval, int val_min, int val_max);
 	void AddProperty(wxString&& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					int* pval, int val_min, int val_max) = delete;
 
 	void AddProperty(wxString& label, 
-					  wxColour colour1, wxColour colour2,
+					  wxColour& colour1, wxColour& colour2,
 					  double *pval, double val_min, double val_max);
 	void AddProperty(wxString&& label,
-		wxColour colour1, wxColour colour2,
+		wxColour& colour1, wxColour& colour2,
 		double* pval, double val_min, double val_max) = delete;
 
 	void AddProperty(wxString &label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					bool *pbln);
 	void AddProperty(wxString&& label,
-					wxColour colour1, wxColour colour2,
+					wxColour& colour1, wxColour& colour2,
 					bool* pbln) = delete;
 
 	//void AddSubGroup();
 	//bool SetFont(const wxFont& font);
 	//void SetLabel(const wxString& label);
-	//bool SetBackgroundColour(const wxColour& colour);
+	void SetBackgroundColour(wxColour& col);
 	//void SetTextColour(const wxColour& colour);
 	void OnGridCellChanging(wxGridEvent& event);
 	void OnSize(wxSizeEvent& event);
 	void SetGridColLaberls();
+	void SetGridLineColour(wxColour& col);
 	void UpdateSize() override;
 	void RefreshData() override;
 

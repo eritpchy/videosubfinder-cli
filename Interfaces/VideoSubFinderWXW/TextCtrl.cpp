@@ -157,6 +157,12 @@ void CTextCtrl::SetTextColour(wxColour& colour)
 	wxTextCtrl::SetForegroundColour(*m_pTextColour);
 }
 
+void CTextCtrl::SetBackgroundColour(wxColour& colour)
+{
+	m_pBackgroundColour = &colour;
+	wxTextCtrl::SetBackgroundColour(*m_pBackgroundColour);
+}
+
 void CTextCtrl::SetMinSize(wxSize& size)
 {
 	m_min_size = size;
@@ -166,6 +172,7 @@ void CTextCtrl::RefreshData()
 {
 	if (m_pFont) wxTextCtrl::SetFont(*m_pFont);
 	if (m_pTextColour) wxTextCtrl::SetForegroundColour(*m_pTextColour);
+	if (m_pBackgroundColour) wxTextCtrl::SetBackgroundColour(*m_pBackgroundColour);
 
 	if (m_p_str_val)
 	{

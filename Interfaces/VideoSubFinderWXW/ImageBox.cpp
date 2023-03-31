@@ -78,7 +78,6 @@ void CImageBox::Init()
 	wxString strIBXClass;
 
 	m_plblIB = new CStaticText(this, g_cfg.m_image_box_title, ID_LBL_IB);
-	m_IBColor = m_plblIB->GetBackgroundColour();
 	m_plblIB->SetSize(0, 0, 390, 30);
 	m_plblIB->SetFont(m_pMF->m_LBLFont);
 	m_plblIB->SetTextColour(g_cfg.m_main_text_colour);
@@ -87,7 +86,7 @@ void CImageBox::Init()
 	m_pIW = new CImageWnd(this);
 	m_pIW->SetBackgroundColour(g_cfg.m_video_image_box_background_colour);
 
-	this->SetBackgroundColour(m_IBColor);
+	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
 	this->SetSize(20,20,402,300);
 
 	m_plblIB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
@@ -110,6 +109,8 @@ void CImageBox::UpdateSize()
 
 void CImageBox::RefreshData()
 {
+	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
+	m_pIW->SetBackgroundColour(g_cfg.m_video_image_box_background_colour);
 }
 
 void CImageBox::OnSize( wxSizeEvent& event )

@@ -41,6 +41,12 @@ void CStaticBox::SetTextColour(wxColour& colour)
     wxStaticBox::SetForegroundColour(*m_pTextColour);
 }
 
+void CStaticBox::SetBackgroundColour(wxColour& colour)
+{
+    m_pBackgroundColour = &colour;
+    wxStaticBox::SetBackgroundColour(*m_pBackgroundColour);
+}
+
 void CStaticBox::SetLabel(const wxString& label)
 {
     m_p_label = &label;
@@ -56,7 +62,8 @@ void CStaticBox::RefreshData()
 {
     wxStaticBox::SetLabel(*m_p_label);
 	if (m_pFont) wxStaticBox::SetFont(*m_pFont);
-    if (m_pTextColour) wxStaticBox::SetForegroundColour(*m_pTextColour);	
+    if (m_pTextColour) wxStaticBox::SetForegroundColour(*m_pTextColour);
+    if (m_pBackgroundColour) wxStaticBox::SetBackgroundColour(*m_pBackgroundColour);
 }
 
 void CStaticBox::UpdateSize()

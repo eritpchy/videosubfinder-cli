@@ -393,7 +393,8 @@ void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 				g_cfg.m_pixel_color_lab = wxString::Format(wxT("Lab: l:%d a:%d b:%d"), (int)(lab[0]), (int)(lab[1]), (int)(lab[2]));
 				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorRGB->SetValue(g_cfg.m_pixel_color_bgr);
 				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorLab->SetValue(g_cfg.m_pixel_color_lab);
-				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->SetBackgroundColour(wxColour(bgr[2], bgr[1], bgr[0]));
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_PixelColorExample = wxColour(bgr[2], bgr[1], bgr[0]);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->SetBackgroundColour(m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_PixelColorExample);
 				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->Refresh();
 			}
 		}
@@ -540,10 +541,10 @@ BEGIN_EVENT_TABLE(CVideoBox, CResizableWindow)
 	EVT_TIMER(TIMER_ID_VB, CVideoBox::OnTimer)
 END_EVENT_TABLE()
 
-CVideoBox::CVideoBox(CMainFrame* pMF, wxColour	bc)
+CVideoBox::CVideoBox(CMainFrame* pMF)
 		: CResizableWindow(pMF,//->GetClientWindow(),
 				  wxID_ANY,
-		          wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_VB), m_bc (bc)
+		          wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_VB)
 {
 	m_pImage = NULL;
 	m_pMF = pMF;
@@ -587,10 +588,10 @@ void ReplaceColour(wxBitmap& bmp, wxColour orig_colour, wxColour repl_colour)
 	}
 }
 
-void LoadToolBarImage(wxImage& image, wxImage& image_focused, wxImage& image_selected, const wxString& path,
+void GetToolBarImages(wxImage& image, wxImage& image_focused, wxImage& image_selected, wxImage& origImage,
 						wxColour border_colour, wxColour border_colour_focused, wxColour border_colour_selected)
 {
-	wxBitmap bmp = wxBitmap(wxImage(path));
+	wxBitmap bmp = wxBitmap(origImage);
 	wxBitmap bmp_focused = bmp;
 	wxBitmap bmp_selected = bmp;
 
@@ -617,18 +618,22 @@ void CVideoBox::Init()
 	m_pFullScreenWin->Hide();	
 #endif
 
-	this->SetBackgroundColour(m_bc);
+	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
+	m_prevBackgroundColour = g_cfg.m_video_image_box_border_colour;
 
-	wxColour border_colour_focused(((int)m_bc.Red()) * 9 / 10, ((int)m_bc.Green()) * 9 / 10, ((int)m_bc.Blue()) * 9 / 10);
-	wxColour border_colour_selected(((int)m_bc.Red()) * 2 / 3, ((int)m_bc.Green()) * 2 / 3, ((int)m_bc.Blue()) * 2 / 3);
+	wxColour border_colour_focused(((int)g_cfg.m_video_image_box_border_colour.Red()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 9 / 10);
+	wxColour border_colour_selected(((int)g_cfg.m_video_image_box_border_colour.Red()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 2 / 3);
 
-	LoadToolBarImage(image, image_focused, image_selected, g_app_dir + "/bitmaps/tb_run.bmp", m_bc, border_colour_focused, border_colour_selected);
+	m_tb_run_origImage = wxImage(g_app_dir + "/bitmaps/tb_run.bmp");
+	GetToolBarImages(image, image_focused, image_selected, m_tb_run_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
 	m_pButtonRun = new CBitmapButton(this, ID_TB_RUN, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
-	LoadToolBarImage(image, image_focused, image_selected, g_app_dir + "/bitmaps/tb_pause.bmp", m_bc, border_colour_focused, border_colour_selected);
+	m_tb_pause_origImage = wxImage(g_app_dir + "/bitmaps/tb_pause.bmp");
+	GetToolBarImages(image, image_focused, image_selected, m_tb_pause_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
 	m_pButtonPause = new CBitmapButton(this, ID_TB_PAUSE, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
-	LoadToolBarImage(image, image_focused, image_selected, g_app_dir + "/bitmaps/tb_stop.bmp", m_bc, border_colour_focused, border_colour_selected);
+	m_tb_stop_origImage = wxImage(g_app_dir + "/bitmaps/tb_stop.bmp");
+	GetToolBarImages(image, image_focused, image_selected, m_tb_stop_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
 	m_pButtonStop = new CBitmapButton(this, ID_TB_STOP, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
 	m_pButtonPause->Disable();
@@ -692,6 +697,25 @@ void CVideoBox::UpdateSize()
 
 void CVideoBox::RefreshData()
 {
+	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
+	m_pVBox->m_pVideoWnd->SetBackgroundColour(g_cfg.m_video_image_box_background_colour);
+
+	if (g_cfg.m_video_image_box_background_colour != m_prevBackgroundColour)
+	{
+		wxColour border_colour_focused(((int)g_cfg.m_video_image_box_border_colour.Red()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 9 / 10);
+		wxColour border_colour_selected(((int)g_cfg.m_video_image_box_border_colour.Red()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 2 / 3);
+
+		GetToolBarImages(m_pButtonRun->m_image, m_pButtonRun->m_image_focused, m_pButtonRun->m_image_selected, m_tb_run_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+		m_pButtonRun->Refresh();
+
+		GetToolBarImages(m_pButtonPause->m_image, m_pButtonPause->m_image_focused, m_pButtonPause->m_image_selected, m_tb_pause_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+		m_pButtonPause->Refresh();
+
+		GetToolBarImages(m_pButtonStop->m_image, m_pButtonStop->m_image_focused, m_pButtonStop->m_image_selected, m_tb_stop_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+		m_pButtonStop->Refresh();
+	}
+
+	m_prevBackgroundColour = g_cfg.m_video_image_box_border_colour;
 }
 
 void CVideoBox::OnSize(wxSizeEvent& event)
