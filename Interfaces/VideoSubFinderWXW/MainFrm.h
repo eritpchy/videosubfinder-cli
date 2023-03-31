@@ -463,24 +463,6 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class MyMessageBox : public wxDialog, public CControl
-{
-public:
-	CMainFrame* m_pMF;
-	wxTextCtrl* m_pDialogText;
-
-	MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
-		const wxPoint& pos = wxDefaultPosition,
-		const wxSize& size = wxDefaultSize);
-
-	~MyMessageBox()
-	{
-	}
-
-	void OnKeyDown(wxKeyEvent& event);
-	void RefreshData();
-};
-
 wxString ConvertVideoTime(s64 pos);
 wxString VideoTimeToStr2(s64 pos);
 wxString VideoTimeToStr3(s64 pos);

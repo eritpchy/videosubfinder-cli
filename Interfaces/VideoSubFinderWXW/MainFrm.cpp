@@ -21,6 +21,7 @@
 #include <wx/txtstrm.h>
 #include <wx/regex.h>
 #include <wx/fontenum.h>
+#include <wx/textwrapper.h>
 #include <chrono>
 #include "Control.h"
 
@@ -2167,19 +2168,41 @@ void CMainFrame::ShowErrorMessage(wxString msg)
 	wxMessageBox(msg, wxT("Error Info"), wxOK | wxICON_ERROR);
 }
 
+class MyMessageBox : public wxDialog, public CControl
+{
+public:
+	CMainFrame* m_pMF;
+	wxTextCtrl* m_pDialogText;
+
+	MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
+
+	~MyMessageBox()
+	{
+	}
+
+	void OnKeyDown(wxKeyEvent& event);
+	void UpdateSize() override;
+	void RefreshData() override;
+
+	int m_w;
+};
+
 MyMessageBox::MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
 	const wxPoint& pos,
 	const wxSize& size) : wxDialog(pMF, wxID_ANY, caption, pos, size)
 {
 	m_pMF = pMF;
+	m_w = size.x;
 	m_pDialogText = new wxTextCtrl(this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
 	m_pDialogText->SetFont(m_pMF->m_LBLFont);
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
 	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
-	Bind(wxEVT_KEY_DOWN, &MyMessageBox::OnKeyDown, this);	
-	m_pDialogText->Bind(wxEVT_KEY_DOWN, &MyMessageBox::OnKeyDown, this);
+	Bind(wxEVT_CHAR_HOOK, &MyMessageBox::OnKeyDown, this);
 	Bind(wxEVT_MOUSEWHEEL, &CMainFrame::OnMouseWheel, m_pMF);
 	m_pDialogText->SetInsertionPoint(0);
+	UpdateSize();
 }
 
 void MyMessageBox::OnKeyDown(wxKeyEvent& event)
@@ -2210,6 +2233,55 @@ void MyMessageBox::RefreshData()
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
 	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
 	m_pDialogText->Refresh(true);
+}
+
+wxString WrapText(wxWindow* win, const wxString& text, int widthMax)
+{
+	class HardBreakWrapper : public wxTextWrapper
+	{
+	public:
+		HardBreakWrapper(wxWindow* win, const wxString& text, int widthMax)
+		{
+			Wrap(win, text, widthMax);
+		}
+		wxString const& GetWrapped() const { return m_wrapped; }
+	protected:
+		virtual void OnOutputLine(const wxString& line)
+		{
+			m_wrapped += line;
+		}
+		virtual void OnNewLine()
+		{
+			m_wrapped += '\n';
+		}
+	private:
+		wxString m_wrapped;
+	};
+	HardBreakWrapper wrapper(win, text, widthMax);
+	return wrapper.GetWrapped();
+}
+
+void MyMessageBox::UpdateSize()
+{
+	wxMemoryDC dc;
+	dc.SetFont(m_pMF->m_LBLFont);
+
+	wxString val = m_pDialogText->GetValue();
+	val = WrapText(m_pDialogText, val, m_w);
+
+	wxSize text_size = dc.GetMultiLineTextExtent(val);
+	wxSize best_size = m_pDialogText->GetSizeFromTextSize(text_size);
+	wxSize cur_size = GetSize();
+	wxSize cur_client_size = GetClientSize();
+	best_size.x += cur_size.x - cur_client_size.x + 10;
+	best_size.y += cur_size.y - cur_client_size.y + 10;
+
+	wxSize mf_cl_size = m_pMF->GetClientSize();
+
+	this->SetSize(std::max<int>((mf_cl_size.x - best_size.x) / 2, 0),
+		std::max<int>((mf_cl_size.y - best_size.y) / 2, 10),
+		std::min<int>(mf_cl_size.x, best_size.x),
+		std::min<int>(mf_cl_size.y, best_size.y));
 }
 
 void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
@@ -2549,6 +2621,7 @@ void CFontsDialog::RefreshData()
 	this->SetFont(m_pMF->m_LBLFont);
 	this->SetForegroundColour(g_cfg.m_main_text_colour);
 	this->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+	Refresh();
 }
 
 void CMainFrame::OnFonts(wxCommandEvent& event)
