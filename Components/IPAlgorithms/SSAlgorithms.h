@@ -64,6 +64,7 @@ s64 GetVideoTime(int minute, int sec, int mili_sec);
 
 wxString GetFileName(wxString FilePath);
 wxString GetFileExtension(wxString FilePath);
+wxString GetFileNameWithExtension(wxString FilePath);
 wxString GetFileDir(wxString FilePath);
 
 // W - full image include scale (if is) width

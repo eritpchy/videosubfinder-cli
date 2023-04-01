@@ -603,6 +603,18 @@ void CMainFrame::Init()
 	this->Bind(VIEW_BGR_IMAGE_IN_VIDEO_BOX, &CMainFrame::OnViewBGRImageInVideoBox, this);
 	this->Bind(VIEW_RGB_IMAGE, &CMainFrame::OnViewRGBImage, this);
 
+	if (wxFileExists(g_prev_data_path))
+	{
+		std::map<wxString, wxString> previous_vido_settings;
+		ReadSettings(g_prev_data_path, previous_vido_settings);
+		ReadProperty(previous_vido_settings, m_last_video_file_path, "last_video_file_path");
+		ReadProperty(previous_vido_settings, m_last_video_begin_time, "last_video_begin_time");
+		ReadProperty(previous_vido_settings, m_last_video_end_time, "last_video_end_time");
+		ReadProperty(previous_vido_settings, m_last_video_open_type, "last_video_open_type");
+		ReadProperty(previous_vido_settings, m_last_saved_sub_file_path, "last_saved_sub_file_path");
+		ReadProperty(previous_vido_settings, m_last_specified_settings_file_path, "last_specified_settings_file_path");
+	}
+
 	SaveToReportLog("CMainFrame::Init(): finished.\n");
 }
 
@@ -838,8 +850,11 @@ void CMainFrame::OnFileOpenVideo(int type)
 		// https://en.wikipedia.org/wiki/Video_file_format
 		wxString all_video_formats("*.3g2;*.3gp;*.amv;*.asf;*.avi;*.drc;*.flv;*.f4v;*.f4p;*.f4a;*.f4b;*.gif;*.gifv;*.m4p;*.m4v;*.m4v;*.mkv;*.mng;*.mov;*.qt;*.mp4;*.mpg;*.mp2;*.mpeg;*.mpe;*.mpv;*.mpg;*.mpeg;*.m2v;*.mts;*.m2ts;*.ts;*.mxf;*.nsv;*.ogv;*.ogg;*.rm;*.rmvb;*.roq;*.svi;*.viv;*.vob;*.webm;*.wmv;*.yuv;*.avs");
 
+		wxString video_file_dir = (m_FileName.size() > 0) ? GetFileDir(m_FileName) : ((m_last_video_file_path.size() > 0) ? GetFileDir(m_last_video_file_path) : wxEmptyString);
+		wxString video_file_name = (m_FileName.size() > 0) ? GetFileNameWithExtension(m_FileName) : ((m_last_video_file_path.size() > 0) ? GetFileNameWithExtension(m_last_video_file_path) : wxEmptyString);
+
 		wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_video_file,
-						wxEmptyString, wxEmptyString, wxString::Format(g_cfg.m_file_dialog_title_open_video_file_wild_card, all_video_formats, all_video_formats), wxFD_OPEN);
+			video_file_dir, video_file_name, wxString::Format(g_cfg.m_file_dialog_title_open_video_file_wild_card, all_video_formats, all_video_formats), wxFD_OPEN);
 
 		if(fd.ShowModal() != wxID_OK)
 		{
@@ -1247,7 +1262,7 @@ void LoadSettings()
 	ReadProperty(g_general_settings, g_cfg.m_video_box_time_text_colour, "video_box_time_text_colour");
 	ReadProperty(g_general_settings, g_cfg.m_video_box_separating_line_colour, "video_box_separating_line_colour");
 	ReadProperty(g_general_settings, g_cfg.m_video_box_separating_line_border_colour, "video_box_separating_line_border_colour");
-	ReadProperty(g_general_settings, g_cfg.m_toolbar_bitmaps_border_colour, "toolbar_bitmaps_border_colour");
+	ReadProperty(g_general_settings, g_cfg.m_toolbar_bitmaps_transparent_colour, "toolbar_bitmaps_transparent_colour");
 
 	ReadProperty(g_general_settings, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
 	ReadProperty(g_general_settings, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
@@ -1671,8 +1686,7 @@ void SaveSettings()
 	WriteProperty(fout, g_cfg.m_video_box_time_colour, "video_box_time_colour");
 	WriteProperty(fout, g_cfg.m_video_box_time_text_colour, "video_box_time_text_colour");
 	WriteProperty(fout, g_cfg.m_video_box_separating_line_colour, "video_box_separating_line_colour");
-	WriteProperty(fout, g_cfg.m_video_box_separating_line_border_colour, "video_box_separating_line_border_colour");
-	WriteProperty(fout, g_cfg.m_toolbar_bitmaps_border_colour, "toolbar_bitmaps_border_colour");
+	WriteProperty(fout, g_cfg.m_video_box_separating_line_border_colour, "video_box_separating_line_border_colour");	
 
 	WriteProperty(fout, g_DontDeleteUnrecognizedImages1, "dont_delete_unrecognized_images1");
 	WriteProperty(fout, g_DontDeleteUnrecognizedImages2, "dont_delete_unrecognized_images2");
@@ -1787,6 +1801,8 @@ void SaveSettings()
 	WriteProperty(fout, g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
 	WriteProperty(fout, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
 
+	WriteProperty(fout, g_cfg.m_toolbar_bitmaps_transparent_colour, "toolbar_bitmaps_transparent_colour");
+
 	fout.Flush();
 	ffout.Close();
 }
@@ -1832,8 +1848,11 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 {
 	SaveToReportLog("CMainFrame::OnFileLoadSettings(): starting ...\n");
 
+	wxString settings_file_dir = (m_last_specified_settings_file_path.size() > 0) ? GetFileDir(m_last_specified_settings_file_path) : g_app_dir;
+	wxString settings_file_name = (m_last_specified_settings_file_path.size() > 0) ? GetFileNameWithExtension(m_last_specified_settings_file_path) : wxEmptyString;
+
 	wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_settings_file,
-		g_work_dir, wxEmptyString, g_cfg.m_file_dialog_title_open_settings_file_wild_card, wxFD_OPEN);
+		settings_file_dir, settings_file_name, g_cfg.m_file_dialog_title_open_settings_file_wild_card, wxFD_OPEN);
 
 	if(fd.ShowModal() != wxID_OK)
 	{
@@ -1841,6 +1860,7 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 	}
 
 	g_GeneralSettingsFileName = fd.GetPath();
+	m_last_specified_settings_file_path = g_GeneralSettingsFileName;
 	g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
 	this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
 
@@ -1880,8 +1900,11 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 {
+	wxString settings_file_dir = (m_last_specified_settings_file_path.size() > 0) ? GetFileDir(m_last_specified_settings_file_path) : g_app_dir;
+	wxString settings_file_name = (m_last_specified_settings_file_path.size() > 0) ? GetFileNameWithExtension(m_last_specified_settings_file_path) : wxEmptyString;
+
 	wxFileDialog fd(this, g_cfg.m_file_dialog_title_save_settings_file,
-		g_work_dir, wxEmptyString, g_cfg.m_file_dialog_title_save_settings_file_wild_card, wxFD_SAVE);
+		settings_file_dir, settings_file_name, g_cfg.m_file_dialog_title_save_settings_file_wild_card, wxFD_SAVE);
 
 	if (m_blnReopenVideo == false)
 	{
@@ -1891,6 +1914,15 @@ void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 		}
 
 		g_GeneralSettingsFileName = fd.GetPath();
+
+		wxString ext = GetFileExtension(g_GeneralSettingsFileName);
+
+		if (ext != wxT("cfg"))
+		{
+			g_GeneralSettingsFileName += wxT(".cfg");
+		}
+
+		m_last_specified_settings_file_path = g_GeneralSettingsFileName;
 
 		g_cfg.m_ssp_GSFN_label = g_GeneralSettingsFileName + wxT(" ");
 		this->m_pPanel->m_pSSPanel->m_pGSFN->SetLabel(g_cfg.m_ssp_GSFN_label);
@@ -2059,16 +2091,36 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		m_timer.Stop();
 	}
 
-	if (m_FileName.size() > 0)
+	
 	{
-		wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
-		wxFFileOutputStream ffout(pvi_path);
+		wxFFileOutputStream ffout(g_prev_data_path);
 		wxTextOutputStream fout(ffout);
 
-		WriteProperty(fout, m_FileName, "FileName");
-		WriteProperty(fout, (int)m_BegTime, "BegTime");
-		WriteProperty(fout, (int)m_EndTime, "EndTime");
-		WriteProperty(fout, m_type, "type");
+		if (m_FileName.size() > 0)
+		{
+			m_last_video_file_path = m_FileName;
+			m_last_video_begin_time = m_BegTime;
+			m_last_video_end_time = m_EndTime;
+			m_last_video_open_type = m_type;
+		}
+
+		if (m_last_video_file_path.size() > 0)
+		{
+			WriteProperty(fout, m_last_video_file_path, "last_video_file_path");
+			WriteProperty(fout, m_last_video_begin_time, "last_video_begin_time");
+			WriteProperty(fout, m_last_video_end_time, "last_video_end_time");
+			WriteProperty(fout, m_last_video_open_type, "last_video_open_type");
+		}
+
+		if (m_last_saved_sub_file_path.size() > 0)
+		{
+			WriteProperty(fout, m_last_saved_sub_file_path, "last_saved_sub_file_path");
+		}
+
+		if (m_last_specified_settings_file_path.size() > 0)
+		{
+			WriteProperty(fout, m_last_specified_settings_file_path, "last_specified_settings_file_path");
+		}
 
 		fout.Flush();
 		ffout.Close();
@@ -2120,19 +2172,13 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 void CMainFrame::OnFileOpenPreviousVideo(wxCommandEvent& event)
 {
 	int int_val;
-	wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
 
-	if (wxFileExists(pvi_path))
+	if (m_last_video_file_path.size() > 0)
 	{
-		std::map<wxString, wxString> previous_vido_settings;
-		ReadSettings(pvi_path, previous_vido_settings);
-
-		ReadProperty(previous_vido_settings, m_FileName, "FileName");
-		ReadProperty(previous_vido_settings, int_val, "BegTime");
-		m_BegTime = int_val;
-		ReadProperty(previous_vido_settings, int_val, "EndTime");
-		m_EndTime = int_val;
-		ReadProperty(previous_vido_settings, m_type, "type");
+		m_FileName = m_last_video_file_path;
+		m_BegTime = m_last_video_begin_time;
+		m_EndTime = m_last_video_end_time;
+		m_type = m_last_video_open_type;
 
 		m_blnReopenVideo = true;
 
@@ -2752,28 +2798,27 @@ void UpdateSettingsInFile(wxString SettingsFilePath, std::map<wxString, wxString
 	ffout.Close();
 }
 
-void WriteProperty(wxTextOutputStream& fout, int val, wxString Name)
+template<typename T>
+void WriteProperty(wxTextOutputStream& fout, T val, wxString Name)
 {
 	fout << Name << " = " << val << '\n';
 }
 
-void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name)
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, s64 val, wxString Name)
 {
-	fout << Name << " = " << val << '\n';
+	fout << Name << " = " << (wxLongLong)val << '\n';
 }
 
-void WriteProperty(wxTextOutputStream& fout, double val, wxString Name)
-{
-	fout << Name << " = " << val << '\n';
-}
-
-void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name)
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, wxString val, wxString Name)
 {
 	val = wxJoin(wxSplit(val, '\n'), ';');
 	fout << Name << " = " << val << '\n';
 }
 
-void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name)
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, wxArrayString val, wxString Name)
 {
 	if (val.size() > 0)
 	{
@@ -2785,7 +2830,8 @@ void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name)
 	}
 }
 
-void WriteProperty(wxTextOutputStream& fout, wxColour val, wxString Name)
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, wxColour val, wxString Name)
 {
 	fout << Name << " = " << wxString::Format(wxT("%d,%d,%d"), (int)val.Red(), (int)val.Green(), (int)val.Blue()) << '\n';
 }
@@ -2798,6 +2844,22 @@ bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Nam
 	if (search != settings.end()) {
 		wxString _val = search->second;
 		val = wxAtoi(_val);
+		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, s64& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		wxInt64 llval;
+		_val.ToLongLong(&llval);
+		val = llval;
 		res = true;
 	}
 

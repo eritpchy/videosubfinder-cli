@@ -189,6 +189,7 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 	g_work_dir = g_app_dir;
 	g_ReportFileName = g_app_dir + wxT("/report.log");
 	g_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
+	g_prev_data_path = g_app_dir + wxT("/previous_data.inf");
 
 	SaveToReportLog("Starting program...\n", wxT("wb"));
 	SaveToReportLog("CVideoSubFinderApp::Initialize...\n");

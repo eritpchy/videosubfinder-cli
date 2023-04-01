@@ -786,26 +786,24 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 {
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		wxString last_video_file;
+		wxString last_video_file_path = m_pMF->m_last_video_file_path;
 
 		if (m_pMF->m_FileName.size() > 0)
 		{
-			last_video_file = m_pMF->m_FileName;
+			last_video_file_path = m_pMF->m_FileName;
+		}
+
+		wxString sub_name = (last_video_file_path.size() > 0) ? GetFileName(last_video_file_path) : wxT("sub");
+		wxString sub_dir = (m_pMF->m_last_saved_sub_file_path.size() > 0) ? GetFileDir(m_pMF->m_last_saved_sub_file_path) : ( (last_video_file_path.size() > 0) ? GetFileDir(last_video_file_path) : g_work_dir );
+
+		if (GetFileName(m_pMF->m_last_saved_sub_file_path) == sub_name)
+		{
+			sub_name = GetFileNameWithExtension(m_pMF->m_last_saved_sub_file_path);
 		}
 		else
 		{
-			wxString pvi_path = g_work_dir + wxT("/previous_video.inf");
-
-			if (wxFileExists(pvi_path))
-			{
-				std::map<wxString, wxString> previous_vido_settings;
-				ReadSettings(pvi_path, previous_vido_settings);
-				ReadProperty(previous_vido_settings, last_video_file, "FileName");
-			}
+			sub_name += wxT(".srt");
 		}
-
-		wxString sub_name = (last_video_file.size() > 0) ? GetFileName(last_video_file) : wxT("sub");
-		wxString sub_dir = (last_video_file.size() > 0) ? GetFileDir(last_video_file) : g_work_dir;
 
 		m_sub_path.Clear();
 		wxFileDialog fd(m_pMF, g_cfg.m_file_dialog_title_save_subtitle_as,
@@ -829,6 +827,8 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 			fout << srt_sub;
 			fout.Flush();
 			ffout.Close();
+
+			m_pMF->m_last_saved_sub_file_path = m_sub_path;
 		}
 		else if (ext == wxT("ass"))
 		{
@@ -837,6 +837,8 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 			fout << ass_sub;
 			fout.Flush();
 			ffout.Close();
+
+			m_pMF->m_last_saved_sub_file_path = m_sub_path;
 		}
 		else
 		{

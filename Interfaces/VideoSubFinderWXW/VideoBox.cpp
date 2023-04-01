@@ -595,9 +595,9 @@ void GetToolBarImages(wxImage& image, wxImage& image_focused, wxImage& image_sel
 	wxBitmap bmp_focused = bmp;
 	wxBitmap bmp_selected = bmp;
 
-	ReplaceColour(bmp, g_cfg.m_toolbar_bitmaps_border_colour, border_colour);
-	ReplaceColour(bmp_focused, g_cfg.m_toolbar_bitmaps_border_colour, border_colour_focused);
-	ReplaceColour(bmp_selected, g_cfg.m_toolbar_bitmaps_border_colour, border_colour_selected);
+	ReplaceColour(bmp, g_cfg.m_toolbar_bitmaps_transparent_colour, border_colour);
+	ReplaceColour(bmp_focused, g_cfg.m_toolbar_bitmaps_transparent_colour, border_colour_focused);
+	ReplaceColour(bmp_selected, g_cfg.m_toolbar_bitmaps_transparent_colour, border_colour_selected);
 
 	image = bmp.ConvertToImage();
 	image_focused = bmp_focused.ConvertToImage();

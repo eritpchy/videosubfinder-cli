@@ -74,6 +74,7 @@ void SaveBGRImageWithLinesInfo(simple_buffer<u8>& ImBGR, wxString name, simple_b
 
 wxString  g_work_dir;
 wxString  g_app_dir;
+wxString  g_prev_data_path;
 
 wxString  g_im_save_format = ".jpeg";
 //wxString  g_im_save_format = ".bmp";

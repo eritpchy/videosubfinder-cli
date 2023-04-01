@@ -316,7 +316,7 @@ public:
 	wxColour	m_video_box_time_text_colour = wxColour(255, 255, 255);
 	wxColour	m_video_box_separating_line_colour = wxColour(255, 255, 255);
 	wxColour	m_video_box_separating_line_border_colour = wxColour(0, 0, 0);	
-	wxColour	m_toolbar_bitmaps_border_colour = wxColour(192, 192, 192);
+	wxColour	m_toolbar_bitmaps_transparent_colour = wxColour(192, 192, 192);
 
 	//dynamic settings dependent from others and etc, can be updated by UpdateDynamicSettings()
 	wxString	m_video_box_lblVB_open_video_title;
@@ -400,6 +400,13 @@ public:
 
 	std::mutex m_mutex;
 
+	wxString	m_last_video_file_path;
+	s64			m_last_video_begin_time;
+	s64			m_last_video_end_time;
+	int			m_last_video_open_type;
+	wxString	m_last_saved_sub_file_path;
+	wxString	m_last_specified_settings_file_path;
+
 public:
 	void Init();
 	void PauseVideo();
@@ -467,13 +474,19 @@ wxString ConvertVideoTime(s64 pos);
 wxString VideoTimeToStr2(s64 pos);
 wxString VideoTimeToStr3(s64 pos);
 
-void WriteProperty(wxTextOutputStream& fout, int val, wxString Name);
-void WriteProperty(wxTextOutputStream& fout, bool val, wxString Name);
-void WriteProperty(wxTextOutputStream& fout, double val, wxString Name);
-void WriteProperty(wxTextOutputStream& fout, wxString val, wxString Name);
-void WriteProperty(wxTextOutputStream& fout, wxArrayString val, wxString Name);
-void WriteProperty(wxTextOutputStream& fout, wxColour val, wxString Name);
+template<typename T>
+void WriteProperty(wxTextOutputStream& fout, T val, wxString Name);
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, s64 val, wxString Name);
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, wxString val, wxString Name);
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, wxArrayString val, wxString Name);
+template<>
+void WriteProperty<>(wxTextOutputStream& fout, wxColour val, wxString Name);
+
 bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name);
+bool ReadProperty(std::map<wxString, wxString>& settings, s64& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name);
 bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name);

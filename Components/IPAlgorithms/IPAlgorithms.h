@@ -43,6 +43,7 @@ extern void     (*g_pViewBGRImage[2])(simple_buffer<u8>& ImBGR, int w, int h);
 
 extern wxString   g_work_dir;
 extern wxString   g_app_dir;
+extern wxString   g_prev_data_path;
 extern wxString   g_im_save_format;
 
 extern double	g_smthr;  //moderate threshold for scaled image
