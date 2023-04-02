@@ -152,7 +152,7 @@ TextAlignment ConvertStringToTextAlignment(wxString val)
 #ifdef WIN32	
 int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det)
 {
-	g_pMF->SaveError(wxT("Got C Exception: ") + wxString(det));
+	SaveError(wxT("Got C Exception: ") + wxString(det));
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif
@@ -492,8 +492,6 @@ void CMainFrame::Init()
 	SaveToReportLog("CMainFrame::Init(): starting...\n");
 
 	m_blnNoGUI = false;
-
-	m_ErrorFileName = g_work_dir + wxT("/error.log");
 
 	SaveToReportLog("CMainFrame::Init(): InitCUDADevice...\n");
 
@@ -1807,15 +1805,6 @@ void SaveSettings()
 	ffout.Close();
 }
 
-void CMainFrame::SaveError(wxString error)
-{
-	wxFFileOutputStream ffout(m_ErrorFileName, wxT("ab"));
-	wxTextOutputStream fout(ffout);
-	fout << error << '\n';
-	fout.Flush();
-	ffout.Close();
-}
-
 void CMainFrame::OnEditSetBeginTime(wxCommandEvent& event)
 {
 	if (m_VIsOpen)
@@ -2155,7 +2144,7 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 	}
 
 	{
-		std::unique_lock<std::mutex> lock(m_pPanel->m_pOCRPanel->m_ccti_mutex);
+		std::unique_lock<std::mutex> lock(m_pPanel->m_pOCRPanel->m_mutex);
 		if (g_IsCreateClearedTextImages == 1)
 		{
 			g_RunCreateClearedTextImages = 0;

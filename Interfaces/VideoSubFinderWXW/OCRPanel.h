@@ -156,6 +156,7 @@ public:
 };
 
 void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir);
+void JoinTXTImages();
 
 class COCRPanel : public wxPanel, public CControl
 {
@@ -163,7 +164,7 @@ public:
 	COCRPanel(CSSOWnd* pParent);
 	~COCRPanel();
 
-	std::mutex m_ccti_mutex;
+	std::mutex m_mutex;
 
 	wxString m_sub_path;
 
@@ -186,6 +187,7 @@ public:
 	CMainFrame	*m_pMF;
 
 	std::thread m_CCTIThread;
+	std::thread m_JoinTXTImagesThread;
 
 	void Init();
 
@@ -200,6 +202,7 @@ public:
 	void OnBnClickedJoinTXTImages(wxCommandEvent& event);
 	void SaveSub(wxString srt_sub, wxString ass_sub);
 	void ThreadCreateClearedTextImagesEnd(wxCommandEvent& event);
+	void ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event);
 	void UpdateSize() override;
 	void RefreshData() override;
 

@@ -316,7 +316,7 @@ void ThreadSearchSubtitles()
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles() ") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles() ") + wxString(e.what()));
 	}
 	
 	if (!(g_pMF->m_blnNoGUI))

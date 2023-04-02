@@ -38,6 +38,7 @@ bool g_clear_txt_folders = true;
 
 int g_IsCreateClearedTextImages = 0;
 int g_RunCreateClearedTextImages = 0;
+int g_IsJoinTXTImages = 0;
 bool g_ValidateAndCompareTXTImages = false;
 bool g_DontDeleteUnrecognizedImages1 = true;
 bool g_DontDeleteUnrecognizedImages2 = true;
@@ -50,6 +51,7 @@ int  g_ocr_threads = 8;
 
 wxDEFINE_EVENT(UPDATE_CCTI_PROGRESS, wxThreadEvent);
 wxDEFINE_EVENT(THREAD_CCTI_END, wxCommandEvent);
+wxDEFINE_EVENT(THREAD_JOIN_TXT_IMAGES_END, wxCommandEvent);
 
 AssTXTLine::AssTXTLine()
 {
@@ -178,6 +180,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
 
 BEGIN_EVENT_TABLE(COCRPanel, wxPanel)
 	EVT_COMMAND(wxID_ANY, THREAD_CCTI_END, COCRPanel::ThreadCreateClearedTextImagesEnd)
+	EVT_COMMAND(wxID_ANY, THREAD_JOIN_TXT_IMAGES_END, COCRPanel::ThreadJoinTXTImagesThreadEnd)
 	EVT_BUTTON(ID_BTN_CES, COCRPanel::OnBnClickedCreateEmptySub)
 	EVT_BUTTON(ID_BTN_CSCTI, COCRPanel::OnBnClickedCreateSubFromClearedTXTImages)
 	EVT_BUTTON(ID_BTN_CSTXT, COCRPanel::OnBnClickedCreateSubFromTXTResults)
@@ -1074,6 +1077,41 @@ void COCRPanel::CreateSubFromTXTResults()
 
 void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 {
+	const std::lock_guard<std::mutex> lock(m_mutex);
+
+	if (g_IsJoinTXTImages == 0)
+	{
+		g_IsJoinTXTImages = 1;
+
+		if (!(g_pMF->m_blnNoGUI))
+		{
+			m_pMF->m_pPanel->m_pSSPanel->Disable();
+			m_pMF->m_pPanel->m_pSHPanel->Disable();
+			m_pMF->m_pPanel->m_pOCRPanel->Disable();
+		}
+
+		m_JoinTXTImagesThread = std::thread(JoinTXTImages);
+
+		if (m_pMF->m_blnNoGUI)
+		{
+			m_JoinTXTImagesThread.join();
+		}
+	}
+}
+
+void COCRPanel::ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event)
+{
+	std::unique_lock<std::mutex> lock(m_mutex);
+	
+	g_pMF->m_pPanel->m_pSHPanel->Enable();
+	g_pMF->m_pPanel->m_pSSPanel->Enable();
+	g_pMF->m_pPanel->m_pOCRPanel->Enable();
+
+	g_IsJoinTXTImages = 0;
+}
+
+void JoinTXTImages()
+{
 	wxString Str;
 	wxString dir_path = wxString(g_work_dir + wxT("/TXTImages/"));
 	wxDir dir(dir_path);
@@ -1081,10 +1119,6 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 	wxString file_name, file_path;
 	bool res;
 	const int max_joins_size = 300;
-
-	m_pMF->m_pPanel->m_pSSPanel->Disable();
-	m_pMF->m_pPanel->m_pSHPanel->Disable();
-	m_pMF->m_pPanel->m_pOCRPanel->Disable();
 
 	res = dir.GetFirst(&file_name);
 	while (res)
@@ -1132,10 +1166,18 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			{
 				if (w != w_prev)
 				{
-					wxMessageBox(wxString::Format(wxT("ERROR: File \"%s\" has not same width %d as file \"%\" with width %d"), file_name, w, FileNamesVector[fi_start], w_prev), wxT("JoinTXTImages"));
-					m_pMF->m_pPanel->m_pSHPanel->Enable();
-					m_pMF->m_pPanel->m_pSSPanel->Enable();
-					m_pMF->m_pPanel->m_pOCRPanel->Enable();
+					SaveError(wxString::Format(wxT("ERROR: File \"%s\" has not same width %d as file \"%\" with width %d"), file_name, w, FileNamesVector[fi_start], w_prev));
+					
+					if (!(g_pMF->m_blnNoGUI))
+					{
+						SaveToReportLog("JoinTXTImages: wxPostEvent THREAD_JOIN_TXT_IMAGES_END ...\n");
+						wxCommandEvent event(THREAD_JOIN_TXT_IMAGES_END);
+						wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
+					}
+					else
+					{
+						g_IsJoinTXTImages = 0;
+					}
 					return;
 				}
 			}
@@ -1169,10 +1211,17 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 
 			if (font_size == 0)
 			{
-				wxMessageBox(wxT("ERROR: Unfortunately optimal font size is too small"), wxT("JoinTXTImages"));
-				m_pMF->m_pPanel->m_pSHPanel->Enable();
-				m_pMF->m_pPanel->m_pSSPanel->Enable();
-				m_pMF->m_pPanel->m_pOCRPanel->Enable();
+				SaveError(wxT("ERROR: Unfortunately optimal font size is too small"));
+				if (!(g_pMF->m_blnNoGUI))
+				{
+					SaveToReportLog("JoinTXTImages: wxPostEvent THREAD_JOIN_TXT_IMAGES_END ...\n");
+					wxCommandEvent event(THREAD_JOIN_TXT_IMAGES_END);
+					wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
+				}
+				else
+				{
+					g_IsJoinTXTImages = 0;
+				}
 				return;
 			}
 
@@ -1258,9 +1307,16 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 		SaveGreyscaleImage(ImRes, Str, w, H);
 	}
 
-	m_pMF->m_pPanel->m_pSHPanel->Enable();
-	m_pMF->m_pPanel->m_pSSPanel->Enable();
-	m_pMF->m_pPanel->m_pOCRPanel->Enable();
+	if (!(g_pMF->m_blnNoGUI))
+	{
+		SaveToReportLog("JoinTXTImages: wxPostEvent THREAD_JOIN_TXT_IMAGES_END ...\n");
+		wxCommandEvent event(THREAD_JOIN_TXT_IMAGES_END);
+		wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
+	}
+	else
+	{
+		g_IsJoinTXTImages = 0;
+	}
 }
 
 void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, simple_buffer<u8>* pImNF, simple_buffer<u8>* pImNE, simple_buffer<u8>* pImIL)
@@ -1271,7 +1327,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, 
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLinesWithExcFilter:FindTextLines()") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in FindTextLinesWithExcFilter:FindTextLines()") + wxString(e.what()));
 		res->m_res = -1;
 	}
 }
@@ -1434,7 +1490,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 
 		if (res.m_res == -1)
 		{
-			g_pMF->SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileName);
+			SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileName);
 		}
 
 		// free memory for reduce usage
@@ -1446,7 +1502,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLines: ") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in FindTextLines: ") + wxString(e.what()));
 	}
 }
 
@@ -1507,7 +1563,7 @@ s64 getTotalSystemMemory()
 
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 {
-	std::unique_lock<std::mutex> lock(m_ccti_mutex);
+	std::unique_lock<std::mutex> lock(m_mutex);
 
 	if (g_IsCreateClearedTextImages == 0)
 	{
@@ -1634,7 +1690,7 @@ struct ProgressData
 
 void COCRPanel::OnUpdateCCTIProgress(wxThreadEvent& event)
 {
-	const std::lock_guard<std::mutex> lock(m_ccti_mutex);
+	const std::lock_guard<std::mutex> lock(m_mutex);
 	ProgressData pd = event.GetPayload<ProgressData>();	
 
 	m_pMF->m_pVideoBox->m_plblTIME->SetLabel(pd.m_ProgressStr);
@@ -1739,7 +1795,7 @@ void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir
 
 				if (res == -1)
 				{
-					g_pMF->SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k]);
+					SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k]);
 				}
 
 				if (!(g_pMF->m_blnNoGUI))
@@ -1795,7 +1851,7 @@ void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir
 			}
 			catch (const exception& e)
 			{
-				g_pMF->SaveError(wxT("Got C++ Exception: got error in CreateClearedTextImages: ") + wxString(e.what()));
+				SaveError(wxT("Got C++ Exception: got error in CreateClearedTextImages: ") + wxString(e.what()));
 			}
 		}
 
@@ -1818,7 +1874,7 @@ void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir
 
 void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 {
-	std::unique_lock<std::mutex> lock(m_ccti_mutex);
+	std::unique_lock<std::mutex> lock(m_mutex);
 
 	if (m_CCTIThread.joinable())
 	{

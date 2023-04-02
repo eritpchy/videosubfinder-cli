@@ -18,6 +18,8 @@
 #include <time.h>
 #include <memory.h>
 #include <wx/wx.h>
+#include <wx/wfstream.h>
+#include <wx/txtstrm.h>
 #include "opencv2/imgcodecs.hpp"
 #include <condition_variable>
 #include <queue>
@@ -41,7 +43,31 @@ typedef long long	                s64;
 wxString get_add_info();
 
 extern void PlaySound(wxString path);
-extern void SaveToReportLog(wxString msg, wxString mode = wxT("ab"));
+
+extern wxString g_ReportFileName;
+extern wxString g_ErrorFileName;
+extern wxString GetFileNameWithExtension(wxString FilePath);
+
+inline void SaveToReportLog(char const* file, int line, wxString msg, wxString mode = wxT("ab"))
+{
+	wxFFileOutputStream ffout(g_ReportFileName, mode);
+	wxTextOutputStream fout(ffout);
+	fout << GetFileNameWithExtension(wxString(file)) << wxT(":") << line << wxT(" ") << msg;
+	fout.Flush();
+	ffout.Close();
+}
+#define SaveToReportLog(...) SaveToReportLog(__FILE__, __LINE__, __VA_ARGS__)
+
+inline void SaveError(char const* file, int line, wxString error)
+{
+	wxFFileOutputStream ffout(g_ErrorFileName, wxT("ab"));
+	wxTextOutputStream fout(ffout);
+	fout << GetFileNameWithExtension(wxString(file)) << wxT(":") << line << wxT(" ") << error;
+	fout.Flush();
+	ffout.Close();
+}
+#define SaveError(error) SaveError(__FILE__, __LINE__, error)
+
 extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, char* det);
 
 // NOTE: for debugging!!!

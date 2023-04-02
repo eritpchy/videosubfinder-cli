@@ -25,6 +25,7 @@
 
 wxString g_ReportFileName;
 wxString g_GeneralSettingsFileName;
+wxString g_ErrorFileName;
 wxCmdLineParser *g_pParser = NULL;
 
 void SetParserDescription()
@@ -56,15 +57,6 @@ void SetParserDescription()
 	};
 
 	g_pParser->SetDesc(cmdLineDesc);
-}
-
-void SaveToReportLog(wxString msg, wxString mode)
-{
-	wxFFileOutputStream ffout(g_ReportFileName, mode);
-	wxTextOutputStream fout(ffout);
-	fout << msg;
-	fout.Flush();
-	ffout.Close();
 }
 
 void PlaySound(wxString path)
@@ -188,6 +180,7 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 	g_app_dir = Str;
 	g_work_dir = g_app_dir;
 	g_ReportFileName = g_app_dir + wxT("/report.log");
+	g_ErrorFileName = g_app_dir + wxT("/error.log");
 	g_GeneralSettingsFileName = g_app_dir + wxT("/settings/general.cfg");
 	g_prev_data_path = g_app_dir + wxT("/previous_data.inf");
 

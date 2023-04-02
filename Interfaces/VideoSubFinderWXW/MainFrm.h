@@ -386,8 +386,6 @@ public:
 	s64			m_BegTime;
 	s64			m_EndTime;
 
-	wxString		m_ErrorFileName;	
-
 	bool		m_blnReopenVideo;
 
 	int			m_type;
@@ -410,7 +408,6 @@ public:
 public:
 	void Init();
 	void PauseVideo();
-	void SaveError(wxString error);
 	void OnFileOpenVideo(int type);
 	void ClearDir(wxString DirName);
 	void ScaleTextSize(int& size, int dsize);
