@@ -6245,29 +6245,81 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 		}
 	}
 
+	GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, 255);
+
 	ww = w_orig * g_scale;
-	hh = h;
+	int min_y = std::max<int>(DYB - (LH / 2), 0);
+	int max_y = std::min<int>(DYE + (LH / 2), h - 1);
 
-	simple_buffer<u8> ImSubForSave(ww*hh, 255);
-
-	cnt = 0;
+	bln = 0;
+	val = 0;
 	for (y = 0, i = 0; y < h; y++)
 	{
 		for (x = 0; x < w; x++, i++)
 		{
 			if (ImFF[i] != 0)
 			{
+				val = y;
+				bln = 1;
+				break;
+			}
+		}
+
+		if (bln == 1)
+		{
+			break;
+		}
+	}
+	min_y = std::min<int>(min_y, val);
+
+	bln = 0;
+	val = h - 1;
+	for (y = h-1; y >= 0; y--)
+	{
+		for (x = 0; x < w; x++)
+		{
+			i = y * w + x;
+
+			if (ImFF[i] != 0)
+			{
+				val = y;
+				bln = 1;
+				break;
+			}
+		}
+
+		if (bln == 1)
+		{
+			break;
+		}
+	}
+	max_y = std::max<int>(max_y, val);
+
+	min_y -= (min_y % g_scale);
+	hh = max_y - min_y + 1;
+
+	simple_buffer<u8> ImSubForSave(ww* hh, 255);
+
+	cnt = 0;
+	for (y = min_y; y <= max_y; y++)
+	{
+		for (x = 0; x < w; x++)
+		{
+			i = y * w + x;
+
+			if (ImFF[i] != 0)
+			{
 				cnt++;
-				ImSubForSave[y*ww + (int)(XB * g_scale) + x] = 0;
+				ImSubForSave[(y - min_y) * ww + (int)(XB * g_scale) + x] = 0;
 			}
 		}
 	}
 
 	if (cnt > 0)
 	{
-		res.m_YB = YB;
+		res.m_YB = YB + (min_y / g_scale);
 		custom_assert(g_scale > 0, "FindText: g_scale > 0");
-		res.m_im_h = h / g_scale;
+		res.m_im_h = hh / g_scale;
 
 		simple_buffer<u8> ImFFD(w_orig*res.m_im_h, 0), ImSF(w_orig*res.m_im_h), ImTF(w_orig*res.m_im_h);
 
@@ -6321,8 +6373,6 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 
 		if (res.m_res == 1)
 		{
-			GetTextLineParameters(ImFF, ImY, ImU, ImV, w, h, LH, LMAXY, DXB, DXE, DYB, DYE, mY, mI, mQ, 255);
-
 			custom_assert(g_scale > 0, "FindText: g_scale > 0");
 			res.m_LH = LH / g_scale;
 			res.m_LY = YB + LMAXY / g_scale;
@@ -6338,7 +6388,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 			res.m_ImageName = FullName;
 
 			if (g_save_each_substring_separately)
-			{				
+			{
 				if (g_save_scaled_images)
 				{
 					SaveGreyscaleImage(ImSubForSave, FullName, ww, hh);
