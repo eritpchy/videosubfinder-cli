@@ -181,7 +181,7 @@ jobs:
           cp -fv /usr/local/lib/libgraphite2.3.dylib lib/ || true; \
           cp -fv /usr/local/lib/libpcre2-8.0.dylib lib/ || true; \
           cp -fv ../Interfaces/VideoSubFinderCli/VideoSubFinderCli . && \
-          cp -fv ../Darwin_x64/* . && \
+          cp -rfv ../Darwin_x64/* . && \
           true
       -
         name: Archive artifacts

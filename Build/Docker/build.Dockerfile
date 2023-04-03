@@ -2,7 +2,7 @@ FROM eritpchy/videosubfinder-build:base
 COPY . /tmp/work/videosubfinder-src
 
 RUN cd /tmp/work/videosubfinder-src \
-    && cp -f ./Build/Linux_x64/VideoSubFinderCli.run /tmp/work/ \
+    && cp -rf ./Build/Linux_x64/* /tmp/work/ \
     && rm -rf linux_build \
     && mkdir -p linux_build \
     && cd linux_build/ \

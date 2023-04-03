@@ -4,7 +4,7 @@ RUN CUDA_DIR="$(ls -d1 /usr/local/cuda-*|head -1)" \
     && ln -s $CUDA_DIR/targets/x86_64-linux/lib/libcudart.so /usr/lib/libcudart.so \
     && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_DIR/lib64:$CUDA_DIR/extras/CUPTI/lib64 export PATH=$PATH:$CUDA_DIR/bin \
     && cd /tmp/work/videosubfinder-src \
-    && cp -f ./Build/Linux_x64/VideoSubFinderCli.run /tmp/work/ \
+    && cp -rf ./Build/Linux_x64/* /tmp/work/ \
     && rm -rf linux_build \
     && mkdir -p linux_build \
     && cd linux_build/ \

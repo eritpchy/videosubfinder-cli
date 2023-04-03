@@ -25,6 +25,8 @@ public:
     virtual bool OnCmdLineParsed(wxCmdLineParser& parser) override;
 
     virtual int OnRun() override;
+
+    void LoadSettings(wxString file_name);
 };
 
 wxIMPLEMENT_APP(CVideoSubFinderApp);

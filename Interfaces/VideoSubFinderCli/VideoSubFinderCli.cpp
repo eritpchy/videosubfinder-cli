@@ -1,3 +1,5 @@
+#include <wx/regex.h>
+
 #include "VideoSubFinderCli.h"
 #include "IPAlgorithms.h"
 
@@ -19,7 +21,8 @@ static const wxCmdLineEntryDesc cmdLineDesc[] =
 	{ wxCMD_LINE_OPTION, "le", "left_video_image_percent_end", "left video image percent end, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "re", "right_video_image_percent_end", "right video image percent end, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
 	{ wxCMD_LINE_OPTION, "o", "output_dir",  "output dir (root directory where results will be stored)" },
-	{ wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
+    { wxCMD_LINE_OPTION, "gs", "general_settings",  "general settings (path to general settings *.cfg file, default = settings/general.cfg)" },
+    { wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
 	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -i \"C:\\test_video.mp4\" -cscti \"C:\\test_video.srt\" -o \"C:\\ResultsDir\" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
 	{ wxCMD_LINE_NONE }
 };
@@ -35,6 +38,12 @@ double g_DyMax;
 s64 g_BegTime;
 s64	g_EndTime;
 
+extern int g_IsCreateClearedTextImages;
+extern int g_RunCreateClearedTextImages;
+extern bool g_ValidateAndCompareTXTImages;
+wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
+
+bool g_join_subs_and_correct_time = true;
 
  class MyGUIThread : public wxThread
  {
@@ -114,7 +123,15 @@ bool CVideoSubFinderApp::OnCmdLineParsed(wxCmdLineParser& parser) {
     SaveToReportLog("Starting program...\n", wxT("wb"));
     SaveToReportLog("CVideoSubFinderApp::OnInitCmdLine...\n");
 
-    wxLogMessage("Logging wxScroll");
+    wxString wxStr;
+    if (parser.Found("gs", &wxStr))
+    {
+        wxStr.Replace("\\", "/");
+        LoadSettings(wxStr);
+    } else {
+        LoadSettings(g_app_dir + wxT("/settings/general.cfg"));
+    }
+
     if (parser.FoundSwitch("dsi")) {
         g_save_images = false;
     } else {
@@ -139,7 +156,6 @@ bool CVideoSubFinderApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         }
     }
     parser.Found("i", &g_InputFileName);
-    wxString wxStr;
     if (parser.Found("o", &wxStr))
     {
         wxStr.Replace("\\", "/");
@@ -297,7 +313,6 @@ void createEmptySub()
 		ET.push_back(et);
 	}
 
-    bool g_join_subs_and_correct_time = true; // "join_subs_and_correct_time"
 	if (g_join_subs_and_correct_time)
 	{
 		for (k = 0; k < (int)FileNamesVector.size() - 1; k++)
@@ -356,6 +371,228 @@ void createEmptySub()
     fout << srt_sub;
     fout.Flush();
     ffout.Close();
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		val = wxAtoi(_val);
+		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		int get_val = wxAtoi(_val);
+		if (get_val != 0)
+		{
+			val = true;
+		}
+		else
+		{
+			val = false;
+		}
+		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		wxString _val = search->second;
+		_val.ToDouble(&val);
+		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		val = search->second;
+		val = wxJoin(wxSplit(val, ';'), '\n');
+		res = true;
+	}
+
+	return res;
+}
+
+bool ReadProperty(std::map<wxString, wxString>& settings, wxArrayString& val, wxString Name)
+{
+	bool res = false;
+	auto search = settings.find(Name);
+
+	if (search != settings.end()) {
+		if (search->second == "none") {
+			val.clear();
+		}
+		else {
+			val = wxSplit(search->second, ';');
+		}
+		res = true;
+	}
+
+	return res;
+}
+
+static void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings)
+{
+	wxFileInputStream ffin(file_name);
+
+	if (!ffin.IsOk())
+	{
+		wxLogMessage("ERROR: Can't open settings file: " + file_name);
+		exit(1);
+	}
+
+	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
+	wxString name, val, line;
+	wxRegEx re(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([^[:space:]].*[^[:space:]]|[^[:space:]])[[:space:]]*$"));
+	wxRegEx re_empty(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*$"));
+
+	while (ffin.IsOk() && !ffin.Eof())
+	{
+		line = fin.ReadLine();
+
+		if (line.size() > 0)
+		{
+			if (re.Matches(line))
+			{
+				name = re.GetMatch(line, 1);
+				val = re.GetMatch(line, 2);
+				settings[name] = val;
+			}
+			else
+			{
+				if (re_empty.Matches(line))
+				{
+					name = re.GetMatch(line, 1);
+					val = wxString(wxT(""));
+					settings[name] = val;
+				}
+				else
+				{
+					wxLogMessage(wxT("Unsupported line format: ") + line + wxT("\nin file: ") + file_name);
+					exit(1);
+				}
+			}
+		}
+	}
+}
+
+void CVideoSubFinderApp::LoadSettings(wxString file_name)
+{
+	std::map<wxString, wxString> m_general_settings;
+	ReadSettings(file_name, m_general_settings);
+
+	ReadProperty(m_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
+	ReadProperty(m_general_settings, g_show_results, "dump_debug_images");
+	ReadProperty(m_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
+	ReadProperty(m_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
+	ReadProperty(m_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
+	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
+	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
+
+	ReadProperty(m_general_settings, g_use_filter_color, "use_filter_color");
+	ReadProperty(m_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
+	ReadProperty(m_general_settings, g_dL_color, "dL_color");
+	ReadProperty(m_general_settings, g_dA_color, "dA_color");
+	ReadProperty(m_general_settings, g_dB_color, "dB_color");
+	ReadProperty(m_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
+
+	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
+	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
+	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
+	ReadProperty(m_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
+
+	ReadProperty(m_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
+	ReadProperty(m_general_settings, g_mthr, "moderate_threshold");
+	ReadProperty(m_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
+	ReadProperty(m_general_settings, g_segw, "segment_width");
+	ReadProperty(m_general_settings, g_segh, "segment_height");
+	ReadProperty(m_general_settings, g_msegc, "minimum_segments_count");
+	ReadProperty(m_general_settings, g_scd, "min_sum_color_diff");
+	ReadProperty(m_general_settings, g_btd, "between_text_distace");
+	ReadProperty(m_general_settings, g_to, "text_centre_offset");
+	ReadProperty(m_general_settings, g_scale, "image_scale_for_clear_image");
+
+
+	ReadProperty(m_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
+	ReadProperty(m_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
+
+	ReadProperty(m_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
+	ReadProperty(m_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
+	ReadProperty(m_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");
+
+	ReadProperty(m_general_settings, g_mpn, "min_points_number");
+	ReadProperty(m_general_settings, g_mpd, "min_points_density");
+	ReadProperty(m_general_settings, g_msh, "min_symbol_height");
+	ReadProperty(m_general_settings, g_msd, "min_symbol_density");
+	ReadProperty(m_general_settings, g_mpned, "min_NEdges_points_density");
+
+	ReadProperty(m_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
+
+	ReadProperty(m_general_settings, g_threads, "threads");
+	ReadProperty(m_general_settings, g_DL, "sub_frame_length");
+	ReadProperty(m_general_settings, g_tp, "text_percent");
+	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_percent");
+	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");
+	ReadProperty(m_general_settings, g_ilaple, "ila_points_line_error");
+
+	ReadProperty(m_general_settings, g_video_contrast, "video_contrast");
+	ReadProperty(m_general_settings, g_video_gamma, "video_gamma");
+
+	ReadProperty(m_general_settings, g_clear_image_logical, "clear_image_logical");
+
+	ReadProperty(m_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
+
+	ReadProperty(m_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
+	ReadProperty(m_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
+	ReadProperty(m_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
+	ReadProperty(m_general_settings, g_max_dl_down, "max_dl_down");
+	ReadProperty(m_general_settings, g_max_dl_up, "max_dl_up");
+
+	ReadProperty(m_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
+
+	ReadProperty(m_general_settings, g_hw_device, "hw_device");
+
+	if (ReadProperty(m_general_settings, g_filter_descr, "filter_descr"))
+	{
+		if (g_filter_descr == wxT("none"))
+		{
+			g_filter_descr = wxT("");
+		}
+	}
+
+	ReadProperty(m_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
+	ReadProperty(m_general_settings, g_save_scaled_images, "save_scaled_images");
+
+	ReadProperty(m_general_settings, g_border_is_darker, "border_is_darker");
+
+	ReadProperty(m_general_settings, g_text_alignment_string, "text_alignment");
+
+	ReadProperty(m_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
+	ReadProperty(m_general_settings, g_allow_min_luminance, "allow_min_luminance");
 }
 
 
