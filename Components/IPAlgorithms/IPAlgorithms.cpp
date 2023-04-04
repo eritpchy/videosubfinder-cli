@@ -5249,17 +5249,45 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 
 wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h)
 {
-	return wxString::Format(wxT("%.5d%.5d%.5d%.5d%.5d"), ymin, xmin, w, H, W);
+	return wxString::Format(wxT("%.5d%.5d%.5d%.5d%.5d"), ymin, xmin, h, H, W);
 }
 
-void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, int* pmax_x, int* pmin_y, int* pmax_y, wxString* pBaseName)
+bool DecodeImData(wxString FileName, int* pW, int* pH, int* pmin_x, int* pmin_y, int* p_h, wxString* pBaseName)
+{
+	bool res = false;
+
+	wxString str_ymin, str_xmin, str_H, str_W, str_h;
+
+	wxRegEx re(wxT("^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$"));
+	if (re.Matches(FileName))
+	{
+		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
+		str_ymin = re.GetMatch(FileName, 2);
+		str_xmin = re.GetMatch(FileName, 3);
+		str_h = re.GetMatch(FileName, 4);
+		str_H = re.GetMatch(FileName, 5);
+		str_W = re.GetMatch(FileName, 6);
+		
+		if (p_h) *p_h = wxAtoi(str_h);
+		if (pW) *pW = wxAtoi(str_W);
+		if (pH) *pH = wxAtoi(str_H);
+		if (pmin_x) *pmin_x = wxAtoi(str_xmin);
+		if (pmin_y) *pmin_y = wxAtoi(str_ymin);
+
+		res = true;
+	}
+
+	return res;
+}
+
+void GetImInfo(wxString FileName, int img_real_w, int img_real_h, int *pW, int* pH, int* pmin_x, int* pmax_x, int* pmin_y, int* pmax_y, wxString* pBaseName, int* pScale)
 {
 	// Note:
-	//FileName = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, w, h)
+	//FileName = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, img_real_w, img_real_h)
 	//Example:
 	//0_00_05_000__0_00_07_959_00503000000072001280
 	
-	wxString str_ymin, str_xmin, str_H, str_W, str_saved_w;
+	wxString str_ymin, str_xmin, str_H, str_W, str_h;
 
 	wxRegEx re(wxT("^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$"));
 	if (re.Matches(FileName))
@@ -5267,29 +5295,31 @@ void GetImInfo(wxString FileName, int w, int h, int *pW, int* pH, int* pmin_x, i
 		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
 		str_ymin = re.GetMatch(FileName, 2);
 		str_xmin = re.GetMatch(FileName, 3);
-		str_saved_w = re.GetMatch(FileName, 4);
+		str_h = re.GetMatch(FileName, 4);
 		str_H = re.GetMatch(FileName, 5);
 		str_W = re.GetMatch(FileName, 6);
 
-		int saved_w = wxAtoi(str_saved_w);
-		double scaler = (double)w / (double)saved_w;
+		int h = wxAtoi(str_h);
+		int scale = img_real_h/h;
 
-		if (pW) *pW = scaler * wxAtoi(str_W);
-		if (pH) *pH = scaler * wxAtoi(str_H);
-		if (pmin_x) *pmin_x = scaler * wxAtoi(str_xmin);
-		if (pmin_y) *pmin_y = scaler * wxAtoi(str_ymin);
-		if (pmax_x) *pmax_x = (scaler * wxAtoi(str_xmin)) + w - 1;
-		if (pmax_y) *pmax_y = (scaler * wxAtoi(str_ymin)) + h - 1;
+		if (pScale) *pScale = scale;
+		if (pW) *pW = scale * wxAtoi(str_W);
+		if (pH) *pH = scale * wxAtoi(str_H);
+		if (pmin_x) *pmin_x = scale * wxAtoi(str_xmin);
+		if (pmin_y) *pmin_y = scale * wxAtoi(str_ymin);
+		if (pmax_x) *pmax_x = (scale * wxAtoi(str_xmin)) + img_real_w - 1;
+		if (pmax_y) *pmax_y = (scale * wxAtoi(str_ymin)) + img_real_h - 1;
 	}
 	else
 	{
 		if (pBaseName) *pBaseName = FileName;
-		if (pW) *pW = w;
-		if (pH) *pH = h;
+		if (pScale) *pScale = 1;
+		if (pW) *pW = img_real_w;
+		if (pH) *pH = img_real_h;
 		if (pmin_x) *pmin_x = 0;
 		if (pmin_y) *pmin_y = 0;
-		if (pmax_x) *pmax_x = w - 1;
-		if (pmax_y) *pmax_y = h - 1;
+		if (pmax_x) *pmax_x = img_real_w - 1;
+		if (pmax_y) *pmax_y = img_real_h - 1;
 	}
 }
 

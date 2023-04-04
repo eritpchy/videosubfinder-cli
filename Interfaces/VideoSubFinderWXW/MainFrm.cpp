@@ -38,7 +38,7 @@ wxArrayString g_localizations;
 std::map<wxString, int> g_localization_id;
 std::map<int, wxString> g_id_localization;
 
-const int g_max_font_size = 40;
+const int g_max_font_size = 80;
 const int g_def_main_text_font_size = 10;
 const int g_def_buttons_text_font_size = 13;
 
@@ -152,7 +152,7 @@ TextAlignment ConvertStringToTextAlignment(wxString val)
 #ifdef WIN32	
 int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS *ep, char *det)
 {
-	SaveError(wxT("Got C Exception: ") + wxString(det));
+	SaveError(wxT("Got C Exception: ") + wxString(det) + wxT("\n"));
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif
@@ -726,6 +726,8 @@ void CMainFrame::OnSize(wxSizeEvent& event)
 		m_pVideoBox->Raise();
 		m_pVideoBox->Refresh();
 	}
+
+	CControl::UpdateAllControlsSize();
 }
 
 void CMainFrame::OnFileReOpenVideo(wxCommandEvent& event)
@@ -848,8 +850,8 @@ void CMainFrame::OnFileOpenVideo(int type)
 		// https://en.wikipedia.org/wiki/Video_file_format
 		wxString all_video_formats("*.3g2;*.3gp;*.amv;*.asf;*.avi;*.drc;*.flv;*.f4v;*.f4p;*.f4a;*.f4b;*.gif;*.gifv;*.m4p;*.m4v;*.m4v;*.mkv;*.mng;*.mov;*.qt;*.mp4;*.mpg;*.mp2;*.mpeg;*.mpe;*.mpv;*.mpg;*.mpeg;*.m2v;*.mts;*.m2ts;*.ts;*.mxf;*.nsv;*.ogv;*.ogg;*.rm;*.rmvb;*.roq;*.svi;*.viv;*.vob;*.webm;*.wmv;*.yuv;*.avs");
 
-		wxString video_file_dir = (m_FileName.size() > 0) ? GetFileDir(m_FileName) : ((m_last_video_file_path.size() > 0) ? GetFileDir(m_last_video_file_path) : wxEmptyString);
-		wxString video_file_name = (m_FileName.size() > 0) ? GetFileNameWithExtension(m_FileName) : ((m_last_video_file_path.size() > 0) ? GetFileNameWithExtension(m_last_video_file_path) : wxEmptyString);
+		wxString video_file_dir = (m_FileName.size() > 0) ? GetFileDir(m_FileName) : ((m_last_video_file_path.size() > 0) ? GetFileDir(m_last_video_file_path) : wxString(wxEmptyString));
+		wxString video_file_name = (m_FileName.size() > 0) ? GetFileNameWithExtension(m_FileName) : ((m_last_video_file_path.size() > 0) ? GetFileNameWithExtension(m_last_video_file_path) : wxString(wxEmptyString));
 
 		wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_video_file,
 			video_file_dir, video_file_name, wxString::Format(g_cfg.m_file_dialog_title_open_video_file_wild_card, all_video_formats, all_video_formats), wxFD_OPEN);
@@ -1232,6 +1234,15 @@ void LoadSettings()
 
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings...\n");
 
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_clear_dir, "ocr_join_txt_images_clear_dir");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line_font_size, "ocr_join_txt_images_split_line_font_size");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line_font_bold, "ocr_join_txt_images_split_line_font_bold");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_sub_id_format, "ocr_join_txt_images_sub_id_format");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_sub_search_by_id_format, "ocr_join_txt_images_sub_search_by_id_format");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_scale, "ocr_join_txt_images_scale");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_max_number, "ocr_join_txt_images_max_number");
+
 	ReadProperty(g_general_settings, g_cfg.m_vsf_is_maximized, "vsf_is_maximized");
 	ReadProperty(g_general_settings, g_cfg.m_vsf_x, "vsf_x");
 	ReadProperty(g_general_settings, g_cfg.m_vsf_y, "vsf_y");
@@ -1336,8 +1347,7 @@ void LoadSettings()
 
 	ReadProperty(g_general_settings, g_cfg.process_affinity_mask, "process_affinity_mask");
 
-	ReadProperty(g_general_settings, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");	
 
 	ReadProperty(g_general_settings, g_cfg.m_txt_dw, "txt_dw");
 	ReadProperty(g_general_settings, g_cfg.m_txt_dy, "txt_dy");
@@ -1416,6 +1426,11 @@ void LoadLocaleSettings(wxString settings_path)
 	SaveToReportLog(wxString::Format(wxT("CMainFrame::LoadLocaleSettings(): reading properties from \"%s\" ...\n"), settings_path));
 
 	ReadSettings(settings_path, g_locale_settings);
+
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_clear_dir, "ocr_label_join_txt_images_clear_dir");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_create_txt_images, "ocr_dg_sub_group_settings_for_create_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_join_txt_images, "ocr_dg_sub_group_settings_for_join_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_create_sub, "ocr_dg_sub_group_settings_for_create_sub");
 
 	ReadProperty(g_locale_settings, g_cfg.m_fd_main_font_gb_label, "fd_main_font_gb_label");
 	ReadProperty(g_locale_settings, g_cfg.m_fd_buttons_font_gb_label, "fd_buttons_font_gb_label");
@@ -1529,6 +1544,13 @@ void LoadLocaleSettings(wxString settings_path)
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_test_text, "ocr_button_test_text");
+
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_split_line_font_size, "ocr_label_join_txt_images_split_line_font_size");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_split_line_font_bold, "ocr_label_join_txt_images_split_line_font_bold");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_sub_id_format, "ocr_label_join_txt_images_sub_id_format");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_sub_search_by_id_format, "ocr_label_join_txt_images_sub_search_by_id_format");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_scale, "ocr_label_join_txt_images_scale");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_max_number, "ocr_label_join_txt_images_max_number");
 
 	ReadProperty(g_locale_settings, g_cfg.m_label_text_alignment, "label_text_alignment");
 	ReadProperty(g_locale_settings, g_cfg.m_ssp_hw_device, "ssp_hw_device");
@@ -1756,8 +1778,7 @@ void SaveSettings()
 
 	WriteProperty(fout, g_cfg.m_ocr_min_sub_duration, "min_sub_duration");
 
-	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
+	WriteProperty(fout, g_DefStringForEmptySub, "def_string_for_empty_sub");	
 
 	WriteProperty(fout, g_cfg.m_txt_dw, "txt_dw");
 	WriteProperty(fout, g_cfg.m_txt_dy, "txt_dy");
@@ -1801,6 +1822,15 @@ void SaveSettings()
 
 	WriteProperty(fout, g_cfg.m_toolbar_bitmaps_transparent_colour, "toolbar_bitmaps_transparent_colour");
 
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_clear_dir, "ocr_join_txt_images_clear_dir");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line_font_size, "ocr_join_txt_images_split_line_font_size");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line_font_bold, "ocr_join_txt_images_split_line_font_bold");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_sub_id_format, "ocr_join_txt_images_sub_id_format");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_sub_search_by_id_format, "ocr_join_txt_images_sub_search_by_id_format");	
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_scale, "ocr_join_txt_images_scale");
+	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_max_number, "ocr_join_txt_images_max_number");
+
 	fout.Flush();
 	ffout.Close();
 }
@@ -1838,7 +1868,7 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 	SaveToReportLog("CMainFrame::OnFileLoadSettings(): starting ...\n");
 
 	wxString settings_file_dir = (m_last_specified_settings_file_path.size() > 0) ? GetFileDir(m_last_specified_settings_file_path) : g_app_dir;
-	wxString settings_file_name = (m_last_specified_settings_file_path.size() > 0) ? GetFileNameWithExtension(m_last_specified_settings_file_path) : wxEmptyString;
+	wxString settings_file_name = (m_last_specified_settings_file_path.size() > 0) ? GetFileNameWithExtension(m_last_specified_settings_file_path) : wxString(wxEmptyString);
 
 	wxFileDialog fd(this, g_cfg.m_file_dialog_title_open_settings_file,
 		settings_file_dir, settings_file_name, g_cfg.m_file_dialog_title_open_settings_file_wild_card, wxFD_OPEN);
@@ -1890,7 +1920,7 @@ void CMainFrame::OnFileLoadSettings(wxCommandEvent& event)
 void CMainFrame::OnFileSaveSettingsAs(wxCommandEvent& event)
 {
 	wxString settings_file_dir = (m_last_specified_settings_file_path.size() > 0) ? GetFileDir(m_last_specified_settings_file_path) : g_app_dir;
-	wxString settings_file_name = (m_last_specified_settings_file_path.size() > 0) ? GetFileNameWithExtension(m_last_specified_settings_file_path) : wxEmptyString;
+	wxString settings_file_name = (m_last_specified_settings_file_path.size() > 0) ? GetFileNameWithExtension(m_last_specified_settings_file_path) : wxString(wxEmptyString);
 
 	wxFileDialog fd(this, g_cfg.m_file_dialog_title_save_settings_file,
 		settings_file_dir, settings_file_name, g_cfg.m_file_dialog_title_save_settings_file_wild_card, wxFD_SAVE);
@@ -2155,6 +2185,17 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 		}
 	}
 
+	{
+		std::unique_lock<std::mutex> lock(m_pPanel->m_pOCRPanel->m_mutex);
+		if (g_IsJoinTXTImages == 1)
+		{
+			if (m_pPanel->m_pOCRPanel->m_JoinTXTImagesThread.joinable())
+			{
+				m_pPanel->m_pOCRPanel->m_JoinTXTImagesThread.join();
+			}
+		}
+	}
+
 	Destroy();
 }
 
@@ -2221,6 +2262,7 @@ public:
 	{
 	}
 
+	void OnTextUrl(wxTextUrlEvent& event);
 	void OnKeyDown(wxKeyEvent& event);
 	void UpdateSize() override;
 	void RefreshData() override;
@@ -2234,14 +2276,24 @@ MyMessageBox::MyMessageBox(CMainFrame* pMF, const wxString& message, const wxStr
 {
 	m_pMF = pMF;
 	m_w = size.x;
-	m_pDialogText = new wxTextCtrl(this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
+	m_pDialogText = new wxTextCtrl(this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_READONLY | wxBORDER_NONE);
 	m_pDialogText->SetFont(m_pMF->m_LBLFont);
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
 	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	Bind(wxEVT_TEXT_URL, &MyMessageBox::OnTextUrl, this);
 	Bind(wxEVT_CHAR_HOOK, &MyMessageBox::OnKeyDown, this);
 	Bind(wxEVT_MOUSEWHEEL, &CMainFrame::OnMouseWheel, m_pMF);
 	m_pDialogText->SetInsertionPoint(0);
 	UpdateSize();
+}
+
+void MyMessageBox::OnTextUrl(wxTextUrlEvent& event)
+{
+	if (event.GetMouseEvent().LeftIsDown())
+	{
+		wxTextCtrl* pTextCtrl = (wxTextCtrl*)event.GetEventObject();
+		wxLaunchDefaultBrowser(pTextCtrl->GetRange(event.GetURLStart(), event.GetURLEnd()));
+	}
 }
 
 void MyMessageBox::OnKeyDown(wxKeyEvent& event)

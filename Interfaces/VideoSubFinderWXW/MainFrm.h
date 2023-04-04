@@ -44,6 +44,8 @@ extern Settings	g_cfg;
 extern wxString g_GeneralSettingsFileName;
 extern wxString g_text_alignment_string;
 
+extern const int g_max_font_size;
+
 class CSSOWnd;
 class CVideoBox;
 class CImageBox;
@@ -85,8 +87,7 @@ public:
 	bool		m_buttons_text_font_underline = false;
 	int			m_buttons_text_font_size = -1;
 
-	double		m_ocr_min_sub_duration;
-	wxString	m_ocr_join_txt_images_split_line;
+	double		m_ocr_min_sub_duration;	
 
 	int			process_affinity_mask = -1;
 
@@ -107,6 +108,13 @@ public:
 	wxString	m_ocr_button_csftr_text;
 	wxString	m_ocr_button_cesfcti_text;
 	wxString	m_ocr_button_test_text;
+
+	wxString	m_ocr_label_join_txt_images_split_line_font_size;
+	wxString	m_ocr_label_join_txt_images_split_line_font_bold;
+	wxString	m_ocr_label_join_txt_images_sub_id_format;
+	wxString	m_ocr_label_join_txt_images_sub_search_by_id_format;
+	wxString	m_ocr_label_join_txt_images_scale;
+	wxString	m_ocr_label_join_txt_images_max_number;
 
 	wxString	m_label_text_alignment;
 	wxString	m_playback_sound;
@@ -339,6 +347,22 @@ public:
 	int			m_vsf_y = -1;
 	int			m_vsf_w = -1;
 	int			m_vsf_h = -1;
+
+	bool		m_ocr_join_txt_images_clear_dir = true;
+	wxString	m_ocr_join_txt_images_split_line = wxT("[sub_id]");
+	int			m_ocr_join_txt_images_split_line_font_size = -1;
+	bool		m_ocr_join_txt_images_split_line_font_bold = true;
+	wxString	m_ocr_join_txt_images_sub_id_format = wxT("[SUB%d]");
+	wxString	m_ocr_join_txt_images_sub_search_by_id_format = wxT("\\[SUB%d\\](.*?)\\[SUB");
+	int			m_ocr_join_txt_images_scale = 1;
+	int			m_ocr_join_txt_images_max_number = 50;
+
+	wxString	m_ocr_dg_sub_group_settings_for_create_txt_images;
+	wxString	m_ocr_dg_sub_group_settings_for_join_txt_images;
+	wxString	m_ocr_dg_sub_group_settings_for_create_sub;
+	wxString	m_ocr_label_join_txt_images_clear_dir;
+
+	wxString	m_ocr_GB_label;
 };
 
 class CMainFrame : public wxFrame
@@ -378,7 +402,11 @@ public:
 
 	int 		m_dx = 20;
 	int 		m_dy = 10;
+#ifdef WIN32
 	int			m_ph = 310; //panel height
+#else
+	int			m_ph = 350; //panel height
+#endif
 
 	s64			m_dt;
 	s64         m_ct;

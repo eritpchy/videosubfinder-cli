@@ -85,41 +85,48 @@ void CSearchPanel::Init()
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pP1...\n");
 	m_pP1 = new wxPanel( this, wxID_ANY, rcP1.GetPosition(), rcP1.GetSize() );
-	m_pP1->SetMinSize(rcP1.GetSize());
+	wxSize p1_min_size = rcP1.GetSize();
+	m_pP1->SetMinSize(p1_min_size);
 	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
 
 	m_plblBT1 = new CStaticText(m_pP1, g_cfg.m_label_begin_time, wxID_ANY);
 	m_plblBT1->SetSize(rcBT1);
-	m_plblBT1->SetMinSize(rcBT1.GetSize());
+	wxSize bt1_min_size = rcBT1.GetSize();
+	m_plblBT1->SetMinSize(bt1_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
 	m_plblBT2 = new CStaticText( m_pP1, g_cfg.m_label_end_time, wxID_ANY);
 	m_plblBT2->SetSize(rcBT2);
-	m_plblBT2->SetMinSize(rcBT2.GetSize());
+	wxSize bt2_min_size = rcBT2.GetSize();
+	m_plblBT2->SetMinSize(bt2_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
 	m_plblBTA1 = new CTextCtrl(m_pP1, ID_LBL_BEGIN_TIME,
 		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
 	m_plblBTA1->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
-	m_plblBTA1->SetMinSize(rcBTA1.GetSize());
+	wxSize bta1_min_size = rcBTA1.GetSize();
+	m_plblBTA1->SetMinSize(bta1_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA2...\n");
 	m_plblBTA2 = new CTextCtrl( m_pP1, ID_LBL_END_TIME,
 		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
 	m_plblBTA2->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
-	m_plblBTA2->SetMinSize(rcBTA2.GetSize());
+	wxSize bta2_min_size = rcBTA2.GetSize();
+	m_plblBTA2->SetMinSize(bta2_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
 	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_clear_folders_text, rcClear.GetPosition(), rcClear.GetSize() );
-	m_pClear->SetMinSize(rcClear.GetSize());
+	wxSize clear_min_size =  rcClear.GetSize();
+	m_pClear->SetMinSize(clear_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
 	m_pRun = new CButton( m_pP1, ID_BTN_RUN, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
 		g_cfg.m_button_run_search_text, rcRun.GetPosition(), rcRun.GetSize() );
-	m_pRun->SetMinSize(rcRun.GetSize());
+	wxSize run_min_size = rcRun.GetSize();
+	m_pRun->SetMinSize(run_min_size);
 		
 	m_plblBT1->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
 	m_plblBT2->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
@@ -316,7 +323,7 @@ void ThreadSearchSubtitles()
 	}
 	catch (const exception& e)
 	{
-		SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles() ") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles() ") + wxString(e.what()) + wxT("\n"));
 	}
 	
 	if (!(g_pMF->m_blnNoGUI))

@@ -126,7 +126,8 @@ void CSettingsPanel::Init()
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pP2...\n");
 	m_pP2 = new wxPanel( this, wxID_ANY, rcP2.GetPosition(), rcP2.GetSize() );
-	m_pP2->SetMinSize(rcP2.GetSize());
+	wxSize p2_min_size = rcP2.GetSize();
+	m_pP2->SetMinSize(p2_min_size);
 	m_pP2->SetBackgroundColour(g_cfg.m_notebook_panels_colour);	
 
 	SaveToReportLog("CSettingsPanel::Init(): init m_pGB1...\n");
@@ -157,7 +158,8 @@ void CSettingsPanel::Init()
 	rcTEST.GetPosition();
 	m_pTest->SetFont(m_pMF->m_BTNFont);
 	m_pTest->SetTextColour(g_cfg.m_main_text_colour);
-	m_pTest->SetMinSize(rcTEST.GetSize());
+	wxSize test_min_size = rcTEST.GetSize();
+	m_pTest->SetMinSize(test_min_size);
 
 	bmp_na = wxImage(g_app_dir + "/bitmaps/left_na.bmp");
 	bmp_od = wxImage(g_app_dir + "/bitmaps/left_od.bmp");
@@ -400,7 +402,9 @@ void CSettingsPanel::Init()
 	m_pPixelColorExample->SetTextColour(g_cfg.m_main_text_colour);
 	m_pPixelColorExample->SetBackgroundColour(m_PixelColorExample);
 	m_pPixelColorExample->SetSize(rcPixelColorExample);
-	m_pPixelColorExample->SetMinSize(rcPixelColorExample.GetSize());
+	
+	wxSize pce_min_size = rcPixelColorExample.GetSize();
+	m_pPixelColorExample->SetMinSize(pce_min_size);
 
 	// m_pP2 location sizer
 	{
@@ -415,23 +419,11 @@ void CSettingsPanel::Init()
 
 	// m_pP2 elements location sizer
 	{
-		int gb_y_offset = std::max<int>(m_pGB1->GetTextExtent(m_pGB1->GetLabel()).GetHeight(), m_pGB2->GetTextExtent(m_pGB1->GetLabel()).GetHeight()) + 2;
-
-		wxBoxSizer* gb1_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
-		wxBoxSizer* gb1_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
-
-		gb1_hor_box_sizer->Add(m_pOI, 1, wxEXPAND | wxALL);
-		gb1_vert_box_sizer->AddSpacer(gb_y_offset);
-		gb1_vert_box_sizer->Add(gb1_hor_box_sizer, 1, wxEXPAND | wxALL, 4);
-		m_pGB1->SetSizer(gb1_vert_box_sizer);
-
-		wxBoxSizer* gb2_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
-		wxBoxSizer* gb2_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
-
-		gb2_hor_box_sizer->Add(m_pOIM, 1, wxEXPAND | wxALL);
-		gb2_vert_box_sizer->AddSpacer(gb_y_offset);
-		gb2_vert_box_sizer->Add(gb2_hor_box_sizer, 1, wxEXPAND | wxALL, 4);
-		m_pGB2->SetSizer(gb2_vert_box_sizer);
+		wxStaticBoxSizer* gb1_sizer = new wxStaticBoxSizer(m_pGB1, wxVERTICAL);
+		gb1_sizer->Add(m_pOI, 1, wxEXPAND | wxALL);
+		
+		wxStaticBoxSizer* gb2_sizer = new wxStaticBoxSizer(m_pGB2, wxVERTICAL);
+		gb2_sizer->Add(m_pOIM, 1, wxEXPAND | wxALL);
 
 		wxBoxSizer* gb3_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
 		wxBoxSizer* gb3_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -462,16 +454,16 @@ void CSettingsPanel::Init()
 		vert_right_ctrls_sizer->AddSpacer(4);
 		vert_right_ctrls_sizer->Add(m_plblPixelColor, 0, wxEXPAND | wxALL);	
 		vert_right_ctrls_sizer->AddSpacer(2);
-		vert_right_ctrls_sizer->Add(rgb_lab_color_sizer, 0, wxEXPAND | wxALL);
+		vert_right_ctrls_sizer->Add(rgb_lab_color_sizer, 0, wxEXPAND | wxALL);		
 
 		gb3_hor_box_sizer->Add(vert_right_ctrls_sizer, 0, wxALIGN_CENTER);
-		gb3_vert_box_sizer->AddSpacer(gb_y_offset);
+		gb3_vert_box_sizer->AddSpacer(1);
 		gb3_vert_box_sizer->Add(gb3_hor_box_sizer, 0, wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL);
 		m_pGB3->SetSizer(gb3_vert_box_sizer);
 
 		wxGridSizer* grids_boxs_sizer = new wxGridSizer(1, 2, 0, 4);
-		grids_boxs_sizer->Add(m_pGB1, 1, wxEXPAND | wxALL);
-		grids_boxs_sizer->Add(m_pGB2, 1, wxEXPAND | wxALL);
+		grids_boxs_sizer->Add(gb1_sizer, 1, wxEXPAND | wxALL);
+		grids_boxs_sizer->Add(gb2_sizer, 1, wxEXPAND | wxALL);
 		
 		wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
 		hor_box_sizer->AddSpacer(4);
@@ -484,7 +476,7 @@ void CSettingsPanel::Init()
 		vert_box_sizer->AddSpacer(2);
 		vert_box_sizer->Add(hor_box_sizer, 1, wxEXPAND | wxALL);
 		vert_box_sizer->AddSpacer(2);
-		m_pP2->SetSizer(vert_box_sizer);		
+		m_pP2->SetSizer(vert_box_sizer);
 	}
 
 	SaveToReportLog("CSettingsPanel::Init(): finished.\n");
@@ -492,10 +484,12 @@ void CSettingsPanel::Init()
 
 void CSettingsPanel::UpdateSize()
 {
-	int gb_y_offset = std::max<int>(m_pGB1->GetTextExtent(m_pGB1->GetLabel()).GetHeight(), m_pGB2->GetTextExtent(m_pGB1->GetLabel()).GetHeight()) + 2;
-	m_pGB1->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
-	m_pGB2->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
-	m_pGB3->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
+	wxPoint  gb1_pos = m_pGB1->GetScreenPosition();
+	wxPoint  oi_pos = m_pOI->GetScreenPosition();
+
+	m_pGB3->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, oi_pos.y - gb1_pos.y);
+
+	this->GetSizer()->Layout();
 }
 
 void CSettingsPanel::RefreshData()

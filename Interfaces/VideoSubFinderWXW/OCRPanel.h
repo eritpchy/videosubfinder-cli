@@ -18,6 +18,8 @@
 #include "SSOWnd.h"
 #include "DataTypes.h"
 #include "MyResource.h"
+#include "DataGrid.h"
+#include "StaticBox.h"
 #include "CheckBox.h"
 #include "TextCtrl.h"
 #include "Button.h"
@@ -32,6 +34,7 @@ extern bool g_use_ILA_images_for_get_txt_area;
 
 extern int g_IsCreateClearedTextImages;
 extern int g_RunCreateClearedTextImages;
+extern int g_IsJoinTXTImages;
 extern bool g_ValidateAndCompareTXTImages;
 extern bool g_DontDeleteUnrecognizedImages1;
 extern bool g_DontDeleteUnrecognizedImages2;
@@ -155,7 +158,7 @@ public:
 	wxString  m_Name;
 };
 
-void CreateClearedTextImages(vector<wxString>& FileNamesVector, wxString SaveDir);
+void CreateClearedTextImages();
 void JoinTXTImages();
 
 class COCRPanel : public wxPanel, public CControl
@@ -168,29 +171,33 @@ public:
 
 	wxString m_sub_path;
 
-	CStaticText *m_plblMSD;
-	CStaticText	*m_plblJTXTSL;
-	CCheckBox	*m_pcbJSACT;
-	CCheckBox	*m_pcbCTXTF;
-	CCheckBox	*m_pcbSESS;
-	CCheckBox	*m_pcbSSI;
-	CTextCtrl	*m_pMSD;
-	CTextCtrl	*m_pJTXTSL;
-	CButton	 *m_pCCTI;
-	CButton	 *m_pCES;
-	CButton  *m_pJOIN;
-	CButton	 *m_pCSCTI;
-	CButton	 *m_pCSTXT;
-	wxPanel		 *m_pP3;
+	CStaticBox	*m_pGB;
+	CDataGrid	*m_pDG;
+	CButton		*m_pCCTI;
+	CButton		*m_pCES;
+	CButton		*m_pJOIN;
+	CButton		*m_pCSCTI;
+	CButton		*m_pCSTXT;
+	wxPanel		*m_pP3;	
 
 	CSSOWnd		*m_pParent;
 	CMainFrame	*m_pMF;
+
+	wxSizerItem* m_pSpacerBNs;
+	wxBoxSizer* m_gb_hor_box_sizer;
+	wxBoxSizer* m_vert_box_buttons_sizer;
+
+	const int m_dx = 10;
+
+	vector<wxString> m_FileNamesVector;
+	wxString m_SaveDir;
 
 	std::thread m_CCTIThread;
 	std::thread m_JoinTXTImagesThread;
 
 	void Init();
 
+	void CreateSubFromJoinTXTResults(wxString join_txt_res_path);
 	void CreateSubFromTXTResults();
 
 public:

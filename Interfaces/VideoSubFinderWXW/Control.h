@@ -48,7 +48,7 @@ public:
 		}
 	}
 
-	virtual void UpdateData(wxString *newval){}
+	virtual bool UpdateData(wxString* newval) { bool res = true; return res; }
 	virtual void UpdateSize(){}
 
 	virtual void RefreshData() = 0;

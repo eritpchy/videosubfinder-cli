@@ -18,6 +18,8 @@ Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS, Ar
 
 For faster support in case of bug fixes please contact me in: https://vk.com/skosnits
 
+For donate you can use: https://sourceforge.net/projects/videosubfinder/donate
+
 #######################################################################################
 Used Terms:
 #######################################################################################
@@ -27,12 +29,12 @@ Used Terms:
 *) ILAImages - Intersected Luminance Areas (by using frames in video on which subtitle was detected), the areas where pixels are not change too much in luminance in range:
 "Max luminance diff from down for IL image generation"
 "Max luminance diff from up for IL image generation"
-First image of "Sub Frames Length" sequence (~8-12 (dependently from settings) nearest frames in video on which subtitle was detected) are taked as reference,
+First image of "Sub Frames Length" sequence (~8-12 (dependently from settings) nearest frames in video on which subtitle was detected) is taken as reference,
 all next images in "Sub Frames Length" sequence are compared with it by luminance change. On produced ILAImages also affect "Use Filter Colors"
 and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (first image of "Sub Frames Length" sequence).
 
 *) kmeans (K-Means Clustering)
-https://docs.opencv.org/3.4/d1/d5c/tutorial_py_kmeans_opencv.html
+https://docs.opencv.org/4.x/d1/d5c/tutorial_py_kmeans_opencv.html
 https://en.wikipedia.org/wiki/K-means_clustering
 
 *) Sobel Operator
@@ -58,17 +60,18 @@ initial processing of the frame, the result of the processing is affected by all
 except one H-Vertical Threshold, all "Settings For Color Filter "except for one Sum Multiple Color Diff.
 
 *) (OLD) ""After Second Filtration" is the resulting image as a result secondary image processing (processing applied to the image resulting from "After First Filtration"),
-the result of processing affect all the "Settings for Linear Filtering", all "Settings for Points Color Borders", all "Settings for Color Filter" except one Sum Color Diff.
+result of processing affects all the "Settings for Linear Filtering", all "Settings for Points Color Borders", all "Settings for Color Filter" except one Sum Color Diff.
 
 
 #######################################################################################
 Quick Start Guide
 #######################################################################################
+
 How to use without deep details:
 1) Click in menu "File->Open Video" (any variant)
 2) Check boundary box in "Video Box" where most subs will appear (for that you can move split lines in it): by default it is whole video.
 It is recommended to reduce area for search for getting less wrong detections and less timings splits.
-3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab.
+3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab page.
 Center - is in most case, so it set by default.
 4) It is strongly recommended to use "Use Filter Colors" but you can skip this step.
 For this you need:
@@ -76,17 +79,19 @@ For this you need:
 * - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
 * - if there are many subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-5) Click "Run Search" in the first tab page, if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub",
+5) Click "Run Search" in the "Search" tab page, if you need to get only timing and original images with potential subs go after this step to "OCR" tab page and press "Create Empty Sub From Found Video Frames With Text (RGBImages->Sub)",
 found original images with subtitles will be located in "RGBImages" folder.
 6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken,
 which is possible if you use too strong Color Filters or subtitles pop-up on video and disappear, in this case it is better to change program settings or delete such ILA Images.
 7) [MOST IMPORTANT PART IF YOU DON’T USE COLOR FILTERING]
 Before continue: Check does subtitles has darker border color then subtitles text color.
-In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab".
+In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings" tab.
 In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
 8) If you are using "Use Filter Colors" and have too good ILAImages - all characters separated from background,
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
-9) Click "Create Cleared TXTImages" on the last tab page for get text symbols separation from background, after this you can do OCR text in other software as described in separate topic "For OCR".
+9) Click "Create Cleared Text Images (RGBImages->TXTImages)" on the "OCR" tab page for get text symbols separation from background.
+10) Do OCR text from TXTImages or RGBImages in other software as described in separate topic "For OCR".
+11) Generate subtitle (*.srt or *.ass) from TXTResults or TXTImages/RGBImages (with only timing) by clicking related button in "OCR" tab.
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
@@ -295,10 +300,20 @@ For OCR (conversion of images of text into machine-encoded text) can be used:
 NOTE:
 For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 
+#-----------------------------------------------------
+
 (1) FineReader: https://www.abbyy.com/finereader/
+
 1_1. Video instructions:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
+
+1_2. OCR TXTImages by FineReader with generating TXTResults/*.txt files.
+In this case result txt files after OCR should have:
+*) UTF8 format
+*) same names as original TXTImages
+
+1_3. Generate subtitle (*.srt or *.ass) from TXTResults/*.txt files by clicking "Create Sub From Text Results (TXTResults->Sub)" button in "OCR" tab.
 
 #-----------------------------------------------------
 
@@ -307,9 +322,9 @@ NOTE: The instruction below was tested on 3.5.16 version with images with Englis
 In VideoSubFinder:
 2_1_1. Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
 2_1_2. Click "Run Search" and get images (in the first tab page: "Search").
-2_1_3. Click "Create Cleared TXTImages" (in the last tab page: "Search").
+2_1_3. Click "Create Cleared Text Images (RGBImages->TXTImages)" (in the last tab page: "Search").
 2_1_4. [Note: This step can be skipped] Open "TXTImages" folder and remove images without text.
-2_1_5. Click "Create Empty Sub From Cleared TXTImages" which will generate "sub.srt" file with timing only (in the last tab page: "Search").
+2_1_5. Click "Create Empty Sub From Cleared Text Images (TXTImages->Sub)" which will generate "sub.srt" file with timing only (in the "OCR" tab page).
 In Subtitle Edit:
 2_2_1. Click in menu "File->Open" and select sub.srt file
 2_2_2. Click in menu "File->Import images.." + Click "..." in top right and select all files in "TXTImages" (CTRL+A)
@@ -325,7 +340,55 @@ https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line
 
 #-----------------------------------------------------
 
-(3) baidu ocr
+(3) Google Drive (free web service): https://drive.google.com/drive/my-drive
+
+3_1. Before Join TXTImages it is very recommended to "Create Cleared Text Images (RGBImages->TXTImages)" with turned on "Save Each Substring Separately" option (in settings in the left side of "OCR" tab page)
+or in other case you will need to manually specify font size for "Join TXTImages Split Line"
+
+3_2. Join TXTImages by "Join Cleared Text Images To Single Image (TXTImages->TXTImagesJoined)" button in "OCR" tab.
+In settings in the left side of "OCR" tab page you can change:
+*) max number of joined subtitles in single generated image,
+in some cases with "Join TXTImages Scale (From Original RGBImages Size)" == 1 it can work even with "Join TXTImages Max Number" == 160
+but according users experience OCR can be more accurate with "Join TXTImages Max Number" == 50 than with "Join TXTImages Max Number" == 100
+*) generated [sub_id] format and related search format pattern for find sub data in "TXTResults/join_txt_results.txt"
+NOTE: when program search related sub data in "TXTResults/join_txt_results.txt" it add additional [sub_id] to the end.
+*) if font size is "-1" it will try to automatically find optimal font size for "Join TXTImages Split Line" according average TXTImages heights, but you can specify it manually in range [1-80].
+*) scale from original "RGBImages" size.
+*) "Join TXTImages Split Line Text" support macro definitions: [sub_id], [begin_time], [end_time].
+[MOST IMPORTANT] But for find sub data currently supported only [sub_id] which format can be changed.
+
+3_3. Upload joined TXT images from "TXTImagesJoined" folder to some directory in Google Drive.
+3_4. Right mouse click on each joined TXT image -> "Open with" -> "Google Docs" (it will should automatically OCR image and generate doc file).
+NOTE: If OCR failed and result doc file is empty you can try to change:
+*) scale from original "RGBImages" size, in most case it works better with unscaled images: "Join TXTImages Scale (From Original RGBImages Size)" == 1
+*) manually specify font size for "Join TXTImages Split Line"
+*) max number of joined subtitles in single generated image
+
+3_5. Open each generated doc file and copy all texts to single file "TXTResults/join_txt_results.txt" with saving in UTF8 format.
+NOTE: '\n' is no matter, just simply copy each text result to the end of result txt file with simple concatenation.
+
+3_6. Generate subtitle (*.srt or *.ass) from "TXTResults/join_txt_results.txt" files by clicking "Create Sub From Text Results (TXTResults->Sub)" button in "OCR" tab.
+
+#-----------------------------------------------------
+
+(4) Google vision API
+https://cloud.google.com/vision
+
+Some possible solutions:
+
+Batch images processing python script:
+https://sourceforge.net/p/videosubfinder/discussion/684990/thread/352389f0e9/#c00e
+https://github.com/Abu3safeer/image-ocr-google-docs-srt
+https://youtu.be/JXbL-PEoT4I
+https://youtu.be/vt_PtZ6KYIE
+
+Batch whole process with translation:
+https://sourceforge.net/p/videosubfinder/discussion/684990/thread/af99aafebf/#f2ed
+https://gist.github.com/kumorikuma/e4deca4e9384c0391acc784de3a8f015
+
+#-----------------------------------------------------
+
+(5) Baidu OCR
 You can try to write a program in python with usage baidu ocr api for ocr images.
 
 Useful links:
@@ -336,14 +399,6 @@ https://programmer.ink/think/5d35803c404e4.html
 https://ai.baidu.com/ai-doc/OCR/Dk3h7yf8m
 https://ai.baidu.com/ai-doc/OCR/Kk3h7y7vq
 https://ai.baidu.com/sdk#ocr
-
-#-----------------------------------------------------
-
-(4) Google vision API
-https://cloud.google.com/vision
-
-Some possible solution is described in bottom:
-https://sourceforge.net/p/videosubfinder/discussion/684990/thread/352389f0e9/
 
 #######################################################################################
 OUTDATED OLD INFORMATION:

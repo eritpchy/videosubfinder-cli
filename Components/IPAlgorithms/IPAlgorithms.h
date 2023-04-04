@@ -149,7 +149,8 @@ int FilterImage(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, int w, int h, i
 
 wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h);
 
-void GetImInfo(wxString FileName, int w, int h, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmax_x = NULL, int* pmin_y = NULL, int* pmax_y = NULL, wxString* pBaseName = NULL);
+void GetImInfo(wxString FileName, int img_real_w, int img_real_h, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmax_x = NULL, int* pmin_y = NULL, int* pmax_y = NULL, wxString* pBaseName = NULL, int* pScale = NULL);
+bool DecodeImData(wxString FileName, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmin_y = NULL, int* p_h = NULL, wxString* pBaseName = NULL);
 
 int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig);
 
@@ -169,7 +170,7 @@ void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name);
 void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 void SaveGreyscaleImage(simple_buffer<int>& Im, wxString name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 template <class T>
-void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white = 255);
+void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white = 255, bool allocate_im_size = false);
 template <class T>
 void CombineTwoImages(simple_buffer<T>& ImRes, simple_buffer<T>& Im2, int w, int h, T white = 255);
 template <class T1, class T2>
@@ -305,7 +306,7 @@ void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int qual
 }
 
 template <class T>
-void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white)
+void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white, bool allocate_im_size)
 {
 	cv::Mat data;
 	ReadFile(data, name);
@@ -313,7 +314,14 @@ void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T whit
 	w = im.cols;
 	h = im.rows;
 
-	custom_assert(Im.m_size >= w * h, "LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h)\nnot: Im.m_size >= w * h");
+	if (allocate_im_size)
+	{
+		Im.set_size(w * h);
+	}
+	else
+	{
+		custom_assert(Im.m_size >= w * h, "LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h)\nnot: Im.m_size >= w * h");
+	}
 
 	for (int i = 0; i < w * h; i++)
 	{

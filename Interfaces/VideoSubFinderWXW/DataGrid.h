@@ -102,6 +102,7 @@ public:
 	void OnSize(wxSizeEvent& event);
 	void SetGridColLaberls();
 	void SetGridLineColour(wxColour& col);
+	wxSize GetOptimalSize();
 	void UpdateSize() override;
 	void RefreshData() override;
 

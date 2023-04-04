@@ -44,15 +44,17 @@ public:
 
 		if (res == true)
 		{
-			UpdateData(newval);
+			res = UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void UpdateData(wxString *newval) override
+	bool UpdateData(wxString *newval) override
 	{
+		bool res = true;
 		*m_pstr = *newval;
+		return res;
 	}
 
 	void RefreshData() override
@@ -96,15 +98,17 @@ public:
 
 		if (res == true)
 		{
-			UpdateData(newval);
+			res = UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void UpdateData(wxString *newval) override
+	bool UpdateData(wxString *newval) override
 	{
+		bool res = true;
 		*m_pstr = wxSplit(*newval, '\n');
+		return res;
 	}
 
 	void RefreshData() override
@@ -161,15 +165,17 @@ public:
 
 		if (res == true)
 		{
-			UpdateData(newval);
+			res = UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void UpdateData(wxString *newval) override
+	bool UpdateData(wxString *newval) override
 	{
+		bool res = true;
 		*m_pstr = *newval;
+		return res;
 	}
 
 	void RefreshData() override
@@ -232,7 +238,7 @@ public:
 		m_vmax = val_max;
 
 		Str << *m_pval;
-		grid->SetCellValue( row, col, Str );
+		m_grid->SetCellValue(m_row, m_col, Str );
 	}
 
 	bool EndEdit(int row, int col, const wxGrid *grid, const wxString &oldval, wxString *newval) override
@@ -243,16 +249,17 @@ public:
 
 		if (res == true)
 		{
-			UpdateData(newval);			
+			res = UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void UpdateData(wxString *newval) override
+	bool UpdateData(wxString *newval) override
 	{
+		bool res = true;
 		wxString Str = *newval;
-		int val = (int)strtod(Str, NULL);
+		int val = (int)strtod(Str, NULL);		
 			
 		if ( (val >= m_vmin) && (val <= m_vmax) )
 		{
@@ -263,7 +270,10 @@ public:
 			Str = "";
 			Str << *m_pval;
 			*newval = Str;
-		}	
+			res = false;
+		}
+
+		return res;
 	}
 
 	void RefreshData() override
@@ -318,14 +328,15 @@ public:
 
 		if (res == true)
 		{
-			UpdateData(newval);
+			res = UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void UpdateData(wxString *newval) override
+	bool UpdateData(wxString *newval) override
 	{
+		bool res = true;
 		wxString Str = *newval;
 		double val = strtod(Str, NULL);
 			
@@ -338,7 +349,10 @@ public:
 			Str = "";
 			Str << *m_pval;
 			*newval = Str;
+			res = false;
 		}
+
+		return res;
 	}
 
 	void RefreshData() override
@@ -397,14 +411,15 @@ public:
 		res = wxGridCellBoolEditor::EndEdit(row, col, grid, oldval, newval);
 		if (res == true)
 		{
-			UpdateData(newval);
+			res = UpdateData(newval);
 		}
 
 		return res;
 	}
 
-	void UpdateData(wxString *newval) override
+	bool UpdateData(wxString *newval) override
 	{
+		bool res = true;
 		if (IsTrueValue(*newval))
 		{
 			*m_pbln = true;
@@ -413,6 +428,7 @@ public:
 		{
 			*m_pbln = false;
 		}
+		return res;
 	}
 
 	void RefreshData() override
@@ -558,6 +574,42 @@ void CDataGrid::RefreshData()
 	}
 
 	SetGridColLaberls();
+}
+
+wxSize CDataGrid::GetOptimalSize()
+{
+	wxClientDC dc(this);
+	if (m_pFont) dc.SetFont(*m_pFont);
+	int max_text_w = 0;
+	int opt_cw;
+
+	for (int index = 0; index < this->GetNumberRows(); index++)
+	{
+		wxString label = this->GetCellValue(index, 0);
+		wxSize text_size = dc.GetMultiLineTextExtent(label);
+		this->SetRowSize(index, text_size.GetHeight() + 6);
+
+		int rows, cols;
+		this->GetCellSize(index, 0, &rows, &cols);
+
+		if (cols == 1)
+		{
+			if (text_size.GetWidth() > max_text_w)
+			{
+				max_text_w = text_size.GetWidth();
+			}
+		}
+	}
+	max_text_w += 6;
+
+	opt_cw = (double)max_text_w / 0.65;
+
+	wxSize cur_size = this->GetSize();
+	wxSize cur_client_size = this->GetClientSize();
+	wxSize opt_size(10, 10);
+	opt_size.x = opt_cw + cur_size.x - cur_client_size.x;
+
+	return opt_size;
 }
 
 void CDataGrid::UpdateSize()
