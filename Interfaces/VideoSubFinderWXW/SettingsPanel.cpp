@@ -581,7 +581,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 
 			g_cfg.m_on_test_image_name = ImgName;
 			m_pMF->get_video_box_lblVB_on_test_title();
-			m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_on_test_title);
+			m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_title);
 
 			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/DebugImages");
 

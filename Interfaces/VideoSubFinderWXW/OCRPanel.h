@@ -187,6 +187,8 @@ public:
 	wxBoxSizer* m_gb_hor_box_sizer;
 	wxBoxSizer* m_vert_box_buttons_sizer;
 
+	bool m_was_sub_save = false;
+
 	const int m_dx = 10;
 
 	vector<wxString> m_FileNamesVector;

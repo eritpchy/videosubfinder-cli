@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"5.80"
+#define VSF_VERSION	"6.00"
 
 #define ID_APP_ABOUT                    1100
 
@@ -186,6 +186,9 @@
 #define ID_APP_CMD_ARGS_INFO            70
 #define ID_APP_USAGE_DOCS               71
 #define ID_FONTS                        72
+#define ID_APP_WEBSITE                  73
+#define ID_APP_FORUM                    74
+#define ID_APP_BUG_TRACKER              75
 
 // !NOTE: SHOULD BE WITH THE HIGHEST VALUE
-#define FIRST_ID_FOR_LOCALIZATIONS      73
+#define FIRST_ID_FOR_LOCALIZATIONS      76

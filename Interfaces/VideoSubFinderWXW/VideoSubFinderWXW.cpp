@@ -30,33 +30,27 @@ wxCmdLineParser *g_pParser = NULL;
 
 void SetParserDescription()
 {
-	const wxCmdLineEntryDesc cmdLineDesc[] =
-	{
-		{ wxCMD_LINE_SWITCH, "c", "clear_dirs", g_cfg.m_help_desc_for_clear_dirs },
-		{ wxCMD_LINE_SWITCH, "r", "run_search", g_cfg.m_help_desc_for_run_search },
-		{ wxCMD_LINE_SWITCH, "ccti", "create_cleared_text_images", g_cfg.m_help_desc_for_create_cleared_text_images },
-		{ wxCMD_LINE_OPTION, "ces", "create_empty_sub", g_cfg.m_help_desc_for_create_empty_sub },
-		{ wxCMD_LINE_OPTION, "cscti", "create_sub_from_cleared_txt_images", g_cfg.m_help_desc_for_create_sub_from_cleared_txt_images },
-		{ wxCMD_LINE_OPTION, "cstxt", "create_sub_from_txt_results", g_cfg.m_help_desc_for_create_sub_from_txt_results },
-		{ wxCMD_LINE_OPTION, "i", "input_video", g_cfg.m_help_desc_for_input_video },
-		{ wxCMD_LINE_SWITCH, "ovocv", "open_video_opencv", g_cfg.m_help_desc_for_open_video_opencv },
-		{ wxCMD_LINE_SWITCH, "ovffmpeg", "open_video_ffmpeg", g_cfg.m_help_desc_for_open_video_ffmpeg },
-		{ wxCMD_LINE_SWITCH, "uc", "use_cuda", g_cfg.m_help_desc_for_use_cuda },
-		{ wxCMD_LINE_OPTION, "s", "start_time", g_cfg.m_help_desc_for_start_time },
-		{ wxCMD_LINE_OPTION, "e", "end_time", g_cfg.m_help_desc_for_end_time },
-		{ wxCMD_LINE_OPTION, "te", "top_video_image_percent_end", g_cfg.m_help_desc_for_top_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE },
-		{ wxCMD_LINE_OPTION, "be", "bottom_video_image_percent_end", g_cfg.m_help_desc_for_bottom_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE },
-		{ wxCMD_LINE_OPTION, "le", "left_video_image_percent_end", g_cfg.m_help_desc_for_left_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE },
-		{ wxCMD_LINE_OPTION, "re", "right_video_image_percent_end", g_cfg.m_help_desc_for_right_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE },
-		{ wxCMD_LINE_OPTION, "o", "output_dir",  g_cfg.m_help_desc_for_output_dir },
-		{ wxCMD_LINE_OPTION, "gs", "general_settings",  g_cfg.m_help_desc_for_general_settings },
-		{ wxCMD_LINE_OPTION, "nthr", "num_threads", g_cfg.m_help_desc_for_num_threads, wxCMD_LINE_VAL_NUMBER },
-		{ wxCMD_LINE_OPTION, "nocrthr", "num_ocr_threads", g_cfg.m_help_desc_for_num_ocr_threads, wxCMD_LINE_VAL_NUMBER },
-		{ wxCMD_LINE_SWITCH, "h", "help", g_cfg.m_help_desc_for_help },
-		{ wxCMD_LINE_NONE }
-	};
-
-	g_pParser->SetDesc(cmdLineDesc);
+	g_pParser->AddSwitch("c", "clear_dirs", g_cfg.m_help_desc_for_clear_dirs);
+	g_pParser->AddSwitch("r", "run_search", g_cfg.m_help_desc_for_run_search);
+	g_pParser->AddSwitch("ccti", "create_cleared_text_images", g_cfg.m_help_desc_for_create_cleared_text_images);
+	g_pParser->AddOption("ces", "create_empty_sub", g_cfg.m_help_desc_for_create_empty_sub);
+	g_pParser->AddOption("cscti", "create_sub_from_cleared_txt_images", g_cfg.m_help_desc_for_create_sub_from_cleared_txt_images);
+	g_pParser->AddOption("cstxt", "create_sub_from_txt_results", g_cfg.m_help_desc_for_create_sub_from_txt_results);
+	g_pParser->AddOption("i", "input_video", g_cfg.m_help_desc_for_input_video);
+	g_pParser->AddSwitch("ovocv", "open_video_opencv", g_cfg.m_help_desc_for_open_video_opencv);
+	g_pParser->AddSwitch("ovffmpeg", "open_video_ffmpeg", g_cfg.m_help_desc_for_open_video_ffmpeg);
+	g_pParser->AddSwitch("uc", "use_cuda", g_cfg.m_help_desc_for_use_cuda);
+	g_pParser->AddOption("s", "start_time", g_cfg.m_help_desc_for_start_time);
+	g_pParser->AddOption("e", "end_time", g_cfg.m_help_desc_for_end_time);
+	g_pParser->AddOption("te", "top_video_image_percent_end", g_cfg.m_help_desc_for_top_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE);
+	g_pParser->AddOption("be", "bottom_video_image_percent_end", g_cfg.m_help_desc_for_bottom_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE);
+	g_pParser->AddOption("le", "left_video_image_percent_end", g_cfg.m_help_desc_for_left_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE);
+	g_pParser->AddOption("re", "right_video_image_percent_end", g_cfg.m_help_desc_for_right_video_image_percent_end, wxCMD_LINE_VAL_DOUBLE);
+	g_pParser->AddOption("o", "output_dir",  g_cfg.m_help_desc_for_output_dir);
+	g_pParser->AddOption("gs", "general_settings",  g_cfg.m_help_desc_for_general_settings);
+	g_pParser->AddOption("nthr", "num_threads", g_cfg.m_help_desc_for_num_threads, wxCMD_LINE_VAL_NUMBER);
+	g_pParser->AddOption("nocrthr", "num_ocr_threads", g_cfg.m_help_desc_for_num_ocr_threads, wxCMD_LINE_VAL_NUMBER);
+	g_pParser->AddSwitch("h", "help", g_cfg.m_help_desc_for_help);
 }
 
 void PlaySound(wxString path)

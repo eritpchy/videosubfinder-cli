@@ -54,3 +54,10 @@ add_subdirectory(Components/OCVVideo)
 add_subdirectory(Components/FFMPEGVideo)
 add_subdirectory(Interfaces/VideoSubFinderWXW)
 
+install(TARGETS VideoSubFinderWXW DESTINATION VideoSubFinder)
+install(DIRECTORY Data/bitmaps/ DESTINATION VideoSubFinder/bitmaps)
+install(DIRECTORY Settings/Localization/ DESTINATION VideoSubFinder/settings FILES_MATCHING PATTERN "*.cfg")
+install(FILES Settings/general.cfg DESTINATION VideoSubFinder/settings)
+
+file(GLOB readme_files "Docs/readme*.txt")
+install(FILES ${readme_files} DESTINATION VideoSubFinder/Docs)

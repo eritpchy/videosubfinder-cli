@@ -112,15 +112,13 @@ void CButton::OnSize(wxSizeEvent& event)
 void CButton::SetLabel(const wxString& label)
 {
 	m_p_label = &label;
-	wxSizeEvent event;
-	this->OnSize(event);
+	RefreshData();
 }
 
 void CButton::SetFont(wxFont& font)
 {
 	m_pFont = &font;
-	wxSizeEvent event;
-	this->OnSize(event);
+	RefreshData();
 }
 
 void CButton::SetTextColour(wxColour& colour)
@@ -154,7 +152,7 @@ void CButton::RefreshData()
 
 		if (opt_size != cur_size)
 		{
-			pSizer->SetItemMinSize(this, opt_size);
+			bool res = pSizer->SetItemMinSize(this, opt_size);
 			pSizer->Layout();
 		}
 	}

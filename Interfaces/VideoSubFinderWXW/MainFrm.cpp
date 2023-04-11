@@ -305,6 +305,9 @@ BEGIN_EVENT_TABLE(CMainFrame, wxFrame)
 	EVT_MENU(ID_FILE_OPENPREVIOUSVIDEO, CMainFrame::OnFileOpenPreviousVideo)
 	EVT_MENU(ID_APP_CMD_ARGS_INFO, CMainFrame::OnAppCMDArgsInfo)
 	EVT_MENU(ID_APP_USAGE_DOCS, CMainFrame::OnAppUsageDocs)
+	EVT_MENU(ID_APP_WEBSITE, CMainFrame::OnAppOpenLink)
+	EVT_MENU(ID_APP_FORUM, CMainFrame::OnAppOpenLink)
+	EVT_MENU(ID_APP_BUG_TRACKER, CMainFrame::OnAppOpenLink)
 	EVT_MENU(ID_APP_ABOUT, CMainFrame::OnAppAbout)	
 	EVT_MENU(ID_FONTS, CMainFrame::OnFonts)
 	EVT_MENU(ID_SCALE_TEXT_SIZE_INC, CMainFrame::OnScaleTextSizeInc)
@@ -477,10 +480,29 @@ wxMenuBar* CMainFrame::CreateMenuBar()
 	pMenu4->Append(ID_APP_CMD_ARGS_INFO, g_cfg.m_menu_app_cmd_args_info);
 	pMenu4->AppendSeparator();
 	pMenu4->Append(ID_APP_USAGE_DOCS, g_cfg.m_menu_app_usage_docs);
+	pMenu4->AppendSeparator();
+	pMenu4->Append(ID_APP_WEBSITE, g_cfg.m_menu_app_website);
+	pMenu4->Append(ID_APP_FORUM, g_cfg.m_menu_app_forum);
+	pMenu4->Append(ID_APP_BUG_TRACKER, g_cfg.m_menu_app_bug_tracker);
+	pMenu4->AppendSeparator();
 	pMenu4->Append(ID_APP_ABOUT, g_cfg.m_menu_app_about + wxT("\tF1"));
 	pMenuBar->Append(pMenu4, g_cfg.m_menu_help);
 
 	pMenuBar->SetFont(m_LBLFont);
+
+	for (wxString localization : g_localizations)
+	{
+		int loc_id = g_localization_id[localization];
+
+		if (g_cfg.m_prefered_locale == localization)
+		{
+			pMenuBar->Check(loc_id, true);
+		}
+		else
+		{
+			pMenuBar->Check(loc_id, false);
+		}
+	}
 
 	SaveToReportLog("CMainFrame::CreateMenuBar(): end.\n");
 
@@ -689,8 +711,12 @@ void CMainFrame::UpdateTextSizes(int dsize)
 	}
 
 	SetFonts();
-	this->GetMenuBar()->SetFont(m_LBLFont);
-	this->GetMenuBar()->Refresh();
+	
+	SaveToReportLog("CMainFrame::UpdateTextSizes(): CreateMenuBar() ...\n");
+	wxMenuBar* pMenuBar = CreateMenuBar();	
+
+	SaveToReportLog("CMainFrame::UpdateTextSizes(): this->SetMenuBar(pMenuBar) ...\n");
+	this->SetMenuBar(pMenuBar);
 
 	CControl::RefreshAllControlsData();
 	CControl::UpdateAllControlsSize();
@@ -755,11 +781,11 @@ void CMainFrame::get_video_box_lblTIME_run_search_label()
 	{
 		wxString str;
 		str.Printf(g_cfg.m_run_search_progress_format_string, g_cfg.m_run_search_str_progress, g_cfg.m_run_search_str_eta, g_cfg.m_run_search_run_time, g_cfg.m_run_search_cur_time, m_EndTimeStr);
-		g_cfg.m_video_box_lblTIME_run_search_label = str + wxT("   ");
+		g_cfg.m_video_box_lblTIME_label = str + wxT("   ");
 	}
 	else
 	{
-		g_cfg.m_video_box_lblTIME_run_search_label = wxT("");
+		g_cfg.m_video_box_lblTIME_label = wxT("");
 	}
 }
 
@@ -767,11 +793,11 @@ void CMainFrame::get_video_box_lblVB_open_video_title()
 {
 	if (m_FileName.size() > 0)
 	{
-		g_cfg.m_video_box_lblVB_open_video_title = g_cfg.m_video_box_title + wxT(" \"") + GetFileName(m_FileName) + wxT("\"");
+		g_cfg.m_video_box_lblVB_title = g_cfg.m_video_box_title + wxT(" \"") + GetFileName(m_FileName) + wxT("\"");
 	}
 	else
 	{
-		g_cfg.m_video_box_lblVB_open_video_title = wxT("");
+		g_cfg.m_video_box_lblVB_title = wxT("");
 	}
 }
 
@@ -779,11 +805,11 @@ void CMainFrame::get_video_box_lblVB_on_test_title()
 {
 	if (g_cfg.m_on_test_image_name.size() > 0)
 	{
-		g_cfg.m_video_box_lblVB_on_test_title = g_cfg.m_video_box_title + wxT(" \"") + g_cfg.m_on_test_image_name + wxT("\"");
+		g_cfg.m_video_box_lblVB_title = g_cfg.m_video_box_title + wxT(" \"") + g_cfg.m_on_test_image_name + wxT("\"");
 	}
 	else
 	{
-		g_cfg.m_video_box_lblVB_on_test_title = wxT("");
+		g_cfg.m_video_box_lblVB_title = wxT("");
 	}
 }
 
@@ -923,7 +949,7 @@ void CMainFrame::OnFileOpenVideo(int type)
 	}
 
 	get_video_box_lblVB_open_video_title();
-	m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_open_video_title);
+	m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_title);
 
 	if (m_blnReopenVideo == false) 
 	{
@@ -1114,6 +1140,7 @@ void CMainFrame::OnLocalization(wxCommandEvent& event)
 
 	LoadLocaleSettings(g_app_dir + wxT("/settings/") + g_cfg.m_prefered_locale + wxT("/locale.cfg"));
 
+	//Not required, SetMenuBar automaticly remove previous
 	//SaveToReportLog("CMainFrame::OnLocalization(): deleting current Menu Bar ...\n");
 	//this->GetMenuBar()->Destroy();	
 
@@ -1122,20 +1149,6 @@ void CMainFrame::OnLocalization(wxCommandEvent& event)
 
 	SaveToReportLog("CMainFrame::OnLocalization(): this->SetMenuBar(pMenuBar) ...\n");
 	this->SetMenuBar(pMenuBar);
-
-	for (wxString localization : g_localizations)
-	{
-		int loc_id = g_localization_id[localization];
-
-		if (loc_id == selected_loc_id)
-		{
-			pMenuBar->Check(loc_id, true);
-		}
-		else
-		{
-			pMenuBar->Check(loc_id, false);
-		}
-	}
 
 	UpdateDynamicSettings();
 	CControl::RefreshAllControlsData();
@@ -1485,9 +1498,16 @@ void LoadLocaleSettings(wxString settings_path)
 	ReadProperty(g_locale_settings, g_cfg.m_menu_previous_frame, "menu_previous_frame");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_app_cmd_args_info, "menu_app_cmd_args_info");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_app_usage_docs, "menu_app_usage_docs");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_app_website, "menu_app_website");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_app_forum, "menu_app_forum");
+	ReadProperty(g_locale_settings, g_cfg.m_menu_app_bug_tracker, "menu_app_bug_tracker");
 	ReadProperty(g_locale_settings, g_cfg.m_menu_app_about, "menu_app_about");
 
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_app_about, "help_desc_app_about");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_app_about_dev_email, "help_desc_app_about_dev_email");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_app_about_dev_contact, "help_desc_app_about_dev_contact");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_app_about_dev_donate, "help_desc_app_about_dev_donate");
+
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_clear_dirs, "help_desc_for_clear_dirs");
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_run_search, "help_desc_for_run_search");
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_cleared_text_images, "help_desc_for_create_cleared_text_images");
@@ -1539,6 +1559,7 @@ void LoadLocaleSettings(wxString settings_path)
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_save_scaled_images, "ocr_label_save_scaled_images");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ces_text, "ocr_button_ces_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_join_text, "ocr_button_join_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_join_stop_text, "ocr_button_join_stop_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ccti_text, "ocr_button_ccti_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_ccti_stop_text, "ocr_button_ccti_stop_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_csftr_text, "ocr_button_csftr_text");
@@ -2004,7 +2025,7 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 				g_cfg.m_run_search_cur_time = ConvertVideoTime(Cur);
 
 				get_video_box_lblTIME_run_search_label();				
-				m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_run_search_label);
+				m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
 			}			
 		}
 		else
@@ -2253,8 +2274,10 @@ class MyMessageBox : public wxDialog, public CControl
 public:
 	CMainFrame* m_pMF;
 	wxTextCtrl* m_pDialogText;
+	wxColour*	m_p_background_colour;
 
-	MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
+	MyMessageBox(CMainFrame* pMF, wxString message, const wxString& caption,
+		wxColour* p_background_colour = NULL,
 		const wxPoint& pos = wxDefaultPosition,
 		const wxSize& size = wxDefaultSize);
 
@@ -2270,16 +2293,18 @@ public:
 	int m_w;
 };
 
-MyMessageBox::MyMessageBox(CMainFrame* pMF, const wxString& message, const wxString& caption,
+MyMessageBox::MyMessageBox(CMainFrame* pMF, wxString message, const wxString& caption,
+	wxColour* p_background_colour,
 	const wxPoint& pos,
 	const wxSize& size) : wxDialog(pMF, wxID_ANY, caption, pos, size)
 {
 	m_pMF = pMF;
+	m_p_background_colour = p_background_colour;
 	m_w = size.x;
 	m_pDialogText = new wxTextCtrl(this, wxID_ANY, message, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_AUTO_URL | wxTE_READONLY | wxBORDER_NONE);
 	m_pDialogText->SetFont(m_pMF->m_LBLFont);
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
-	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	if (m_p_background_colour) m_pDialogText->SetBackgroundColour(*m_p_background_colour);
 	Bind(wxEVT_TEXT_URL, &MyMessageBox::OnTextUrl, this);
 	Bind(wxEVT_CHAR_HOOK, &MyMessageBox::OnKeyDown, this);
 	Bind(wxEVT_MOUSEWHEEL, &CMainFrame::OnMouseWheel, m_pMF);
@@ -2322,7 +2347,7 @@ void MyMessageBox::RefreshData()
 {
 	m_pDialogText->SetFont(m_pMF->m_LBLFont);
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
-	m_pDialogText->SetBackgroundColour(g_cfg.m_main_text_ctls_background_colour);
+	if (m_p_background_colour) m_pDialogText->SetBackgroundColour(*m_p_background_colour);
 	m_pDialogText->Refresh(true);
 }
 
@@ -2354,25 +2379,42 @@ wxString WrapText(wxWindow* win, const wxString& text, int widthMax)
 
 void MyMessageBox::UpdateSize()
 {
-	wxMemoryDC dc;
+	wxMemoryDC dc;	
 	dc.SetFont(m_pMF->m_LBLFont);
 
 	wxString val = m_pDialogText->GetValue();
 	val = WrapText(m_pDialogText, val, m_w);
-
 	wxSize text_size = dc.GetMultiLineTextExtent(val);
-	wxSize best_size = m_pDialogText->GetSizeFromTextSize(text_size);
+	
 	wxSize cur_size = GetSize();
 	wxSize cur_client_size = GetClientSize();
+	wxSize mf_cl_size = m_pMF->GetClientSize();
+	wxSize best_size;
+
+	best_size = m_pDialogText->GetSizeFromTextSize(text_size);
 	best_size.x += cur_size.x - cur_client_size.x + 10;
 	best_size.y += cur_size.y - cur_client_size.y + 10;
-
-	wxSize mf_cl_size = m_pMF->GetClientSize();
-
 	this->SetSize(std::max<int>((mf_cl_size.x - best_size.x) / 2, 0),
 		std::max<int>((mf_cl_size.y - best_size.y) / 2, 10),
 		std::min<int>(mf_cl_size.x, best_size.x),
 		std::min<int>(mf_cl_size.y, best_size.y));
+
+	// drowing txt data size in wxTextCtrl is not same as if drow in dc in case of "chn" locale and Windows
+#ifdef WIN32
+	// return wxPoint(0, 0) on Ubuntu
+	wxPoint pos1 = m_pDialogText->PositionToCoords(m_pDialogText->XYToPosition(0, 1));
+	wxPoint pos2 = m_pDialogText->PositionToCoords(m_pDialogText->GetLastPosition());
+
+	text_size.y = pos2.y + pos1.y;
+
+	best_size = m_pDialogText->GetSizeFromTextSize(text_size);
+	best_size.x += cur_size.x - cur_client_size.x + 10;
+	best_size.y += cur_size.y - cur_client_size.y + 10;
+	this->SetSize(std::max<int>((mf_cl_size.x - best_size.x) / 2, 0),
+		std::max<int>((mf_cl_size.y - best_size.y) / 2, 10),
+		std::min<int>(mf_cl_size.x, best_size.x),
+		std::min<int>(mf_cl_size.y, best_size.y));
+#endif
 }
 
 void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
@@ -2381,6 +2423,7 @@ void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
 	wxSize msg_size(1000, 520);
 	MyMessageBox msg_dlg(this, g_pParser->GetUsageString(),
 		wxT("VideoSubFinder " VSF_VERSION),
+		&(g_cfg.m_notebook_colour),
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);
 	msg_dlg.ShowModal();
@@ -2413,19 +2456,52 @@ void CMainFrame::OnAppUsageDocs(wxCommandEvent& event)
 
 		MyMessageBox msg_dlg(this, g_cfg.m_menu_app_usage_docs + wxT(": ") + docs_sub_parth + wxT("\n\n") + str,
 			wxT("VideoSubFinder " VSF_VERSION),
+			&(g_cfg.m_main_text_ctls_background_colour),
 			wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 			msg_size);
 		msg_dlg.ShowModal();
 	}
 }
 
+void CMainFrame::OnAppOpenLink(wxCommandEvent& event)
+{
+	wxString link;
+	int id = event.GetId();
+
+	switch (id)
+	{
+		case ID_APP_WEBSITE:
+			link = wxString(wxT("https://sourceforge.net/projects/videosubfinder/"));
+			break;
+
+		case ID_APP_FORUM:
+			link = wxString(wxT("https://sourceforge.net/p/videosubfinder/discussion/684990/"));
+			break;
+
+		case ID_APP_BUG_TRACKER:
+			link = wxString(wxT("https://sourceforge.net/p/videosubfinder/bugs/"));
+			break;
+	}
+
+	wxLaunchDefaultBrowser(link);
+}
+
 void CMainFrame::OnAppAbout(wxCommandEvent& event)
 {
 	wxSize cl_size = this->GetClientSize();
-	wxSize msg_size(800, 220);
+	wxSize msg_size(830, 220);
 	MyMessageBox msg_dlg(this,
-		g_cfg.m_help_desc_app_about,
+		wxString(wxT("\n")) + 
+		g_cfg.m_help_desc_app_about + 
+		wxString(wxT("\n\n")) +
+		g_cfg.m_help_desc_app_about_dev_email + wxString(wxT(" mailto:skosnits@gmail.com")) +
+		wxString(wxT("\n\n")) +
+		g_cfg.m_help_desc_app_about_dev_contact + wxString(wxT(" https://vk.com/skosnits")) +
+		wxString(wxT("\n\n")) +
+		g_cfg.m_help_desc_app_about_dev_donate + wxString(wxT(" https://sourceforge.net/projects/videosubfinder/donate")) +
+		wxString(wxT("\n")),
 		wxT("VideoSubFinder " VSF_VERSION),
+		&(g_cfg.m_notebook_colour),
 		wxPoint((cl_size.x - msg_size.x) / 2, (cl_size.y - msg_size.y) / 2),
 		msg_size);
 	msg_dlg.ShowModal();
@@ -2477,7 +2553,7 @@ CFontsDialog::CFontsDialog(CMainFrame* pMF, const wxString& caption,
 
 	this->SetFont(m_pMF->m_LBLFont);
 	this->SetForegroundColour(g_cfg.m_main_text_colour);
-	this->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+	this->SetBackgroundColour(g_cfg.m_notebook_colour);
 
 	wxArrayString validFaceNames;
 	{
@@ -2509,7 +2585,7 @@ CFontsDialog::CFontsDialog(CMainFrame* pMF, const wxString& caption,
 	m_pGBMainFont = new CStaticBox(this, wxID_ANY, g_cfg.m_fd_main_font_gb_label);
 	m_pGBMainFont->SetFont(m_pMF->m_LBLFont);
 	m_pGBMainFont->SetTextColour(g_cfg.m_main_text_colour);
-	m_pGBMainFont->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+	m_pGBMainFont->SetBackgroundColour(g_cfg.m_notebook_colour);
 
 	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_plblMainFontSize...\n");
 	m_plblMainFontSize = new CStaticText(m_pGBMainFont, g_cfg.m_fd_font_size, wxID_ANY);
@@ -2557,7 +2633,7 @@ CFontsDialog::CFontsDialog(CMainFrame* pMF, const wxString& caption,
 	m_pGBButtonsFont = new CStaticBox(this, wxID_ANY, g_cfg.m_fd_buttons_font_gb_label);
 	m_pGBButtonsFont->SetFont(m_pMF->m_LBLFont);
 	m_pGBButtonsFont->SetTextColour(g_cfg.m_main_text_colour);
-	m_pGBButtonsFont->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+	m_pGBButtonsFont->SetBackgroundColour(g_cfg.m_notebook_colour);
 
 	SaveToReportLog("CFontsDialog::CFontsDialog(): init m_plblButtonsFontSize...\n");
 	m_plblButtonsFontSize = new CStaticText(m_pGBButtonsFont, g_cfg.m_fd_font_size, wxID_ANY);
@@ -2711,7 +2787,8 @@ void CFontsDialog::RefreshData()
 {
 	this->SetFont(m_pMF->m_LBLFont);
 	this->SetForegroundColour(g_cfg.m_main_text_colour);
-	this->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+	this->SetBackgroundColour(g_cfg.m_notebook_colour);
+
 	Refresh();
 }
 

@@ -103,6 +103,7 @@ public:
 	wxString	m_ocr_label_save_scaled_images;
 	wxString	m_ocr_button_ces_text;
 	wxString	m_ocr_button_join_text;
+	wxString	m_ocr_button_join_stop_text;
 	wxString	m_ocr_button_ccti_text;
 	wxString	m_ocr_button_ccti_stop_text;
 	wxString	m_ocr_button_csftr_text;
@@ -260,9 +261,15 @@ public:
 	wxString	m_menu_previous_frame;
 	wxString	m_menu_app_cmd_args_info;
 	wxString	m_menu_app_usage_docs;
+	wxString	m_menu_app_website;
+	wxString	m_menu_app_forum;
+	wxString	m_menu_app_bug_tracker;
 	wxString	m_menu_app_about;
 
 	wxString	m_help_desc_app_about;
+	wxString	m_help_desc_app_about_dev_email;
+	wxString	m_help_desc_app_about_dev_contact;
+	wxString	m_help_desc_app_about_dev_donate;
 	wxString	m_help_desc_for_clear_dirs;
 	wxString	m_help_desc_for_run_search;
 	wxString	m_help_desc_for_create_cleared_text_images;
@@ -327,9 +334,7 @@ public:
 	wxColour	m_toolbar_bitmaps_transparent_colour = wxColour(192, 192, 192);
 
 	//dynamic settings dependent from others and etc, can be updated by UpdateDynamicSettings()
-	wxString	m_video_box_lblVB_open_video_title;
-	wxString	m_video_box_lblVB_on_test_title;
-	wxString	m_video_box_lblTIME_run_search_label;
+	wxString	m_video_box_lblVB_title;
 	wxString	m_video_box_lblTIME_label;
 	wxString	m_ssp_GSFN_label;
 	wxString	m_ssp_GB3_label;
@@ -481,6 +486,7 @@ public:
 	void OnFileOpenPreviousVideo(wxCommandEvent& event);
 	void OnAppCMDArgsInfo(wxCommandEvent& event);
 	void OnAppUsageDocs(wxCommandEvent& event);
+	void OnAppOpenLink(wxCommandEvent& event);
 	void OnAppAbout(wxCommandEvent& event);
 	void OnFonts(wxCommandEvent& event);
 	void OnScaleTextSizeInc(wxCommandEvent& event);

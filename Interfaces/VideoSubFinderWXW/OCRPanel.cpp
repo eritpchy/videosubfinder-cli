@@ -39,6 +39,7 @@ bool g_clear_txt_folders = true;
 int g_IsCreateClearedTextImages = 0;
 int g_RunCreateClearedTextImages = 0;
 int g_IsJoinTXTImages = 0;
+int g_RunJoinTXTImages = 0;
 bool g_ValidateAndCompareTXTImages = false;
 bool g_DontDeleteUnrecognizedImages1 = true;
 bool g_DontDeleteUnrecognizedImages2 = true;
@@ -792,23 +793,33 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 {
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		wxString last_video_file_path = m_pMF->m_last_video_file_path;
+		wxString sub_name;
+		wxString sub_dir;
 
-		if (m_pMF->m_FileName.size() > 0)
-		{
-			last_video_file_path = m_pMF->m_FileName;
-		}
-
-		wxString sub_name = (last_video_file_path.size() > 0) ? GetFileName(last_video_file_path) : wxT("sub");
-		wxString sub_dir = (m_pMF->m_last_saved_sub_file_path.size() > 0) ? GetFileDir(m_pMF->m_last_saved_sub_file_path) : ( (last_video_file_path.size() > 0) ? GetFileDir(last_video_file_path) : g_work_dir );
-
-		if (GetFileName(m_pMF->m_last_saved_sub_file_path) == sub_name)
+		if (m_was_sub_save)
 		{
 			sub_name = GetFileNameWithExtension(m_pMF->m_last_saved_sub_file_path);
+			sub_dir = GetFileDir(m_pMF->m_last_saved_sub_file_path);
+		}
+		else if (m_pMF->m_FileName.size() > 0)
+		{
+			sub_name = GetFileName(m_pMF->m_FileName) + wxT(".srt");
+			sub_dir = GetFileDir(m_pMF->m_FileName);
+		}
+		else if (m_pMF->m_last_video_file_path.size() > 0)
+		{
+			sub_name = GetFileName(m_pMF->m_last_video_file_path) + wxT(".srt");
+			sub_dir = GetFileDir(m_pMF->m_last_video_file_path);
+		}
+		else if (m_pMF->m_last_saved_sub_file_path.size() > 0)
+		{
+			sub_name = GetFileNameWithExtension(m_pMF->m_last_saved_sub_file_path);
+			sub_dir = GetFileDir(m_pMF->m_last_saved_sub_file_path);
 		}
 		else
 		{
-			sub_name += wxT(".srt");
+			sub_name = wxT("sub.srt");
+			sub_dir = g_work_dir;
 		}
 
 		m_sub_path.Clear();
@@ -835,6 +846,7 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 			ffout.Close();
 
 			m_pMF->m_last_saved_sub_file_path = m_sub_path;
+			m_was_sub_save = true;
 		}
 		else if (ext == wxT("ass"))
 		{
@@ -845,6 +857,7 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 			ffout.Close();
 
 			m_pMF->m_last_saved_sub_file_path = m_sub_path;
+			m_was_sub_save = true;
 		}
 		else
 		{
@@ -864,7 +877,7 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 	wxDir dir(dir_path);
 	vector<wxString> FileNamesVector;
 	vector<u64> BT, ET;
-	vector<wxString> Subs;
+	vector<wxString> TXTVector;
 	wxString filename;
 	bool res;
 
@@ -971,6 +984,7 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 		}
 
 		sub_str.Trim(true);
+		sub_str.Trim(false);
 
 		Str = FileNamesVector[kb];
 
@@ -989,12 +1003,66 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 
 		BT.push_back(bt);
 		ET.push_back(et);
-		Subs.push_back(sub_str);
+		TXTVector.push_back(sub_str);
+	}
+
+	k = 0;
+	while (k < TXTVector.size())
+	{
+		if (TXTVector[k].size() == 0)
+		{
+			if (g_DontDeleteUnrecognizedImages2 == false)
+			{
+				if (g_join_subs_and_correct_time)
+				{
+					for (i = k; i < (int)TXTVector.size() - 1; i++)
+					{
+						BT[i] = BT[i + 1];
+						ET[i] = ET[i + 1];
+						TXTVector[i] = TXTVector[i + 1];
+					}
+					BT.pop_back();
+					ET.pop_back();
+					TXTVector.pop_back();
+
+					continue;
+				}
+			}
+			else
+			{
+				TXTVector[k] = wxT("#unrecognized text#");
+			}
+		}
+
+		if ((g_join_subs_and_correct_time) && (k < ((int)TXTVector.size() - 1)))
+		{
+			if (BT[k + 1] - ET[k] <= 333)
+			{
+				if (TXTVector[k + 1] == TXTVector[k])
+				{
+					ET[k] = ET[k + 1];
+
+					for (i = k + 1; i < (int)TXTVector.size() - 1; i++)
+					{
+						BT[i] = BT[i + 1];
+						ET[i] = ET[i + 1];
+						TXTVector[i] = TXTVector[i + 1];
+					}
+					BT.pop_back();
+					ET.pop_back();
+					TXTVector.pop_back();
+
+					continue;
+				}
+			}
+		}
+
+		k++;
 	}
 
 	if (g_join_subs_and_correct_time)
 	{
-		for (k = 0; k < (int)BT.size() - 1; k++)
+		for (k = 0; k < (int)TXTVector.size() - 1; k++)
 		{
 			if (ET[k] - BT[k] < mdt)
 			{
@@ -1011,7 +1079,7 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 	}
 
 	wxString srt_sub;
-	for (k = 0; k < (int)BT.size(); k++)
+	for (k = 0; k < (int)TXTVector.size(); k++)
 	{
 		bt = BT[k];
 		et = ET[k];
@@ -1020,49 +1088,24 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 			" --> " +
 			VideoTimeToStr2(et);
 
-		dt = et - bt;
-		sec = (int)(dt / 1000);
-		msec = (int)(dt % 1000);
-
-		sec1 = wxString::Format(wxT("%i"), sec);
-
-		str_int = wxString::Format(wxT("%i"), msec);
-		if (msec < 10) msec1 = wxT("00") + str_int;
-		else
-		{
-			if (msec < 100) msec1 = wxT("0") + str_int;
-			else msec1 = str_int;
-		}
-
-		SubStr = Subs[k];
-
-		srt_sub << (k + 1) << wxT("\n") << Str << wxT("\n") << SubStr << "\n\n";
+		srt_sub << (k + 1) << wxT("\n") << Str << wxT("\n") << TXTVector[k] << wxT("\n\n");
 	}
 
 	wxString ass_sub;
 	ass_sub << AssSubHead;
-	for (k = 0; k < (int)BT.size(); k++)
+	for (k = 0; k < (int)TXTVector.size(); k++)
 	{
 		bt = BT[k];
 		et = ET[k];
 
-		dt = et - bt;
-		sec = (int)(dt / 1000);
-		msec = (int)(dt % 1000);
+		//example: Dialogue: 0,0:00:03.29,0:00:05.00,Default,,0,0,0,,Regulars gather up!
 
-		sec1 = wxString::Format(wxT("%i"), sec);
+		wxString txt = TXTVector[k];
+		wxRegEx re(wxT("\n"));
 
-		str_int = wxString::Format(wxT("%i"), msec);
-		if (msec < 10) msec1 = wxT("00") + str_int;
-		else
-		{
-			if (msec < 100) msec1 = wxT("0") + str_int;
-			else msec1 = str_int;
-		}
+		re.ReplaceAll(&txt, wxT("\\\\N"));
 
-		SubStr = Subs[k];
-
-		ass_sub << "Dialogue: 0," + VideoTimeToStr3(bt) + "," + VideoTimeToStr3(et) + ",Default,,0,0,0,," + SubStr + wxT("\n");
+		ass_sub << wxT("Dialogue: 0,") + VideoTimeToStr3(bt) + wxT(",") + VideoTimeToStr3(et) + wxT(",Default,,0,0,0,,") + txt + wxT("\n");
 	}
 
 	SaveSub(srt_sub, ass_sub);
@@ -1186,8 +1229,6 @@ void COCRPanel::CreateSubFromTXTResults()
 		TXTVector.push_back(Str);
 	}
 
-	// создаем srt subtitle
-	
 	k=0;
 	while(k < TXTVector.size())
 	{
@@ -1300,9 +1341,13 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 	if (g_IsJoinTXTImages == 0)
 	{
 		g_IsJoinTXTImages = 1;
+		g_RunJoinTXTImages = 1;
 
 		if (!(g_pMF->m_blnNoGUI))
 		{
+			m_pJOIN->SetLabel(g_cfg.m_ocr_button_join_stop_text);
+			this->UpdateSize();
+
 			m_pCCTI->Disable();
 			m_pCES->Disable();
 			m_pCSCTI->Disable();
@@ -1320,6 +1365,11 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			m_JoinTXTImagesThread.join();
 		}
 	}
+	else
+	{
+		g_RunJoinTXTImages = 0;
+		m_JoinTXTImagesThread.join();
+	}
 }
 
 void COCRPanel::ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event)
@@ -1330,6 +1380,9 @@ void COCRPanel::ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event)
 	{
 		m_JoinTXTImagesThread.join();
 	}
+
+	m_pJOIN->SetLabel(g_cfg.m_ocr_button_join_text);
+	this->UpdateSize();
 
 	m_pCCTI->Enable();
 	m_pCES->Enable();
@@ -1530,6 +1583,12 @@ void JoinTXTImages()
 		int h_ofset = 0;
 		for (fi = fi_start; fi <= fi_end; fi++)
 		{
+			if (g_RunJoinTXTImages == 0)
+			{
+				end_func();
+				return;
+			}
+
 			file_name = FileNamesVector[fi];
 			file_path = dir_path + file_name;
 
@@ -1593,6 +1652,7 @@ void JoinTXTImages()
 				dc.DrawRectangle(0, 0, res_w, dh);
 
 				SaveToReportLog(wxString::Format(wxT("JoinTXTImages: DrawText(%s, %d, %d) res_w(%d) dh(%d)...\n"), Str, text_x, text_y, res_w, dh));				
+				dc.SetTextForeground(wxColour(0, 0, 0));
 				dc.DrawText(Str, text_x, text_y);
 
 				wxImage img = bitmap.ConvertToImage();
@@ -1983,6 +2043,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 			if (!(m_pMF->m_blnNoGUI))
 			{
 				m_pCCTI->SetLabel(g_cfg.m_ocr_button_ccti_stop_text);
+				this->UpdateSize();
 
 				m_pCES->Disable();
 				m_pJOIN->Disable();
@@ -2038,7 +2099,8 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 
 				wxString str;
 				str.Printf(g_cfg.m_ccti_start_progress_format_string + wxT("   "), NImages);
-				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+				g_cfg.m_video_box_lblTIME_label = str;
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
 			}
 
 			m_FileNamesVector = FileNamesVector;
@@ -2071,8 +2133,10 @@ void COCRPanel::OnUpdateCCTIProgress(wxThreadEvent& event)
 	const std::lock_guard<std::mutex> lock(m_mutex);
 	ProgressData pd = event.GetPayload<ProgressData>();	
 
-	m_pMF->m_pVideoBox->m_plblTIME->SetLabel(pd.m_ProgressStr);
-	m_pMF->m_pVideoBox->m_plblVB->SetLabel(pd.m_VBLabel);
+	g_cfg.m_video_box_lblTIME_label = pd.m_ProgressStr;
+	m_pMF->m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
+	g_cfg.m_video_box_lblVB_title = pd.m_VBLabel;
+	m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_title);
 	m_pMF->m_pVideoBox->m_pSB->SetScrollPos(pd.m_SBpos);
 }
 
@@ -2263,6 +2327,7 @@ void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 	}
 
 	m_pCCTI->SetLabel(g_cfg.m_ocr_button_ccti_text);
+	this->UpdateSize();
 
 	m_pMF->m_pPanel->m_pSHPanel->Enable();
 	m_pMF->m_pPanel->m_pSSPanel->Enable();

@@ -7,7 +7,7 @@ The main purpose of this program is to provide functionality for extract hardcod
 
 It provides two main features:
 1) Autodetection of frames with hardcoded text (hardsub) on video with saving info about timing positions.
-2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader or Subtitle Edit) to generate complete subtitle with original text and timing.
+2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader, Subtitle Edit, Google Drive) to generate complete subtitle with original text and timing.
 
 For working of this program on Windows will be required "Microsoft Visual C++ Redistributable runtime libraries 2022":
 https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
@@ -17,8 +17,6 @@ For working of this program on Linux possibly will be required libraries for gtk
 Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS, Arch Linux (EndeavourOS Cassini Nova 03-2023)
 
 For faster support in case of bug fixes please contact me in: https://vk.com/skosnits
-
-For donate you can use: https://sourceforge.net/projects/videosubfinder/donate
 
 #######################################################################################
 Used Terms:

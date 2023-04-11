@@ -257,6 +257,7 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		m_pMF->m_timer.Start(1000);
 
 		m_pRun->SetLabel(g_cfg.m_button_run_search_stop_text);
+		this->UpdateSize();
 
 		m_pMF->m_pVideoBox->m_pButtonPause->Disable();
 		m_pMF->m_pVideoBox->m_pButtonRun->Disable();
@@ -368,7 +369,8 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 			m_pMF->OnFileReOpenVideo(menu_event);
 		}
 
-		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel(g_cfg.m_button_run_search_text);
+		m_pRun->SetLabel(g_cfg.m_button_run_search_text);
+		this->UpdateSize();
 
 		m_pMF->m_pPanel->m_pSSPanel->Enable();
 		m_pMF->m_pPanel->m_pOCRPanel->Enable();

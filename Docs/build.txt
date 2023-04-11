@@ -186,14 +186,14 @@ https://www.intel.com/content/www/us/en/develop/documentation/oneapi-dpcpp-cpp-c
 # start "Intel oneAPI command prompt for Intel 64 for Visual Studio 2022"
 cd %videosubfinder_source_root_dir%\intel_windows_build\release_x64
 # example: cd E:\Public\Programs\VideoSubFinder\src_git\videosubfinder-src\intel_windows_build\release_x64 && E: && set "WX_WIDGETS_PATH=C:\wxWidgets-3.2.1-intel" && set "VERBOSE=1"
-cmake -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icx -DCMAKE_BUILD_TYPE=Release -GNinja ../..
-cmake --build . --config Release -j 16
+cmake -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icx -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=install -GNinja ../..
+cmake --build . --target install --config Release -j 16
 
 # start "Intel oneAPI command prompt for IA32 for Visual Studio 2022"
 cd %videosubfinder_source_root_dir%\intel_windows_build\release_x86
 # example: cd E:\Public\Programs\VideoSubFinder\src_git\videosubfinder-src\intel_windows_build\release_x86 && E: && set "WX_WIDGETS_PATH=C:\wxWidgets-3.2.1-intel" && set "VERBOSE=1"
-cmake -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icx -DCMAKE_BUILD_TYPE=Release -DWIN64=OFF -GNinja ../..
-cmake --build . --config Release -j 16
+cmake -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icx -DCMAKE_BUILD_TYPE=Release -DWIN64=OFF -DCMAKE_INSTALL_PREFIX:PATH=install -GNinja ../..
+cmake --build . --target install --config Release -j 16
 
 ##############################################################################################################################
 #      Linux Build (Ubuntu 20.04.5 LTS)
@@ -342,13 +342,13 @@ cd linux_build
 
 # for build with CUDA support in terminal:
 cd $videosubfinder_source_root_dir/linux_build
-CUDA_TOOLKIT_PATH=/usr/local/cuda-12.0 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TOOLKIT_PATH/lib64:$CUDA_TOOLKIT_PATH/extras/CUPTI/lib64 PATH=$PATH:$CUDA_TOOLKIT_PATH/bin cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --config Release -j 16
+CUDA_TOOLKIT_PATH=/usr/local/cuda-12.0 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TOOLKIT_PATH/lib64:$CUDA_TOOLKIT_PATH/extras/CUPTI/lib64 PATH=$PATH:$CUDA_TOOLKIT_PATH/bin cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=install ..
+cmake --build . --target install --config Release -j 16
 
 # for build without CUDA support in terminal:
 cd $videosubfinder_source_root_dir/linux_build
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF ..
-cmake --build . --config Release -j 16
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DCMAKE_INSTALL_PREFIX:PATH=install ..
+cmake --build . --target install --config Release -j 16
 
 # for build with CUDA support in Visual Studio Code :
 cd $videosubfinder_source_root_dir
@@ -356,6 +356,10 @@ CUDA_TOOLKIT_PATH=/usr/local/cuda-12.0 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TO
 # Select compiler in the bottom: GCC 9.4.0
 # Select CMake target in the bottom: [Release]
 # Press "Build" in the bottom
+# You can also set in /.vscode/settings.json
+# "cmake.configureArgs" : ["-DCMAKE_INSTALL_PREFIX:PATH=install"],
+# and build [install] target
+# result build will be located in /Release/install/VideoSubFinder
 
 ##############################################################################################################################
 #      Linux Build (Arch Linux / EndeavourOS Cassini_Nova-03-2023)
@@ -483,10 +487,10 @@ cd linux_build
 
 # for build with CUDA support in terminal:
 cd $videosubfinder_source_root_dir/linux_build
-CUDA_TOOLKIT_PATH=/opt/cuda LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TOOLKIT_PATH/lib64:$CUDA_TOOLKIT_PATH/extras/CUPTI/lib64 PATH=$PATH:$CUDA_TOOLKIT_PATH/bin cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --config Release -j 16
+CUDA_TOOLKIT_PATH=/opt/cuda LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_TOOLKIT_PATH/lib64:$CUDA_TOOLKIT_PATH/extras/CUPTI/lib64 PATH=$PATH:$CUDA_TOOLKIT_PATH/bin cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:PATH=install ..
+cmake --build . --target install --config Release -j 16
 
 # for build without CUDA support in terminal:
 cd $videosubfinder_source_root_dir/arch_linux_build
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF ..
-cmake --build . --config Release -j 16
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DCMAKE_INSTALL_PREFIX:PATH=install ..
+cmake --build . --target install --config Release -j 16
