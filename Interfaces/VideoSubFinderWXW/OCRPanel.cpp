@@ -50,6 +50,8 @@ bool g_CLEAN_RGB_IMAGES = false;
 
 int  g_ocr_threads = 8;
 
+void GetFileNames(wxString dir_path, vector<wxString>& FileNamesVector);
+
 wxDEFINE_EVENT(UPDATE_CCTI_PROGRESS, wxThreadEvent);
 wxDEFINE_EVENT(THREAD_CCTI_END, wxCommandEvent);
 wxDEFINE_EVENT(THREAD_JOIN_TXT_IMAGES_END, wxCommandEvent);
@@ -328,15 +330,17 @@ void COCRPanel::Init()
 	m_pDG->AddProperty(g_cfg.m_ocr_label_save_each_substring_separately, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_save_each_substring_separately);
 	m_pDG->AddProperty(g_cfg.m_ocr_label_save_scaled_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_save_scaled_images);
 
-	m_pDG->AddSubGroup(g_cfg.m_ocr_dg_sub_group_settings_for_join_txt_images, g_cfg.m_grid_sub_gropes_colour);	
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_clear_dir, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_clear_dir));
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_split_line_text, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_split_line));
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_split_line_font_size, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_split_line_font_size), -1, g_max_font_size);
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_split_line_font_bold, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_split_line_font_bold));
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_sub_id_format, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_sub_id_format));
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_sub_search_by_id_format, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_sub_search_by_id_format));
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_scale, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_scale), 1, 4);
-	m_pDG->AddProperty(g_cfg.m_ocr_label_join_txt_images_max_number, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_txt_images_max_number), 2, 5000);
+	m_pDG->AddSubGroup(g_cfg.m_ocr_dg_sub_group_settings_for_join_images, g_cfg.m_grid_sub_gropes_colour);	
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_join_rgb_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_join_rgb_images));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_clear_dir, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_clear_dir));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_split_line_text, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_split_line));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_split_line_font_size, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_split_line_font_size), -1, g_max_font_size);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_split_line_font_bold, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_split_line_font_bold));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_sub_id_format, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_sub_id_format));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_sub_search_by_id_format, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_sub_search_by_id_format));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_scale, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_scale), 1, 4);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_max_number, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_max_number), 2, 5000);
 
 	m_pDG->AddSubGroup(g_cfg.m_ocr_dg_sub_group_settings_for_create_sub, g_cfg.m_grid_sub_gropes_colour);
 	m_pDG->AddProperty(g_cfg.m_ocr_label_msd_text, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_min_sub_duration), 0.0, 100.0);
@@ -861,7 +865,7 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 		}
 		else
 		{
-			wxMessageBox("Only .ass and .srt output subtitles formats are supported", "Error", wxOK, this);
+			SaveError("ERROR: SaveSub(): Only .ass and .srt output subtitles formats are supported\n");
 		}
 	}
 }
@@ -869,40 +873,87 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 {
 	wxString Str, SubStr, Name, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
-	int i, j, k, kb, sec, msec;
+	int i, j, k, kb, sec, msec, fn;
 	wxString str_int;
+	wxString filename, img_data_BaseName;
+	int img_data_W, img_data_H, img_data_min_x, img_data_min_y, img_data_w, img_data_h, img_data_ln;
 	u64 bt, et, dt, mdt;
 
-	wxString dir_path = wxString(g_work_dir + wxT("/TXTImages/"));
-	wxDir dir(dir_path);
-	vector<wxString> FileNamesVector;
-	vector<u64> BT, ET;
-	vector<wxString> TXTVector;
-	wxString filename;
-	bool res;
+	wxString dir_txt_images_path = wxString(g_work_dir + wxT("/TXTImages/"));
+	wxString dir_rgb_images_path = wxString(g_work_dir + wxT("/RGBImages/"));
+	vector<wxString> TXTFileNamesVector, RGBFileNamesVector;
+	vector<wxString>* pFileNamesVector;
 
-	res = dir.GetFirst(&filename);
-	while (res)
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
 	{
-		FileNamesVector.push_back(filename);
-
-		res = dir.GetNext(&filename);
+		GetFileNames(dir_rgb_images_path, RGBFileNamesVector);
 	}
 
-	if (FileNamesVector.size() == 0) return;
+	if (!g_cfg.m_ocr_join_images_join_rgb_images || (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images))
+	{
+		GetFileNames(dir_txt_images_path, TXTFileNamesVector);
+	}
 
-	for (i = 0; i < (int)FileNamesVector.size() - 1; i++)
-		for (j = i + 1; j < (int)FileNamesVector.size(); j++)
-		{
-			if (FileNamesVector[i] > FileNamesVector[j])
-			{
-				Str = FileNamesVector[i];
-				FileNamesVector[i] = FileNamesVector[j];
-				FileNamesVector[j] = Str;
-			}
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		pFileNamesVector = &RGBFileNamesVector;
+	}
+	else
+	{
+		pFileNamesVector = &TXTFileNamesVector;
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		return;
+	}
+
+	std::map<wxString, int> base_names_map;
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+	{
+		for (int i = 0; i < (int)TXTFileNamesVector.size(); i++)
+		{			
+
+			filename = TXTFileNamesVector[i];
+			DecodeImData(GetFileName(filename), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+			base_names_map[img_data_BaseName] = 1;
 		}
 
-	vector<wxString> sub_strs(FileNamesVector.size());
+		int fi = 0;
+		while (fi < (int)RGBFileNamesVector.size())
+		{
+			filename = RGBFileNamesVector[fi];
+			DecodeImData(GetFileName(filename), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+
+			if (base_names_map.find(img_data_BaseName) == base_names_map.end())
+			{
+				for (int i = fi; i < RGBFileNamesVector.size() - 1; i++)
+				{
+					RGBFileNamesVector[i] = RGBFileNamesVector[i + 1];
+				}
+
+				RGBFileNamesVector.pop_back();
+				continue;
+			}
+
+			fi++;
+		}
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		return;
+	}
+
+	vector<u64> BT, ET;
+	vector<wxString> TXTVector;	
+
+	vector<wxString> sub_strs(fn);
 
 	{
 		wxFileInputStream ffin(join_txt_res_path);
@@ -930,11 +981,11 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 		str.Replace(wxString(wxT("\r")), wxString(), true);
 		str.Trim(true);
 		str.Trim(false);
-		str += wxString::Format(g_cfg.m_ocr_join_txt_images_sub_id_format, 0);
+		str += wxString::Format(g_cfg.m_ocr_join_images_sub_id_format, 0);
 
-		for (i = 0; i < (int)FileNamesVector.size(); i++)
+		for (i = 0; i < fn; i++)
 		{
-			wxString str_sub_search_by_id = wxString::Format(g_cfg.m_ocr_join_txt_images_sub_search_by_id_format, i + 1);
+			wxString str_sub_search_by_id = wxString::Format(g_cfg.m_ocr_join_images_sub_search_by_id_format, i + 1);
 			wxRegEx re_sub_search_by_id(str_sub_search_by_id);
 			
 			if (re_sub_search_by_id.Matches(str))
@@ -960,7 +1011,7 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	k = 0;
-	while (k < (int)FileNamesVector.size())
+	while (k < fn)
 	{
 		kb = k;
 		i = 0;
@@ -969,8 +1020,8 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 
 		if (g_join_subs_and_correct_time)
 		{
-			while ((k < (int)FileNamesVector.size()) &&
-				(FileNamesVector[kb].Mid(0, 11) == FileNamesVector[k].Mid(0, 11))
+			while ((k < fn) &&
+				((*pFileNamesVector)[kb].Mid(0, 11) == (*pFileNamesVector)[k].Mid(0, 11))
 				)
 			{
 				sub_str += sub_strs[k] + wxT("\n");
@@ -986,7 +1037,7 @@ void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
 		sub_str.Trim(true);
 		sub_str.Trim(false);
 
-		Str = FileNamesVector[kb];
+		Str = (*pFileNamesVector)[kb];
 
 		hour1 = Str.Mid(0, 1);
 		min1 = Str.Mid(2, 2);
@@ -1358,7 +1409,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 			m_pMF->m_pPanel->m_pSHPanel->Disable();
 		}
 
-		m_JoinTXTImagesThread = std::thread(JoinTXTImages);
+		m_JoinTXTImagesThread = std::thread(JoinImages);
 
 		if (m_pMF->m_blnNoGUI)
 		{
@@ -1396,32 +1447,12 @@ void COCRPanel::ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event)
 	g_IsJoinTXTImages = 0;
 }
 
-void JoinTXTImages()
+void GetFileNames(wxString dir_path, vector<wxString>& FileNamesVector)
 {
-	wxString Str;
-	wxString dir_path = wxString(g_work_dir + wxT("/TXTImages/"));
 	wxDir dir(dir_path);
-	vector<wxString> FileNamesVector;
-	wxString file_name, file_path;
+	wxString file_name;
+	wxString Str;
 	bool res;
-
-	auto end_func = []() {
-		if (!(g_pMF->m_blnNoGUI))
-		{
-			SaveToReportLog("JoinTXTImages: wxPostEvent THREAD_JOIN_TXT_IMAGES_END ...\n");
-			wxCommandEvent event(THREAD_JOIN_TXT_IMAGES_END);
-			wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
-		}
-		else
-		{
-			g_IsJoinTXTImages = 0;
-		}
-	};
-
-	if (g_cfg.m_ocr_join_txt_images_clear_dir)
-	{
-		g_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
-	}
 
 	res = dir.GetFirst(&file_name);
 	while (res)
@@ -1432,6 +1463,7 @@ void JoinTXTImages()
 	}
 
 	for (int i = 0; i < (int)FileNamesVector.size() - 1; i++)
+	{
 		for (int j = i + 1; j < (int)FileNamesVector.size(); j++)
 		{
 			if (FileNamesVector[i] > FileNamesVector[j])
@@ -1441,29 +1473,82 @@ void JoinTXTImages()
 				FileNamesVector[j] = Str;
 			}
 		}
+	}
+}
 
-	int fn = FileNamesVector.size();
+void JoinImages()
+{
+	wxString Str;
+	wxString dir_txt_images_path = wxString(g_work_dir + wxT("/TXTImages/"));
+	wxString dir_rgb_images_path = wxString(g_work_dir + wxT("/RGBImages/"));
+	vector<wxString> TXTFileNamesVector, RGBFileNamesVector;
+	vector<wxString> *pFileNamesVector;
+	wxString file_name, file_path, dir_path;
+	int fn;
+	bool res;
+
+	auto end_func = []() {
+		if (!(g_pMF->m_blnNoGUI))
+		{
+			SaveToReportLog("JoinImages: wxPostEvent THREAD_JOIN_TXT_IMAGES_END ...\n");
+			wxCommandEvent event(THREAD_JOIN_TXT_IMAGES_END);
+			wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
+		}
+		else
+		{
+			g_IsJoinTXTImages = 0;
+		}
+	};
+
+	if (g_cfg.m_ocr_join_images_clear_dir)
+	{
+		g_pMF->ClearDir(g_work_dir + "/ImagesJoined");
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		GetFileNames(dir_rgb_images_path, RGBFileNamesVector);		
+	}
+
+	if (!g_cfg.m_ocr_join_images_join_rgb_images || (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images))
+	{
+		GetFileNames(dir_txt_images_path, TXTFileNamesVector);
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		pFileNamesVector = &RGBFileNamesVector;
+		dir_path = dir_rgb_images_path;
+	}
+	else
+	{
+		pFileNamesVector = &TXTFileNamesVector;
+		dir_path = dir_txt_images_path;
+	}
+
+	fn = pFileNamesVector->size();
 
 	if (fn == 0)
 	{
 		end_func();
 		return;
-	}	
+	}
 
 	int orig_scale = 1;
-	int first_img_data_W, img_data_W, img_data_H, img_data_min_x, img_data_min_y, img_data_h;
+	int first_img_data_W, img_data_W, img_data_H, img_data_min_x, img_data_min_y, img_data_w, img_data_h, img_data_ln;
+	wxString img_data_BaseName;
 	int res_w = 0, res_h = 0, first_w = 0, first_h = 0, dh = 0, dth = 0, average_h = 0;
 	int font_size = 0;
-	wxFontWeight font_weight = g_cfg.m_ocr_join_txt_images_split_line_font_bold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL;
+	wxFontWeight font_weight = g_cfg.m_ocr_join_images_split_line_font_bold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL;
 
 	{
-		file_name = FileNamesVector[0];
+		file_name = (*pFileNamesVector)[0];
 		file_path = dir_path + file_name;
 		GetImageSize(file_path, first_w, first_h);
 		
-		if (!DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_h))
+		if (!DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln))
 		{
-			SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): File \"%s\" has wrong img name format\n"), file_name));
+			SaveError(wxString::Format(wxT("ERROR: JoinImages(): File \"%s\" has wrong img name format\n"), file_name));
 			end_func();
 			return;
 		}
@@ -1471,35 +1556,61 @@ void JoinTXTImages()
 		first_img_data_W = img_data_W;
 		orig_scale = first_h / img_data_h;
 
-		res_w = (first_w * g_cfg.m_ocr_join_txt_images_scale) / orig_scale;
+		res_w = (first_w * g_cfg.m_ocr_join_images_scale) / orig_scale;
 	}
 
-	if (!g_cfg.m_ocr_join_txt_images_split_line.empty())
+	if (!g_cfg.m_ocr_join_images_split_line.empty())
 	{
-		if (g_cfg.m_ocr_join_txt_images_split_line_font_size == -1)
+		if (g_cfg.m_ocr_join_images_split_line_font_size == -1)
 		{
+			if (g_cfg.m_ocr_join_images_join_rgb_images && !g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+			{
+				SaveError(wxString(wxT("ERROR: JoinImages(): Font size should be manually specified in case of turned off: ")) + g_cfg.m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images + wxString(wxT("\n")));
+				end_func();
+				return;
+			}
+
+			if (!g_cfg.m_ocr_join_images_join_rgb_images || (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images))
+			{
+				pFileNamesVector = &TXTFileNamesVector;
+				dir_path = dir_txt_images_path;
+			}
+			else
+			{
+				pFileNamesVector = &RGBFileNamesVector;
+				dir_path = dir_rgb_images_path;
+			}
+
+			fn = pFileNamesVector->size();
+
+			if (fn == 0)
+			{
+				end_func();
+				return;
+			}
+
 			for (int fi = 0; fi < fn; fi++)
 			{
-				file_name = FileNamesVector[fi];
-				if (!DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_h))
+				file_name = (*pFileNamesVector)[fi];
+				if (!DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln))
 				{
-					SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): File \"%s\" has wrong img name format\n"), file_name));
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): File \"%s\" has wrong img name format\n"), file_name));
 					end_func();
 					return;
 				}
 
 				if (img_data_W != first_img_data_W)
 				{
-					SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): File \"%s\": img_data_w (%d) != first_img_data_W (%d)\n"), file_name, img_data_W, first_img_data_W));
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): File \"%s\": img_data_w (%d) != first_img_data_W (%d)\n"), file_name, img_data_W, first_img_data_W));
 					end_func();
 					return;
 				}
 
-				average_h += img_data_h;
+				average_h += img_data_h / img_data_ln;
 			}
 			average_h /= fn;
 
-			average_h *= g_cfg.m_ocr_join_txt_images_scale;
+			average_h *= g_cfg.m_ocr_join_images_scale;
 
 			if (average_h < (res_w / 16))
 			{
@@ -1513,7 +1624,7 @@ void JoinTXTImages()
 			}
 
 			wxMemoryDC dc;
-			wxSize text_size;			
+			wxSize text_size;
 
 			do
 			{
@@ -1526,14 +1637,14 @@ void JoinTXTImages()
 
 			if (font_size == 0)
 			{
-				SaveError(wxT("ERROR: JoinTXTImages(): Unfortunately optimal font size is too small\n"));
+				SaveError(wxT("ERROR: JoinImages(): Unfortunately optimal font size is too small\n"));
 				end_func();
 				return;
 			}
 		}
 		else
 		{
-			font_size = g_cfg.m_ocr_join_txt_images_split_line_font_size;
+			font_size = g_cfg.m_ocr_join_images_split_line_font_size;
 
 			wxMemoryDC dc;
 			wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, font_weight, false, wxEmptyString, wxFONTENCODING_DEFAULT);
@@ -1543,7 +1654,81 @@ void JoinTXTImages()
 			dh = (dth * 10) / 6;
 		}
 	}
+
+	struct img_data
+	{
+		int m_min_y;
+		int m_max_y;
+	};
 	
+	std::map<wxString, img_data> txt_imgs_data_map;
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+	{
+		for (int i = 0; i < (int)TXTFileNamesVector.size(); i++)
+		{
+			file_name = TXTFileNamesVector[i];
+			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+
+			if (txt_imgs_data_map.find(img_data_BaseName) == txt_imgs_data_map.end())
+			{
+				txt_imgs_data_map[img_data_BaseName].m_min_y = img_data_min_y;
+				txt_imgs_data_map[img_data_BaseName].m_max_y = img_data_min_y + img_data_h - 1;
+			}
+			else
+			{
+				if (img_data_min_y < txt_imgs_data_map[img_data_BaseName].m_min_y)
+				{
+					txt_imgs_data_map[img_data_BaseName].m_min_y = img_data_min_y;
+				}
+
+				if (img_data_min_y + img_data_h - 1 > txt_imgs_data_map[img_data_BaseName].m_max_y)
+				{
+					txt_imgs_data_map[img_data_BaseName].m_max_y = img_data_min_y + img_data_h - 1;
+				}
+			}
+		}
+		
+		int fi = 0;
+		while (fi < (int)RGBFileNamesVector.size())
+		{
+			file_name = RGBFileNamesVector[fi];
+			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+
+			if (txt_imgs_data_map.find(img_data_BaseName) == txt_imgs_data_map.end())
+			{
+				for (int i = fi; i < RGBFileNamesVector.size() - 1; i++)
+				{
+					RGBFileNamesVector[i] = RGBFileNamesVector[i + 1];					
+				}
+				
+				RGBFileNamesVector.pop_back();
+				continue;
+			}
+
+			fi++;
+		}
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		pFileNamesVector = &RGBFileNamesVector;
+		dir_path = dir_rgb_images_path;
+	}
+	else
+	{
+		pFileNamesVector = &TXTFileNamesVector;
+		dir_path = dir_txt_images_path;
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		end_func();
+		return;
+	}
+
 	int fi = 0;
 	while (fi < fn)
 	{
@@ -1554,10 +1739,17 @@ void JoinTXTImages()
 		fi = fi_start;
 		while (fi < fn)
 		{
-			file_name = FileNamesVector[fi];
-			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_h);
+			file_name = (*pFileNamesVector)[fi];
+			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
 
-			save_h = img_data_h * g_cfg.m_ocr_join_txt_images_scale;
+			if (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+			{
+				save_h = (txt_imgs_data_map[img_data_BaseName].m_max_y - txt_imgs_data_map[img_data_BaseName].m_min_y + 1) * g_cfg.m_ocr_join_images_scale;
+			}
+			else
+			{
+				save_h = img_data_h * g_cfg.m_ocr_join_images_scale;
+			}
 
 			if (res_h + dh + save_h > 65500)
 			{
@@ -1567,7 +1759,7 @@ void JoinTXTImages()
 
 			res_h += dh + save_h;
 
-			if ((fi - fi_start + 1) == g_cfg.m_ocr_join_txt_images_max_number)
+			if ((fi - fi_start + 1) == g_cfg.m_ocr_join_images_max_number)
 			{
 				fi_end = fi;
 				break;
@@ -1578,7 +1770,7 @@ void JoinTXTImages()
 
 		wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, font_weight, false, wxEmptyString, wxFONTENCODING_DEFAULT);		
 
-		simple_buffer<u8> ImRes(res_w * res_h, 255);
+		simple_buffer<u8> ImRes(res_w * res_h * (g_cfg.m_ocr_join_images_join_rgb_images ? 3 : 1), (u8)255);
 
 		int h_ofset = 0;
 		for (fi = fi_start; fi <= fi_end; fi++)
@@ -1589,10 +1781,10 @@ void JoinTXTImages()
 				return;
 			}
 
-			file_name = FileNamesVector[fi];
+			file_name = (*pFileNamesVector)[fi];
 			file_path = dir_path + file_name;
 
-			if (!g_cfg.m_ocr_join_txt_images_split_line.empty())
+			if (!g_cfg.m_ocr_join_images_split_line.empty())
 			{
 				wxBitmap bitmap(res_w, dh);
 				wxMemoryDC dc;
@@ -1618,7 +1810,7 @@ void JoinTXTImages()
 				bt = (wxAtoi(hour1) * 3600 + wxAtoi(min1) * 60 + wxAtoi(sec1)) * 1000 + wxAtoi(msec1);
 				et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);				
 
-				Str = g_cfg.m_ocr_join_txt_images_split_line;
+				Str = g_cfg.m_ocr_join_images_split_line;
 
 				wxRegEx re_bt(wxT("\\[begin_time\\]"));
 				wxString str_bt = VideoTimeToStr2(bt);
@@ -1635,7 +1827,7 @@ void JoinTXTImages()
 				}
 
 				wxRegEx re_sub_id(wxT("\\[sub_id\\]"));
-				wxString str_sub_id = wxString::Format(g_cfg.m_ocr_join_txt_images_sub_id_format, fi + 1);
+				wxString str_sub_id = wxString::Format(g_cfg.m_ocr_join_images_sub_id_format, fi + 1);
 				if (re_sub_id.Matches(Str))
 				{
 					re_sub_id.Replace(&Str, str_sub_id);
@@ -1651,20 +1843,39 @@ void JoinTXTImages()
 				dc.SetPen(pen);
 				dc.DrawRectangle(0, 0, res_w, dh);
 
-				SaveToReportLog(wxString::Format(wxT("JoinTXTImages: DrawText(%s, %d, %d) res_w(%d) dh(%d)...\n"), Str, text_x, text_y, res_w, dh));				
+				SaveToReportLog(wxString::Format(wxT("JoinImages: DrawText(%s, %d, %d) res_w(%d) dh(%d)...\n"), Str, text_x, text_y, res_w, dh));				
 				dc.SetTextForeground(wxColour(0, 0, 0));
 				dc.DrawText(Str, text_x, text_y);
 
 				wxImage img = bitmap.ConvertToImage();
 				u8* img_data = img.GetData();
 
-				for (int y = 0; y < img.GetHeight(); y++)
+				if (g_cfg.m_ocr_join_images_join_rgb_images)
 				{
-					for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
+					for (int y = 0; y < img.GetHeight(); y++)
 					{
-						if ((img_data[0] != 255) || (img_data[1] != 255) || (img_data[2] != 255))
+						for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
 						{
-							ImRes[((h_ofset + y) * res_w) + x] = 0;
+							if ((img_data[0] != 255) || (img_data[1] != 255) || (img_data[2] != 255))
+							{
+								int offset = (((h_ofset + y) * res_w) + x) * 3;
+								ImRes[offset] = 0;
+								ImRes[offset + 1] = 0;
+								ImRes[offset + 2] = 0;
+							}
+						}
+					}
+				}
+				else
+				{
+					for (int y = 0; y < img.GetHeight(); y++)
+					{
+						for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
+						{
+							if ((img_data[0] != 255) || (img_data[1] != 255) || (img_data[2] != 255))
+							{
+								ImRes[((h_ofset + y) * res_w) + x] = 0;
+							}
 						}
 					}
 				}
@@ -1672,49 +1883,130 @@ void JoinTXTImages()
 
 			h_ofset += dh;
 
+			if (g_cfg.m_ocr_join_images_join_rgb_images)
+			{
+				int cur_w, cur_h;
+				simple_buffer<u8> Img;
+				LoadBGRImage(Img, file_path, cur_w, cur_h, true);
+
+				if (res_w != (cur_w * g_cfg.m_ocr_join_images_scale) / orig_scale)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): res_w (%d) != (cur_w (%d) * g_cfg.m_ocr_join_images_scale (%d)) / orig_scale (%d)\n"), file_path, res_w, cur_w, g_cfg.m_ocr_join_images_scale, orig_scale));
+					end_func();
+					return;
+				}
+
+				DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+				if (img_data_h != cur_h / orig_scale)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): img_data_h (%d) != cur_h (%d) / orig_scale (%d)\n"), file_path, img_data_h, cur_h, orig_scale));
+					end_func();
+					return;
+				}
+
+				int yb;
+
+				if (g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+				{
+					save_h = (txt_imgs_data_map[img_data_BaseName].m_max_y - txt_imgs_data_map[img_data_BaseName].m_min_y + 1) * g_cfg.m_ocr_join_images_scale;
+					yb = (txt_imgs_data_map[img_data_BaseName].m_min_y - img_data_min_y) * g_cfg.m_ocr_join_images_scale;
+				}
+				else
+				{
+					save_h = img_data_h * g_cfg.m_ocr_join_images_scale;
+					yb = 0;
+				}
+
+				if (g_cfg.m_ocr_join_images_scale != orig_scale)
+				{
+					cv::Mat cv_Im, cv_ImRes;
+					BGRImageToMat(Img, cur_w, cur_h, cv_Im);
+					cv::resize(cv_Im, cv_ImRes, cv::Size(0, 0),
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale,
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale);
+
+					simple_buffer<u8> ImgRes(cv_ImRes.cols * cv_ImRes.rows * 3);
+					BGRMatToImage(cv_ImRes, cv_ImRes.cols, cv_ImRes.rows, ImgRes);
+
+					if (cv_ImRes.cols != res_w)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.cols (%d) != res_w (%d)\n"), file_path, cv_ImRes.cols, res_w));
+						end_func();
+						return;
+					}
+
+					if (cv_ImRes.rows < yb + save_h)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.rows (%d) < yb (%d) + save_h (%d)\n"), file_path, cv_ImRes.rows, yb, save_h));
+						end_func();
+						return;
+					}
+
+					ImRes.copy_data(ImgRes, res_w * h_ofset * 3, res_w * yb * 3, res_w * save_h * 3);
+				}
+				else
+				{
+					if (cur_w != res_w)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_w (%d) != res_w (%d)\n"), file_path, cur_w, res_w));
+						end_func();
+						return;
+					}
+
+					if (cur_h < yb + save_h)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_h (%d) < yb (%d) + save_h (%d)\n"), file_path, cur_h, yb, save_h));
+						end_func();
+						return;
+					}
+
+					ImRes.copy_data(Img, res_w * h_ofset * 3, res_w * yb * 3, res_w * save_h * 3);
+				}
+			}
+			else
 			{			
 				int cur_w, cur_h;
 				simple_buffer<u8> Img;
 				LoadBinaryImage(Img, file_path, cur_w, cur_h, (u8)255, true);
 				
-				if (res_w != (cur_w * g_cfg.m_ocr_join_txt_images_scale) / orig_scale)
+				if (res_w != (cur_w * g_cfg.m_ocr_join_images_scale) / orig_scale)
 				{
-					SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): file (%s): res_w (%d) != (cur_w (%d) * g_cfg.m_ocr_join_txt_images_scale (%d)) / orig_scale (%d)\n"), file_path, res_w, cur_w, g_cfg.m_ocr_join_txt_images_scale, orig_scale));
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): res_w (%d) != (cur_w (%d) * g_cfg.m_ocr_join_images_scale (%d)) / orig_scale (%d)\n"), file_path, res_w, cur_w, g_cfg.m_ocr_join_images_scale, orig_scale));
 					end_func();
 					return;
 				}
 
-				DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_h);
+				DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln);
 				if (img_data_h != cur_h / orig_scale)
 				{
-					SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): file (%s): img_data_h (%d) != cur_h (%d) / orig_scale (%d)\n"), file_path, img_data_h, cur_h, orig_scale));
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): img_data_h (%d) != cur_h (%d) / orig_scale (%d)\n"), file_path, img_data_h, cur_h, orig_scale));
 					end_func();
 					return;
 				}
 
-				save_h = img_data_h * g_cfg.m_ocr_join_txt_images_scale;
+				save_h = img_data_h * g_cfg.m_ocr_join_images_scale;
 
-				if (g_cfg.m_ocr_join_txt_images_scale != orig_scale)
+				if (g_cfg.m_ocr_join_images_scale != orig_scale)
 				{
 					cv::Mat cv_Im, cv_ImRes;
 					GreyscaleImageToMat(Img, cur_w, cur_h, cv_Im);
 					cv::resize(cv_Im, cv_ImRes, cv::Size(0, 0),
-						(double)g_cfg.m_ocr_join_txt_images_scale / (double)orig_scale,
-						(double)g_cfg.m_ocr_join_txt_images_scale / (double)orig_scale);
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale,
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale);
 
 					simple_buffer<u8> ImgRes(cv_ImRes.cols * cv_ImRes.rows);
 					BinaryMatToImage(cv_ImRes, cv_ImRes.cols, cv_ImRes.rows, ImgRes, (u8)255);
 
 					if (cv_ImRes.cols != res_w)
 					{
-						SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): file (%s): cv_ImRes.cols (%d) != res_w (%d)\n"), file_path, cv_ImRes.cols, res_w));
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.cols (%d) != res_w (%d)\n"), file_path, cv_ImRes.cols, res_w));
 						end_func();
 						return;
 					}
 
 					if (cv_ImRes.rows < save_h)
 					{
-						SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): file (%s): cv_ImRes.rows (%d) < save_h (%d)\n"), file_path, cv_ImRes.rows, save_h));
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.rows (%d) < save_h (%d)\n"), file_path, cv_ImRes.rows, save_h));
 						end_func();
 						return;
 					}
@@ -1725,27 +2017,35 @@ void JoinTXTImages()
 				{
 					if (cur_w != res_w)
 					{
-						SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): file (%s): cur_w (%d) != res_w (%d)\n"), file_path, cur_w, res_w));
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_w (%d) != res_w (%d)\n"), file_path, cur_w, res_w));
 						end_func();
 						return;
 					}
 
 					if (cur_h < save_h)
 					{
-						SaveError(wxString::Format(wxT("ERROR: JoinTXTImages(): file (%s): cur_h (%d) < save_h (%d)\n"), file_path, cur_h, save_h));
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_h (%d) < save_h (%d)\n"), file_path, cur_h, save_h));
 						end_func();
 						return;
 					}
 
 					ImRes.copy_data(Img, res_w* h_ofset, 0, res_w * save_h);
 				}
-			}			
+			}
 			
 			h_ofset += save_h;
 		}
 
-		Str = wxString::Format(wxT("%s%s%s"), wxT("/TXTImagesJoined/"), GetFileName(FileNamesVector[fi_start]), g_im_save_format);
-		SaveGreyscaleImage(ImRes, Str, res_w, res_h);
+		Str = wxString::Format(wxT("%s%s%s"), wxT("/ImagesJoined/"), GetFileName((*pFileNamesVector)[fi_start]), g_im_save_format);
+
+		if (g_cfg.m_ocr_join_images_join_rgb_images)
+		{
+			SaveBGRImage(ImRes, Str, res_w, res_h);
+		}
+		else
+		{
+			SaveGreyscaleImage(ImRes, Str, res_w, res_h);
+		}
 
 		fi = fi_end + 1;
 	}
@@ -1784,8 +2084,8 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 		res.m_ymin = ymin;
 		res.m_xmax = xmax;
 		res.m_ymax = ymax;
-		res.m_ImBGR = simple_buffer<u8>(w * h * 3, 0);
-		res.m_ImClearedText = simple_buffer<u8>(w * h, 0);
+		res.m_ImBGR = simple_buffer<u8>(w * h * 3, (u8)0);
+		res.m_ImClearedText = simple_buffer<u8>(w * h, (u8)0);
 
 		LoadBGRImage(res.m_ImBGR, FileName);
 
@@ -2037,7 +2337,7 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 			{
 				m_pMF->ClearDir(g_work_dir + "/TXTImages");
 				m_pMF->ClearDir(g_work_dir + "/TXTResults");
-				m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
+				m_pMF->ClearDir(g_work_dir + "/ImagesJoined");
 			}
 
 			if (!(m_pMF->m_blnNoGUI))
@@ -2285,7 +2585,7 @@ void CreateClearedTextImages()
 					Str = GetFileName(Str);
 					Str = wxT("/TXTImages/") + Str + wxT("_00001") + g_im_save_format;
 
-					simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale) * (int)(p_task_res->m_h / g_scale), 255);
+					simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale) * (int)(p_task_res->m_h / g_scale), (u8)255);
 					SaveGreyscaleImage(ImRES1, wxString(Str), p_task_res->m_w * g_scale, p_task_res->m_h / g_scale);
 				}
 

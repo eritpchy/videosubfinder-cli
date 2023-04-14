@@ -542,7 +542,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			return;
 		}		
 
-		m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));
+		m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, (u8)0));
 
 		if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/DebugImages");
 
@@ -586,7 +586,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/DebugImages");
 
 			FindTextLinesRes res(wxT("/TestImages/TXTImages/"));
-			m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, 0));
+			m_ImF = custom_buffer<simple_buffer<u8>>(g_cfg.m_StrFN.size(), simple_buffer<u8>(m_w * m_h, (u8)0));
 			res.m_pImFF = &m_ImF[0];
 			res.m_pImSF = &m_ImF[1];
 			res.m_pImTF = &m_ImF[2];

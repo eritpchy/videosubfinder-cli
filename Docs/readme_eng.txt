@@ -267,7 +267,10 @@ Tested with AviSynth plugins:
 FFmpegSource plugin v2.40: https://github.com/FFMS/ffms2/releases/tag/2.40
 LSMASHSource plugin 20200728 : https://github.com/HolyWu/L-SMASH-Works/releases/tag/20200728
 MaskTools2 v2.2.26: https://github.com/pinterf/masktools/releases/tag/2.2.26
-All AviSynth plugins can be found in: http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+All AviSynth plugins can be found in:
+http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+http://avisynth.nl/index.php/Category:Plugins_x64
+http://avisynth.nl/index.php/External_filters
 NOTE3: Plugins dll should be placed to "C:\Program Files (x86)\AviSynth+\plugins64+"
 NOTE4: LSmashVideoSource failed to open mkv but FFVideoSource open it successfully in my case.
 6-2)
@@ -316,7 +319,7 @@ In this case result txt files after OCR should have:
 #-----------------------------------------------------
 
 (2) Subtitle Edit (Free software): https://www.videohelp.com/software/Subtitle-Edit
-NOTE: The instruction below was tested on 3.5.16 version with images with English and Croatian (Tesseract 3.02) Text and it works
+NOTE: The instruction below was tested on 3.6.12 version with images with English, Croatian, Vietnamese (Tesseract 5.3.0) Text and it works
 In VideoSubFinder:
 2_1_1. Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
 2_1_2. Click "Run Search" and get images (in the first tab page: "Search").
@@ -326,7 +329,7 @@ In VideoSubFinder:
 In Subtitle Edit:
 2_2_1. Click in menu "File->Open" and select sub.srt file
 2_2_2. Click in menu "File->Import images.." + Click "..." in top right and select all files in "TXTImages" (CTRL+A)
-2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree (select any record and press CTRL+A), right mouse click, select "Image preprocessing...",
+2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree (select any record and press CTRL+A), right mouse click, select "Image pre-processing...",
 select check box with "Invert colors", press "OK"
 2_2_4. Select "OCR Method" (any Tesseract method works good on English Text)
 2_2_5. Select Right "Language" also as it in Dictionary and download it by pressing "..." and "Download"

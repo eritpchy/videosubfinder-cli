@@ -106,7 +106,7 @@ void test1()
 {
 	int w = 1920;
 	int h = 1080;
-	simple_buffer<u8> Im(w * h, 1);
+	simple_buffer<u8> Im(w * h, (u8)1);
 
 	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(h), [&](int y)
 	{
@@ -122,11 +122,11 @@ void test1()
 
 void test2()
 {
-	simple_buffer<u8> Im1(1920 * 1080, 1);
-	simple_buffer<u8> Im2(1920 * 1080, 2);
-	simple_buffer<u8> Im3(1920 * 1080, 3);
-	simple_buffer<u8> Im4(1920 * 1080, 4);
-	simple_buffer<u8> Im5(1920 * 1080, 5);
+	simple_buffer<u8> Im1(1920 * 1080, (u8)1);
+	simple_buffer<u8> Im2(1920 * 1080, (u8)2);
+	simple_buffer<u8> Im3(1920 * 1080, (u8)3);
+	simple_buffer<u8> Im4(1920 * 1080, (u8)4);
+	simple_buffer<u8> Im5(1920 * 1080, (u8)5);
 
 	run_in_parallel(
 		[&] { test_func(Im1); },
@@ -144,8 +144,8 @@ void test3()
 	thrs = vector<shared_custom_task>(N, shared_custom_task([] {}));
 	wait_all(begin(thrs), end(thrs));
 
-	simple_buffer<u32> Im1(1920 * 1080, 1);
-	simple_buffer<u32> Im2(1920 * 1080, 2);
+	simple_buffer<u32> Im1(1920 * 1080, (u32)1);
+	simple_buffer<u32> Im2(1920 * 1080, (u32)2);
 
 	thrs[0] = shared_custom_task([&] { test_func_fast(Im1); });
 	thrs[1] = shared_custom_task([&] { test_func_fast(Im2); });
@@ -282,7 +282,7 @@ bool CVideoSubFinderApp::OnInit()
 	wxFileName::Mkdir(g_work_dir + "/ILAImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/DebugImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-	wxFileName::Mkdir(g_work_dir + "/TXTImagesJoined", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
+	wxFileName::Mkdir(g_work_dir + "/ImagesJoined", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TestImages/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
 	wxFileName::Mkdir(g_work_dir + "/TestImages/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);

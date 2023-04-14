@@ -23,6 +23,21 @@ https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#options-for-st
 
 NOTES:
 # If -arch=all is specified, nvcc embeds a compiled code image for all supported architectures (sm_*), and a PTX program for the highest major virtual architecture
+# "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0\bin\nvcc.exe" --list-gpu-code
+# sm_50
+# sm_52
+# sm_53
+# sm_60
+# sm_61
+# sm_62
+# sm_70
+# sm_72
+# sm_75
+# sm_80
+# sm_86
+# sm_87
+# sm_89
+# sm_90
 # "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0\bin\nvcc.exe" --list-gpu-arch
 # compute_50
 # compute_52

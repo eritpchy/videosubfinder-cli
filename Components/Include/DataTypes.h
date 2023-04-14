@@ -503,7 +503,7 @@ public:
 	}
 
 	// return sub buffer
-	custom_buffer(const custom_buffer<T>& obj, int offset, bool)
+	custom_buffer(const custom_buffer<T>& obj, int offset)
 	{
 		custom_assert(offset < obj.m_size, "custom_buffer(const custom_buffer<T>& obj, int offset): not: offset < obj.m_size");
 		m_pData = obj.m_pData + offset;
@@ -769,7 +769,7 @@ public:
 	}
 
 	// return sub buffer
-	simple_buffer(const simple_buffer<T>& obj, int offset, bool)
+	simple_buffer(const simple_buffer<T>& obj, int offset)
 	{
 		custom_assert(offset < obj.m_size, "simple_buffer(const simple_buffer<T>& obj, int offset): not: offset < obj.m_size");
 		this->m_pData = obj.m_pData + offset;

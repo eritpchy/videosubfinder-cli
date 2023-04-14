@@ -96,7 +96,7 @@ public:
 	wxString	m_pixel_color_example;
 
 	wxString	m_ocr_label_msd_text;
-	wxString	m_ocr_label_join_txt_images_split_line_text;
+	wxString	m_ocr_label_join_images_split_line_text;
 	wxString	m_ocr_label_jsact_text;
 	wxString	m_ocr_label_clear_txt_folders;
 	wxString	m_ocr_label_save_each_substring_separately;
@@ -110,12 +110,12 @@ public:
 	wxString	m_ocr_button_cesfcti_text;
 	wxString	m_ocr_button_test_text;
 
-	wxString	m_ocr_label_join_txt_images_split_line_font_size;
-	wxString	m_ocr_label_join_txt_images_split_line_font_bold;
-	wxString	m_ocr_label_join_txt_images_sub_id_format;
-	wxString	m_ocr_label_join_txt_images_sub_search_by_id_format;
-	wxString	m_ocr_label_join_txt_images_scale;
-	wxString	m_ocr_label_join_txt_images_max_number;
+	wxString	m_ocr_label_join_images_split_line_font_size;
+	wxString	m_ocr_label_join_images_split_line_font_bold;
+	wxString	m_ocr_label_join_images_sub_id_format;
+	wxString	m_ocr_label_join_images_sub_search_by_id_format;
+	wxString	m_ocr_label_join_images_scale;
+	wxString	m_ocr_label_join_images_max_number;
 
 	wxString	m_label_text_alignment;
 	wxString	m_playback_sound;
@@ -353,19 +353,23 @@ public:
 	int			m_vsf_w = -1;
 	int			m_vsf_h = -1;
 
-	bool		m_ocr_join_txt_images_clear_dir = true;
-	wxString	m_ocr_join_txt_images_split_line = wxT("[sub_id]");
-	int			m_ocr_join_txt_images_split_line_font_size = -1;
-	bool		m_ocr_join_txt_images_split_line_font_bold = true;
-	wxString	m_ocr_join_txt_images_sub_id_format = wxT("[SUB%d]");
-	wxString	m_ocr_join_txt_images_sub_search_by_id_format = wxT("\\[SUB%d\\](.*?)\\[SUB");
-	int			m_ocr_join_txt_images_scale = 1;
-	int			m_ocr_join_txt_images_max_number = 50;
+	bool		m_ocr_join_images_join_rgb_images = false;
+	bool		m_ocr_join_images_use_txt_images_data_for_join_rgb_images = true;
+	bool		m_ocr_join_images_clear_dir = true;
+	wxString	m_ocr_join_images_split_line = wxT("[sub_id]");
+	int			m_ocr_join_images_split_line_font_size = -1;
+	bool		m_ocr_join_images_split_line_font_bold = true;
+	wxString	m_ocr_join_images_sub_id_format = wxT("[SUB%d]");
+	wxString	m_ocr_join_images_sub_search_by_id_format = wxT("\\[SUB%d\\](.*?)\\[SUB");
+	int			m_ocr_join_images_scale = 1;
+	int			m_ocr_join_images_max_number = 50;
 
 	wxString	m_ocr_dg_sub_group_settings_for_create_txt_images;
-	wxString	m_ocr_dg_sub_group_settings_for_join_txt_images;
+	wxString	m_ocr_dg_sub_group_settings_for_join_images;
 	wxString	m_ocr_dg_sub_group_settings_for_create_sub;
-	wxString	m_ocr_label_join_txt_images_clear_dir;
+	wxString	m_ocr_label_join_images_clear_dir;
+	wxString	m_ocr_label_join_images_join_rgb_images;
+	wxString	m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images;
 
 	wxString	m_ocr_GB_label;
 };

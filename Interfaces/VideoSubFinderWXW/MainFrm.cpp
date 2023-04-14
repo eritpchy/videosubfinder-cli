@@ -1247,14 +1247,16 @@ void LoadSettings()
 
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings...\n");
 
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_clear_dir, "ocr_join_txt_images_clear_dir");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line_font_size, "ocr_join_txt_images_split_line_font_size");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_split_line_font_bold, "ocr_join_txt_images_split_line_font_bold");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_sub_id_format, "ocr_join_txt_images_sub_id_format");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_sub_search_by_id_format, "ocr_join_txt_images_sub_search_by_id_format");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_scale, "ocr_join_txt_images_scale");
-	ReadProperty(g_general_settings, g_cfg.m_ocr_join_txt_images_max_number, "ocr_join_txt_images_max_number");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_join_rgb_images, "ocr_join_images_join_rgb_images");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images, "ocr_join_images_use_txt_images_data_for_join_rgb_images");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_clear_dir, "ocr_join_images_clear_dir");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_split_line, "ocr_join_images_split_line");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_split_line_font_size, "ocr_join_images_split_line_font_size");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_split_line_font_bold, "ocr_join_images_split_line_font_bold");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_sub_id_format, "ocr_join_images_sub_id_format");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_sub_search_by_id_format, "ocr_join_images_sub_search_by_id_format");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_scale, "ocr_join_images_scale");
+	ReadProperty(g_general_settings, g_cfg.m_ocr_join_images_max_number, "ocr_join_images_max_number");
 
 	ReadProperty(g_general_settings, g_cfg.m_vsf_is_maximized, "vsf_is_maximized");
 	ReadProperty(g_general_settings, g_cfg.m_vsf_x, "vsf_x");
@@ -1440,9 +1442,11 @@ void LoadLocaleSettings(wxString settings_path)
 
 	ReadSettings(settings_path, g_locale_settings);
 
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_clear_dir, "ocr_label_join_txt_images_clear_dir");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_join_rgb_images, "ocr_label_join_images_join_rgb_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images, "ocr_label_join_images_use_txt_images_data_for_join_rgb_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_clear_dir, "ocr_label_join_images_clear_dir");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_create_txt_images, "ocr_dg_sub_group_settings_for_create_txt_images");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_join_txt_images, "ocr_dg_sub_group_settings_for_join_txt_images");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_join_images, "ocr_dg_sub_group_settings_for_join_images");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_dg_sub_group_settings_for_create_sub, "ocr_dg_sub_group_settings_for_create_sub");
 
 	ReadProperty(g_locale_settings, g_cfg.m_fd_main_font_gb_label, "fd_main_font_gb_label");
@@ -1552,7 +1556,7 @@ void LoadLocaleSettings(wxString settings_path)
 	ReadProperty(g_locale_settings, g_cfg.m_settings_panel_title, "settings_panel_title");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_panel_title, "ocr_panel_title");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_msd_text, "ocr_label_msd_text");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_split_line_text, "ocr_label_join_txt_images_split_line_text");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_split_line_text, "ocr_label_join_images_split_line_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_jsact_text, "ocr_label_jsact_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_clear_txt_folders, "ocr_label_clear_txt_folders");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_save_each_substring_separately, "ocr_label_save_each_substring_separately");
@@ -1566,12 +1570,12 @@ void LoadLocaleSettings(wxString settings_path)
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_cesfcti_text, "ocr_button_cesfcti_text");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_button_test_text, "ocr_button_test_text");
 
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_split_line_font_size, "ocr_label_join_txt_images_split_line_font_size");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_split_line_font_bold, "ocr_label_join_txt_images_split_line_font_bold");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_sub_id_format, "ocr_label_join_txt_images_sub_id_format");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_sub_search_by_id_format, "ocr_label_join_txt_images_sub_search_by_id_format");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_scale, "ocr_label_join_txt_images_scale");
-	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_txt_images_max_number, "ocr_label_join_txt_images_max_number");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_split_line_font_size, "ocr_label_join_images_split_line_font_size");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_split_line_font_bold, "ocr_label_join_images_split_line_font_bold");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_sub_id_format, "ocr_label_join_images_sub_id_format");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_sub_search_by_id_format, "ocr_label_join_images_sub_search_by_id_format");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_scale, "ocr_label_join_images_scale");
+	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_max_number, "ocr_label_join_images_max_number");
 
 	ReadProperty(g_locale_settings, g_cfg.m_label_text_alignment, "label_text_alignment");
 	ReadProperty(g_locale_settings, g_cfg.m_ssp_hw_device, "ssp_hw_device");
@@ -1843,14 +1847,16 @@ void SaveSettings()
 
 	WriteProperty(fout, g_cfg.m_toolbar_bitmaps_transparent_colour, "toolbar_bitmaps_transparent_colour");
 
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_clear_dir, "ocr_join_txt_images_clear_dir");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line, "ocr_join_txt_images_split_line");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line_font_size, "ocr_join_txt_images_split_line_font_size");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_split_line_font_bold, "ocr_join_txt_images_split_line_font_bold");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_sub_id_format, "ocr_join_txt_images_sub_id_format");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_sub_search_by_id_format, "ocr_join_txt_images_sub_search_by_id_format");	
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_scale, "ocr_join_txt_images_scale");
-	WriteProperty(fout, g_cfg.m_ocr_join_txt_images_max_number, "ocr_join_txt_images_max_number");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_join_rgb_images, "ocr_join_images_join_rgb_images");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images, "ocr_join_images_use_txt_images_data_for_join_rgb_images");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_clear_dir, "ocr_join_images_clear_dir");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_split_line, "ocr_join_images_split_line");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_split_line_font_size, "ocr_join_images_split_line_font_size");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_split_line_font_bold, "ocr_join_images_split_line_font_bold");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_sub_id_format, "ocr_join_images_sub_id_format");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_sub_search_by_id_format, "ocr_join_images_sub_search_by_id_format");	
+	WriteProperty(fout, g_cfg.m_ocr_join_images_scale, "ocr_join_images_scale");
+	WriteProperty(fout, g_cfg.m_ocr_join_images_max_number, "ocr_join_images_max_number");
 
 	fout.Flush();
 	ffout.Close();

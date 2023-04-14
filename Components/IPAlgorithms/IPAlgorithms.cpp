@@ -247,7 +247,7 @@ int ClearImageLogical(simple_buffer<u8>& Im, int w, int h, int W, int H, int rea
 	}
 	if (g_show_results) SaveGreyscaleImage(Im, "/DebugImages/ClearImageLogical_" + iter_det + "_2_ImFByInsideFigures" + g_im_save_format, w, h);
 
-	simple_buffer<CMyClosedFigure*> ImInfo(w * h, NULL);
+	simple_buffer<CMyClosedFigure*> ImInfo(w * h, (CMyClosedFigure*)NULL);
 
 	for (i = 0; i < N; i++)
 	{
@@ -1405,7 +1405,7 @@ void GetImCMOEWithThr1(simple_buffer<u16> &ImCMOE, simple_buffer<u16> &ImYMOE, s
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
-		simple_buffer<u16> ImCMOE_sub_buffer(ImCMOE, i, true);
+		simple_buffer<u16> ImCMOE_sub_buffer(ImCMOE, i);
 		ApplyModerateThreshold(ImCMOE_sub_buffer, mthr, w, dhs[k]);
 	}
 }
@@ -1460,7 +1460,7 @@ void GetImCMOEWithThr2(simple_buffer<u16> &ImCMOE, simple_buffer<u16> &ImYMOE, s
 	for (k = 0; k < N; k++)
 	{
 		i = offsets[k];
-		simple_buffer<u16> ImCMOE_sub_buffer(ImCMOE, i, true);
+		simple_buffer<u16> ImCMOE_sub_buffer(ImCMOE, i);
 		ApplyModerateThreshold(ImCMOE_sub_buffer, mthr, w, dhs[k]);
 	}
 }
@@ -2497,7 +2497,7 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 #ifdef USE_CUDA	
 	int numObjs = w * h, i, j, numObjsFF;
 	float **clusters;	
-	simple_buffer<char> color_cluster_id(1 << 24, -1);
+	simple_buffer<char> color_cluster_id(1 << 24, (char)-1);
 
 	{
 		simple_buffer<u8> ImBGRFF(numObjs * 3);
@@ -2655,7 +2655,7 @@ int cuda_kmeans(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImFF, simple_buffer
 
 int opencv_kmeans(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buffer<char> &labels, int w, int h, int numClusters, int loop_iterations, int initial_loop_iterations, int &min_x, int &max_x, int &min_y, int &max_y, wxString iter_det, bool mask_only = false)
 {
-	simple_buffer<char> color_cluster_id(1 << 24, 0);
+	simple_buffer<char> color_cluster_id(1 << 24, (char)0);
 	int numObjsFF;
 	int i, j, color, res = 0;
 
@@ -2704,7 +2704,7 @@ int opencv_kmeans(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simple_buff
 		if (g_show_results)
 		{
 			simple_buffer<u8> ImClusters_tmp(w * h);
-			simple_buffer<char> labels_tmp(w * h, -1);
+			simple_buffer<char> labels_tmp(w * h, (char)-1);
 
 			j = 0;
 			for (i = 0; i < w * h; i++)
@@ -3683,7 +3683,7 @@ int GetMainTwoClustersByAverageLuminanceDifference(simple_buffer<u8>& ImMainClus
 
 		if (g_show_results)
 		{
-			simple_buffer<u8> ImTMP(w * h, 0);
+			simple_buffer<u8> ImTMP(w * h, (u8)0);
 			GetBinaryImageByClusterId(ImTMP, labels, id1, w, h, GetClusterColor(clusterCount, id1), false);
 			GetBinaryImageByClusterId(ImTMP, labels, id2, w, h, GetClusterColor(clusterCount, id2), false);
 			SaveGreyscaleImageWithLinesInfo(ImTMP, "/DebugImages/GetMainTwoClustersByAverageLuminanceDifference_" + iter_det + "_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImMainTwoClusters_WSP" + g_im_save_format, w, h,
@@ -3996,7 +3996,7 @@ void MorphCloseAndExtByInsideAllFigures(simple_buffer<u8>& Im, simple_buffer<CMy
 			int dy = morph_close_size;
 			int ww = pFigure->width() + (2 * dx);
 			int hh = pFigure->height() + (2 * dy);
-			simple_buffer<u8> FigureIm(ww * hh, 0);
+			simple_buffer<u8> FigureIm(ww * hh, (u8)0);
 
 			for (int l = 0; l < pFigure->m_PointsArray.m_size; l++)
 			{
@@ -4235,7 +4235,7 @@ int GetMainClusterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8>& ImLab, simp
 		if (g_show_results) SaveGreyscaleImage(ImMASK, "/DebugImages/GetMainClusterImage_" + iter_det + "_03_02_01_ImMASK" + g_im_save_format, w, h);
 		simple_buffer<char> labels3(w * h);
 		simple_buffer<u8> ImClusters3(w * h);
-		simple_buffer<u8> ImMASKR(w * h, 0), ImMASKR2(w * h, 0);
+		simple_buffer<u8> ImMASKR(w * h, (u8)0), ImMASKR2(w * h, (u8)0);
 
 		{
 			int min_x, max_x, min_y, max_y;
@@ -5197,7 +5197,7 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 	}
 
 	{
-		simple_buffer<u8> ImFFD(w_orig * hh, 0), ImSF(w_orig * hh), ImTF(w_orig * hh);
+		simple_buffer<u8> ImFFD(w_orig * hh, (u8)0), ImSF(w_orig * hh), ImTF(w_orig * hh);
 
 		for (y = 0, i = xb, j = 0; y < hh; y++, i += w_orig, j += ww)
 		{
@@ -5211,7 +5211,7 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = hh - 1;
-		simple_buffer<u8> ImNE_sub_buffer(ImNE, yb * w_orig, true);
+		simple_buffer<u8> ImNE_sub_buffer(ImNE, yb * w_orig);
 		res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE_sub_buffer, LB, LE, 1, w_orig, hh, W_orig, H_orig, 0, w_orig - 1, iter_det);
 
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/CheckOnSubPresence_" + iter_det + "_03_ImFF_F" + g_im_save_format, w_orig, hh);
@@ -5247,32 +5247,37 @@ int CheckOnSubPresence(simple_buffer<u8>& ImMASK, simple_buffer<u8>& ImNE, simpl
 	return res;
 }
 
-wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h)
+wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h, int ln)
 {
-	return wxString::Format(wxT("%.5d%.5d%.5d%.5d%.5d"), ymin, xmin, h, H, W);
+	return wxString::Format(wxT("%.1d%.4d%.4d%.4d%.4d%.4d%.4d"), ln, xmin, ymin, w, h, W, H);
 }
 
-bool DecodeImData(wxString FileName, int* pW, int* pH, int* pmin_x, int* pmin_y, int* p_h, wxString* pBaseName)
+bool DecodeImData(wxString FileName, int* pW, int* pH, int* pmin_x, int* pmin_y, int* p_w, int* p_h, int* p_ln, wxString* pBaseName)
 {
 	bool res = false;
 
-	wxString str_ymin, str_xmin, str_H, str_W, str_h;
+	wxString str_ymin, str_xmin, str_H, str_W, str_w, str_h, str_ln;
 
-	wxRegEx re(wxT("^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$"));
+	wxRegEx re(wxT("^(.+)_([[:digit:]]{1})([[:digit:]]{4})([[:digit:]]{4})([[:digit:]]{4})([[:digit:]]{4})([[:digit:]]{4})([[:digit:]]{4})$"));
 	if (re.Matches(FileName))
 	{
 		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
-		str_ymin = re.GetMatch(FileName, 2);
+		str_ln = re.GetMatch(FileName, 2);
 		str_xmin = re.GetMatch(FileName, 3);
-		str_h = re.GetMatch(FileName, 4);
-		str_H = re.GetMatch(FileName, 5);
-		str_W = re.GetMatch(FileName, 6);
+		str_ymin = re.GetMatch(FileName, 4);		
+		str_w = re.GetMatch(FileName, 5);
+		str_h = re.GetMatch(FileName, 6);
+		str_W = re.GetMatch(FileName, 7);
+		str_H = re.GetMatch(FileName, 8);
 		
+		
+		if (p_ln) *p_ln = wxAtoi(str_ln);
+		if (pmin_x) *pmin_x = wxAtoi(str_xmin);
+		if (pmin_y) *pmin_y = wxAtoi(str_ymin);
+		if (p_w) *p_w = wxAtoi(str_w);
 		if (p_h) *p_h = wxAtoi(str_h);
 		if (pW) *pW = wxAtoi(str_W);
 		if (pH) *pH = wxAtoi(str_H);
-		if (pmin_x) *pmin_x = wxAtoi(str_xmin);
-		if (pmin_y) *pmin_y = wxAtoi(str_ymin);
 
 		res = true;
 	}
@@ -5282,33 +5287,19 @@ bool DecodeImData(wxString FileName, int* pW, int* pH, int* pmin_x, int* pmin_y,
 
 void GetImInfo(wxString FileName, int img_real_w, int img_real_h, int *pW, int* pH, int* pmin_x, int* pmax_x, int* pmin_y, int* pmax_y, wxString* pBaseName, int* pScale)
 {
-	// Note:
-	//FileName = VideoTimeToStr(bt) + wxT("__") + VideoTimeToStr(et) + wxT("_") + FormatImInfoAddData(W, H, xmin, ymin, img_real_w, img_real_h)
-	//Example:
-	//0_00_05_000__0_00_07_959_00503000000072001280
-	
-	wxString str_ymin, str_xmin, str_H, str_W, str_h;
+	int w, h, ln, min_x, min_y, W, H;
 
-	wxRegEx re(wxT("^(.+)_([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})([[:digit:]]{5})$"));
-	if (re.Matches(FileName))
+	if (DecodeImData(FileName, &W, &H, &min_x, &min_y, &w, &h, &ln, pBaseName))
 	{		
-		if (pBaseName) *pBaseName = re.GetMatch(FileName, 1);
-		str_ymin = re.GetMatch(FileName, 2);
-		str_xmin = re.GetMatch(FileName, 3);
-		str_h = re.GetMatch(FileName, 4);
-		str_H = re.GetMatch(FileName, 5);
-		str_W = re.GetMatch(FileName, 6);
-
-		int h = wxAtoi(str_h);
 		int scale = img_real_h/h;
 
 		if (pScale) *pScale = scale;
-		if (pW) *pW = scale * wxAtoi(str_W);
-		if (pH) *pH = scale * wxAtoi(str_H);
-		if (pmin_x) *pmin_x = scale * wxAtoi(str_xmin);
-		if (pmin_y) *pmin_y = scale * wxAtoi(str_ymin);
-		if (pmax_x) *pmax_x = (scale * wxAtoi(str_xmin)) + img_real_w - 1;
-		if (pmax_y) *pmax_y = (scale * wxAtoi(str_ymin)) + img_real_h - 1;
+		if (pW) *pW = scale * W;
+		if (pH) *pH = scale * H;
+		if (pmin_x) *pmin_x = scale * min_x;
+		if (pmin_y) *pmin_y = scale * min_y;
+		if (pmax_x) *pmax_x = (scale * min_x) + img_real_w - 1;
+		if (pmax_y) *pmax_y = (scale * min_y) + img_real_h - 1;
 	}
 	else
 	{
@@ -6328,7 +6319,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 	min_y -= (min_y % g_scale);
 	hh = max_y - min_y + 1;
 
-	simple_buffer<u8> ImSubForSave(ww* hh, 255);
+	simple_buffer<u8> ImSubForSave(ww* hh, (u8)255);
 
 	cnt = 0;
 	for (y = min_y; y <= max_y; y++)
@@ -6351,7 +6342,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 		custom_assert(g_scale > 0, "FindText: g_scale > 0");
 		res.m_im_h = hh / g_scale;
 
-		simple_buffer<u8> ImFFD(w_orig*res.m_im_h, 0), ImSF(w_orig*res.m_im_h), ImTF(w_orig*res.m_im_h);
+		simple_buffer<u8> ImFFD(w_orig*res.m_im_h, (u8)0), ImSF(w_orig*res.m_im_h), ImTF(w_orig*res.m_im_h);
 
 		{
 			cv::Mat cv_ImDilate(res.m_im_h, w_orig, CV_8UC1);
@@ -6396,7 +6387,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 		simple_buffer<int> LB(1, 0), LE(1, 0);
 		LB[0] = 0;
 		LE[0] = res.m_im_h - 1;
-		simple_buffer<u8> ImNE_sub_buffer(ImNE, res.m_YB* w_orig, true);
+		simple_buffer<u8> ImNE_sub_buffer(ImNE, res.m_YB* w_orig);
 		res.m_res = FilterTransformedImage(ImFFD, ImSF, ImTF, ImNE_sub_buffer, LB, LE, 1, w_orig, res.m_im_h, W_orig, H_orig, 0, w_orig - 1, iter_det);
 
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/FindText_" + iter_det + "_78_02_ImTXTF" + g_im_save_format, w_orig, res.m_im_h);
@@ -6414,7 +6405,7 @@ void FindText(FindTextRes &res, simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImF
 			res.m_mI = mI;
 			res.m_mQ = mQ;
 
-			wxString FullName = SaveDir + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + res.m_LY, w_orig, res.m_im_h) + g_im_save_format;
+			wxString FullName = SaveDir + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + res.m_YB, w_orig, res.m_im_h, 1) + g_im_save_format;
 			res.m_ImageName = FullName;
 
 			if (g_save_each_substring_separately)
@@ -6449,7 +6440,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	simple_buffer<u8> ImClearedTextScaled;
 
 	int i, j, k, l, r, x, y, ib, bln, N, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
-	int XB, XE, YB, YE, DXB, DXE, DYB, DYE;
+	int XB, XE, YB = h_orig, YE = -1, DXB, DXE, DYB, DYE;
 	int xb, xe, yb, ye, lb, le, segh;
 	int delta, val, val1, val2, val3, val4, val5, cnt1, cnt2, NN, ys1, ys2, ys3, val_min, val_max;	
 	int j1, j2, j3, j1_min, j1_max, j2_min, j2_max, j3_min, j3_max, j4_min, j4_max, j5_min, j5_max;
@@ -6461,6 +6452,7 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	int res = 0;
 	int iter = 0;	
 	int min_h = g_min_h * H_orig;
+	int ln = 0;
 	
 	mthr = 0.3;
 	segh = g_segh;
@@ -6634,6 +6626,18 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 		{
 			if (p_ft_res->m_res == 1)
 			{
+				ln++;
+
+				if (p_ft_res->m_YB < YB)
+				{
+					YB = p_ft_res->m_YB;
+				}
+
+				if ((p_ft_res->m_YB + p_ft_res->m_im_h - 1) > YE)
+				{
+					YE = p_ft_res->m_YB + p_ft_res->m_im_h - 1;
+				}
+
 				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 				{
 					for (x = 0; x < w_orig; x++, i++)
@@ -6691,6 +6695,18 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 		{
 			if (p_ft_res->m_res == 1)
 			{
+				ln++;
+
+				if (p_ft_res->m_YB < YB)
+				{
+					YB = p_ft_res->m_YB;
+				}
+
+				if ((p_ft_res->m_YB + p_ft_res->m_im_h - 1) > YE)
+				{
+					YE = p_ft_res->m_YB + p_ft_res->m_im_h - 1;
+				}
+
 				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 				{
 					for (x = 0; x < w_orig; x++, i++)
@@ -6727,17 +6743,17 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 
 	if (res == 1)
 	{
-		FullName = SaveDir + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig, w_orig, h_orig) + g_im_save_format;
-
 		if (!g_save_each_substring_separately)
 		{
+			FullName = SaveDir + SaveName + wxT("_") + FormatImInfoAddData(W_orig, H_orig, xmin_orig, ymin_orig + YB, w_orig, YE - YB + 1, ln) + g_im_save_format;
+
 			if (g_save_scaled_images)
 			{
-				SaveBinaryImage(ImClearedTextScaled, FullName, w_orig * g_scale, h_orig * g_scale);
+				SaveBinaryImage(simple_buffer<u8>(ImClearedTextScaled, YB * g_scale * w_orig * g_scale), FullName, w_orig * g_scale, (YE - YB + 1) * g_scale);
 			}
 			else
 			{
-				SaveBinaryImage(ImClearedText, FullName, w_orig, h_orig);
+				SaveBinaryImage(simple_buffer<u8>(ImClearedText, YB * w_orig), FullName, w_orig, (YE - YB + 1));
 			}
 		}
 	}
@@ -8210,8 +8226,8 @@ void GetSymbolAvgColor(CMyClosedFigure* pFigure, simple_buffer<u8>& ImY, simple_
 
 	int SIZE = w * h;
 
-	simple_buffer<char> pImage(SIZE, 0);
-	simple_buffer<u8> pImageY(SIZE, 0), pImageI(SIZE, 0), pImageQ(SIZE, 0);
+	simple_buffer<char> pImage(SIZE, (char)0);
+	simple_buffer<u8> pImageY(SIZE, (u8)0), pImageI(SIZE, (u8)0), pImageQ(SIZE, (u8)0);
 
 	for(i=0; i < pFigure->m_PointsArray.m_size; i++)
 	{
@@ -8798,15 +8814,26 @@ void GetImageSize(wxString name, int &w, int &h)
 	h = im.rows;
 }
 
-void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name)
+void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name, int& w, int& h, bool allocate_im_size)
 {
 	cv::Mat data;
 	ReadFile(data, name);
 	cv::Mat im = cv::imdecode(data, cv::IMREAD_COLOR); // load in BGR format
-	int w = im.cols;
-	int h = im.rows;
+	w = im.cols;
+	h = im.rows;
+
+	if (allocate_im_size)
+	{
+		ImBGR.set_size(w * h * 3);
+	}
 
 	ImBGR.copy_data(im.data, w * h * 3);
+}
+
+void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name)
+{
+	int w, h;
+	LoadBGRImage(ImBGR, name, w, h, false);
 }
 
 void SaveBGRImage(simple_buffer<u8>& ImBGR, wxString name, int w, int h)
@@ -8900,7 +8927,7 @@ void SaveBinaryImageWithLinesInfo(simple_buffer<u8> &Im, wxString name, int lb1,
 {
 	if (g_disable_save_images) return;
 
-	simple_buffer<u8> ImTMP(w*h*3, 0);
+	simple_buffer<u8> ImTMP(w*h*3, (u8)0);
 	int x, y;
 	int color, rc, gc, bc, yc, cc, wc;
 	u8 *pClr;

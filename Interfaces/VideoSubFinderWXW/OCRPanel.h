@@ -159,7 +159,7 @@ public:
 };
 
 void CreateClearedTextImages();
-void JoinTXTImages();
+void JoinImages();
 
 class COCRPanel : public wxPanel, public CControl
 {

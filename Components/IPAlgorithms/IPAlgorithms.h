@@ -147,10 +147,10 @@ int GetTransformedImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImFF, simpl
 int FilterTransformedImage(simple_buffer<u8> &ImFF, simple_buffer<u8> &ImSF, simple_buffer<u8> &ImTF, simple_buffer<u8> &ImNE, simple_buffer<int> &LB, simple_buffer<int> &LE, int N, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
 int FilterImage(simple_buffer<u8> &ImF, simple_buffer<u8> &ImNE, int w, int h, int W, int H, int min_x, int max_x, simple_buffer<int> &LB, simple_buffer<int> &LE, int N);
 
-wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h);
+wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h, int ln = 0);
 
 void GetImInfo(wxString FileName, int img_real_w, int img_real_h, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmax_x = NULL, int* pmin_y = NULL, int* pmax_y = NULL, wxString* pBaseName = NULL, int* pScale = NULL);
-bool DecodeImData(wxString FileName, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmin_y = NULL, int* p_h = NULL, wxString* pBaseName = NULL);
+bool DecodeImData(wxString FileName, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmin_y = NULL, int* p_w = NULL, int* p_h = NULL, int* p_ln = NULL, wxString* pBaseName = NULL);
 
 int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig);
 
@@ -167,6 +167,7 @@ void GetTextLineParameters(simple_buffer<u8>& Im, simple_buffer<u8>& ImY, simple
 void GetImageSize(wxString name, int &w, int &h);
 void SaveBGRImage(simple_buffer<u8>& ImBGR, wxString name, int w, int h);
 void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name);
+void LoadBGRImage(simple_buffer<u8>& ImBGR, wxString name, int& w, int& h, bool allocate_im_size);
 void SaveGreyscaleImage(simple_buffer<u8>& Im, wxString name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 void SaveGreyscaleImage(simple_buffer<int>& Im, wxString name, int w, int h, int add = 0, double scale = 1.0, int quality = -1, int dpi = -1);
 template <class T>
@@ -306,6 +307,12 @@ void SaveBinaryImage(simple_buffer<T>& Im, wxString name, int w, int h, int qual
 }
 
 template <class T>
+void SaveBinaryImage(simple_buffer<T>&& Im, wxString name, int w, int h, int quality = -1, int dpi = -1, T zero_value = 0)
+{
+	SaveBinaryImage(Im, name, w, h, quality, dpi, zero_value);
+}
+
+template <class T>
 void LoadBinaryImage(simple_buffer<T>& Im, wxString name, int& w, int& h, T white, bool allocate_im_size)
 {
 	cv::Mat data;
@@ -433,7 +440,7 @@ int GetAllInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, custom_bu
 	}
 	else
 	{
-		simple_buffer<T> ImTMP(w * h, 0);
+		simple_buffer<T> ImTMP(w * h, (T)0);
 
 		for (i = 0; i < w * h; i++)
 		{
@@ -532,7 +539,7 @@ int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int
 
 	// Removing all inside figures which are inside others
 
-	simple_buffer<T> ImIntRes(w * h, 0);
+	simple_buffer<T> ImIntRes(w * h, (T)0);
 
 	std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(N), [&ImIntRes, &ppFigures, N, w, h, white, im_is_white](int i)
 		//for (i = 0; i < N; i++)
@@ -559,7 +566,7 @@ int GetImageWithInsideFigures(simple_buffer<T>& Im, simple_buffer<T>& ImRes, int
 				// 'j' is inside 'i'
 
 				int N1, ww = ppFigures[i]->width(), hh = ppFigures[i]->height(), x, y, min_x = ppFigures[i]->m_minX, min_y = ppFigures[i]->m_minY;
-				simple_buffer<T> Im1(ww * hh, 0), ImInt1(ww * hh, 0);
+				simple_buffer<T> Im1(ww * hh, (T)0), ImInt1(ww * hh, (T)0);
 				custom_buffer<CMyClosedFigure> pFigures1;
 				simple_buffer<CMyClosedFigure*> ppFigures1;
 
