@@ -80,7 +80,11 @@ For this you need:
 5) Click "Run Search" in the "Search" tab page, if you need to get only timing and original images with potential subs go after this step to "OCR" tab page and press "Create Empty Sub From Found Video Frames With Text (RGBImages->Sub)",
 found original images with subtitles will be located in "RGBImages" folder.
 6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken,
-which is possible if you use too strong Color Filters or subtitles pop-up on video and disappear, in this case it is better to change program settings or delete such ILA Images.
+which is possible if you:
+* use too strong Color Filters
+* or you define "Use Outline Filter Colors" but subtitles have not good outlines
+* or subtitles pop-up on video and disappear
+in this case it is better to change program settings or delete such ILA Images.
 7) [MOST IMPORTANT PART IF YOU DON’T USE COLOR FILTERING]
 Before continue: Check does subtitles has darker border color then subtitles text color.
 In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings" tab.
@@ -106,6 +110,9 @@ Known Issues
 3) Missed subtitles. Check that missed subtitles are not < 12 frames length (going less then 0.5s), if so you can change "Sub Frames Length" to 6 or other in "Settings" tab.
 4) For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 5) For playback sound on Linux currently is used "canberra-gtk-play", so it will be required if you wish to have finish work sound. (Unfortunately wxWidgets doesn't play sound on Ubuntu 20.04.5 LTS)
+6) Broken TXTImages "missed some symbols on them" multiple splits and incorrect timing in case if you define "Use Outline Filter Colors" but subtitles have not good outlines:
+subtitles has not solid outlines from all sides, some symbols are not contained in inside figures produced by pixels which are in outline filter colors range.
+In this case "Use Outline Filter Colors" break ILAImages and ISAImages generation which afftect on "Run Search" and "Create Cleared TXTImages".
 
 #######################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -201,21 +208,24 @@ when 'a' and 'b' like chroma components.
 if min_l_val==max_l_val or only l_val is specified then will be used dL value from settings for define 'L'/'l' range: [l_val-dL, l_val+dL]
 if min_a_val==max_a_val or only a_val is specified then will be used dA value from settings for define 'a' range: [a_val-dA, a_val+dA]
 if min_b_lab_val==max_b_lab_val or only b_lab_val is specified then will be used dB value from settings for define 'b' range: [b_lab_val-dB, b_lab_val+dB]
-*) Use not too strong "Use Outline Filter Colors" only if all symbols are contained inside borders:
+*) "Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
+"Use Outline Filter Colors" only if all symbols are contained inside good solid outline borders:
 subtitles has solid outlines from all sides, symbols are contained in inside figures produced by pixels which are in outline filter colors range.
-"Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
+Usage "Use Outline Filter Colors" can lead to broken ILAImages, ISAImages and TXTImages in other case.
+Use not too strong "Use Outline Filter Colors".
 Example in case if borders are mostly black color.
 Lab: l:0-30 a:0-255 b:0-255
-*) Find optimal values for color filters by using 'T' button in Video Box
-Press left/right/space for check that during video symbols are shown stable (not broken), check on different scenes.
-* - all pixels which are in inline color filters will be shown as 'red' (pixels related to searched symbols)
-* - all pixels which are in outline color filters will be shown as 'green' (pixels related to searched symbols borders)
-* - all pixels which are in inline and outline color filters will be shown as 'yellow' (better that no one will be in yellow (no intersection))
-Also:
-Using 'U' button in Video Box will show original video frame but in full screen.
-Using 'R' button in Video Box will show original video frame filtered by color filters in case of "Run Search" version - which extend inline/outline pixels area.
-Using 'Y' button in Video Box will show pixels related to inline color without change, all others in black color.
-Using 'I' button in Video Box will show pixels related to outline color without change, all others in black color.
+*) Find optimal values for Color Filters by pressing and holding 'R' (will show how all Color Filters will affect on "Run Serach") and 'T' (will show pixels related to Color Filters) keyboard buttons when Video Box is selected.
+Press left/right/space keyboard buttons or mouse wheel for check that during video symbols are shown stable (not broken), check on different scenes.
+Use hot keys:
+Press and hold 'U' keyboard button when Video Box is selected: will show original video frame but in full screen.
+Press and hold 'R' keyboard button when Video Box is selected: will show original video frame filtered by all Color Filters in case of "Run Search" version (which extend inline/outline pixels area).
+Press and hold 'T' keyboard button when Video Box is selected: will show:
+* - all pixels which are in inline Color Filters will be shown as 'red' (pixels related to searched symbols)
+* - all pixels which are in outline Color Filters will be shown as 'green' (pixels related to searched symbols borders)
+* - all pixels which are in inline and outline Color Filters will be shown as 'yellow' (better that no one will be in yellow (no intersection))
+Press and hold 'Y' keyboard button when Video Box is selected: will show pixels related to inline color with their original colors, all others in black color.
+Press and hold 'I' keyboard button when Video Box is selected: will show pixels related to outline color with their original colors, all others in black color.
 You can get pixel color by left mouse click in Video box or in shown full screen image (its values and color will be shown in "Settings" tab in bottom right part)
 *) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.

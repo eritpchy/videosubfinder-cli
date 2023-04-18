@@ -686,6 +686,8 @@ void CVideoBox::Init()
 	m_pVBox->m_pVSL1->m_pos = g_cfg.m_left_video_image_percent_end;
 	m_pVBox->m_pVSL2->m_pos = g_cfg.m_right_video_image_percent_end;
 
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_MOUSEWHEEL, &CVideoBox::OnMouseWheel, this);
+
 	m_WasInited = true;
 }
 
