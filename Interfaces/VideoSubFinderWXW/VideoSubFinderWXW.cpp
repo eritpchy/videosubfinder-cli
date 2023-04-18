@@ -33,6 +33,7 @@ void SetParserDescription()
 	g_pParser->AddSwitch("c", "clear_dirs", g_cfg.m_help_desc_for_clear_dirs);
 	g_pParser->AddSwitch("r", "run_search", g_cfg.m_help_desc_for_run_search);
 	g_pParser->AddSwitch("ccti", "create_cleared_text_images", g_cfg.m_help_desc_for_create_cleared_text_images);
+	g_pParser->AddSwitch("ji", "join_images", g_cfg.m_help_desc_for_join_images);
 	g_pParser->AddOption("ces", "create_empty_sub", g_cfg.m_help_desc_for_create_empty_sub);
 	g_pParser->AddOption("cscti", "create_sub_from_cleared_txt_images", g_cfg.m_help_desc_for_create_sub_from_cleared_txt_images);
 	g_pParser->AddOption("cstxt", "create_sub_from_txt_results", g_cfg.m_help_desc_for_create_sub_from_txt_results);
@@ -396,6 +397,15 @@ bool CVideoSubFinderApp::OnInit()
 		blnNeedToExit = true;
 	}
 
+	if (wxCMD_SWITCH_ON == g_pParser->FoundSwitch("ji"))
+	{
+		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_JOIN);
+		m_pMainWnd->m_blnNoGUI = true;
+		SaveToReportLog("setting: m_pMainWnd->m_blnNoGUI = true\n");
+		m_pMainWnd->m_pPanel->m_pOCRPanel->OnBnClickedJoinTXTImages(bn_event);
+		blnNeedToExit = true;
+	}
+
 	if (g_pParser->Found("ces", &wxStr))
 	{
 		wxCommandEvent bn_event(wxEVT_COMMAND_BUTTON_CLICKED, ID_BTN_CES);
@@ -429,8 +439,7 @@ bool CVideoSubFinderApp::OnInit()
 	{		
 		cout << g_pParser->GetUsageString();
 		wxCommandEvent send_event;
-		m_pMainWnd->OnAppAbout(send_event);
-		//g_pParser->Usage();
+		m_pMainWnd->OnAppCMDArgsInfo(send_event);
 		blnNeedToExit = true;
 	}
 

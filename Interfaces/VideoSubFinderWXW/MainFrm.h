@@ -272,6 +272,7 @@ public:
 	wxString	m_help_desc_app_about_dev_donate;
 	wxString	m_help_desc_for_clear_dirs;
 	wxString	m_help_desc_for_run_search;
+	wxString	m_help_desc_for_join_images;
 	wxString	m_help_desc_for_create_cleared_text_images;
 	wxString	m_help_desc_for_create_empty_sub;
 	wxString	m_help_desc_for_create_sub_from_cleared_txt_images;

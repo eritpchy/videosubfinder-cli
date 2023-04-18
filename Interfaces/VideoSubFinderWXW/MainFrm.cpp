@@ -1514,6 +1514,7 @@ void LoadLocaleSettings(wxString settings_path)
 
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_clear_dirs, "help_desc_for_clear_dirs");
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_run_search, "help_desc_for_run_search");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_join_images, "help_desc_for_join_images");
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_cleared_text_images, "help_desc_for_create_cleared_text_images");
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_empty_sub, "help_desc_for_create_empty_sub");
 	ReadProperty(g_locale_settings, g_cfg.m_help_desc_for_create_sub_from_cleared_txt_images, "help_desc_for_create_sub_from_cleared_txt_images");
