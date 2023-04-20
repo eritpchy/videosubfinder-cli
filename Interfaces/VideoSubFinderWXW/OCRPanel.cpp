@@ -2050,6 +2050,14 @@ void JoinImages()
 		fi = fi_end + 1;
 	}
 
+	wxString path = wxString(g_work_dir + wxT("/TXTResults/join_txt_results.txt"));
+
+	if (!wxFileExists(path))
+	{
+		wxFFileOutputStream ffout(path, wxT("wb"));
+		ffout.Close();
+	}
+
 	end_func();
 }
 
