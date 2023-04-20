@@ -542,7 +542,7 @@ BEGIN_EVENT_TABLE(CVideoBox, CResizableWindow)
 END_EVENT_TABLE()
 
 CVideoBox::CVideoBox(CMainFrame* pMF)
-		: CResizableWindow(pMF,//->GetClientWindow(),
+		: CResizableWindow(pMF,
 				  wxID_ANY,
 		          wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_VB)
 {

@@ -51,16 +51,155 @@ void CImageWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 
 BEGIN_EVENT_TABLE(CImageBox, CResizableWindow)
 	EVT_SIZE(CImageBox::OnSize)
+	EVT_KEY_DOWN(CImageBox::OnKeyDown)
+	EVT_KEY_UP(CImageBox::OnKeyUp)
+	EVT_MOUSEWHEEL(CImageBox::OnMouseWheel)
+	EVT_TIMER(TIMER_ID_IB, CImageBox::OnTimer)
 END_EVENT_TABLE()
 
+void CImageBox::OnMouseWheel(wxMouseEvent& event)
+{
+	if (m_pImage != NULL)
+	{
+		wxCommandEvent evt;
+
+		if (event.m_wheelRotation > 0)
+		{
+			m_pMF->m_pPanel->m_pSSPanel->OnBnClickedRight(evt);
+		}
+		else
+		{
+			m_pMF->m_pPanel->m_pSSPanel->OnBnClickedLeft(evt);
+		}
+	}
+}
+
+void CImageBox::OnKeyDown(wxKeyEvent& event)
+{
+	s64 Cur;
+	int key_code = event.GetKeyCode();
+	wxCommandEvent evt;
+
+	if (m_pImage != NULL)
+	{
+		switch (key_code)
+		{
+		case WXK_RIGHT:
+			m_pMF->m_pPanel->m_pSSPanel->OnBnClickedRight(evt);
+			break;
+
+		case WXK_LEFT:
+			m_pMF->m_pPanel->m_pSSPanel->OnBnClickedLeft(evt);
+			break;
+
+		case 'U':
+		case 'u':
+			m_pIW->Reparent(m_pFullScreenWin);
+
+			int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+			int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+			m_pIW->SetSize(0, 0, w, h);
+
+			if (m_pFullScreenWin != NULL)
+			{
+				if (!m_pFullScreenWin->IsFullScreen())
+				{
+					m_pFullScreenWin->ShowFullScreen(true);
+				}
+				if (!m_pFullScreenWin->IsShown())
+				{
+					m_pFullScreenWin->Show(true);
+				}
+			}
+
+			if (!m_timer.IsRunning())
+			{
+				m_timer.Start(100);
+			}
+
+			break;
+		}
+	}
+
+	switch (key_code)
+	{
+	case 'S':
+	case 's':
+		if (event.CmdDown())
+		{
+			m_pMF->OnFileSaveSettings(evt);
+		}
+		break;
+
+	}
+}
+
+void CImageBox::OnKeyUp(wxKeyEvent& event)
+{
+	s64 Cur;
+	int key_code = event.GetKeyCode();
+	wxCommandEvent evt;
+
+	if (m_pImage != NULL)
+	{
+		switch (key_code)
+		{
+		case 'U':
+		case 'u':
+			if (m_timer.IsRunning())
+			{
+				m_timer.Stop();
+				wxTimerEvent te;
+				this->OnTimer(te);
+			}
+
+			break;
+		}
+	}
+}
+
+// note: this is the hack for resolve lost keybard messages if click image in fullscreen
+void CImageBox::OnTimer(wxTimerEvent& event)
+{
+	if ( (m_pImage != NULL) && (!wxGetKeyState(wxKeyCode('U')) && !wxGetKeyState(wxKeyCode('u'))) )
+	{
+		if (m_timer.IsRunning())
+		{
+			m_timer.Stop();
+		}
+
+		if (m_pFullScreenWin) // Linux case
+		{
+			if (m_pFullScreenWin->IsShown())
+			{
+				m_pFullScreenWin->Hide();
+				m_pIW->Reparent(this);
+
+				wxSizeEvent event;
+				OnSize(event);
+			}
+		}
+		else
+		{
+			if (m_pIW->GetParent() == NULL)
+			{
+				m_pIW->Reparent(this);
+				wxSizeEvent event;
+				OnSize(event);
+			}
+		}
+	}
+}
+
 CImageBox::CImageBox(CMainFrame* pMF)
-		: CResizableWindow(pMF,//->GetClientWindow(),
+		: CResizableWindow(pMF,
 			wxID_ANY,
-			wxDefaultPosition, wxDefaultSize)
+			wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_IB)
 {
 	m_pMF = pMF;
 	m_pImage = NULL;
 	m_WasInited = false;
+	m_pFullScreenWin = NULL;
 }
 
 CImageBox::~CImageBox()
@@ -76,6 +215,14 @@ void CImageBox::Init()
 {
 	wxString strIBClass;
 	wxString strIBXClass;
+
+	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+
+#ifndef WIN32
+	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0, 0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
+	m_pFullScreenWin->Hide();
+#endif
 
 	m_plblIB = new CStaticText(this, g_cfg.m_image_box_title, ID_LBL_IB);
 	m_plblIB->SetSize(0, 0, 390, 30);
@@ -97,6 +244,10 @@ void CImageBox::Init()
 	m_plblIB->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblIB->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblIB->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+
+	m_pIW->Bind(wxEVT_KEY_DOWN, &CImageBox::OnKeyDown, this);
+	m_pIW->Bind(wxEVT_KEY_UP, &CImageBox::OnKeyUp, this);
+	m_pIW->Bind(wxEVT_MOUSEWHEEL, &CImageBox::OnMouseWheel, this);
 
 	m_WasInited = true;
 }

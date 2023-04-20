@@ -52,6 +52,8 @@ public:
 	bool		m_WasInited;
 
 	wxImage		*m_pImage;
+	wxFrame		*m_pFullScreenWin;
+	wxTimer		m_timer;
 
 	CMainFrame*	m_pMF;
 
@@ -68,7 +70,11 @@ public:
 	void RefreshData() override;
 
 public:
-	void OnSize( wxSizeEvent& event );
+	void OnSize(wxSizeEvent& event);
+	void OnKeyDown(wxKeyEvent& event);
+	void OnKeyUp(wxKeyEvent& event);
+	void OnMouseWheel(wxMouseEvent& event);
+	void OnTimer(wxTimerEvent& event);
 
 private:
 	std::mutex m_view_mutex;

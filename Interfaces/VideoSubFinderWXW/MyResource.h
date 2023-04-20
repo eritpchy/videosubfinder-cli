@@ -189,6 +189,7 @@
 #define ID_APP_WEBSITE                  73
 #define ID_APP_FORUM                    74
 #define ID_APP_BUG_TRACKER              75
+#define TIMER_ID_IB						76
 
 // !NOTE: SHOULD BE WITH THE HIGHEST VALUE
-#define FIRST_ID_FOR_LOCALIZATIONS      76
+#define FIRST_ID_FOR_LOCALIZATIONS      77
