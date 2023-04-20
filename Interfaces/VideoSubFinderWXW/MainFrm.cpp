@@ -1442,6 +1442,9 @@ void LoadLocaleSettings(wxString settings_path)
 
 	ReadSettings(settings_path, g_locale_settings);
 
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_hotkeys_for_video_box, "help_desc_hotkeys_for_video_box");
+	ReadProperty(g_locale_settings, g_cfg.m_help_desc_hotkeys_for_image_box, "help_desc_hotkeys_for_image_box");
+
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_join_rgb_images, "ocr_label_join_images_join_rgb_images");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images, "ocr_label_join_images_use_txt_images_data_for_join_rgb_images");
 	ReadProperty(g_locale_settings, g_cfg.m_ocr_label_join_images_clear_dir, "ocr_label_join_images_clear_dir");
@@ -3076,4 +3079,39 @@ bool ReadProperty(std::map<wxString, wxString>& settings, wxColour& val, wxStrin
 	}
 
 	return res;
+}
+
+CPopupHelpWindow::CPopupHelpWindow(const wxString& help_msg) : wxPopupTransientWindow(g_pMF), m_help_msg(help_msg)
+{
+	m_pST = new wxStaticText(this, wxID_ANY, m_help_msg);
+
+	wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+	vert_box_sizer->Add(m_pST, 0, wxALIGN_CENTER, 0);
+	hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_CENTER);
+	this->SetSizer(hor_box_sizer);	
+}
+
+void CPopupHelpWindow::Popup(wxWindow* focus)
+{
+	this->SetBackgroundColour(g_cfg.m_notebook_colour);
+
+	m_pST->SetFont(g_pMF->m_LBLFont);
+	m_pST->SetForegroundColour(g_cfg.m_main_text_colour);
+	m_pST->SetLabel(m_help_msg);	
+
+	wxSize best_size = m_pST->GetBestSize();
+	m_pST->SetSize(best_size);
+
+	best_size.x += 20;
+	best_size.y += 20;
+	this->SetSize(best_size);
+
+	wxPoint clao = g_pMF->GetClientAreaOrigin();
+	wxPoint pt = wxGetMousePosition() - g_pMF->GetScreenPosition() - clao;
+
+	this->SetPosition(pt);
+
+	wxPopupTransientWindow::Popup(focus);
 }

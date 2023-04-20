@@ -55,11 +55,18 @@ BEGIN_EVENT_TABLE(CImageBox, CResizableWindow)
 	EVT_KEY_UP(CImageBox::OnKeyUp)
 	EVT_MOUSEWHEEL(CImageBox::OnMouseWheel)
 	EVT_TIMER(TIMER_ID_IB, CImageBox::OnTimer)
+	EVT_RIGHT_DOWN(CImageBox::OnRButtonDown)
 END_EVENT_TABLE()
+
+void CImageBox::OnRButtonDown(wxMouseEvent& event)
+{
+	SetFocus();
+	m_pHW->Popup();
+}
 
 void CImageBox::OnMouseWheel(wxMouseEvent& event)
 {
-	if ( (m_pImage != NULL) && (g_IsSearching == 0) )
+	if ( (m_pImage != NULL) && (g_IsSearching == 0) && (g_IsCreateClearedTextImages == 0) )
 	{
 		wxCommandEvent evt;
 
@@ -76,6 +83,8 @@ void CImageBox::OnMouseWheel(wxMouseEvent& event)
 
 void CImageBox::OnKeyDown(wxKeyEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	s64 Cur;
 	int key_code = event.GetKeyCode();
 	wxCommandEvent evt;
@@ -85,14 +94,14 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 		switch (key_code)
 		{
 		case WXK_RIGHT:
-			if (g_IsSearching == 0)
+			if ( (g_IsSearching == 0) && (g_IsCreateClearedTextImages == 0) )
 			{
 				m_pMF->m_pPanel->m_pSSPanel->OnBnClickedRight(evt);
 			}
 			break;
 
 		case WXK_LEFT:
-			if (g_IsSearching == 0)
+			if ( (g_IsSearching == 0) && (g_IsCreateClearedTextImages == 0) )
 			{
 				m_pMF->m_pPanel->m_pSSPanel->OnBnClickedLeft(evt);
 			}
@@ -100,26 +109,28 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 
 		case 'U':
 		case 'u':
-			m_pIW->Reparent(m_pFullScreenWin);
-
-			int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
-			int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
-			m_pIW->SetSize(0, 0, w, h);
-
-			if (m_pFullScreenWin != NULL)
-			{
-				if (!m_pFullScreenWin->IsFullScreen())
-				{
-					m_pFullScreenWin->ShowFullScreen(true);
-				}
-				if (!m_pFullScreenWin->IsShown())
-				{
-					m_pFullScreenWin->Show(true);
-				}
-			}
-
 			if (!m_timer.IsRunning())
 			{
+				m_pHW->Dismiss();
+
+				m_pIW->Reparent(m_pFullScreenWin);
+
+				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+				m_pIW->SetSize(0, 0, w, h);
+
+				if (m_pFullScreenWin != NULL)
+				{
+					if (!m_pFullScreenWin->IsFullScreen())
+					{
+						m_pFullScreenWin->ShowFullScreen(true);
+					}
+					if (!m_pFullScreenWin->IsShown())
+					{
+						m_pFullScreenWin->Show(true);
+					}
+				}
+
 				m_timer.Start(100);
 			}
 
@@ -129,19 +140,23 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 
 	switch (key_code)
 	{
-	case 'S':
-	case 's':
-		if (event.CmdDown())
-		{
-			m_pMF->OnFileSaveSettings(evt);
-		}
-		break;
+		case WXK_ESCAPE:
+			m_pHW->Dismiss();
 
+		case 'S':
+		case 's':
+			if (event.CmdDown())
+			{
+				m_pMF->OnFileSaveSettings(evt);
+			}
+			break;
 	}
 }
 
 void CImageBox::OnKeyUp(wxKeyEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	s64 Cur;
 	int key_code = event.GetKeyCode();
 	wxCommandEvent evt;
@@ -181,6 +196,8 @@ void CImageBox::OnTimer(wxTimerEvent& event)
 				m_pFullScreenWin->Hide();
 				m_pIW->Reparent(this);
 
+				m_pHW->Dismiss();
+
 				wxSizeEvent event;
 				OnSize(event);
 			}
@@ -190,6 +207,9 @@ void CImageBox::OnTimer(wxTimerEvent& event)
 			if (m_pIW->GetParent() == NULL)
 			{
 				m_pIW->Reparent(this);
+
+				m_pHW->Dismiss();
+
 				wxSizeEvent event;
 				OnSize(event);
 			}
@@ -242,18 +262,23 @@ void CImageBox::Init()
 	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
 	this->SetSize(20,20,402,300);
 
+	m_pHW = new CPopupHelpWindow(g_cfg.m_help_desc_hotkeys_for_image_box);
+
 	m_plblIB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblIB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblIB->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblIB->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblIB->Bind(wxEVT_RIGHT_DOWN, &CImageBox::OnRButtonDown, this);
 	m_plblIB->m_pST->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblIB->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblIB->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblIB->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblIB->m_pST->Bind(wxEVT_RIGHT_DOWN, &CImageBox::OnRButtonDown, this);
 
 	m_pIW->Bind(wxEVT_KEY_DOWN, &CImageBox::OnKeyDown, this);
 	m_pIW->Bind(wxEVT_KEY_UP, &CImageBox::OnKeyUp, this);
 	m_pIW->Bind(wxEVT_MOUSEWHEEL, &CImageBox::OnMouseWheel, this);
+	m_pIW->Bind(wxEVT_RIGHT_DOWN, &CImageBox::OnRButtonDown, this);
 
 	m_WasInited = true;
 }

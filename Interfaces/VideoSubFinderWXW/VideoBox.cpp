@@ -539,7 +539,14 @@ BEGIN_EVENT_TABLE(CVideoBox, CResizableWindow)
 	EVT_MOUSEWHEEL(CVideoBox::OnMouseWheel)
 	EVT_SCROLL_THUMBTRACK(CVideoBox::OnHScroll)
 	EVT_TIMER(TIMER_ID_VB, CVideoBox::OnTimer)
+	EVT_RIGHT_DOWN(CVideoBox::OnRButtonDown)
 END_EVENT_TABLE()
+
+void CVideoBox::OnRButtonDown(wxMouseEvent& event)
+{
+	SetFocus();
+	m_pHW->Popup();
+}
 
 CVideoBox::CVideoBox(CMainFrame* pMF)
 		: CResizableWindow(pMF,
@@ -663,14 +670,18 @@ void CVideoBox::Init()
 
 	this->SetSize(20,20,402,300);
 
+	m_pHW = new CPopupHelpWindow(g_cfg.m_help_desc_hotkeys_for_video_box);
+
 	m_plblVB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblVB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblVB->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblVB->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblVB->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
 	m_plblVB->m_pST->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblVB->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblVB->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblVB->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblVB->m_pST->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
 
 	m_plblTIME->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblTIME->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
@@ -686,7 +697,10 @@ void CVideoBox::Init()
 	m_pVBox->m_pVSL1->m_pos = g_cfg.m_left_video_image_percent_end;
 	m_pVBox->m_pVSL2->m_pos = g_cfg.m_right_video_image_percent_end;
 
+	m_pVBox->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
+
 	m_pVBox->m_pVideoWnd->Bind(wxEVT_MOUSEWHEEL, &CVideoBox::OnMouseWheel, this);
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
 
 	m_WasInited = true;
 }
@@ -843,6 +857,8 @@ void CVideoBox::OnBnClickedStop(wxCommandEvent& event)
 
 void CVideoBox::OnKeyDown(wxKeyEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	s64 Cur;
 	int key_code = event.GetKeyCode();
 	wxCommandEvent evt;
@@ -876,27 +892,29 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 			}
 
 			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
-			{				
-				m_pVBox->m_pVideoWnd->Reparent(m_pFullScreenWin);
-
-				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
-				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
-				m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
-
-				if (m_pFullScreenWin != NULL)
-				{
-					if (!m_pFullScreenWin->IsFullScreen())
-					{
-						m_pFullScreenWin->ShowFullScreen(true);
-					}
-					if (!m_pFullScreenWin->IsShown())
-					{
-						m_pFullScreenWin->Show(true);
-					}
-				}
-
+			{
 				if (!m_timer.IsRunning())
 				{
+					m_pHW->Dismiss();
+
+					m_pVBox->m_pVideoWnd->Reparent(m_pFullScreenWin);
+
+					int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
+					int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
+					m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
+
+					if (m_pFullScreenWin != NULL)
+					{
+						if (!m_pFullScreenWin->IsFullScreen())
+						{
+							m_pFullScreenWin->ShowFullScreen(true);
+						}
+						if (!m_pFullScreenWin->IsShown())
+						{
+							m_pFullScreenWin->Show(true);
+						}
+					}
+
 					m_timer.Start(100);
 				}
 
@@ -959,6 +977,9 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 	switch ( key_code )
 	{
+		case WXK_ESCAPE:
+			m_pHW->Dismiss();
+
 		case 'S':
 		case 's':
 			if (event.CmdDown())
@@ -972,6 +993,8 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 void CVideoBox::OnKeyUp(wxKeyEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	int key_code = event.GetKeyCode();
 
 	switch (key_code)
@@ -1031,6 +1054,8 @@ void CVideoBox::OnTimer(wxTimerEvent& event)
 				m_pVBox->m_pVSL1->Reparent(m_pVBox);
 				m_pVBox->m_pVSL2->Reparent(m_pVBox);
 
+				m_pHW->Dismiss();
+
 				wxSizeEvent event;
 				m_pVBox->OnSize(event);
 			}
@@ -1040,6 +1065,9 @@ void CVideoBox::OnTimer(wxTimerEvent& event)
 			if (m_pVBox->m_pVideoWnd->GetParent() == NULL)
 			{
 				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+
+				m_pHW->Dismiss();
+
 				wxSizeEvent event;
 				m_pVBox->OnSize(event);
 			}

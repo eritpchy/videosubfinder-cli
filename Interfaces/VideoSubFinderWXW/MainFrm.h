@@ -22,6 +22,7 @@
 #include <wx/timer.h>
 #include <wx/filename.h>
 #include <wx/cmdline.h>
+#include <wx/popupwin.h>
 #include <time.h>
 #include "DataTypes.h"
 #include "MyResource.h"
@@ -35,6 +36,16 @@
 #include "Choice.h"
 
 using namespace std;
+
+class CPopupHelpWindow : public wxPopupTransientWindow
+{
+	const wxString& m_help_msg;
+	wxStaticText* m_pST;
+
+public:
+	CPopupHelpWindow(const wxString& help_msg);
+	virtual void Popup(wxWindow* focus = NULL) wxOVERRIDE;
+};
 
 class Settings;
 
@@ -333,6 +344,9 @@ public:
 	wxColour	m_video_box_separating_line_colour = wxColour(255, 255, 255);
 	wxColour	m_video_box_separating_line_border_colour = wxColour(0, 0, 0);	
 	wxColour	m_toolbar_bitmaps_transparent_colour = wxColour(192, 192, 192);
+
+	wxString	m_help_desc_hotkeys_for_video_box;
+	wxString	m_help_desc_hotkeys_for_image_box;
 
 	//dynamic settings dependent from others and etc, can be updated by UpdateDynamicSettings()
 	wxString	m_video_box_lblVB_title;

@@ -30,6 +30,7 @@
 
 class CVideoBox;
 class CVideoWindow;
+class CPopupHelpWindow;
 
 class CVideoWnd : public wxWindow
 {
@@ -90,6 +91,8 @@ public:
 	CVideoBox(CMainFrame* pMF);
 	~CVideoBox();
 
+	std::mutex m_mutex;
+
 	CBitmapButton	*m_pButtonRun;
 	CBitmapButton	*m_pButtonPause;
 	CBitmapButton	*m_pButtonStop;
@@ -111,6 +114,8 @@ public:
 
 	wxTimer		m_timer;
 
+	CPopupHelpWindow* m_pHW;
+
 public:
 	void Init();
 	void ViewImage(simple_buffer<int> &Im, int w, int h);
@@ -130,6 +135,7 @@ public:
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnHScroll(wxScrollEvent& event);
 	void OnTimer(wxTimerEvent& event);
+	void OnRButtonDown(wxMouseEvent& event);
 
 private:
 	std::mutex m_view_mutex;

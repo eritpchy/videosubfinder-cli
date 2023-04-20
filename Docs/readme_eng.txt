@@ -3,11 +3,11 @@
 About Program
 #######################################################################################
 
-The main purpose of this program is to provide functionality for extract hardcoded text (hardsub) from video.
+The main purpose of this program is to provide functionality for extract hardcoded subtitles (hardsub) from video.
 
 It provides two main features:
 1) Autodetection of frames with hardcoded text (hardsub) on video with saving info about timing positions.
-2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader, Subtitle Edit, Google Drive) to generate complete subtitle with original text and timing.
+2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader, Subtitle Edit, Google Drive) to generate complete subtitles with original text and timing.
 
 For working of this program on Windows will be required "Microsoft Visual C++ Redistributable runtime libraries 2022":
 https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
@@ -70,12 +70,14 @@ How to use without deep details:
 2) Check boundary box in "Video Box" where most subs will appear (for that you can move split lines in it): by default it is whole video.
 It is recommended to reduce area for search for getting less wrong detections and less timings splits.
 3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab page.
-Center - is in most case, so it set by default.
+Center - is in most case, so it is set by default.
 4) It is strongly recommended to use "Use Filter Colors" but you can skip this step.
-For this you need:
-* - scroll video to subtitle frame
-* - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
+IMPORTANT NOTE: It is strongly "not recommended" to use "Use Outline Filter Colors" if you are not sure that it is applicable for your case, more details in topic [Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"] in 2-2 and 2-3 subtopics.
+For define "Use Filter Colors" you need:
+* - scroll video in Video Box to frame containing subtitle
+* - press and hold 'U' when Video Box is selected and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
+* - check "Use Filter Colors" by pressing and holding 'R' (will show how all Color Filters will affect on "Run Search") and 'T' (will show pixels related to Color Filters) keyboard buttons when Video Box is selected
 * - if there are many subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
 5) Click "Run Search" in the "Search" tab page, if you need to get only timing and original images with potential subs go after this step to "OCR" tab page and press "Create Empty Sub From Found Video Frames With Text (RGBImages->Sub)",
 found original images with subtitles will be located in "RGBImages" folder.
@@ -86,9 +88,9 @@ which is possible if you:
 * or subtitles pop-up on video and disappear
 in this case it is better to change program settings or delete such ILA Images.
 7) [MOST IMPORTANT PART IF YOU DON’T USE COLOR FILTERING]
-Before continue: Check does subtitles has darker border color then subtitles text color.
-In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings" tab.
-In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
+Before continue: Check does subtitles have darker border color then subtitles text color.
+In most cases it is so, if not then disable checkbox "Characters Border Is Darker" in first right setting in "Settings" tab.
+In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according to this setting.
 8) If you are using "Use Filter Colors" and have too good ILAImages - all characters separated from background,
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
 9) Click "Create Cleared Text Images (RGBImages->TXTImages)" on the "OCR" tab page for get text symbols separation from background.
@@ -112,7 +114,7 @@ Known Issues
 5) For playback sound on Linux currently is used "canberra-gtk-play", so it will be required if you wish to have finish work sound. (Unfortunately wxWidgets doesn't play sound on Ubuntu 20.04.5 LTS)
 6) Broken TXTImages "missed some symbols on them" multiple splits and incorrect timing in case if you define "Use Outline Filter Colors" but subtitles have not good outlines:
 subtitles has not solid outlines from all sides, some symbols are not contained in inside figures produced by pixels which are in outline filter colors range.
-In this case "Use Outline Filter Colors" break ILAImages and ISAImages generation which afftect on "Run Search" and "Create Cleared TXTImages".
+In this case "Use Outline Filter Colors" breaks ILAImages and ISAImages generation which affect on "Run Search" and "Create Cleared TXTImages".
 
 #######################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
@@ -123,7 +125,7 @@ Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXT
 1-1) Before starting "Run Search":
 --------------------------------
 After opening video:
-*) Test all setting in "Settings" tab by pressing "Test" button with selection different video frames with too light and to dark background and so on.
+*) Test all settings in "Settings" tab by pressing "Test" button with selection different video frames with too light and to dark background and so on.
 *) Check boundary box in "Video Box" where most subs will appear (you can move split lines for that in it): by default it is whole video.
 It is recommended to reduce area for search for getting less wrong detections and less timings splits.
 In worse cases, you can detect each line separately by running program multiple times with different video area selection (this can fix
@@ -187,7 +189,7 @@ For this you need:
 * - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
 * - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-*) Use not too strong color filtering if subtitles are mostly stable and have same colors:
+2-1) Use not too strong color filtering if subtitles are mostly stable and have same colors:
 "Use Filter Colors" - inline color - color of subtitles symbols, located in "Settings" tab in left panel.
 Example of values which are working in most case of white subtitles:
 Lab: l:180-255 a:108-148 b:108-148  (mostly working in all cases)
@@ -208,14 +210,14 @@ when 'a' and 'b' like chroma components.
 if min_l_val==max_l_val or only l_val is specified then will be used dL value from settings for define 'L'/'l' range: [l_val-dL, l_val+dL]
 if min_a_val==max_a_val or only a_val is specified then will be used dA value from settings for define 'a' range: [a_val-dA, a_val+dA]
 if min_b_lab_val==max_b_lab_val or only b_lab_val is specified then will be used dB value from settings for define 'b' range: [b_lab_val-dB, b_lab_val+dB]
-*) "Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
+2-2) "Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
 "Use Outline Filter Colors" only if all symbols are contained inside good solid outline borders:
 subtitles has solid outlines from all sides, symbols are contained in inside figures produced by pixels which are in outline filter colors range.
 Usage "Use Outline Filter Colors" can lead to broken ILAImages, ISAImages and TXTImages in other case.
 Use not too strong "Use Outline Filter Colors".
 Example in case if borders are mostly black color.
 Lab: l:0-30 a:0-255 b:0-255
-*) Find optimal values for Color Filters by pressing and holding 'R' (will show how all Color Filters will affect on "Run Serach") and 'T' (will show pixels related to Color Filters) keyboard buttons when Video Box is selected.
+2-3) Find optimal values for Color Filters by pressing and holding 'R' (will show how all Color Filters will affect on "Run Search") and 'T' (will show pixels related to Color Filters) keyboard buttons when Video Box is selected.
 Press left/right/space keyboard buttons or mouse wheel for check that during video symbols are shown stable (not broken), check on different scenes.
 Use hot keys:
 Press and hold 'U' keyboard button when Video Box is selected: will show original video frame but in full screen.
@@ -227,7 +229,7 @@ Press and hold 'T' keyboard button when Video Box is selected: will show:
 Press and hold 'Y' keyboard button when Video Box is selected: will show pixels related to inline color with their original colors, all others in black color.
 Press and hold 'I' keyboard button when Video Box is selected: will show pixels related to outline color with their original colors, all others in black color.
 You can get pixel color by left mouse click in Video box or in shown full screen image (its values and color will be shown in "Settings" tab in bottom right part)
-*) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
+2-4) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
 
 3) "Create Cleared TXTImages" from subs with bad quality:
@@ -309,7 +311,7 @@ For OCR (conversion of images of text into machine-encoded text) can be used:
 #######################################################################################
 
 NOTE:
-For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
+For create subtitles in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 
 #-----------------------------------------------------
 
@@ -353,32 +355,33 @@ https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line
 
 (3) Google Drive (free web service): https://drive.google.com/drive/my-drive
 
-3_1. Before Join TXTImages it is very recommended to "Create Cleared Text Images (RGBImages->TXTImages)" with turned on "Save Each Substring Separately" option (in settings in the left side of "OCR" tab page)
-or in other case you will need to manually specify font size for "Join TXTImages Split Line"
-
-3_2. Join TXTImages by "Join Cleared Text Images To Single Image (TXTImages->TXTImagesJoined)" button in "OCR" tab.
+3_1. Join TXT/RGBImages by "Join TXT/RGBImages (TXT/RGBImages->ImagesJoined)" button in "OCR" tab, after generation of joined images it will auto create "TXTResults/join_txt_results.txt" file if it is not exist yet.
 In settings in the left side of "OCR" tab page you can change:
-*) max number of joined subtitles in single generated image,
-in some cases with "Join TXTImages Scale (From Original RGBImages Size)" == 1 it can work even with "Join TXTImages Max Number" == 160
-but according users experience OCR can be more accurate with "Join TXTImages Max Number" == 50 than with "Join TXTImages Max Number" == 100
-*) generated [sub_id] format and related search format pattern for find sub data in "TXTResults/join_txt_results.txt"
-NOTE: when program search related sub data in "TXTResults/join_txt_results.txt" it add additional [sub_id] to the end.
-*) if font size is "-1" it will try to automatically find optimal font size for "Join TXTImages Split Line" according average TXTImages heights, but you can specify it manually in range [1-80].
-*) scale from original "RGBImages" size.
-*) "Join TXTImages Split Line Text" support macro definitions: [sub_id], [begin_time], [end_time].
+*) "Join RGBImages" switch what images to join TXTImages or RGBImages by turn on or off
+*) "Use TXTImages Info For Join RGBImages" switch, in case of turn on (which is the most preferred variant) it will join only those RGBImages which data still exist in TXTImages and will join only related areas to TXTImages.
+*) "Join Images Max Number" max number of joined TXT/RGBImages to single (combined) generated images,
+in some cases with "Join Images Scale (From Original RGBImages Size)" == 1 it can work even with "Join Images Max Number" == 160
+but according users experience OCR can be more accurate with "Join Images Max Number" == 50 than with "Join Images Max Number" == 100
+*) if font size is "-1" it will try to automatically find optimal font size for "Join Images Split Line" according average Images heights (and info about found number of lines in them in case of TXTImages), but you can specify it manually in range [1-80].
+*) "Join Images Scale (From Original RGBImages Size)"
+*) "Join Images Split Line Text" support macro definitions: [sub_id], [begin_time], [end_time].
 [MOST IMPORTANT] But for find sub data currently supported only [sub_id] which format can be changed.
+*) "Format For Generate [sub_id]" and related "Format For Search Subtitle Data By [sub_id] In "TXTResults/join_txt_results.txt""
+NOTE: when program search related subtitle data in "TXTResults/join_txt_results.txt" it add additional [sub_id] to the end.
+[MOST IMPORTANT] You don't need to change them but in case if OCR fail to correctly decode [sub_id] in generated "Join Images Split Line Text" you can try to change them.
 
-3_3. Upload joined TXT images from "TXTImagesJoined" folder to some directory in Google Drive.
-3_4. Right mouse click on each joined TXT image -> "Open with" -> "Google Docs" (it will should automatically OCR image and generate doc file).
+3_2. Upload joined TXT/RGB images from "ImagesJoined" folder to some directory in Google Drive.
+
+3_3. Right mouse click on each joined TXT/RGB image -> "Open with" -> "Google Docs" (it will should automatically OCR image and generate doc file).
 NOTE: If OCR failed and result doc file is empty you can try to change:
-*) scale from original "RGBImages" size, in most case it works better with unscaled images: "Join TXTImages Scale (From Original RGBImages Size)" == 1
-*) manually specify font size for "Join TXTImages Split Line"
-*) max number of joined subtitles in single generated image
+*) scale from original "RGBImages" size, in most case it works better with unscaled images: "Join Images Scale (From Original RGBImages Size)" == 1
+*) manually specify font size for "Join Images Split Line"
+*) max number of joined TXT/RGBImages to single (combined) generated images
 
-3_5. Open each generated doc file and copy all texts to single file "TXTResults/join_txt_results.txt" with saving in UTF8 format.
+3_4. Open each generated doc file and copy all texts to single file "TXTResults/join_txt_results.txt" with saving in UTF8 format.
 NOTE: '\n' is no matter, just simply copy each text result to the end of result txt file with simple concatenation.
 
-3_6. Generate subtitle (*.srt or *.ass) from "TXTResults/join_txt_results.txt" files by clicking "Create Sub From Text Results (TXTResults->Sub)" button in "OCR" tab.
+3_5. Generate subtitle (*.srt or *.ass) from "TXTResults/join_txt_results.txt" files by clicking "Create Sub From Text Results (TXTResults->Sub)" button in "OCR" tab.
 
 #-----------------------------------------------------
 

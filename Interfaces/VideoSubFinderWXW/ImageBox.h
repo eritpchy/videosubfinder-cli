@@ -24,6 +24,7 @@
 #include "Control.h"
 
 class CImageBox;
+class CPopupHelpWindow;
 
 class CImageWnd : public wxWindow
 {
@@ -55,6 +56,10 @@ public:
 	wxFrame		*m_pFullScreenWin;
 	wxTimer		m_timer;
 
+	CPopupHelpWindow* m_pHW;
+
+	std::mutex m_mutex;
+
 	CMainFrame*	m_pMF;
 
 public:
@@ -75,6 +80,7 @@ public:
 	void OnKeyUp(wxKeyEvent& event);
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnTimer(wxTimerEvent& event);
+	void OnRButtonDown(wxMouseEvent& event);
 
 private:
 	std::mutex m_view_mutex;
