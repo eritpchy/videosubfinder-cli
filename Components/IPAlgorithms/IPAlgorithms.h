@@ -152,7 +152,7 @@ wxString FormatImInfoAddData(int W, int H, int xmin, int ymin, int w, int h, int
 void GetImInfo(wxString FileName, int img_real_w, int img_real_h, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmax_x = NULL, int* pmin_y = NULL, int* pmax_y = NULL, wxString* pBaseName = NULL, int* pScale = NULL);
 bool DecodeImData(wxString FileName, int* pW = NULL, int* pH = NULL, int* pmin_x = NULL, int* pmin_y = NULL, int* p_w = NULL, int* p_h = NULL, int* p_ln = NULL, wxString* pBaseName = NULL);
 
-int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig);
+int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedTextScaled, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig);
 
 void FindMaxStrDistribution(simple_buffer<int> &GRStr, int delta, simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &N, int offset);
 void FindMaxStr(simple_buffer<int> &smax, simple_buffer<int> &smaxi, int &max_i, int &max_val, int N);

@@ -59,7 +59,7 @@ END_EVENT_TABLE()
 
 void CImageBox::OnMouseWheel(wxMouseEvent& event)
 {
-	if (m_pImage != NULL)
+	if ( (m_pImage != NULL) && (g_IsSearching == 0) )
 	{
 		wxCommandEvent evt;
 
@@ -85,11 +85,17 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 		switch (key_code)
 		{
 		case WXK_RIGHT:
-			m_pMF->m_pPanel->m_pSSPanel->OnBnClickedRight(evt);
+			if (g_IsSearching == 0)
+			{
+				m_pMF->m_pPanel->m_pSSPanel->OnBnClickedRight(evt);
+			}
 			break;
 
 		case WXK_LEFT:
-			m_pMF->m_pPanel->m_pSSPanel->OnBnClickedLeft(evt);
+			if (g_IsSearching == 0)
+			{
+				m_pMF->m_pPanel->m_pSSPanel->OnBnClickedLeft(evt);
+			}
 			break;
 
 		case 'U':

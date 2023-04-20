@@ -552,6 +552,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 		{
 			simple_buffer<u8> ImIL;
 
+			m_ImF[4] = simple_buffer<u8>(m_w * g_scale * m_h * g_scale, (u8)0);
 			FindTextLines(ImBGR, m_ImF[4], m_ImF[2], m_ImF[0], m_ImF[3], ImIL, wxString(wxT("/TestImages/TXTImages/")), BaseImgName, m_w, m_h, m_W, m_H, m_xmin, m_ymin);
 		}
 	}
@@ -596,7 +597,7 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 			
 			if ((g_generate_cleared_text_images_on_test) && (!g_show_transformed_images_only))
 			{
-				m_ImF[4].copy_data(res.m_ImClearedText, res.m_ImClearedText.m_size);
+				m_ImF[4] = res.m_ImClearedTextScaled;
 			}
 		}
 		else
@@ -614,9 +615,18 @@ void CSettingsPanel::ViewCurImF()
 {
 	m_plblIF->SetLabel(g_cfg.m_StrFN[m_cn]);
 
-	simple_buffer<u8> ImTMP_F(m_W * m_H);
-	ImToNativeSize(m_ImF[m_cn], ImTMP_F, m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax);
-	m_pMF->m_pImageBox->ViewGrayscaleImage(ImTMP_F, m_W, m_H);
+	if (m_ImF[m_cn].m_size == m_w * m_h)
+	{
+		simple_buffer<u8> ImTMP_F(m_W * m_H);
+		ImToNativeSize(m_ImF[m_cn], ImTMP_F, m_w, m_h, m_W, m_H, m_xmin, m_xmax, m_ymin, m_ymax);
+		m_pMF->m_pImageBox->ViewGrayscaleImage(ImTMP_F, m_W, m_H);
+	}
+	else if (m_ImF[m_cn].m_size == m_w * g_scale * m_h * g_scale)
+	{
+		simple_buffer<u8> ImTMP_F(m_W * g_scale * m_H * g_scale);
+		ImToNativeSize(m_ImF[m_cn], ImTMP_F, m_w * g_scale, m_h * g_scale, m_W * g_scale, m_H * g_scale, m_xmin * g_scale, m_xmax * g_scale, m_ymin * g_scale, m_ymax * g_scale);
+		m_pMF->m_pImageBox->ViewGrayscaleImage(ImTMP_F, m_W * g_scale, m_H * g_scale);
+	}
 }
 
 

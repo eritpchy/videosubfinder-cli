@@ -6432,12 +6432,12 @@ inline shared_custom_task TaskFindText(FindTextRes &res, simple_buffer<u8> &ImBG
 	);
 }
 
-int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
+int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedTextScaled, simple_buffer<u8>& ImF, simple_buffer<u8>& ImNF, simple_buffer<u8>& ImNE, simple_buffer<u8>& ImIL, wxString SaveDir, wxString SaveName, const int w_orig, const int h_orig, const int W_orig, const int H_orig, const int xmin_orig, const int ymin_orig)
 {
 	simple_buffer<int> LL(h_orig, 0), LR(h_orig, 0), LLB(h_orig, 0), LLE(h_orig, 0), LW(h_orig, 0);
 	simple_buffer<int> GRStr(STR_SIZE, 0), smax(256 * 2, 0), smaxi(256 * 2, 0);
 	simple_buffer<u8> FullImY(w_orig * h_orig);
-	simple_buffer<u8> ImClearedTextScaled;
+	simple_buffer<u8> ImClearedText;
 
 	int i, j, k, l, r, x, y, ib, bln, N, N1, N2, N3, N4, N5, N6, N7, minN, maxN, w, h, ww, hh, cnt;
 	int XB, XE, YB = h_orig, YE = -1, DXB, DXE, DYB, DYE;
@@ -6457,12 +6457,12 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 	mthr = 0.3;
 	segh = g_segh;
 
-	ImClearedText.set_values(255);
+	ImClearedTextScaled.set_values(255);
 
-	if ((!g_save_each_substring_separately) && g_save_scaled_images)
+	if (!g_save_each_substring_separately && !g_save_scaled_images)
 	{
-		ImClearedTextScaled.set_size(w_orig * g_scale * h_orig * g_scale);
-		ImClearedTextScaled.set_values(255);
+		ImClearedText.set_size(w_orig * h_orig);
+		ImClearedText.set_values(255);
 	}	
 
 	if (g_show_results) SaveBGRImage(ImBGR, "/DebugImages/FindTextLines_01_1_ImBGR" + g_im_save_format, w_orig, h_orig);
@@ -6638,27 +6638,27 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 					YE = p_ft_res->m_YB + p_ft_res->m_im_h - 1;
 				}
 
-				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
+				if (!g_save_each_substring_separately && !g_save_scaled_images)
 				{
-					for (x = 0; x < w_orig; x++, i++)
+					for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 					{
-						if (p_ft_res->m_cv_ImClearedText.data[i] == 0)
+						for (x = 0; x < w_orig; x++, i++)
 						{
-							ImClearedText[(p_ft_res->m_YB * w_orig) + i] = 0;
+							if (p_ft_res->m_cv_ImClearedText.data[i] == 0)
+							{
+								ImClearedText[(p_ft_res->m_YB * w_orig) + i] = 0;
+							}
 						}
 					}
 				}
 
-				if ((!g_save_each_substring_separately) && g_save_scaled_images)
+				for (y = 0, i = 0; y < p_ft_res->m_im_h * g_scale; y++)
 				{
-					for (y = 0, i = 0; y < p_ft_res->m_im_h * g_scale; y++)
+					for (x = 0; x < w_orig * g_scale; x++, i++)
 					{
-						for (x = 0; x < w_orig * g_scale; x++, i++)
+						if (p_ft_res->m_cv_ImClearedTextScaled.data[i] == 0)
 						{
-							if (p_ft_res->m_cv_ImClearedTextScaled.data[i] == 0)
-							{
-								ImClearedTextScaled[(p_ft_res->m_YB * g_scale * w_orig * g_scale) + i] = 0;
-							}
+							ImClearedTextScaled[(p_ft_res->m_YB * g_scale * w_orig * g_scale) + i] = 0;
 						}
 					}
 				}
@@ -6707,27 +6707,27 @@ int FindTextLines(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImClearedText, si
 					YE = p_ft_res->m_YB + p_ft_res->m_im_h - 1;
 				}
 
-				for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
+				if (!g_save_each_substring_separately && !g_save_scaled_images)
 				{
-					for (x = 0; x < w_orig; x++, i++)
+					for (y = 0, i = 0; y < p_ft_res->m_im_h; y++)
 					{
-						if (p_ft_res->m_cv_ImClearedText.data[i] == 0)
+						for (x = 0; x < w_orig; x++, i++)
 						{
-							ImClearedText[(p_ft_res->m_YB * w_orig) + i] = 0;
+							if (p_ft_res->m_cv_ImClearedText.data[i] == 0)
+							{
+								ImClearedText[(p_ft_res->m_YB * w_orig) + i] = 0;
+							}
 						}
 					}
 				}
 
-				if ((!g_save_each_substring_separately) && g_save_scaled_images)
+				for (y = 0, i = 0; y < p_ft_res->m_im_h * g_scale; y++)
 				{
-					for (y = 0, i = 0; y < p_ft_res->m_im_h * g_scale; y++)
+					for (x = 0; x < w_orig * g_scale; x++, i++)
 					{
-						for (x = 0; x < w_orig * g_scale; x++, i++)
+						if (p_ft_res->m_cv_ImClearedTextScaled.data[i] == 0)
 						{
-							if (p_ft_res->m_cv_ImClearedTextScaled.data[i] == 0)
-							{
-								ImClearedTextScaled[(p_ft_res->m_YB * g_scale * w_orig * g_scale) + i] = 0;
-							}
+							ImClearedTextScaled[(p_ft_res->m_YB * g_scale * w_orig * g_scale) + i] = 0;
 						}
 					}
 				}

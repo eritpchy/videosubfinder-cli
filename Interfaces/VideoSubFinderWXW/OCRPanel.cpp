@@ -2065,7 +2065,7 @@ void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, 
 {
 	try
 	{
-		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SaveDir, res->m_BaseImgName, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedTextScaled, *pImF, *pImNF, *pImNE, *pImIL, res->m_SaveDir, res->m_BaseImgName, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
 	}
 	catch (const exception& e)
 	{
@@ -2093,7 +2093,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 		res.m_xmax = xmax;
 		res.m_ymax = ymax;
 		res.m_ImBGR = simple_buffer<u8>(w * h * 3, (u8)0);
-		res.m_ImClearedText = simple_buffer<u8>(w * h, (u8)0);
+		res.m_ImClearedTextScaled = simple_buffer<u8>(w * g_scale * h * g_scale, (u8)0);
 
 		LoadBGRImage(res.m_ImBGR, FileName);
 
@@ -2122,7 +2122,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 			Str = GetFileName(Str);
 			Str = g_work_dir + "/TXTImages/" + Str + g_im_save_format;
 			SaveGreyscaleImage(ImTF, wxString(Str), w, h);
-			res.m_ImClearedText = ImTF;
+			res.m_ImClearedTextScaled = ImTF;
 			return;
 		}
 
@@ -2239,7 +2239,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 		if (g_pMF->m_blnNoGUI)
 		{
 			res.m_ImBGR.set_size(0);
-			res.m_ImClearedText.set_size(0);
+			res.m_ImClearedTextScaled.set_size(0);
 		}
 	}
 	catch (const exception& e)
@@ -2560,9 +2560,9 @@ void CreateClearedTextImages()
 					}
 
 					{
-						simple_buffer<u8> ImTMP_ClearedText(p_task_res->m_W * p_task_res->m_H);
-						ImToNativeSize(p_task_res->m_ImClearedText, ImTMP_ClearedText, p_task_res->m_w, p_task_res->m_h, p_task_res->m_W, p_task_res->m_H, p_task_res->m_xmin, p_task_res->m_xmax, p_task_res->m_ymin, p_task_res->m_ymax);
-						g_pViewGreyscaleImage[1](ImTMP_ClearedText, p_task_res->m_W, p_task_res->m_H);
+						simple_buffer<u8> ImTMP_ClearedTextScaled(p_task_res->m_W * g_scale * p_task_res->m_H * g_scale);
+						ImToNativeSize(p_task_res->m_ImClearedTextScaled, ImTMP_ClearedTextScaled, p_task_res->m_w * g_scale, p_task_res->m_h * g_scale, p_task_res->m_W * g_scale, p_task_res->m_H * g_scale, p_task_res->m_xmin * g_scale, p_task_res->m_xmax * g_scale, p_task_res->m_ymin * g_scale, p_task_res->m_ymax * g_scale);
+						g_pViewGreyscaleImage[1](ImTMP_ClearedTextScaled, p_task_res->m_W * g_scale, p_task_res->m_H * g_scale);
 					}
 
 					std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();

@@ -69,7 +69,7 @@ public:
 	wxString m_SaveDir;
 	wxString m_BaseImgName;
 	simple_buffer<u8> m_ImBGR;
-	simple_buffer<u8> m_ImClearedText;
+	simple_buffer<u8> m_ImClearedTextScaled;
 	simple_buffer<u8>* m_pImFF = NULL;
 	simple_buffer<u8>* m_pImSF = NULL;
 	simple_buffer<u8>* m_pImTF = NULL;
