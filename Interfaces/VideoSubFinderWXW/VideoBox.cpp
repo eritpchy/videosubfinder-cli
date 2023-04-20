@@ -859,8 +859,21 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 		case 'u':
 		case 'I':
 		case 'i':
-			g_color_ranges = GetColorRanges(g_use_filter_color);
-			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+			// This fix issue in case of Run Search and redefining g_color_ranges and g_outline_color_ranges
+			{
+				std::vector<color_range> color_ranges = GetColorRanges(g_use_filter_color);
+				std::vector<color_range> outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+
+				if (g_color_ranges != color_ranges)
+				{
+					g_color_ranges = color_ranges;
+				}
+
+				if (g_outline_color_ranges != outline_color_ranges)
+				{
+					g_outline_color_ranges = outline_color_ranges;
+				}
+			}
 
 			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
 			{				
@@ -1076,9 +1089,14 @@ void CVideoBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		//m_pVBox->m_pVideoWnd->Refresh(false);
-		//m_pVBox->m_pVideoWnd->Update();
-		m_pVBox->Refresh(false);
+		if (m_timer.IsRunning())
+		{
+			m_pVBox->m_pVideoWnd->Refresh(false);
+		}
+		else
+		{
+			m_pVBox->Refresh(false);
+		}
 	}
 }
 
@@ -1101,9 +1119,14 @@ void CVideoBox::ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		//m_pVBox->m_pVideoWnd->Refresh(false);
-		//m_pVBox->m_pVideoWnd->Update();
-		m_pVBox->Refresh(false);
+		if (m_timer.IsRunning())
+		{
+			m_pVBox->m_pVideoWnd->Refresh(false);
+		}
+		else
+		{
+			m_pVBox->Refresh(false);
+		}
 	}
 }
 
@@ -1125,9 +1148,14 @@ void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		//m_pVBox->m_pVideoWnd->Refresh(false);
-		//m_pVBox->m_pVideoWnd->Update();
-		m_pVBox->Refresh(false);
+		if (m_timer.IsRunning())
+		{
+			m_pVBox->m_pVideoWnd->Refresh(false);
+		}
+		else
+		{
+			m_pVBox->Refresh(false);
+		}
 	}
 }
 
@@ -1141,8 +1169,15 @@ void CVideoBox::ClearScreen()
 		delete m_pImage;
 		m_pImage = new wxImage(w, h);
 	}
-	//m_pVBox->m_pVideoWnd->Refresh(false);
-	m_pVBox->Refresh(false);
+	
+	if (m_timer.IsRunning())
+	{
+		m_pVBox->m_pVideoWnd->Refresh(false);
+	}
+	else
+	{
+		m_pVBox->Refresh(false);
+	}
 }
 
 void CVideoBox::OnHScroll(wxScrollEvent& event)

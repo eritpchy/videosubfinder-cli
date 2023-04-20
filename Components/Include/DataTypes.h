@@ -115,10 +115,17 @@ enum ColorSpace {
 
 struct color_range
 {
-	int m_min_data[3];
-	int m_max_data[3];
+	std::array<int, 3> m_min_data;
+	std::array<int, 3> m_max_data;
 	ColorSpace m_color_space;
 };
+
+inline bool operator==(const color_range& lhs, const color_range& rhs)
+{
+	return ((lhs.m_min_data == rhs.m_min_data) &&
+		(lhs.m_max_data == rhs.m_max_data) &&
+		(lhs.m_color_space == rhs.m_color_space));
+}
 
 enum TextAlignment : int {
 	Center = 0,
