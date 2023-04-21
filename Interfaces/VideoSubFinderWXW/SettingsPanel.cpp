@@ -514,10 +514,11 @@ void CSettingsPanel::OnBnClickedTest(wxCommandEvent& event)
 	{
 		m_pMF->m_pPanel->Disable();
 
-		m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-			m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+		m_pMF->m_pVideo->SetVideoWindowSettins(
+			std::min<double>(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos),
+			std::max<double>(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos),
+			std::min<double>(g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos),
+			std::max<double>(g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos));
 
 		m_w = m_pMF->m_pVideo->m_w;
 		m_h = m_pMF->m_pVideo->m_h;

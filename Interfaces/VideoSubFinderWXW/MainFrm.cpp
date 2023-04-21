@@ -1841,13 +1841,13 @@ void SaveSettings()
 
 	double double_val;
 
-	double_val = 1 - g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos;
+	double_val = 1 - std::max<double>(g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 	WriteProperty(fout, double_val, "bottom_video_image_percent_end");
-	double_val = 1 - g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos;
+	double_val = 1 - std::min<double>(g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
 	WriteProperty(fout, double_val, "top_video_image_percent_end");
 	
-	WriteProperty(fout, g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, "left_video_image_percent_end");
-	WriteProperty(fout, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos, "right_video_image_percent_end");
+	WriteProperty(fout, std::min<double>(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos), "left_video_image_percent_end");
+	WriteProperty(fout, std::max<double>(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos), "right_video_image_percent_end");
 
 	WriteProperty(fout, g_cfg.m_toolbar_bitmaps_transparent_colour, "toolbar_bitmaps_transparent_colour");
 
@@ -2061,11 +2061,6 @@ void CMainFrame::OnTimer(wxTimerEvent& event)
 	}
 
 	m_pVideoBox->m_pSB->SetScrollPos((int)Cur);
-
-	//m_pVideoBox->m_pVBox->m_pHSL1->Refresh(true);
-	//m_pVideoBox->m_pVBox->m_pHSL2->Refresh(true);
-	//m_pVideoBox->m_pVBox->m_pVSL1->Refresh(true);
-	//m_pVideoBox->m_pVBox->m_pVSL2->Refresh(true);
 }
 
 wxString VideoTimeToStr2(s64 pos)
