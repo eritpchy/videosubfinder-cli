@@ -510,7 +510,7 @@ std::vector<color_range> GetColorRanges(wxArrayString& filter_colors)
 			continue;
 		}
 
-		wxRegEx reRGB(wxT("^RGB:r:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)g:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)(L:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+))?"));
+		wxRegEx reRGB(wxT("^RGB:r:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)g:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)(L:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+))?$"));
 		if (reRGB.Matches(filter_color))
 		{
 			wxString strR = reRGB.GetMatch(filter_color, 1);
@@ -581,7 +581,7 @@ std::vector<color_range> GetColorRanges(wxArrayString& filter_colors)
 		}
 		else
 		{
-			wxRegEx reLab(wxT("^Lab:l:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)a:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)"));
+			wxRegEx reLab(wxT("^Lab:l:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)a:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)b:([[:digit:]]+|[[:digit:]]+-[[:digit:]]+)$"));
 			if (reLab.Matches(filter_color))
 			{
 				wxString strL = reLab.GetMatch(filter_color, 1);
