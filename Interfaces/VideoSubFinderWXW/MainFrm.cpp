@@ -1210,7 +1210,7 @@ void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings)
 
 	while (ffin.IsOk() && !ffin.Eof())
 	{
-		line = fin.ReadLine();		
+		line = fin.ReadLine();
 
 		if (line.size() > 0)
 		{
@@ -1244,6 +1244,21 @@ void LoadSettings()
 
 	SaveToReportLog("CMainFrame::LoadSettings(): ReadSettings(g_GeneralSettingsFileName, g_general_settings)...\n");
 	ReadSettings(g_GeneralSettingsFileName, g_general_settings);
+	
+	if (g_pParser != NULL)
+	{
+		SaveToReportLog("CMainFrame::LoadSettings(): Updating g_general_settings according command line options...\n");
+
+		wxString val;
+
+		for (const std::map<wxString, wxString>::value_type& pair : g_general_settings)
+		{
+			if (g_pParser->Found(pair.first, &val))
+			{
+				g_general_settings[pair.first] = val;
+			}
+		}
+	}
 
 	SaveToReportLog("CMainFrame::LoadSettings(): reading properties from g_general_settings...\n");
 

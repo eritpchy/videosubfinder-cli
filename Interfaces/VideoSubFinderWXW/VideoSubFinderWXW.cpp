@@ -30,6 +30,13 @@ wxCmdLineParser *g_pParser = NULL;
 
 void SetParserDescription()
 {
+	std::map<wxString, wxString> general_settings;
+	ReadSettings(g_GeneralSettingsFileName, general_settings);
+
+	vector<wxString> keys;
+	transform(begin(general_settings), end(general_settings), back_inserter(keys), [](decltype(general_settings)::value_type const& pair) {return pair.first;});
+	std::sort(keys.begin(), keys.end());
+
 	g_pParser->AddSwitch("c", "clear_dirs", g_cfg.m_help_desc_for_clear_dirs);
 	g_pParser->AddSwitch("r", "run_search", g_cfg.m_help_desc_for_run_search);
 	g_pParser->AddSwitch("ccti", "create_cleared_text_images", g_cfg.m_help_desc_for_create_cleared_text_images);
@@ -52,6 +59,11 @@ void SetParserDescription()
 	g_pParser->AddOption("nthr", "num_threads", g_cfg.m_help_desc_for_num_threads, wxCMD_LINE_VAL_NUMBER);
 	g_pParser->AddOption("nocrthr", "num_ocr_threads", g_cfg.m_help_desc_for_num_ocr_threads, wxCMD_LINE_VAL_NUMBER);
 	g_pParser->AddSwitch("h", "help", g_cfg.m_help_desc_for_help);
+
+	for (wxString& key : keys)
+	{
+		g_pParser->AddOption(key);
+	}
 }
 
 void PlaySound(wxString path)
@@ -182,7 +194,7 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 	SaveToReportLog("Starting program...\n", wxT("wb"));
 	SaveToReportLog("CVideoSubFinderApp::Initialize...\n");
 
-	SaveToReportLog("CVideoSubFinderApp::LoadSettings...\n");
+	SaveToReportLog("CVideoSubFinderApp::Initial LoadSettings...\n");
 	LoadSettings();
 
 	//test();
@@ -195,6 +207,9 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 	{
 		return false;
 	}
+
+	SaveToReportLog("CVideoSubFinderApp::LoadSettings again with affect of command line...\n");
+	LoadSettings();
 
 	if (g_pParser->Found("gs", &Str))
 	{
