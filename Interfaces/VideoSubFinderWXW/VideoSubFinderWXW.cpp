@@ -202,7 +202,6 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 	g_pParser = new wxCmdLineParser();
 	SetParserDescription();
 	g_pParser->SetCmdLine(argc, argv);
-	
 	if (g_pParser->Parse() != 0)
 	{
 		return false;
@@ -223,6 +222,10 @@ bool CVideoSubFinderApp::Initialize(int& argc, wxChar **argv)
 		g_pParser = new wxCmdLineParser();
 		SetParserDescription();
 		g_pParser->SetCmdLine(argc, argv);
+		if (g_pParser->Parse() != 0)
+		{
+			return false;
+		}
 	}
 
 	SaveToReportLog("wxApp::Initialize...\n");

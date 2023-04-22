@@ -841,9 +841,17 @@ void CMainFrame::UpdateDynamicSettings()
 	get_video_box_lblVB_on_test_title();
 	get_available_text_alignments();
 	get_StrFN();
-	delete g_pParser;
+	if (g_pParser != NULL)
+	{
+		delete g_pParser;
+	}
 	g_pParser = new wxCmdLineParser();
 	SetParserDescription();
+	g_pParser->SetCmdLine(wxTheApp->argc, wxTheApp->argv);
+	if (g_pParser->Parse() != 0)
+	{
+		exit(0);
+	}
 }
 
 void CMainFrame::OnFileOpenVideo(int type)
