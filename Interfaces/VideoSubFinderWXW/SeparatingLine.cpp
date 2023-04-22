@@ -195,7 +195,7 @@ void CSeparatingLine::CreateNewRgn()
 	//this->SetShape(m_rgn);
 
 	m_old_w = m_w;
-	m_old_h = m_w;
+	m_old_h = m_h;
 }
 
 void CSeparatingLine::OnLButtonDown( wxMouseEvent& event )

@@ -711,7 +711,6 @@ void CVideoBox::Init()
 	m_plblVB->SetTextColour(g_cfg.m_main_text_colour);
 	m_plblVB->SetBackgroundColour(g_cfg.m_video_image_box_title_colour);
 	
-	g_cfg.m_video_box_lblTIME_label = wxT("00:00:00,000/00:00:00,000   ");
 	m_plblTIME = new CStaticText(this, g_cfg.m_video_box_lblTIME_label, ID_LBL_TIME, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxTB_BOTTOM);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_pMF->m_LBLFont);
@@ -767,6 +766,7 @@ void CVideoBox::UpdateSize()
 {
 	wxSizeEvent event;
 	OnSize(event);
+	m_pVBox->OnSize(event);
 }
 
 void CVideoBox::RefreshData()
@@ -790,6 +790,11 @@ void CVideoBox::RefreshData()
 	}
 
 	m_prevBackgroundColour = g_cfg.m_video_image_box_border_colour;
+
+	m_pVBox->m_pHSL1->m_pos = 1 - g_cfg.m_top_video_image_percent_end;
+	m_pVBox->m_pHSL2->m_pos = 1 - g_cfg.m_bottom_video_image_percent_end;
+	m_pVBox->m_pVSL1->m_pos = g_cfg.m_left_video_image_percent_end;
+	m_pVBox->m_pVSL2->m_pos = g_cfg.m_right_video_image_percent_end;
 }
 
 void CVideoBox::OnSize(wxSizeEvent& event)

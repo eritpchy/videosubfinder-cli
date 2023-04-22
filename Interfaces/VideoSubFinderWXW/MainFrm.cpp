@@ -611,6 +611,7 @@ void CMainFrame::Init()
 
 	m_WasInited = true;	
 		
+	UpdateDynamicSettings();
 	CControl::RefreshAllControlsData();
 	CControl::UpdateAllControlsSize();
 	this->Refresh();
@@ -785,7 +786,7 @@ void CMainFrame::get_video_box_lblTIME_run_search_label()
 	}
 	else
 	{
-		g_cfg.m_video_box_lblTIME_label = wxT("");
+		g_cfg.m_video_box_lblTIME_label = wxT("00:00:00,000/00:00:00,000   ");
 	}
 }
 
