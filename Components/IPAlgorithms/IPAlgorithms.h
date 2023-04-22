@@ -181,7 +181,7 @@ void IntersectImages(simple_buffer<T1>& ImRes, simple_buffer<simple_buffer<T2>*>
 
 bool InitCUDADevice();
 
-void RestoreStillExistLines(simple_buffer<u8> &Im, simple_buffer<u8> &ImOrig, int w, int h);
+void RestoreStillExistLines(simple_buffer<u8> &Im, simple_buffer<u8> &ImOrig, int w, int h, int W, int H);
 
 void ReadFile(cv::Mat& res_data, wxString name);
 void WriteFile(std::vector<uchar>& write_data, wxString name);

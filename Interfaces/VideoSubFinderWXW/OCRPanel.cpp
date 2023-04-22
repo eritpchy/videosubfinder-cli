@@ -2159,7 +2159,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 					CombineTwoImages(ImTFOrig, ImTF, w, h);
 					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrigCombinedWithISAImage" + g_im_save_format, w, h);
 
-					RestoreStillExistLines(ImTF, ImTFOrig, w, h);
+					RestoreStillExistLines(ImTF, ImTFOrig, w, h, W, H);
 					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageRestoredStillExistLinesByImTFOrig" + g_im_save_format, w, h);
 
 					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);

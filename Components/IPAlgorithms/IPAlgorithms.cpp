@@ -1767,7 +1767,7 @@ int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, sim
 		ImTF.copy_data(ImSF, w * h);
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/FilterTransformedImage_" + iter_det + "_04_01_ImTF" + g_im_save_format, w, h);
 
-		RestoreStillExistLines(ImTF, ImRES1, w, h);
+		RestoreStillExistLines(ImTF, ImRES1, w, h, W, H);
 		if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/FilterTransformedImage_" + iter_det + "_04_02_ImTFWithRestoredStillExistLines" + g_im_save_format, w, h);
 
 		FilterImageByNotIntersectedFiguresWithImMask(ImTF, ImSF, w, h, (u8)255);
@@ -1780,7 +1780,7 @@ int FilterTransformedImage(simple_buffer<u8>& ImFF, simple_buffer<u8>& ImSF, sim
 
 		if (res == 1)
 		{
-			RestoreStillExistLines(ImTF, ImRES2, w, h);
+			RestoreStillExistLines(ImTF, ImRES2, w, h, W, H);
 			if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/FilterTransformedImage_" + iter_det + "_08_ImTFWithRestoredStillExistLines" + g_im_save_format, w, h);
 
 			ExtendImFWithDataFromImNF(ImTF, ImRES1, w, h);
@@ -7982,11 +7982,11 @@ int ClearImageFromSmallSymbols(simple_buffer<u8>& Im, int w, int h, int W, int H
 	return res;
 }
 
-void RestoreStillExistLines(simple_buffer<u8>& Im, simple_buffer<u8>& ImOrig, int w, int h)
+void RestoreStillExistLines(simple_buffer<u8>& Im, simple_buffer<u8>& ImOrig, int w, int h, int W, int H)
 {
 	int i, x, y, y2;
 	
-	int dy = 2 * g_segh;
+	int dy = (g_msh * (double)H) + 1;
 	simple_buffer<int> lines_info(h, 0);
 
 	for (y = 0; y < h; y++)
