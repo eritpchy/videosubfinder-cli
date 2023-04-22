@@ -226,8 +226,8 @@ Press and hold 'T' keyboard button when Video Box is selected: will show:
 * - all pixels which are in inline Color Filters will be shown as 'red' (pixels related to searched symbols)
 * - all pixels which are in outline Color Filters will be shown as 'green' (pixels related to searched symbols borders)
 * - all pixels which are in inline and outline Color Filters will be shown as 'yellow' (better that no one will be in yellow (no intersection))
-Press and hold 'Y' keyboard button when Video Box is selected: will show pixels related to inline color with their original colors, all others in black color.
-Press and hold 'I' keyboard button when Video Box is selected: will show pixels related to outline color with their original colors, all others in black color.
+Press and hold 'Y' keyboard button when Video Box is selected: will show pixels related to inline color with their original colors, all others with black (or white) color.
+Press and hold 'I' keyboard button when Video Box is selected: will show pixels related to outline color with their original colors, all others with black (or white) color.
 You can get pixel color by left mouse click in Video box or in shown full screen image (its values and color will be shown in "Settings" tab in bottom right part)
 2-4) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.

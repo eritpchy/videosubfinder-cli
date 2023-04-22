@@ -161,6 +161,64 @@ inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, cons
 			bool bln_in_color_ranges;
 			bool bln_in_outline_color_ranges;
 
+			if (!bln_t_pressed)
+			{
+				if (bln_y_pressed)
+				{
+					if (bln_color_ranges)
+					{
+						color_range cr = g_color_ranges[0];
+						u8 mid_y;
+						
+						if (cr.m_color_space == ColorSpace::RGB)
+						{						
+							u8 mid_b, mid_g, mid_r;
+
+							mid_b = (cr.m_min_data[2] + cr.m_max_data[2]) / 2;
+							mid_g = (cr.m_min_data[1] + cr.m_max_data[1]) / 2;
+							mid_r = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+							BGRToYUV(mid_b, mid_g, mid_r, &mid_y);
+						}
+						else
+						{
+							mid_y = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+						}
+
+						if (mid_y < 50)
+						{
+							bc = GetBGRColor(ColorName::White);
+						}
+					}
+				}
+				else if (bln_i_pressed)
+				{
+					if (bln_outline_color_ranges)
+					{
+						color_range cr = g_outline_color_ranges[0];
+						u8 mid_y;
+
+						if (cr.m_color_space == ColorSpace::RGB)
+						{
+							u8 mid_b, mid_g, mid_r;
+
+							mid_b = (cr.m_min_data[2] + cr.m_max_data[2]) / 2;
+							mid_g = (cr.m_min_data[1] + cr.m_max_data[1]) / 2;
+							mid_r = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+							BGRToYUV(mid_b, mid_g, mid_r, &mid_y);
+						}
+						else
+						{
+							mid_y = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+						}
+
+						if (mid_y < 50)
+						{
+							bc = GetBGRColor(ColorName::White);
+						}
+					}
+				}
+			}
+
 			for (int p_id = 0; p_id < num_pixels; p_id++)
 			{
 				bln_in_color_ranges = false;
