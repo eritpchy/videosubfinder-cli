@@ -139,7 +139,19 @@ void CStaticText::OnSize(wxSizeEvent& event)
 	int w, h, tw, th, x, y;
 	
     this->GetClientSize(&w, &h);
-	m_pST->GetSize(&tw, &th);
+
+	{
+		wxMemoryDC dc;
+		if (m_pFont) dc.SetFont(*m_pFont);
+		wxSize st_best_size = dc.GetMultiLineTextExtent(*m_p_label);
+		wxSize st_cur_size = m_pST->GetSize();
+		wxSize st_cur_client_size = m_pST->GetClientSize();
+		st_best_size.x += st_cur_size.x - st_cur_client_size.x;
+		st_best_size.y += st_cur_size.y - st_cur_client_size.y;
+
+		tw = st_best_size.x;
+		th = st_best_size.y;
+	}
 
 	if ( m_text_style & wxALIGN_CENTER_HORIZONTAL )
 	{

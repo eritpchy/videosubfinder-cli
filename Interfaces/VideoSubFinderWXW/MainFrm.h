@@ -22,7 +22,6 @@
 #include <wx/timer.h>
 #include <wx/filename.h>
 #include <wx/cmdline.h>
-#include <wx/popupwin.h>
 #include <time.h>
 #include "DataTypes.h"
 #include "MyResource.h"
@@ -37,14 +36,20 @@
 
 using namespace std;
 
-class CPopupHelpWindow : public wxPopupTransientWindow
+class CPopupHelpWindow : public wxFrame
 {
-	const wxString& m_help_msg;
-	wxStaticText* m_pST;
+	const wxString	&m_help_msg;
+	CStaticText	*m_pST;
 
 public:
 	CPopupHelpWindow(const wxString& help_msg);
-	virtual void Popup(wxWindow* focus = NULL) wxOVERRIDE;
+	void OnKeyDown(wxKeyEvent& event);
+	void OnKillFocus(wxFocusEvent& event);
+	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
+	void Popup();
+
+private:
+	DECLARE_EVENT_TABLE()
 };
 
 class Settings;

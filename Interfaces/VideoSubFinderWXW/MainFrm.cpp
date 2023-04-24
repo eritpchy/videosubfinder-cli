@@ -2159,7 +2159,6 @@ void CMainFrame::OnClose(wxCloseEvent& WXUNUSED(event))
 	{
 		m_timer.Stop();
 	}
-
 	
 	{
 		wxFFileOutputStream ffout(g_prev_data_path);
@@ -3100,37 +3099,74 @@ bool ReadProperty(std::map<wxString, wxString>& settings, wxColour& val, wxStrin
 	return res;
 }
 
-CPopupHelpWindow::CPopupHelpWindow(const wxString& help_msg) : wxPopupTransientWindow(g_pMF), m_help_msg(help_msg)
+BEGIN_EVENT_TABLE(CPopupHelpWindow, wxFrame)
+	EVT_KILL_FOCUS(CPopupHelpWindow::OnKillFocus)
+	EVT_MOUSE_CAPTURE_LOST(CPopupHelpWindow::OnMouseCaptureLost)
+	EVT_KEY_DOWN(CPopupHelpWindow::OnKeyDown)
+END_EVENT_TABLE()
+
+CPopupHelpWindow::CPopupHelpWindow(const wxString& help_msg) : wxFrame(NULL, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, wxFRAME_NO_TASKBAR), m_help_msg(help_msg)
 {
-	m_pST = new wxStaticText(this, wxID_ANY, m_help_msg);
+	m_pST = new CStaticText(this, m_help_msg, wxID_ANY);
+	m_pST->SetFont(g_pMF->m_LBLFont);
+	m_pST->SetTextColour(g_cfg.m_main_text_colour);
+	m_pST->SetBackgroundColour(g_cfg.m_notebook_colour);
 
 	wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
 	wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	vert_box_sizer->Add(m_pST, 0, wxALIGN_CENTER, 0);
 	hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_CENTER);
-	this->SetSizer(hor_box_sizer);	
+	this->SetSizer(hor_box_sizer);
+
+	m_pST->Bind(wxEVT_KILL_FOCUS, &CPopupHelpWindow::OnKillFocus, this);
+	m_pST->Bind(wxEVT_MOUSE_CAPTURE_LOST, &CPopupHelpWindow::OnMouseCaptureLost, this);
+	m_pST->Bind(wxEVT_KEY_DOWN, &CPopupHelpWindow::OnKeyDown, this);
 }
 
-void CPopupHelpWindow::Popup(wxWindow* focus)
+void CPopupHelpWindow::Popup()
 {
+	this->Hide();
+
 	this->SetBackgroundColour(g_cfg.m_notebook_colour);
+	
+	m_pST->RefreshData();
 
-	m_pST->SetFont(g_pMF->m_LBLFont);
-	m_pST->SetForegroundColour(g_cfg.m_main_text_colour);
-	m_pST->SetLabel(m_help_msg);	
+	wxSize cur_size = this->GetSize();
+	wxSize cur_client_size = this->GetClientSize();
+	wxSize best_size = m_pST->GetOptimalSize();
 
-	wxSize best_size = m_pST->GetBestSize();
-	m_pST->SetSize(best_size);
+	best_size.x += cur_size.x - cur_client_size.x;
+	best_size.y += cur_size.x - cur_client_size.x;
 
-	best_size.x += 20;
-	best_size.y += 20;
+	wxPoint mp = wxGetMousePosition();
+
+	// if dont do SetClientSize initial SetSize work incorrectly on Linux
+	this->SetClientSize(best_size);
 	this->SetSize(best_size);
 
-	wxPoint clao = g_pMF->GetClientAreaOrigin();
-	wxPoint pt = wxGetMousePosition() - g_pMF->GetScreenPosition() - clao;
+	this->GetSizer()->Layout();
 
-	this->SetPosition(pt);
+	this->Show();
 
-	wxPopupTransientWindow::Popup(focus);
+	// set pos work correctly only after show on linux
+	this->SetPosition(mp);	
+}
+
+void CPopupHelpWindow::OnKillFocus(wxFocusEvent& event)
+{
+	this->Hide();
+}
+
+void CPopupHelpWindow::OnMouseCaptureLost(wxMouseCaptureLostEvent& event)
+{
+	this->Hide();
+}
+
+void CPopupHelpWindow::OnKeyDown(wxKeyEvent& event)
+{
+	if (event.GetKeyCode() == WXK_ESCAPE)
+	{
+		this->Hide();
+	}
 }

@@ -18,13 +18,12 @@
 
 BEGIN_EVENT_TABLE(CVideoWnd, wxWindow)
 	EVT_PAINT(CVideoWnd::OnPaint)
-	EVT_SET_FOCUS(CVideoWnd::OnSetFocus)
 	EVT_ERASE_BACKGROUND(CVideoWnd::OnEraseBackGround)
 	EVT_LEFT_DOWN(CVideoWnd::OnLeftDown)
 END_EVENT_TABLE()
 
 CVideoWnd::CVideoWnd(CVideoWindow *pVW)
-		:wxWindow( pVW, wxID_ANY )
+		:wxWindow(pVW, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS)
 {
 	m_pVW = pVW;
 	m_pVB = pVW->m_pVB;
@@ -416,11 +415,6 @@ void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 	}
 }
 
-void CVideoWnd::OnSetFocus(wxFocusEvent& event)
-{
-	m_pVB->SetFocus();
-}
-
 void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 {
 	if (m_pVB != NULL)
@@ -525,7 +519,7 @@ void CVideoWindow::Refresh(bool eraseBackground,
 
 	if (m_pVideoWnd)
 	{
-		if (m_pVideoWnd->GetParent() == NULL)
+		if (m_pVideoWnd->GetParent() != this)
 		{
 			m_pVideoWnd->Refresh(true);
 			need_to_refresh = false;
@@ -624,6 +618,16 @@ CVideoBox::~CVideoBox()
 		delete m_pImage;
 		m_pImage = NULL;
 	}
+
+	if (m_pFullScreenWin != NULL)
+	{
+		m_pFullScreenWin->Destroy();
+	}
+
+	if (m_pHW != NULL)
+	{
+		m_pHW->Destroy();
+	}
 }
 
 void ReplaceColour(wxBitmap& bmp, wxColour orig_colour, wxColour repl_colour)
@@ -678,10 +682,8 @@ void CVideoBox::Init()
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 
-#ifndef WIN32
-	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
-	m_pFullScreenWin->Hide();	
-#endif
+	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT);
+	m_pFullScreenWin->Hide();
 
 	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
 	m_prevBackgroundColour = g_cfg.m_video_image_box_border_colour;
@@ -758,6 +760,8 @@ void CVideoBox::Init()
 
 	m_pVBox->m_pVideoWnd->Bind(wxEVT_MOUSEWHEEL, &CVideoBox::OnMouseWheel, this);
 	m_pVBox->m_pVideoWnd->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
 
 	m_WasInited = true;
 }
@@ -958,24 +962,19 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 			{
 				if (!m_timer.IsRunning())
 				{
-					m_pHW->Dismiss();
-
 					m_pVBox->m_pVideoWnd->Reparent(m_pFullScreenWin);
 
 					int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 					int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 					m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
 
-					if (m_pFullScreenWin != NULL)
+					if (!m_pFullScreenWin->IsFullScreen())
 					{
-						if (!m_pFullScreenWin->IsFullScreen())
-						{
-							m_pFullScreenWin->ShowFullScreen(true);
-						}
-						if (!m_pFullScreenWin->IsShown())
-						{
-							m_pFullScreenWin->Show(true);
-						}
+						m_pFullScreenWin->ShowFullScreen(true);
+					}
+					if (!m_pFullScreenWin->IsShown())
+					{
+						m_pFullScreenWin->Show(true);
 					}
 
 					m_timer.Start(100);
@@ -1040,9 +1039,6 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 	switch ( key_code )
 	{
-		case WXK_ESCAPE:
-			m_pHW->Dismiss();
-
 		case 'S':
 		case 's':
 			if (event.CmdDown())
@@ -1100,40 +1096,27 @@ void CVideoBox::OnTimer(wxTimerEvent& event)
 			m_timer.Stop();
 		}
 
-		if (m_pFullScreenWin) // Linux case
+		if (m_pFullScreenWin->IsShown())
 		{
-			if (m_pFullScreenWin->IsShown())
-			{
-				// note: this is the hack for bring separating lines to top of video window
-				m_pFullScreenWin->Hide();
-				m_pVBox->m_pHSL1->Reparent(m_pFullScreenWin);
-				m_pVBox->m_pHSL2->Reparent(m_pFullScreenWin);
-				m_pVBox->m_pVSL1->Reparent(m_pFullScreenWin);
-				m_pVBox->m_pVSL2->Reparent(m_pFullScreenWin);
+			// note: this is the hack for bring separating lines to top of video window
+			m_pFullScreenWin->Hide();
+			m_pVBox->m_pHSL1->Reparent(m_pFullScreenWin);
+			m_pVBox->m_pHSL2->Reparent(m_pFullScreenWin);
+			m_pVBox->m_pVSL1->Reparent(m_pFullScreenWin);
+			m_pVBox->m_pVSL2->Reparent(m_pFullScreenWin);
 
-				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
-				m_pVBox->m_pHSL1->Reparent(m_pVBox);
-				m_pVBox->m_pHSL2->Reparent(m_pVBox);
-				m_pVBox->m_pVSL1->Reparent(m_pVBox);
-				m_pVBox->m_pVSL2->Reparent(m_pVBox);
+			m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+			m_pVBox->m_pHSL1->Reparent(m_pVBox);
+			m_pVBox->m_pHSL2->Reparent(m_pVBox);
+			m_pVBox->m_pVSL1->Reparent(m_pVBox);
+			m_pVBox->m_pVSL2->Reparent(m_pVBox);
 
-				m_pHW->Dismiss();
+			m_pHW->Hide();
 
-				wxSizeEvent event;
-				m_pVBox->OnSize(event);
-			}
-		}
-		else
-		{
-			if (m_pVBox->m_pVideoWnd->GetParent() == NULL)
-			{
-				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+			wxSizeEvent event;
+			m_pVBox->OnSize(event);
 
-				m_pHW->Dismiss();
-
-				wxSizeEvent event;
-				m_pVBox->OnSize(event);
-			}
+			this->SetFocus();
 		}
 	}
 }

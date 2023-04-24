@@ -21,7 +21,7 @@ BEGIN_EVENT_TABLE(CImageWnd, wxWindow)
 END_EVENT_TABLE()
 
 CImageWnd::CImageWnd(CImageBox *pIB)
-			:wxWindow( pIB, wxID_ANY )
+			:wxWindow(pIB, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS)
 {
 	m_pIB = pIB;
 }
@@ -111,24 +111,19 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 		case 'u':
 			if (!m_timer.IsRunning())
 			{
-				m_pHW->Dismiss();
-
 				m_pIW->Reparent(m_pFullScreenWin);
 
 				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 				m_pIW->SetSize(0, 0, w, h);
 
-				if (m_pFullScreenWin != NULL)
+				if (!m_pFullScreenWin->IsFullScreen())
 				{
-					if (!m_pFullScreenWin->IsFullScreen())
-					{
-						m_pFullScreenWin->ShowFullScreen(true);
-					}
-					if (!m_pFullScreenWin->IsShown())
-					{
-						m_pFullScreenWin->Show(true);
-					}
+					m_pFullScreenWin->ShowFullScreen(true);
+				}
+				if (!m_pFullScreenWin->IsShown())
+				{
+					m_pFullScreenWin->Show(true);
 				}
 
 				m_timer.Start(100);
@@ -140,9 +135,6 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 
 	switch (key_code)
 	{
-		case WXK_ESCAPE:
-			m_pHW->Dismiss();
-
 		case 'S':
 		case 's':
 			if (event.CmdDown())
@@ -189,30 +181,17 @@ void CImageBox::OnTimer(wxTimerEvent& event)
 			m_timer.Stop();
 		}
 
-		if (m_pFullScreenWin) // Linux case
+		if (m_pFullScreenWin->IsShown())
 		{
-			if (m_pFullScreenWin->IsShown())
-			{
-				m_pFullScreenWin->Hide();
-				m_pIW->Reparent(this);
+			m_pFullScreenWin->Hide();
+			m_pIW->Reparent(this);
 
-				m_pHW->Dismiss();
+			m_pHW->Hide();
 
-				wxSizeEvent event;
-				OnSize(event);
-			}
-		}
-		else
-		{
-			if (m_pIW->GetParent() == NULL)
-			{
-				m_pIW->Reparent(this);
+			wxSizeEvent event;
+			OnSize(event);
 
-				m_pHW->Dismiss();
-
-				wxSizeEvent event;
-				OnSize(event);
-			}
+			this->SetFocus();
 		}
 	}
 }
@@ -235,6 +214,16 @@ CImageBox::~CImageBox()
 		delete m_pImage;
 		m_pImage = NULL;
 	}
+
+	if (m_pFullScreenWin != NULL)
+	{
+		m_pFullScreenWin->Destroy();
+	}
+
+	if (m_pHW != NULL)
+	{
+		m_pHW->Destroy();
+	}
 }
 
 void CImageBox::Init()
@@ -245,10 +234,8 @@ void CImageBox::Init()
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 
-#ifndef WIN32
-	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0, 0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
+	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0, 0), wxSize(w, h), wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT);
 	m_pFullScreenWin->Hide();
-#endif
 
 	m_plblIB = new CStaticText(this, g_cfg.m_image_box_title, ID_LBL_IB);
 	m_plblIB->SetSize(0, 0, 390, 30);

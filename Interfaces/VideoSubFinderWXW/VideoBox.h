@@ -45,7 +45,6 @@ public:
 
 public:
 	void OnPaint( wxPaintEvent &event );
-	void OnSetFocus( wxFocusEvent &event );
 	void OnEraseBackGround(wxEraseEvent& event);
 	void OnLeftDown(wxMouseEvent& event);
 	//void OnKeyUp(wxKeyEvent& event);
