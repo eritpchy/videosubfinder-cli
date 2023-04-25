@@ -104,7 +104,7 @@ void CStaticText::RefreshData()
 		m_pST->SetBackgroundColour(*m_pBackgroundColour);
 	}
 
-	wxSizer* pSizer = m_pParent->GetSizer();
+	wxSizer* pSizer = GetContainingSizer();
 	if (pSizer)
 	{	
 		wxSize cur_size = this->GetSize();

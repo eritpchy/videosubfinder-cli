@@ -183,7 +183,7 @@ void CTextCtrl::RefreshData()
 		ChangeValue(wxString::Format(wxT("%f"), *m_p_f_val));
 	}
 
-	wxSizer* pSizer = m_pParent->GetSizer();
+	wxSizer* pSizer = GetContainingSizer();
 	if (pSizer)
 	{
 		wxSize text_size = this->GetTextExtent(this->GetValue());

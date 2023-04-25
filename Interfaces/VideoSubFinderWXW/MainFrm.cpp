@@ -2333,10 +2333,20 @@ MyMessageBox::MyMessageBox(CMainFrame* pMF, wxString message, const wxString& ca
 	m_pDialogText->SetFont(m_pMF->m_LBLFont);
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
 	if (m_p_background_colour) m_pDialogText->SetBackgroundColour(*m_p_background_colour);
+	if (m_p_background_colour) SetBackgroundColour(*m_p_background_colour);
 	Bind(wxEVT_TEXT_URL, &MyMessageBox::OnTextUrl, this);
 	Bind(wxEVT_CHAR_HOOK, &MyMessageBox::OnKeyDown, this);
 	Bind(wxEVT_MOUSEWHEEL, &CMainFrame::OnMouseWheel, m_pMF);
 	m_pDialogText->SetInsertionPoint(0);
+
+	wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+	wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+	vert_box_sizer->Add(m_pDialogText, 0, wxALIGN_TOP);
+	hor_box_sizer->AddSpacer(5);
+	hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_LEFT);
+	this->SetSizer(hor_box_sizer);
+
 	UpdateSize();
 }
 
@@ -2376,14 +2386,17 @@ void MyMessageBox::RefreshData()
 	m_pDialogText->SetFont(m_pMF->m_LBLFont);
 	m_pDialogText->SetForegroundColour(g_cfg.m_main_text_colour);
 	if (m_p_background_colour) m_pDialogText->SetBackgroundColour(*m_p_background_colour);
+	if (m_p_background_colour) SetBackgroundColour(*m_p_background_colour);
 	m_pDialogText->Refresh(true);
 }
 
-wxString WrapText(wxWindow* win, const wxString& text, int widthMax)
+wxString WrapText(wxWindow* win, const wxString& text, int widthMax, int &ln)
 {
 	class HardBreakWrapper : public wxTextWrapper
 	{
 	public:
+		int m_ln = 1;
+
 		HardBreakWrapper(wxWindow* win, const wxString& text, int widthMax)
 		{
 			Wrap(win, text, widthMax);
@@ -2397,11 +2410,13 @@ wxString WrapText(wxWindow* win, const wxString& text, int widthMax)
 		virtual void OnNewLine()
 		{
 			m_wrapped += '\n';
+			m_ln++;
 		}
 	private:
 		wxString m_wrapped;
 	};
 	HardBreakWrapper wrapper(win, text, widthMax);
+	ln = wrapper.m_ln;
 	return wrapper.GetWrapped();
 }
 
@@ -2410,17 +2425,19 @@ void MyMessageBox::UpdateSize()
 	wxMemoryDC dc;	
 	dc.SetFont(m_pMF->m_LBLFont);
 
-	wxString val = m_pDialogText->GetValue();
-	val = WrapText(m_pDialogText, val, m_w);
-	wxSize text_size = dc.GetMultiLineTextExtent(val);
-	
 	wxSize cur_size = GetSize();
 	wxSize cur_client_size = GetClientSize();
 	wxSize mf_cl_size = m_pMF->GetClientSize();
+
+	wxString orig_val = m_pDialogText->GetValue();
+	int ln;
+	wxString wrap_val = WrapText(m_pDialogText, orig_val, m_w - 15 - (cur_size.x - cur_client_size.x), ln);
+	wxSize text_size = dc.GetMultiLineTextExtent(wrap_val);
+	
 	wxSize best_size;
 
 	best_size = m_pDialogText->GetSizeFromTextSize(text_size);
-	best_size.x += cur_size.x - cur_client_size.x + 10;
+	best_size.x += cur_size.x - cur_client_size.x + 15;
 	best_size.y += cur_size.y - cur_client_size.y + 10;
 	this->SetSize(std::max<int>((mf_cl_size.x - best_size.x) / 2, 0),
 		std::max<int>((mf_cl_size.y - best_size.y) / 2, 10),
@@ -2429,26 +2446,44 @@ void MyMessageBox::UpdateSize()
 
 	// drowing txt data size in wxTextCtrl is not same as if drow in dc in case of "chn" locale and Windows
 #ifdef WIN32
-	// return wxPoint(0, 0) on Ubuntu
-	wxPoint pos1 = m_pDialogText->PositionToCoords(m_pDialogText->XYToPosition(0, 1));
-	wxPoint pos2 = m_pDialogText->PositionToCoords(m_pDialogText->GetLastPosition());
+	cur_size = GetSize();
+	cur_client_size = GetClientSize();
+	wrap_val = WrapText(m_pDialogText, orig_val, cur_client_size.x - 15, ln);
 
-	text_size.y = pos2.y + pos1.y;
+	while ( (m_pDialogText->XYToPosition(0, ln) == -1) && (ln > 0) )
+	{
+		ln--;
+	}
 
-	best_size = m_pDialogText->GetSizeFromTextSize(text_size);
-	best_size.x += cur_size.x - cur_client_size.x + 10;
-	best_size.y += cur_size.y - cur_client_size.y + 10;
-	this->SetSize(std::max<int>((mf_cl_size.x - best_size.x) / 2, 0),
-		std::max<int>((mf_cl_size.y - best_size.y) / 2, 10),
-		std::min<int>(mf_cl_size.x, best_size.x),
-		std::min<int>(mf_cl_size.y, best_size.y));
+	if (ln > 1)
+	{
+		// return wxPoint(0, 0) on Ubuntu
+		wxPoint pos1 = m_pDialogText->PositionToCoords(m_pDialogText->XYToPosition(0, 1));
+		wxPoint pos2 = m_pDialogText->PositionToCoords(m_pDialogText->XYToPosition(0, ln));
+
+		text_size.y = pos2.y + pos1.y;
+
+		best_size = m_pDialogText->GetSizeFromTextSize(text_size);
+		best_size.x += cur_size.x - cur_client_size.x + 15;
+		best_size.y += cur_size.y - cur_client_size.y + 10;
+		this->SetSize(std::max<int>((mf_cl_size.x - best_size.x) / 2, 0),
+			std::max<int>((mf_cl_size.y - best_size.y) / 2, 10),
+			std::min<int>(mf_cl_size.x, best_size.x),
+			std::min<int>(mf_cl_size.y, best_size.y));
+	}
 #endif
+
+	wxSize dt_size = GetClientSize();
+	dt_size.x -= 5;
+
+	this->GetSizer()->SetItemMinSize(m_pDialogText, dt_size);
+	this->GetSizer()->Layout();
 }
 
 void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
 {
 	wxSize cl_size = this->GetClientSize();
-	wxSize msg_size(1000, 520);
+	wxSize msg_size((9*cl_size.x/10), (9*cl_size.y/10));
 	MyMessageBox msg_dlg(this, g_pParser->GetUsageString(),
 		wxT("VideoSubFinder " VSF_VERSION),
 		&(g_cfg.m_notebook_colour),
@@ -2460,7 +2495,7 @@ void CMainFrame::OnAppCMDArgsInfo(wxCommandEvent& event)
 void CMainFrame::OnAppUsageDocs(wxCommandEvent& event)
 {
 	wxSize cl_size = this->GetClientSize();
-	wxSize msg_size(1000, 600);
+	wxSize msg_size((9*cl_size.x/10), (9*cl_size.y/10));
 	wxString docs_sub_parth = wxString(wxT("/Docs/readme_")) + g_cfg.m_prefered_locale + wxT(".txt");
 	wxString docs_full_parth = g_app_dir + docs_sub_parth;
 
@@ -2557,6 +2592,9 @@ public:
 	CCheckBox* m_pcbButtonsFontBold;
 	CCheckBox* m_pcbButtonsFontItalic;
 	CCheckBox* m_pcbButtonsFontUnderline;
+
+	wxStaticBoxSizer* m_p_main_font_gb_sizer;
+	wxStaticBoxSizer* m_p_buttons_font_gb_sizer;
 
 	CFontsDialog(CMainFrame* pMF, const wxString& caption,
 		const wxPoint& pos = wxDefaultPosition,
@@ -2718,18 +2756,12 @@ CFontsDialog::CFontsDialog(CMainFrame* pMF, const wxString& caption,
 	main_font_hor_box_sizer_ctrls_2->Add(m_pcbMainFontItalic, 0, wxEXPAND | wxALL);
 	main_font_hor_box_sizer_ctrls_2->Add(m_pcbMainFontUnderline, 0, wxEXPAND | wxALL);
 
-	wxBoxSizer* main_font_vert_box_sizer_all_ctrls = new wxBoxSizer(wxVERTICAL);
+	wxFlexGridSizer* main_font_vert_box_sizer_all_ctrls = new wxFlexGridSizer(2, 1, 6, 0);
 	main_font_vert_box_sizer_all_ctrls->Add(main_font_hor_box_sizer_ctrls_1, 0, wxEXPAND | wxALL);
-	main_font_vert_box_sizer_all_ctrls->AddSpacer(6);
 	main_font_vert_box_sizer_all_ctrls->Add(main_font_hor_box_sizer_ctrls_2, 0, wxEXPAND | wxALL);
 
-	wxBoxSizer* main_font_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
-	wxBoxSizer* main_font_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
-
-	main_font_hor_box_sizer->Add(main_font_vert_box_sizer_all_ctrls, 0, wxALIGN_CENTER);
-	main_font_vert_box_sizer->AddSpacer(gb_y_offset);
-	main_font_vert_box_sizer->Add(main_font_hor_box_sizer, 0, wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL);
-	m_pGBMainFont->SetSizer(main_font_vert_box_sizer);
+	m_p_main_font_gb_sizer = new wxStaticBoxSizer(m_pGBMainFont, wxVERTICAL);
+	m_p_main_font_gb_sizer->Add(main_font_vert_box_sizer_all_ctrls, 0, wxEXPAND | wxALL);
 
 	//------------------------------
 
@@ -2747,26 +2779,19 @@ CFontsDialog::CFontsDialog(CMainFrame* pMF, const wxString& caption,
 	buttons_font_hor_box_sizer_ctrls_2->Add(m_pcbButtonsFontItalic, 0, wxEXPAND | wxALL);
 	buttons_font_hor_box_sizer_ctrls_2->Add(m_pcbButtonsFontUnderline, 0, wxEXPAND | wxALL);
 
-	wxBoxSizer* buttons_font_vert_box_sizer_all_ctrls = new wxBoxSizer(wxVERTICAL);
+	wxFlexGridSizer* buttons_font_vert_box_sizer_all_ctrls = new wxFlexGridSizer(2, 1, 6, 0);
 	buttons_font_vert_box_sizer_all_ctrls->Add(buttons_font_hor_box_sizer_ctrls_1, 0, wxEXPAND | wxALL);
-	buttons_font_vert_box_sizer_all_ctrls->AddSpacer(6);
 	buttons_font_vert_box_sizer_all_ctrls->Add(buttons_font_hor_box_sizer_ctrls_2, 0, wxEXPAND | wxALL);
 
-	wxBoxSizer* buttons_font_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
-	wxBoxSizer* buttons_font_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
-
-	buttons_font_hor_box_sizer->Add(buttons_font_vert_box_sizer_all_ctrls, 0, wxALIGN_CENTER);
-	buttons_font_vert_box_sizer->AddSpacer(gb_y_offset);
-	buttons_font_vert_box_sizer->Add(buttons_font_hor_box_sizer, 0, wxALIGN_TOP | wxALIGN_CENTER_HORIZONTAL);
-	m_pGBButtonsFont->SetSizer(buttons_font_vert_box_sizer);
-
+	m_p_buttons_font_gb_sizer = new wxStaticBoxSizer(m_pGBButtonsFont, wxVERTICAL);
+	m_p_buttons_font_gb_sizer->Add(buttons_font_vert_box_sizer_all_ctrls, 0, wxEXPAND | wxALL);
 
 	wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
 	wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-	vert_box_sizer->Add(m_pGBMainFont, 0, wxALIGN_CENTER);
+	vert_box_sizer->Add(m_p_main_font_gb_sizer, 0, wxALIGN_CENTER);
 	vert_box_sizer->AddSpacer(20);
-	vert_box_sizer->Add(m_pGBButtonsFont, 0, wxALIGN_CENTER);
+	vert_box_sizer->Add(m_p_buttons_font_gb_sizer, 0, wxALIGN_CENTER);
 
 	hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_CENTER);
 
@@ -2798,10 +2823,6 @@ void CFontsDialog::OnChangesEvent(wxCommandEvent& evt)
 
 void CFontsDialog::UpdateSize()
 {
-	int gb_y_offset = std::max<int>(m_pGBMainFont->GetTextExtent(m_pGBMainFont->GetLabel()).GetHeight(), m_pGBButtonsFont->GetTextExtent(m_pGBButtonsFont->GetLabel()).GetHeight()) + 2;
-	m_pGBMainFont->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
-	m_pGBButtonsFont->GetSizer()->GetItem((size_t)0)->AssignSpacer(0, gb_y_offset);
-
 	wxSize best_size = this->GetSizer()->GetMinSize();
 	wxSize cur_size = GetSize();
 	wxSize cur_client_size = GetClientSize();
@@ -2809,6 +2830,8 @@ void CFontsDialog::UpdateSize()
 	best_size.y += cur_size.y - cur_client_size.y + 20;
 
 	this->SetSize(best_size);
+
+	this->GetSizer()->Layout();
 }
 
 void CFontsDialog::RefreshData()

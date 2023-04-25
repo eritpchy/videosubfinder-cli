@@ -113,18 +113,10 @@ void CImageBox::OnKeyDown(wxKeyEvent& event)
 			{
 				m_pIW->Reparent(m_pFullScreenWin);
 
-				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
-				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
-				m_pIW->SetSize(0, 0, w, h);
+				wxSize cl_size = m_pFullScreenWin->GetClientSize();
+				m_pIW->SetSize(0, 0, cl_size.x, cl_size.y);
 
-				if (!m_pFullScreenWin->IsFullScreen())
-				{
-					m_pFullScreenWin->ShowFullScreen(true);
-				}
-				if (!m_pFullScreenWin->IsShown())
-				{
-					m_pFullScreenWin->Show(true);
-				}
+				m_pFullScreenWin->Show();
 
 				m_timer.Start(100);
 			}
@@ -235,6 +227,7 @@ void CImageBox::Init()
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 
 	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0, 0), wxSize(w, h), wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT);
+	m_pFullScreenWin->ShowFullScreen(true);
 	m_pFullScreenWin->Hide();
 
 	m_plblIB = new CStaticText(this, g_cfg.m_image_box_title, ID_LBL_IB);

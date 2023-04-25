@@ -160,7 +160,7 @@ void CChoice::RefreshData()
 		}
 	}
 
-	wxSizer* pSizer = m_pParent->GetSizer();
+	wxSizer* pSizer = GetContainingSizer();
 	if (pSizer)
 	{	
 		wxSize cur_size = this->GetSize();

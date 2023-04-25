@@ -69,7 +69,7 @@ void CStaticBox::RefreshData()
 void CStaticBox::UpdateSize()
 {
     wxSizer* p_own_sizer = GetSizer();
-    wxSizer* p_parent_sizer = m_pParent->GetSizer();
+    wxSizer* p_parent_sizer = GetContainingSizer();
 
     if (p_own_sizer && p_parent_sizer)
     {

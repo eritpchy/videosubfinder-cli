@@ -135,7 +135,7 @@ void CButton::SetMinSize(wxSize& size)
 
 void CButton::RefreshData()
 {
-	wxSizer* pSizer = m_pParent->GetSizer();
+	wxSizer* pSizer = GetContainingSizer();
 	if (pSizer)
 	{
 		wxMemoryDC dc;
