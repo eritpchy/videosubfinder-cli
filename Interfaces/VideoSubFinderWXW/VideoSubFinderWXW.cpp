@@ -456,9 +456,22 @@ bool CVideoSubFinderApp::OnInit()
 
 	if (wxCMD_SWITCH_ON == g_pParser->FoundSwitch("h"))
 	{		
-		cout << g_pParser->GetUsageString();
-		wxCommandEvent send_event;
-		m_pMainWnd->OnAppCMDArgsInfo(send_event);
+		#ifdef WIN32
+				HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+				DWORD fileType = GetFileType(out);
+
+				AttachConsole(ATTACH_PARENT_PROCESS);
+
+				bool is_redirected = ((fileType == FILE_TYPE_DISK) || (fileType == FILE_TYPE_PIPE));
+
+				if (!is_redirected)
+				{
+					freopen("CONOUT$", "w", stdout);
+				}
+		#endif
+
+		cout << g_pParser->GetUsageString() << endl;
+
 		blnNeedToExit = true;
 	}
 
