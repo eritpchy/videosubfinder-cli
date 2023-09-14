@@ -62,7 +62,7 @@ else()
 	target_link_directories(VideoSubFinderCli  PUBLIC
 		"${wxWidgets_LIBRARY_DIRS}"
 	)
-
+			
 	target_link_libraries(VideoSubFinderCli PUBLIC
 		IPAlgorithms
 		OCVVideo
@@ -70,13 +70,62 @@ else()
 		${CUDAKernels_LIB}
 		${wxWidgets_LIBRARIES}
 		${OpenCV_LIBS}
-		avcodec
-		avformat
-		avutil
-		swscale
-		avfilter
-		tbb
-	)
+        avcodec
+        avformat
+        avutil
+        swscale
+        avfilter
+        tbb
+    )
+
+    if (BUILD_FULL_STATIC)
+    	message("BUILD_FULL_STATIC is ON")
+		target_link_libraries(VideoSubFinderCli PUBLIC
+			"-static"
+			"SDL2"
+			"SDL2_test"
+			"SDL2main"
+			"SvtAv1Dec"
+			"SvtAv1Enc"
+			"aom"
+			"avdevice"
+			"crypto"
+			"fdk-aac"
+			"gif"
+			"ltdl"
+			"mp3lame"
+			"ogg"
+			"opencore-amrnb"
+			"opencore-amrwb"
+			"opus"
+			"png"
+			"png16"
+			"postproc"
+			"srt"
+			"ssl"
+			"swresample"
+			"theora"
+			"theoradec"
+			"theoraenc"
+			"tiff"
+			"tiffxx"
+			"vidstab"
+			"vorbis"
+			"vorbisenc"
+			"vorbisfile"
+			"vpx"
+			"webp"
+			"webpdecoder"
+			"webpdemux"
+			"webpmux"
+			"x264"
+			"x265"
+			"xvidcore"
+			"yasm"
+			"z"
+			"zimg"	
+		)
+	endif(BUILD_FULL_STATIC)
 
 
 endif (WIN32)

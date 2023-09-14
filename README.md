@@ -7,7 +7,20 @@
 ```
 - Ubuntu 20.04
 
-    see [Build/Docker/run_cuda.Dockerfile](Build/Docker/run_cuda.Dockerfile)
+    [Build/Docker/cuda/run_cuda.Dockerfile](Build/Docker/cuda/run_cuda.Dockerfile)
+
+NOTE: The static version does not require installation dependencies!
+
+## Build from sources
+- macOS
+    
+    [.github/workflows/build-darwin-x64.yml](.github/workflows/build-darwin-x64.yml)
+
+
+- Ubuntu 20.04
+    
+    [Build/Docker/cpu/build.sh](Build/Docker/cpu/build.sh)
+
 
 ## Usage
 ```bash
@@ -35,5 +48,9 @@ Usage: VideoSubFinderCli [-h] [--verbose] [-c] [-r] [-ces <str>] [-i <str>] [-ov
 -h, --help                                    	show this help message
 
 Example of usage:
+chmod +x ./VideoSubFinderCli.run
 ./VideoSubFinderCli.run -c -r -i "./test_video.mp4"  -o "./ResultsDir" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100
 ```
+
+## Donate
+- Bitcoin: bc1q9t4t6g42hge2stvu96rzr6kn7ynq52al5uv0pg

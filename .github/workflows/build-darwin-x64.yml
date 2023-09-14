@@ -71,7 +71,7 @@ jobs:
           cd Build && \
           cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++ -DLIBCXX_ENABLE_PARALLEL_ALGORITHMS=YES \
-            -DFFMPEG_INCLUDE_DIRS=$(readlink -f /usr/local/Cellar/ffmpeg/5*/include) \
+            -DFFMPEG_INCLUDE_DIRS=$(readlink -f /usr/local/Cellar/ffmpeg/6*/include) \
             -DPSTL_PARALLEL_BACKEND="tbb" -DCMAKE_CXX_FLAGS=-isystem\ $(readlink -f /usr/local/Cellar/tbb/2*/include) ..  && \
           make VERBOSE=1 -j$(nproc) && \
           true
@@ -82,18 +82,20 @@ jobs:
           mkdir work && \
           mkdir work/lib && \
           cd work && \
-          cp -fv /usr/local/lib/libwx_baseu-3.2.0.2.1.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libopencv_videoio.407.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libavcodec.59.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libavformat.59.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libavutil.57.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libswscale.6.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libavfilter.8.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libtbb.12.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libwx_osx_cocoau_core-3.2.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libopencv_imgcodecs.407.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libopencv_imgproc.407.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libopencv_core.407.dylib lib/ || true; \
+          otool -l ../Interfaces/VideoSubFinderCli/VideoSubFinderCli && \
+          cp -fv /usr/local/lib/libwx_baseu-3.?.?.?.?.dylib lib/; \
+          cp -fv /usr/local/lib/libopencv_videoio.???.dylib lib/; \
+          cp -fv /usr/local/lib/libavcodec.??.dylib lib/; \
+          cp -fv /usr/local/lib/libavformat.??.dylib lib/; \
+          cp -fv /usr/local/lib/libavutil.??.dylib lib/; \
+          cp -fv /usr/local/lib/libswscale.?.dylib lib/; \
+          cp -fv /usr/local/lib/libavfilter.?.dylib lib/; \
+          cp -fv /usr/local/Cellar/libarchive/*/lib/libarchive.??.dylib lib/; \
+          cp -fv /usr/local/lib/libtbb.??.dylib lib/; \
+          cp -fv /usr/local/lib/libwx_osx_cocoau_core-3.?.dylib lib/; \
+          cp -fv /usr/local/lib/libopencv_imgcodecs.???.dylib lib/ ; \
+          cp -fv /usr/local/lib/libopencv_imgproc.???.dylib lib/; \
+          cp -fv /usr/local/lib/libopencv_core.???.dylib lib/; \
           cp -fv /usr/local/lib/libsystem_pthread.dylib lib/ || true; \
           cp -fv /usr/local/lib/liblzma.5.dylib lib/ || true; \
           cp -fv /usr/local/lib/libGIF.dylib lib/ || true; \
@@ -101,13 +103,14 @@ jobs:
           cp -fv /usr/local/lib/libjpeg.8.dylib lib/ || true; \
           cp -fv /usr/local/lib/libwebp.7.dylib lib/ || true; \
           cp -fv /usr/local/lib/libpng16.16.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libtiff.5.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libtiff.?.dylib lib/; \
           cp -fv /usr/local/lib/libopenjp2.7.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libOpenEXR-3_1.30.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libImath-3_1.30.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libIlmThread-3_1.30.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libIex-3_1.30.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libopenblas.0.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libOpenEXR-?_?.??.dylib lib/; \
+          cp -fv /usr/local/lib/libOpenEXRCore-?_?.??.dylib lib/; \
+          cp -fv /usr/local/lib/libImath-?_?.??.dylib lib/; \
+          cp -fv /usr/local/lib/libIlmThread-?_?.??.dylib lib/; \
+          cp -fv /usr/local/lib/libIex-?_?.??.dylib lib/; \
+          cp -fv /usr/local/Cellar/openblas/*/lib/libopenblas.?.dylib lib/; \
           cp -fv /usr/local/lib/libgfortran.5.dylib lib/ || true; \
           cp -fv /usr/local/lib/libgomp.1.dylib lib/ || true; \
           cp -fv /usr/local/lib/libquadmath.0.dylib lib/ || true; \
@@ -166,7 +169,7 @@ jobs:
           cp -fv /usr/local/lib/libssl.1.1.dylib lib/ || true; \
           cp -fv /usr/local/lib/libcrypto.1.1.dylib lib/ || true; \
           cp -fv /usr/local/lib/libsodium.23.dylib lib/ || true; \
-          cp -fv /usr/local/lib/libpostproc.56.dylib lib/ || true; \
+          cp -fv /usr/local/lib/libpostproc.??.dylib lib/; \
           cp -fv /usr/local/lib/librubberband.2.dylib lib/ || true; \
           cp -fv /usr/local/lib/libsamplerate.0.dylib lib/ || true; \
           cp -fv /usr/local/lib/libtesseract.5.dylib lib/ || true; \
@@ -190,7 +193,7 @@ jobs:
           type: 'tar'
           filename: 'videosubfinder-cli-darwin-x64.tar.gz'
           directory: 'Build/work'
-          path: "./VideoSubFinderCli"
+          path: "./*"
       -
         name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -198,13 +201,6 @@ jobs:
           name: videosubfinder-cli-darwin-x64.tar.gz
           path: |
             ./Build/work/videosubfinder-cli-darwin-x64.tar.gz
-      -
-        name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: dependencies.tar.gz
-          path: |
-            ./Build/work/lib
       -
         name: Release draft
         uses: softprops/action-gh-release@v1
