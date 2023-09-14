@@ -86,13 +86,11 @@ public:
 	AVBufferRef *hw_device_ctx = NULL;		
 	AVCodecContext *decoder_ctx = NULL;		
 	AVStream *video = NULL;
-#ifdef WIN32
-	const AVCodec *decoder = NULL;
-#elif defined(__APPLE__)
+#if LIBAVFORMAT_VERSION_MAJOR >= 60
 	const AVCodec *decoder = NULL;
 #else
-	 AVCodec *decoder = NULL;
-#endif
+	AVCodec *decoder = NULL;
+#endif //LIBAVFORMAT_VERSION_MAJOR >= 60
 	AVFrame *frame = NULL;
 	AVFrame *sw_frame = NULL;
 	AVFrame* filt_frame = NULL;
