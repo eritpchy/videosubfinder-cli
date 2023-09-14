@@ -13,11 +13,11 @@ RUN CUDA_DIR="$(ls -d1 /usr/local/cuda-*|head -1)" \
     && if [[ "USE_GUI" = "1" ]] ; then cp ./Interfaces/VideoSubFinderWXW/VideoSubFinderWXW /tmp/work/; \
        else cp ./Interfaces/VideoSubFinderCli/VideoSubFinderCli /tmp/work/ ; fi \
     && rm -rf /tmp/work/videosubfinder-src
-RUN cp -L /usr/local/lib/libwx_baseu-3.2.so.0 \
-          /usr/local/lib/libopencv_videoio.so.407 \
-          /usr/local/lib/libopencv_core.so.407 \
-          /usr/local/lib/libopencv_imgproc.so.407 \
-          /usr/local/lib/libopencv_imgcodecs.so.407 \
+RUN cp -L /usr/local/lib/libwx_baseu-?.?.so.? \
+          /usr/local/lib/libopencv_videoio.so.??? \
+          /usr/local/lib/libopencv_core.so.??? \
+          /usr/local/lib/libopencv_imgproc.so.??? \
+          /usr/local/lib/libopencv_imgcodecs.so.??? \
           /tmp/work/
 
 
