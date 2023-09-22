@@ -28,9 +28,9 @@ NOTE: The static version does not require installation dependencies!
     see [.github/workflows/build-darwin-x64.yml](.github/workflows/build-darwin-x64.yml)
 
 
-  - Ubuntu 20.04
+- Ubuntu 20.04
     
-    see [Build/Docker/build.sh](Build/Docker/build.sh)
+    see [Build/Docker/cpu/build.sh](Build/Docker/cpu/build.sh)
 
 
 ## Usage
@@ -64,4 +64,5 @@ chmod +x ./VideoSubFinderCli.run
 ```
 
 ## Donate
-- Bitcoin: bc1q9t4t6g42hge2stvu96rzr6kn7ynq52al5uv0pg
+If you use and love videosubfinder-cli, please consider sending some Bitcoin (BTC) to bc1q9t4t6g42hge2stvu96rzr6kn7ynq52al5uv0pg 
+In case you want to be mentioned as a sponsor, let me know!
