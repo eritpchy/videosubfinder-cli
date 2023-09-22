@@ -12,8 +12,9 @@ RUN --mount=type=cache,target=/root/.ccache \
     cd /tmp/work/ \
     && git clone https://github.com/markus-perl/ffmpeg-build-script.git -b master --depth=1 \
     && cd ffmpeg-build-script \
+    && bash -c '([[ "aarch64" == "$(uname -m)" ]] && sed -i "s|https://github.com/videolan/x265/archive/Release_3.5.tar.gz|https://bitbucket.org/multicoreware/x265_git/get/931178347b3f73e40798fd5180209654536bbaa5.tar.gz|g" ./build-ffmpeg || true)' \
     && AUTOINSTALL="yes" ./build-ffmpeg --enable-gpl-and-non-free --build --full-static \
-    && true 
+    && true
 RUN --mount=type=cache,target=/root/.ccache \
     cd /tmp/work \
     && git clone https://github.com/wxWidgets/wxWidgets.git -b v3.2.2.1 --depth=1 --recurse-submodules -j8 \
