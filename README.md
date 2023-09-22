@@ -7,7 +7,20 @@
 ```
 - Ubuntu 20.04
 
-    see [Build/Docker/run_cuda.Dockerfile](Build/Docker/run_cuda.Dockerfile)
+    [Build/Docker/cuda/run_cuda.Dockerfile](Build/Docker/cuda/run_cuda.Dockerfile)
+
+NOTE: The static version does not require installation dependencies!
+
+## Build from sources
+- macOS
+    
+    [.github/workflows/build-darwin-x64.yml](.github/workflows/build-darwin-x64.yml)
+
+
+- Ubuntu 20.04
+    
+    [Build/Docker/cpu/build.sh](Build/Docker/cpu/build.sh)
+
 
 ## Build from sources
 - macOS

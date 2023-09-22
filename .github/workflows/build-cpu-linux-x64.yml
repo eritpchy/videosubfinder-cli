@@ -45,14 +45,14 @@ jobs:
           cat Interfaces/VideoSubFinderWXW/MyResource.h| grep VSF_VERSION | sed -E 's/.+VSF_VERSION.+"(.+)"/release_version=\1/g' >> $GITHUB_ENV
       -
         name: Build cpu
-        run: bash ./Build/Docker/build.sh
+        run: bash ./Build/Docker/cpu/build.sh
       -
         name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: videosubfinder-cli-cpu-linux-x64.tar.gz
           path: |
-            ./Build/Docker/build/cpu/videosubfinder-cli-cpu-linux-x64.tar.gz
+            ./Build/Docker/cpu/out/videosubfinder-cli-cpu-linux-x64.tar.gz
       -
         name: Release draft
         uses: softprops/action-gh-release@v1
@@ -61,5 +61,5 @@ jobs:
           name: "${{ env.release_version }}"
           tag_name: "${{ env.release_version }}-ci"
           files: |
-            ./Build/Docker/build/cpu/videosubfinder-cli-cpu-linux-x64.tar.gz
+            ./Build/Docker/cpu/out/videosubfinder-cli-cpu-linux-x64.tar.gz
           body: "[Github Action](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})"

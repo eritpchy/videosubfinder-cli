@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
 cd ${0%/*}
-./build.sh
-./build_cuda.sh
+./cpu/build.sh
+./cpu_static/build.sh
+./cuda/build_cuda.sh
