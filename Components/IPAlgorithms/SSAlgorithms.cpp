@@ -59,17 +59,10 @@ bool g_save_images = true;
 vector<wxString> g_file_names_vector;
 
 CVideo *g_pV;
-int g_cur_pos_sec = 0;
 
 inline int AnalizeImageForSubPresence(simple_buffer<u8> &ImNE, simple_buffer<u8> &ImISA, simple_buffer<u16> &ImIL, s64 CurPos, int fn, int w, int h, int W, int H, int min_x, int max_x)
 {
 	int res = 1;
-	int CurPosSec = (int)(CurPos / 1000);
-	if (CurPosSec != g_cur_pos_sec) {
-	    g_cur_pos_sec = CurPosSec;
-        fprintf(stderr, "Pos: %s__-1\n", VideoTimeToStr(CurPos).ToStdString().c_str());
-        fflush(stderr);
-	}
 
 	if (g_use_ISA_images_for_search_subtitles)
 	{
