@@ -19,6 +19,7 @@
 #include <wx/regex.h>
 #include <opencv2/core.hpp>
 #include <opencv2/core/ocl.hpp>
+#include "../../3rdparty/CTPL/ctpl_stl.h"
 
 #ifdef CUSTOM_TA 
 #include "ittnotify.h"
@@ -443,7 +444,7 @@ class RunSearch
 	vector<shared_custom_task> m_thrs_rgb;
 	vector<shared_custom_task> m_thrs;
 	vector<shared_custom_task> m_thrs_int;
-	vector<shared_custom_task> m_thrs_save_images;
+	ctpl::thread_pool m_thrs_save_images;
 
 	vector<my_event> m_events_one_step; // events for one step done
 	simple_buffer<my_event*> m_p_events_one_step;
@@ -465,7 +466,7 @@ class RunSearch
 public:
 	int m_N;
 
-	RunSearch(int threads, CVideo *pV)
+	RunSearch(int threads, CVideo *pV): m_thrs_save_images(1)
 	{
 		m_threads = threads;
 		m_pV = pV;
@@ -593,7 +594,7 @@ public:
 		wait_all(begin(m_thrs_rgb), end(m_thrs_rgb));
 		wait_all(begin(m_thrs), end(m_thrs));
 		wait_all(begin(m_thrs_int), end(m_thrs_int));
-		wait_all(begin(m_thrs_save_images), end(m_thrs_save_images));
+		m_thrs_save_images.stop(true);
 	}
 
 	void AddSaveImagesTask(simple_buffer<u8>& ImBGR, simple_buffer<u8>& ImISA, simple_buffer<u16>& ImILA, wxString name)
@@ -608,7 +609,7 @@ public:
 		int ymax = m_ymax;
 		bool convert_to_lab = m_convert_to_lab;
 
-		m_thrs_save_images.emplace_back(shared_custom_task([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab]() mutable {
+		m_thrs_save_images.push(([ImFrameData, ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab](int id) mutable {
                     g_file_names_vector.push_back(name);
 		            fprintf(stderr, "Frame: %s\n", name.ToStdString().c_str());
                     fflush(stderr);
@@ -1674,7 +1675,7 @@ s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End)
 						if (pef - pbf + 1 >= DL)
 						{
 							if (!((finded_prev == 1) && (cmp_prev == 1)))
-							{								
+							{
 								ImIntSP = ImIntS;
 								ImFSP = ImFS;
 								ImNESP = ImNES;
