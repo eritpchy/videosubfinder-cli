@@ -29,9 +29,8 @@ END_EVENT_TABLE()
 CResizableWindow::CResizableWindow(wxWindow* parent, wxWindowID id,
 	const wxPoint& pos,
 	const wxSize& size)
-	: wxWindow(parent, id, pos, size, wxCLIP_CHILDREN | wxWANTS_CHARS)
+	: wxWindow(parent, id, pos, size, wxWANTS_CHARS)
 {
-	m_border_size = m_border_size;
 }
 
 CResizableWindow::~CResizableWindow()
@@ -82,7 +81,8 @@ void CResizableWindow::OnLButtonDown(wxMouseEvent& event)
 		else
 			m_bDownFromBottom = false;
 
-		this->CaptureMouse();
+		this->Raise();
+		this->CaptureMouse();		
 	}
 	else if (y < m_move_border_size)
 	{
@@ -91,6 +91,7 @@ void CResizableWindow::OnLButtonDown(wxMouseEvent& event)
 		//UpdateCursor(event.m_x, event.m_y);
 		m_cur_cursor = wxCURSOR_HAND;
 		this->SetCursor(wxCursor(m_cur_cursor));
+		this->Raise();
 		this->CaptureMouse();
 	}
 }
@@ -103,7 +104,7 @@ void CResizableWindow::OnLButtonUp(wxMouseEvent& event)
 		m_bDownMove = false;
 		m_cur_cursor = wxCURSOR_ARROW;
 		this->SetCursor(wxCursor(m_cur_cursor));
-		this->ReleaseMouse();
+		this->ReleaseMouse();		
 		this->Refresh(true);
 	}
 }
@@ -232,6 +233,7 @@ void CResizableWindow::OnMouseMove(wxMouseEvent& event)
 			this->SetSize(rc);
 			//this->Show(true);
 			//this->Raise();
+			//this->Refresh(true);
 		}
 	}
 	else if (m_bDownMove == true)
@@ -251,6 +253,7 @@ void CResizableWindow::OnMouseMove(wxMouseEvent& event)
 			this->SetSize(rc);
 			//this->Show(true);
 			//this->Raise();
+			//this->Refresh(true);
 		}
 	}
 	else

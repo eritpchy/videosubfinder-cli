@@ -18,6 +18,7 @@
 #include "SearchPanel.h"
 #include <exception>
 #include <wx/sound.h>
+#include <wx/gbsizer.h>
 
 int g_IsSearching = 0;
 int g_IsClose = 0;
@@ -45,10 +46,6 @@ void CSearchPanel::Init()
 {
 	SaveToReportLog("CSearchPanel::Init(): starting...\n");
 
-	m_CLP = wxColour(125,125,125);
-	m_CL1 = wxColour(255, 215, 0);
-	m_CL2 = wxColour(127, 255, 0);
-	
 	wxRect rcP1, rcClP1, rcBT1, rcBTA1, rcBT2, rcBTA2, rcClear, rcRun;
 
 	rcBT1.x = 20;
@@ -88,38 +85,53 @@ void CSearchPanel::Init()
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pP1...\n");
 	m_pP1 = new wxPanel( this, wxID_ANY, rcP1.GetPosition(), rcP1.GetSize() );
-	m_pP1->SetMinSize(rcP1.GetSize());
+	wxSize p1_min_size = rcP1.GetSize();
+	m_pP1->SetMinSize(p1_min_size);
+	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT1...\n");
 
-	m_plblBT1 = new CStaticText( m_pP1, wxID_ANY, wxT("Begin Time:"));
+	m_plblBT1 = new CStaticText(m_pP1, g_cfg.m_label_begin_time, wxID_ANY);
 	m_plblBT1->SetSize(rcBT1);
+	wxSize bt1_min_size = rcBT1.GetSize();
+	m_plblBT1->SetMinSize(bt1_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBT2...\n");
-	m_plblBT2 = new CStaticText( m_pP1, wxID_ANY, wxT("End Time:"));
+	m_plblBT2 = new CStaticText( m_pP1, g_cfg.m_label_end_time, wxID_ANY);
 	m_plblBT2->SetSize(rcBT2);
+	wxSize bt2_min_size = rcBT2.GetSize();
+	m_plblBT2->SetMinSize(bt2_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA1...\n");
-	m_plblBTA1 = new CTextCtrl(m_pP1, wxID_ANY,
-		wxT(""), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_plblBTA1 = new CTextCtrl(m_pP1, ID_LBL_BEGIN_TIME,
+		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA1.GetPosition(), rcBTA1.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER);
+	m_plblBTA1->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
+	wxSize bta1_min_size = rcBTA1.GetSize();
+	m_plblBTA1->SetMinSize(bta1_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_plblBTA2...\n");
-	m_plblBTA2 = new CTextCtrl( m_pP1, wxID_ANY,
-		wxT(""), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+	m_plblBTA2 = new CTextCtrl( m_pP1, ID_LBL_END_TIME,
+		ConvertVideoTime(0), wxString("^[0-9][0-9]:[0-5][0-9]:[0-5][0-9]:[0-9][0-9][0-9]$"), rcBTA2.GetPosition(), rcBTA2.GetSize(), wxALIGN_LEFT | wxST_NO_AUTORESIZE | wxBORDER );
+	m_plblBTA2->Bind(wxEVT_TEXT_ENTER, &CSearchPanel::OnTimeTextEnter, this);
+	wxSize bta2_min_size = rcBTA2.GetSize();
+	m_plblBTA2->SetMinSize(bta2_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pClear...\n");
-	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR,
-		wxT("Clear Folders"), rcClear.GetPosition(), rcClear.GetSize() );
+	m_pClear = new CButton( m_pP1, ID_BTN_CLEAR, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_button_clear_folders_text, rcClear.GetPosition(), rcClear.GetSize() );
+	wxSize clear_min_size =  rcClear.GetSize();
+	m_pClear->SetMinSize(clear_min_size);
 
 	SaveToReportLog("CSearchPanel::Init(): init m_pRun...\n");
-	m_pRun = new CButton( m_pP1, ID_BTN_RUN,
-		wxT("Run Search"), rcRun.GetPosition(), rcRun.GetSize() );
-	
-	m_pP1->SetBackgroundColour( m_CLP );
-	m_plblBT1->SetBackgroundColour( m_CL2 );
-	m_plblBT2->SetBackgroundColour( m_CL2 );
-	m_plblBTA1->SetBackgroundColour( m_CL1 );
-	m_plblBTA2->SetBackgroundColour( m_CL1 );
+	m_pRun = new CButton( m_pP1, ID_BTN_RUN, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_button_run_search_text, rcRun.GetPosition(), rcRun.GetSize() );
+	wxSize run_min_size = rcRun.GetSize();
+	m_pRun->SetMinSize(run_min_size);
+		
+	m_plblBT1->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+	m_plblBT2->SetBackgroundColour(g_cfg.m_main_labels_background_colour);
+	m_plblBTA1->SetBackgroundColour( g_cfg.m_main_text_ctls_background_colour );
+	m_plblBTA2->SetBackgroundColour( g_cfg.m_main_text_ctls_background_colour );
 
 	m_plblBT1->SetFont(m_pMF->m_LBLFont);
 	m_plblBT2->SetFont(m_pMF->m_LBLFont);
@@ -128,21 +140,105 @@ void CSearchPanel::Init()
 	m_pClear->SetFont(m_pMF->m_BTNFont);
 	m_pRun->SetFont(m_pMF->m_BTNFont);
 
-	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
+	m_plblBT1->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblBT2->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblBTA1->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblBTA2->SetTextColour(g_cfg.m_main_text_colour);
+	m_pClear->SetTextColour(g_cfg.m_main_text_colour);
+	m_pRun->SetTextColour(g_cfg.m_main_text_colour);
 
-	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
+	// m_pP1 location sizer
+	{
+		wxBoxSizer* top_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
+		button_sizer->Add(m_pP1, 1, wxALIGN_CENTER, 0);
+		top_sizer->Add(button_sizer, 1, wxALIGN_CENTER);
+		this->SetSizer(top_sizer);
+	}
 
-	button_sizer->Add(m_pP1, 1, wxALIGN_CENTER, 0 );
+	// m_pP1 elements location sizer
+	{
+		wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
+		wxFlexGridSizer* grid_lbls_sizer = new wxFlexGridSizer(2, 2, 6, 4);
+		grid_lbls_sizer->Add(m_plblBT1, 0, wxEXPAND | wxALL);
+		grid_lbls_sizer->Add(m_plblBTA1, 0, wxEXPAND | wxALL);
+		grid_lbls_sizer->Add(m_plblBT2, 0, wxEXPAND | wxALL);
+		grid_lbls_sizer->Add(m_plblBTA2, 0, wxEXPAND | wxALL);
 
-	this->SetSizer(top_sizer);
+		wxGridSizer* grid_btns_sizer = new wxGridSizer(1, 2, 0, 30);
+		grid_btns_sizer->Add(m_pClear, 0, wxEXPAND | wxALL);
+		grid_btns_sizer->Add(m_pRun, 0, wxEXPAND | wxALL);
+
+		vert_box_sizer->Add(grid_lbls_sizer, 0, wxALIGN_CENTER, 0);
+		vert_box_sizer->AddSpacer(10);
+		vert_box_sizer->Add(grid_btns_sizer, 0, wxALIGN_CENTER, 0);
+
+		hor_box_sizer->Add(vert_box_sizer, 1, wxALIGN_CENTER);
+
+		m_pP1->SetSizer(hor_box_sizer);
+	}
 
 	SaveToReportLog("CSearchPanel::Init(): finished.\n");
 }
 
+void CSearchPanel::RefreshData()
+{
+	m_pP1->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
+}
+
+void CSearchPanel::UpdateSize()
+{
+	wxSize best_size = m_pP1->GetSizer()->GetMinSize();
+	wxSize cur_size = m_pP1->GetSize();
+	wxSize cur_client_size = m_pP1->GetClientSize();
+	best_size.x += cur_size.x - cur_client_size.x + 20;
+	best_size.y += cur_size.y - cur_client_size.y + 20;
+	
+	this->GetSizer()->SetItemMinSize(m_pP1, best_size);
+	this->GetSizer()->Layout();
+}
+
+void CSearchPanel::OnTimeTextEnter(wxCommandEvent& evt)
+{
+	int id = evt.GetId();
+	CTextCtrl* pTimeTextCtrl;
+	s64* pTime;
+
+	if (id == ID_LBL_BEGIN_TIME)
+	{
+		pTimeTextCtrl = m_plblBTA1;
+		pTime = &(m_pMF->m_BegTime);
+	}
+	else
+	{
+		pTimeTextCtrl = m_plblBTA2;
+		pTime = &(m_pMF->m_EndTime);
+	}
+
+	pTimeTextCtrl->OnTextEnter(evt);
+	if (m_pMF->m_VIsOpen)
+	{
+		*pTime = GetVideoTime(pTimeTextCtrl->GetValue());
+
+		if (*pTime > m_pMF->m_pVideo->m_Duration)
+		{
+			*pTime = m_pMF->m_pVideo->m_Duration;
+			pTimeTextCtrl->SetValue(ConvertVideoTime(*pTime));
+		}
+		
+		if (m_pMF->m_vs != CMainFrame::Play)
+		{
+			m_pMF->m_pVideo->SetPos(*pTime);
+		}
+	}
+}
+
 void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_rs_mutex);
+
 	if (m_pMF->m_VIsOpen)
 	{
 		wxCommandEvent event;
@@ -160,48 +256,49 @@ void CSearchPanel::OnBnClickedRun(wxCommandEvent& event)
 		
 		m_pMF->m_timer.Start(1000);
 
-		m_pRun->SetLabel("Stop Search");
+		m_pRun->SetLabel(g_cfg.m_button_run_search_stop_text);
+		this->UpdateSize();
 
-		m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pMF->m_pVideoBox->m_pButtonPause->Disable();
+		m_pMF->m_pVideoBox->m_pButtonRun->Disable();
+		m_pMF->m_pVideoBox->m_pButtonStop->Disable();
 
 		m_pMF->m_pPanel->m_pSSPanel->Disable();
 		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		m_pMF->m_pImageBox->ClearScreen();
 
-		m_pMF->m_BegTime = GetVideoTime(wxString(m_plblBTA1->GetValue()));
-		m_pMF->m_EndTime = GetVideoTime(wxString(m_plblBTA2->GetValue()));
+		m_pMF->m_BegTime = GetVideoTime(m_plblBTA1->GetValue());
+		m_pMF->m_EndTime = GetVideoTime(m_plblBTA2->GetValue());
 
 		if (m_pMF->m_pVideo->SetNullRender())
 		{
 			m_pClear->Disable();
-			m_plblBTA1->Disable();
-			m_plblBTA2->Disable();
+			m_plblBTA1->SetEditable(false);
+			m_plblBTA2->SetEditable(false);
 			g_color_ranges = GetColorRanges(g_use_filter_color);
 			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
-			m_pMF->m_pVideo->SetVideoWindowSettins(m_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos,
-			m_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos,
-			m_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos,
-			m_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos);
+			m_pMF->m_pVideo->SetVideoWindowSettins(
+			std::min<double>(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos),
+			std::max<double>(g_pMF->m_pVideoBox->m_pVBox->m_pVSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pVSL2->m_pos),
+			std::min<double>(g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos),
+			std::max<double>(g_pMF->m_pVideoBox->m_pVBox->m_pHSL1->m_pos, g_pMF->m_pVideoBox->m_pVBox->m_pHSL2->m_pos));
 
-			m_pSearchThread = new ThreadSearchSubtitles(m_pMF);
-			m_pSearchThread->Create();
-			m_pSearchThread->Run();
+			g_IsSearching = 1;
+			g_RunSubSearch = 1;
+			m_SearchThread = std::thread(ThreadSearchSubtitles);
 		}
 	}
 	else
 	{
-		if (g_RunSubSearch == 1) 
+		if (g_IsSearching == 1)
 		{
-			m_pRun->Disable();
-
 			m_pMF->m_timer.Stop();
 			wxTimerEvent event;
 			m_pMF->OnTimer(event);
 
 			g_RunSubSearch = 0;
+			m_SearchThread.join();
 		}
 	}
 }
@@ -212,32 +309,28 @@ void CSearchPanel::OnBnClickedClear(wxCommandEvent& event)
 	m_pMF->ClearDir(g_work_dir + "/ISAImages");
 	m_pMF->ClearDir(g_work_dir + "/ILAImages");
 	m_pMF->ClearDir(g_work_dir + "/TXTImages");
-	m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
-	m_pMF->ClearDir(g_work_dir + "/TestImages");
+	m_pMF->ClearDir(g_work_dir + "/ImagesJoined");
+	m_pMF->ClearDir(g_work_dir + "/DebugImages");
 	m_pMF->ClearDir(g_work_dir + "/TXTResults");
+	m_pMF->ClearDir(g_work_dir + "/TestImages/RGBImages");
+	m_pMF->ClearDir(g_work_dir + "/TestImages/TXTImages");
 }
 
-ThreadSearchSubtitles::ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind)
-        : wxThread(kind)
-{
-	g_pMF = pMF;
-}
-
-void ThreadSearchSubtitlesRun(wxThread *pThr);
-
-void *ThreadSearchSubtitles::Entry()
+void ThreadSearchSubtitles()
 {
 	try
 	{
-		ThreadSearchSubtitlesRun(this);
+		g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
+		g_pMF->m_BegTime = FastSearchSubtitles(g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles::Entry():ThreadSearchSubtitlesRun() ") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitles() ") + wxString(e.what()) + wxT("\n"));
 	}
 	
 	if (!(g_pMF->m_blnNoGUI))
 	{
+		SaveToReportLog("ThreadSearchSubtitles: wxPostEvent THREAD_SEARCH_SUBTITLES_END ...\n");
 		wxCommandEvent event(THREAD_SEARCH_SUBTITLES_END); // No specific id
 		wxPostEvent(g_pMF->m_pPanel->m_pSHPanel, event);
 	}
@@ -246,30 +339,20 @@ void *ThreadSearchSubtitles::Entry()
 		g_IsSearching = 0;
 		g_RunSubSearch = 0;
 	}
-
-	return 0;
-}
-
-void ThreadSearchSubtitlesRun(wxThread *pThr)
-{
-	g_IsSearching = 1;
-
-	try
-	{
-		g_pMF->m_BegTime = FastSearchSubtitles(pThr, g_pMF->m_pVideo, g_pMF->m_BegTime, g_pMF->m_EndTime);
-	}
-	catch (const exception& e)
-	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadSearchSubtitlesRun: ") + wxString(e.what()));
-	}
 }
 
 void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_rs_mutex);
+
+	if (m_SearchThread.joinable())
+	{
+		m_SearchThread.join();
+	}
+
 	if (g_IsClose == 1) 
 	{
 		g_IsSearching = 0;
-		m_pMF->Close();
 		return;
 	}
 
@@ -287,7 +370,8 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 			m_pMF->OnFileReOpenVideo(menu_event);
 		}
 
-		m_pMF->m_pPanel->m_pSHPanel->m_pRun->SetLabel("Run Search");
+		m_pRun->SetLabel(g_cfg.m_button_run_search_text);
+		this->UpdateSize();
 
 		m_pMF->m_pPanel->m_pSSPanel->Enable();
 		m_pMF->m_pPanel->m_pOCRPanel->Enable();
@@ -299,26 +383,14 @@ void CSearchPanel::ThreadSearchSubtitlesEnd(wxCommandEvent& event)
 		}
 		else if ((g_RunSubSearch == 1) && g_playback_sound)
 		{
+			SaveToReportLog("ThreadSearchSubtitlesEnd: trying to play sound ...\n");
 			wxString Str = g_app_dir + wxT("/finished.wav");
-#ifdef WIN32
-			if (wxFileExists(Str))
-			{
-				wxSound sound(Str);
-				if (sound.IsOk())
-				{
-					sound.Play();
-				}
-			}
-#else
-			// Unfortunately wxWidgets doesn't play sound
-			system(wxString::Format(wxT("canberra-gtk-play -f \"%s\""), Str).c_str());
-#endif
+			PlaySound(Str);
 		}
 
 		m_pClear->Enable();
-		m_plblBTA1->Enable();
-		m_plblBTA2->Enable();
-		m_pRun->Enable();
+		m_plblBTA1->SetEditable(true);
+		m_plblBTA2->SetEditable(true);
 	}
 
 	g_IsSearching = 0;

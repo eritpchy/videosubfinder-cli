@@ -27,6 +27,11 @@ public:
 		CControl::m_all_controls.push_back(this);
 	}
 
+	~CControl()
+	{		
+		CControl::m_all_controls.erase(find(CControl::m_all_controls.begin(), CControl::m_all_controls.end(), this));
+	}
+
 	static void RefreshAllControlsData()
 	{
 		for (int i = 0; i < m_all_controls.size(); i++)
@@ -35,7 +40,16 @@ public:
 		}
 	}
 
-	virtual void UpdateData(wxString *newval){}
+	static void UpdateAllControlsSize()
+	{
+		for (int i = m_all_controls.size() - 1; i >= 0; i--)
+		{
+			m_all_controls[i]->UpdateSize();
+		}
+	}
+
+	virtual bool UpdateData(wxString* newval) { bool res = true; return res; }
+	virtual void UpdateSize(){}
 
 	virtual void RefreshData() = 0;
 };

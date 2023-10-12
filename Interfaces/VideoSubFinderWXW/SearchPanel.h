@@ -18,6 +18,8 @@
 #include <wx/panel.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
+#include <thread>
+#include <mutex>
 #include "SSOWnd.h"
 #include "Button.h"
 #include "StaticText.h"
@@ -30,19 +32,15 @@ class CSSOWnd;
 extern int g_IsSearching;
 extern int g_IsClose;
 
-class ThreadSearchSubtitles : public wxThread
-{
-public:
-    ThreadSearchSubtitles(CMainFrame *pMF, wxThreadKind kind = wxTHREAD_DETACHED);
+void ThreadSearchSubtitles();
 
-    virtual void *Entry();
-};
-
-class CSearchPanel : public wxPanel
+class CSearchPanel : public wxPanel, public CControl
 {
 public:
 	CSearchPanel(CSSOWnd* pParent);
 	~CSearchPanel();
+
+	std::mutex m_rs_mutex;
 
 	CButton	*m_pClear;
 	CButton	*m_pRun;
@@ -54,15 +52,11 @@ public:
 	CStaticText  *m_plblBT2;
 	CTextCtrl  *m_plblBTA2;
 	
-	wxColour   m_CLP;
-	wxColour   m_CL1;
-	wxColour   m_CL2;
-
 	CSSOWnd		*m_pParent;
 
 	CMainFrame	*m_pMF;
 
-	ThreadSearchSubtitles *m_pSearchThread;
+	std::thread m_SearchThread;
 
 	void Init();
 
@@ -70,7 +64,10 @@ public:
 	//HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	void OnBnClickedRun(wxCommandEvent& event);
 	void OnBnClickedClear(wxCommandEvent& event);
+	void OnTimeTextEnter(wxCommandEvent& evt);
 	void ThreadSearchSubtitlesEnd(wxCommandEvent& event);
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
    DECLARE_EVENT_TABLE()

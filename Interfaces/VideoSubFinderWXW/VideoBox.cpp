@@ -18,16 +18,13 @@
 
 BEGIN_EVENT_TABLE(CVideoWnd, wxWindow)
 	EVT_PAINT(CVideoWnd::OnPaint)
-	EVT_SET_FOCUS(CVideoWnd::OnSetFocus)
 	EVT_ERASE_BACKGROUND(CVideoWnd::OnEraseBackGround)
 	EVT_LEFT_DOWN(CVideoWnd::OnLeftDown)
 END_EVENT_TABLE()
 
 CVideoWnd::CVideoWnd(CVideoWindow *pVW)
-		:wxWindow( pVW, wxID_ANY )
+		:wxWindow(pVW, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxWANTS_CHARS)
 {
-	this->SetBackgroundColour(wxColor(125, 125, 125));
-
 	m_pVW = pVW;
 	m_pVB = pVW->m_pVB;
 	m_filter_image = false;
@@ -53,7 +50,7 @@ void CVideoWnd::OnEraseBackGround(wxEraseEvent& event)
 	{
 		int w, h;
 		this->GetClientSize(&w, &h);
-		event.GetDC()->SetBrush(wxBrush(wxColor(125, 125, 125)));
+		event.GetDC()->SetBrush(wxBrush(g_cfg.m_video_image_box_background_colour));
 		event.GetDC()->DrawRectangle(0, 0, w, h);
 	}
 }
@@ -162,6 +159,64 @@ inline void FilterImage(simple_buffer<u8> &ImBGR, simple_buffer<u8> &ImLab, cons
 			int offset;			
 			bool bln_in_color_ranges;
 			bool bln_in_outline_color_ranges;
+
+			if (!bln_t_pressed)
+			{
+				if (bln_y_pressed)
+				{
+					if (bln_color_ranges)
+					{
+						color_range cr = g_color_ranges[0];
+						u8 mid_y;
+						
+						if (cr.m_color_space == ColorSpace::RGB)
+						{						
+							u8 mid_b, mid_g, mid_r;
+
+							mid_b = (cr.m_min_data[2] + cr.m_max_data[2]) / 2;
+							mid_g = (cr.m_min_data[1] + cr.m_max_data[1]) / 2;
+							mid_r = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+							BGRToYUV(mid_b, mid_g, mid_r, &mid_y);
+						}
+						else
+						{
+							mid_y = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+						}
+
+						if (mid_y < 50)
+						{
+							bc = GetBGRColor(ColorName::White);
+						}
+					}
+				}
+				else if (bln_i_pressed)
+				{
+					if (bln_outline_color_ranges)
+					{
+						color_range cr = g_outline_color_ranges[0];
+						u8 mid_y;
+
+						if (cr.m_color_space == ColorSpace::RGB)
+						{
+							u8 mid_b, mid_g, mid_r;
+
+							mid_b = (cr.m_min_data[2] + cr.m_max_data[2]) / 2;
+							mid_g = (cr.m_min_data[1] + cr.m_max_data[1]) / 2;
+							mid_r = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+							BGRToYUV(mid_b, mid_g, mid_r, &mid_y);
+						}
+						else
+						{
+							mid_y = (cr.m_min_data[0] + cr.m_max_data[0]) / 2;
+						}
+
+						if (mid_y < 50)
+						{
+							bc = GetBGRColor(ColorName::White);
+						}
+					}
+				}
+			}
 
 			for (int p_id = 0; p_id < num_pixels; p_id++)
 			{
@@ -360,11 +415,6 @@ void CVideoWnd::OnPaint(wxPaintEvent& WXUNUSED(event))
 	}
 }
 
-void CVideoWnd::OnSetFocus(wxFocusEvent& event)
-{
-	m_pVB->SetFocus();
-}
-
 void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 {
 	if (m_pVB != NULL)
@@ -379,7 +429,7 @@ void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 			if ((m_pVB->m_pMF->m_VIsOpen) || (m_pVB->m_pImage != NULL))
 			{
 				wxClientDC dc(this);
-				wxColor clr;
+				wxColour clr;
 				dc.GetPixel(wxPoint(mx, my), &clr);
 
 				u8 bgr[3], lab[3], y;
@@ -391,11 +441,12 @@ void CVideoWnd::OnLeftDown(wxMouseEvent& event)
 				BGRToYUV(bgr[0], bgr[1], bgr[2], &y);
 				BGRToLab(bgr[0], bgr[1], bgr[2], &(lab[0]), &(lab[1]), &(lab[2]));
 
-				m_pVB->m_pMF->m_cfg.m_pixel_color_bgr = wxString::Format(wxT("RGB: r:%d g:%d b:%d L:%d"), (int)(bgr[2]), (int)(bgr[1]), (int)(bgr[0]), (int)y);
-				m_pVB->m_pMF->m_cfg.m_pixel_color_lab = wxString::Format(wxT("Lab: l:%d a:%d b:%d"), (int)(lab[0]), (int)(lab[1]), (int)(lab[2]));
-				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorRGB->SetValue(m_pVB->m_pMF->m_cfg.m_pixel_color_bgr);
-				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorLab->SetValue(m_pVB->m_pMF->m_cfg.m_pixel_color_lab);
-				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->SetBackgroundColour(wxColour(bgr[2], bgr[1], bgr[0]));
+				g_cfg.m_pixel_color_bgr = wxString::Format(wxT("RGB: r:%d g:%d b:%d L:%d"), (int)(bgr[2]), (int)(bgr[1]), (int)(bgr[0]), (int)y);
+				g_cfg.m_pixel_color_lab = wxString::Format(wxT("Lab: l:%d a:%d b:%d"), (int)(lab[0]), (int)(lab[1]), (int)(lab[2]));
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorRGB->SetValue(g_cfg.m_pixel_color_bgr);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorLab->SetValue(g_cfg.m_pixel_color_lab);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_PixelColorExample = wxColour(bgr[2], bgr[1], bgr[0]);
+				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->SetBackgroundColour(m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_PixelColorExample);
 				m_pVB->m_pMF->m_pPanel->m_pSSPanel->m_pPixelColorExample->Refresh();
 			}
 		}
@@ -426,13 +477,13 @@ void CVideoWindow::Init()
 {
 	m_pVideoWnd = new CVideoWnd(this);
 
-	m_pHSL1 = new CSeparatingLine(this, 200, 3, 7, 3, 100, 110, 50, 0);
+	m_pHSL1 = new CSeparatingLine(this, 200, 3, 7, 3, 100, 110, 50, 0, g_cfg.m_video_box_separating_line_colour, g_cfg.m_video_box_separating_line_border_colour);
 	m_pHSL1->m_pos = 0;
-	m_pHSL2 = new CSeparatingLine(this, 200, 3, 7, 3, 140, 150, 50, 0);
+	m_pHSL2 = new CSeparatingLine(this, 200, 3, 7, 3, 140, 150, 50, 0, g_cfg.m_video_box_separating_line_colour, g_cfg.m_video_box_separating_line_border_colour);
 	m_pHSL2->m_pos = 1;
-	m_pVSL1 = new CSeparatingLine(this, 3, 100, 3, 7, 100, 110, 50, 1);
+	m_pVSL1 = new CSeparatingLine(this, 3, 100, 3, 7, 100, 110, 50, 1, g_cfg.m_video_box_separating_line_colour, g_cfg.m_video_box_separating_line_border_colour);
 	m_pVSL1->m_pos = 0;
-	m_pVSL2 = new CSeparatingLine(this, 3, 100, 3, 7, 140, 150, 50, 1);
+	m_pVSL2 = new CSeparatingLine(this, 3, 100, 3, 7, 140, 150, 50, 1, g_cfg.m_video_box_separating_line_colour, g_cfg.m_video_box_separating_line_border_colour);
 	m_pVSL2->m_pos = 1;
 
 	m_pHSL1->Raise();
@@ -468,7 +519,7 @@ void CVideoWindow::Refresh(bool eraseBackground,
 
 	if (m_pVideoWnd)
 	{
-		if (m_pVideoWnd->GetParent() == NULL)
+		if (m_pVideoWnd->GetParent() != this)
 		{
 			m_pVideoWnd->Refresh(true);
 			need_to_refresh = false;
@@ -532,20 +583,27 @@ void CVideoWindow::OnSize(wxSizeEvent& event)
 
 BEGIN_EVENT_TABLE(CVideoBox, CResizableWindow)
 	EVT_SIZE(CVideoBox::OnSize)
-	EVT_MENU(ID_TB_RUN, CVideoBox::OnBnClickedRun)
-	EVT_MENU(ID_TB_PAUSE, CVideoBox::OnBnClickedPause)
-	EVT_MENU(ID_TB_STOP, CVideoBox::OnBnClickedStop)
+	EVT_BUTTON(ID_TB_RUN, CVideoBox::OnBnClickedRun)
+	EVT_BUTTON(ID_TB_PAUSE, CVideoBox::OnBnClickedPause)
+	EVT_BUTTON(ID_TB_STOP, CVideoBox::OnBnClickedStop)
 	EVT_KEY_DOWN(CVideoBox::OnKeyDown)
 	EVT_KEY_UP(CVideoBox::OnKeyUp)
 	EVT_MOUSEWHEEL(CVideoBox::OnMouseWheel)
 	EVT_SCROLL_THUMBTRACK(CVideoBox::OnHScroll)
 	EVT_TIMER(TIMER_ID_VB, CVideoBox::OnTimer)
+	EVT_RIGHT_DOWN(CVideoBox::OnRButtonDown)
 END_EVENT_TABLE()
 
-CVideoBox::CVideoBox(CMainFrame* pMF, wxColour	bc)
-		: CResizableWindow(pMF,//->GetClientWindow(),
+void CVideoBox::OnRButtonDown(wxMouseEvent& event)
+{
+	SetFocus();
+	m_pHW->Popup();
+}
+
+CVideoBox::CVideoBox(CMainFrame* pMF)
+		: CResizableWindow(pMF,
 				  wxID_ANY,
-		          wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_VB), m_bc (bc)
+		          wxDefaultPosition, wxDefaultSize), m_timer(this, TIMER_ID_VB)
 {
 	m_pImage = NULL;
 	m_pMF = pMF;
@@ -560,73 +618,130 @@ CVideoBox::~CVideoBox()
 		delete m_pImage;
 		m_pImage = NULL;
 	}
+
+	if (m_pFullScreenWin != NULL)
+	{
+		m_pFullScreenWin->Destroy();
+	}
+
+	if (m_pHW != NULL)
+	{
+		m_pHW->Destroy();
+	}
+}
+
+void ReplaceColour(wxBitmap& bmp, wxColour orig_colour, wxColour repl_colour)
+{
+	if (bmp.IsOk())
+	{
+		int w = bmp.GetWidth();
+		int h = bmp.GetHeight();
+		wxColour Colour;
+
+		wxMemoryDC dc;
+		dc.SelectObject(bmp);
+		dc.SetPen(wxPen(repl_colour));
+
+		for (int y = 0; y < h; y++)
+		{
+			for (int x = 0; x < w; x++)
+			{
+				dc.GetPixel(x, y, &Colour);
+
+				if (Colour == orig_colour)
+				{
+					dc.DrawPoint(x, y);
+				}
+			}
+		}
+	}
+}
+
+void GetToolBarImages(wxImage& image, wxImage& image_focused, wxImage& image_selected, wxImage& origImage,
+						wxColour border_colour, wxColour border_colour_focused, wxColour border_colour_selected)
+{
+	wxBitmap bmp = wxBitmap(origImage);
+	wxBitmap bmp_focused = bmp;
+	wxBitmap bmp_selected = bmp;
+
+	ReplaceColour(bmp, g_cfg.m_toolbar_bitmaps_transparent_colour, border_colour);
+	ReplaceColour(bmp_focused, g_cfg.m_toolbar_bitmaps_transparent_colour, border_colour_focused);
+	ReplaceColour(bmp_selected, g_cfg.m_toolbar_bitmaps_transparent_colour, border_colour_selected);
+
+	image = bmp.ConvertToImage();
+	image_focused = bmp_focused.ConvertToImage();
+	image_selected = bmp_selected.ConvertToImage();	
 }
 
 void CVideoBox::Init()
 {
 	//wxString strVBClass;
 	//wxString strVBXClass;
-	wxBitmap bmp;
-
-	m_VBX = wxColour(125, 125, 125);
-	m_CL1 = wxColour(255, 255, 225);
-	m_CL2 = wxColour(0, 0, 0);
+	wxImage image, image_focused, image_selected;
 
 	int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
 	int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
 
-#ifndef WIN32
-	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT);
-	m_pFullScreenWin->Hide();	
-#endif
+	m_pFullScreenWin = new wxFrame(m_pMF, wxID_ANY, wxT(""), wxPoint(0,0), wxSize(w, h), wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT);
+	m_pFullScreenWin->ShowFullScreen(true);
+	m_pFullScreenWin->Hide();
 
-	this->SetBackgroundColour(m_bc);
+	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
+	m_prevBackgroundColour = g_cfg.m_video_image_box_border_colour;
 
-	m_pVBar = new wxToolBar(this, wxID_ANY,
-                               wxDefaultPosition, wxSize(30, 30), 
-							   wxTB_HORIZONTAL | wxTB_BOTTOM | 
-							   /*wxTB_NO_TOOLTIPS |*/ wxTB_FLAT );
-	m_pVBar->SetMargins(4, 4);
+	wxColour border_colour_focused(((int)g_cfg.m_video_image_box_border_colour.Red()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 9 / 10);
+	wxColour border_colour_selected(((int)g_cfg.m_video_image_box_border_colour.Red()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 2 / 3);
 
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_run.bmp", m_bc);
-	m_pVBar->AddTool(ID_TB_RUN, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
+	m_tb_run_origImage = wxImage(g_app_dir + "/bitmaps/tb_run.bmp");
+	GetToolBarImages(image, image_focused, image_selected, m_tb_run_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+	m_pButtonRun = new CBitmapButton(this, ID_TB_RUN, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_pause.bmp", m_bc);
-	m_pVBar->AddTool(ID_TB_PAUSE, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);
-	
-	LoadToolBarImage(bmp, g_app_dir + "/bitmaps/tb_stop.bmp", m_bc);
-	m_pVBar->AddTool(ID_TB_STOP, _T(""), bmp, wxNullBitmap, wxITEM_CHECK);	
+	m_tb_pause_origImage = wxImage(g_app_dir + "/bitmaps/tb_pause.bmp");
+	GetToolBarImages(image, image_focused, image_selected, m_tb_pause_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+	m_pButtonPause = new CBitmapButton(this, ID_TB_PAUSE, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
 
-	m_plblVB = new CStaticText( this, ID_LBL_VB, wxT("Video Box") );
+	m_tb_stop_origImage = wxImage(g_app_dir + "/bitmaps/tb_stop.bmp");
+	GetToolBarImages(image, image_focused, image_selected, m_tb_stop_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+	m_pButtonStop = new CBitmapButton(this, ID_TB_STOP, image, image_focused, image_selected, wxDefaultPosition, image.GetSize());
+
+	m_pButtonPause->Disable();
+	m_pButtonRun->Disable();
+	m_pButtonStop->Disable();
+
+	m_plblVB = new CStaticText(this, g_cfg.m_video_box_title, ID_LBL_VB);
 	m_plblVB->SetSize(0, 0, 390, 30);
 	m_plblVB->SetFont(m_pMF->m_LBLFont);
-	m_plblVB->SetBackgroundColour( m_CL1 );
+	m_plblVB->SetTextColour(g_cfg.m_main_text_colour);
+	m_plblVB->SetBackgroundColour(g_cfg.m_video_image_box_title_colour);
 	
-	m_plblTIME = new CStaticText( this, ID_LBL_TIME, 
-									wxT("00:00:00,000/00:00:00,000   "), wxALIGN_RIGHT | wxTB_BOTTOM);
+	m_plblTIME = new CStaticText(this, g_cfg.m_video_box_lblTIME_label, ID_LBL_TIME, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL | wxTB_BOTTOM);
 	m_plblTIME->SetSize(200, 242, 190, 26);
 	m_plblTIME->SetFont(m_pMF->m_LBLFont);
-	m_plblTIME->SetTextColour(*wxWHITE);
-	m_plblTIME->SetBackgroundColour( m_CL2 );
+	m_plblTIME->SetTextColour(g_cfg.m_video_box_time_text_colour);
+	m_plblTIME->SetBackgroundColour(g_cfg.m_video_box_time_colour);
 
 	m_pVBox = new CVideoWindow(this);
 	m_pVBox->Init();
+
+	m_pVBox->m_pVideoWnd->SetBackgroundColour(g_cfg.m_video_image_box_background_colour);
 
 	m_pSB = new CScrollBar(this, ID_TRACKBAR);
 	m_pSB->SetScrollRange(0, 255);
 
 	this->SetSize(20,20,402,300);
 
-	m_pVBar->Realize();
+	m_pHW = new CPopupHelpWindow(g_cfg.m_help_desc_hotkeys_for_video_box);
 
 	m_plblVB->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblVB->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblVB->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblVB->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblVB->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
 	m_plblVB->m_pST->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblVB->m_pST->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
 	m_plblVB->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblVB->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
+	m_plblVB->m_pST->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
 
 	m_plblTIME->Bind(wxEVT_MOTION, &CResizableWindow::OnMouseMove, this);
 	m_plblTIME->Bind(wxEVT_LEAVE_WINDOW, &CResizableWindow::OnMouseLeave, this);
@@ -637,53 +752,109 @@ void CVideoBox::Init()
 	m_plblTIME->m_pST->Bind(wxEVT_LEFT_DOWN, &CResizableWindow::OnLButtonDown, this);
 	m_plblTIME->m_pST->Bind(wxEVT_LEFT_UP, &CResizableWindow::OnLButtonUp, this);
 
+	m_pVBox->m_pHSL1->m_pos = 1 - g_cfg.m_top_video_image_percent_end;
+	m_pVBox->m_pHSL2->m_pos = 1 - g_cfg.m_bottom_video_image_percent_end;
+	m_pVBox->m_pVSL1->m_pos = g_cfg.m_left_video_image_percent_end;
+	m_pVBox->m_pVSL2->m_pos = g_cfg.m_right_video_image_percent_end;
+
+	m_pVBox->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
+
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_MOUSEWHEEL, &CVideoBox::OnMouseWheel, this);
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_RIGHT_DOWN, &CVideoBox::OnRButtonDown, this);
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_DOWN, &CVideoBox::OnKeyDown, this);
+	m_pVBox->m_pVideoWnd->Bind(wxEVT_KEY_UP, &CVideoBox::OnKeyUp, this);
+
 	m_WasInited = true;
+}
+
+void CVideoBox::UpdateSize()
+{
+	wxSizeEvent event;
+	OnSize(event);
+	m_pVBox->OnSize(event);
+}
+
+void CVideoBox::RefreshData()
+{
+	this->SetBackgroundColour(g_cfg.m_video_image_box_border_colour);
+	m_pVBox->m_pVideoWnd->SetBackgroundColour(g_cfg.m_video_image_box_background_colour);
+
+	if (g_cfg.m_video_image_box_background_colour != m_prevBackgroundColour)
+	{
+		wxColour border_colour_focused(((int)g_cfg.m_video_image_box_border_colour.Red()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 9 / 10, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 9 / 10);
+		wxColour border_colour_selected(((int)g_cfg.m_video_image_box_border_colour.Red()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Green()) * 2 / 3, ((int)g_cfg.m_video_image_box_border_colour.Blue()) * 2 / 3);
+
+		GetToolBarImages(m_pButtonRun->m_image, m_pButtonRun->m_image_focused, m_pButtonRun->m_image_selected, m_tb_run_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+		m_pButtonRun->Refresh();
+
+		GetToolBarImages(m_pButtonPause->m_image, m_pButtonPause->m_image_focused, m_pButtonPause->m_image_selected, m_tb_pause_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+		m_pButtonPause->Refresh();
+
+		GetToolBarImages(m_pButtonStop->m_image, m_pButtonStop->m_image_focused, m_pButtonStop->m_image_selected, m_tb_stop_origImage, g_cfg.m_video_image_box_border_colour, border_colour_focused, border_colour_selected);
+		m_pButtonStop->Refresh();
+	}
+
+	m_prevBackgroundColour = g_cfg.m_video_image_box_border_colour;
+
+	m_pVBox->m_pHSL1->m_pos = 1 - g_cfg.m_top_video_image_percent_end;
+	m_pVBox->m_pHSL2->m_pos = 1 - g_cfg.m_bottom_video_image_percent_end;
+	m_pVBox->m_pVSL1->m_pos = g_cfg.m_left_video_image_percent_end;
+	m_pVBox->m_pVSL2->m_pos = g_cfg.m_right_video_image_percent_end;
 }
 
 void CVideoBox::OnSize(wxSizeEvent& event)
 {
 	int w, h, sbw, sbh, csbw, csbh;
-	wxRect rlVB, rlTIME, rcSB, rcVBOX, rcVBAR;
+	wxRect rlVB, rlTIME, rcSB, rcVBOX, rcButtonRunPause, rcButtonStop;
+	wxSize lblVB_opt_size = m_plblVB->GetOptimalSize();
+	wxSize lblIB_opt_size = m_pMF->m_pImageBox ? m_pMF->m_pImageBox->m_plblIB->GetOptimalSize() : wxSize(0, 0);
+	wxSize lblTIME_opt_size = m_plblTIME->GetOptimalSize(0);
 
 	this->GetClientSize(&w, &h);
 	
 	rlVB.x = 0;
 	rlVB.width = w;
 	rlVB.y = 0;
-	rlVB.height = 28;
+	rlVB.height = std::max<int>(lblVB_opt_size.y, lblIB_opt_size.y);
 
-	int vbw, vbh;
-	m_pVBar->GetBestSize(&vbw, &vbh);
+	int bw, bh;
+	wxSize opt_bsize = m_pButtonRun->GetOptimalSize(0, lblTIME_opt_size.y);
+	bw = opt_bsize.x;
+	bh = opt_bsize.y;
 
-	rcVBAR.width = vbw;
-	rcVBAR.height = vbh;
-	rcVBAR.x = 2;
-	rcVBAR.y = h - rcVBAR.height - 2;
+	rcButtonRunPause.width = bw;
+	rcButtonRunPause.height = bh;
+	rcButtonRunPause.x = 4;
+	rcButtonRunPause.y = h - bh - rcButtonRunPause.x;
+
+	rcButtonStop = rcButtonRunPause;
+	rcButtonStop.x = rcButtonRunPause.x + rcButtonRunPause.width + 2;
 
 	m_pSB->GetClientSize(&csbw, &csbh);
 	m_pSB->GetSize(&sbw, &sbh);
 
-	rcSB.x = 2;
+	rcSB.x = rcButtonRunPause.x;
 	rcSB.width = w - rcSB.x*2;
 	rcSB.height = (sbh-csbh) + m_pSB->m_SBLA.GetHeight();
-	rcSB.y = rcVBAR.y - rcSB.height - 1;	
+	rcSB.y = rcButtonRunPause.y - rcSB.height - 1;
 	
-	rcVBOX.x = 0;
-	rcVBOX.width = w;
+	rcVBOX.x = rcButtonRunPause.x;
+	rcVBOX.width = w - rcVBOX.x*2;
 	rcVBOX.y = rlVB.GetBottom() + 1;
 	rcVBOX.height = rcSB.y - rcVBOX.y - 2;
 
 	m_plblVB->SetSize(rlVB);
 	m_pVBox->SetSize(rcVBOX);
-	m_pSB->SetSize(rcSB);
-	m_pVBar->SetSize(rcVBAR);
-
-	//m_pVBar->GetSize(&w, &h);
-
-	rlTIME.width = w - rcVBAR.width - rcVBAR.x - 2;
-	rlTIME.height = 22;
-	rlTIME.x = rcVBAR.x + rcVBAR.width;
-	rlTIME.y = rcVBAR.y + (rcVBAR.height - rlTIME.height)/2;
+	m_pSB->SetSize(rcSB);	
+	m_pButtonPause->SetSize(rcButtonRunPause);
+	m_pButtonPause->Hide();
+	m_pButtonRun->SetSize(rcButtonRunPause);
+	m_pButtonStop->SetSize(rcButtonStop);
+	
+	rlTIME.x = rcButtonStop.x + rcButtonStop.width + 2;
+	rlTIME.y = rcButtonStop.y;
+	rlTIME.width = w - rlTIME.x - rcButtonRunPause.x;
+	rlTIME.height = rcButtonStop.height;
 
 	m_plblTIME->SetSize(rlTIME);
 
@@ -702,17 +873,16 @@ void CVideoBox::OnBnClickedRun(wxCommandEvent& event)
 		if (m_pMF->m_vs != m_pMF->Play)
 		{
 			m_pMF->m_vs = m_pMF->Play;
-			m_pVBar->ToggleTool(ID_TB_RUN, true);
-			m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-			m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pButtonRun->Hide();
+			m_pButtonPause->Show();
 			m_pMF->m_pVideo->Run();
 		}
 	}
 	else
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pButtonPause->Disable();
+		m_pButtonRun->Disable();
+		m_pButtonStop->Disable();
 	}
 }
 
@@ -724,18 +894,17 @@ void CVideoBox::OnBnClickedPause(wxCommandEvent& event)
 	{
 		if (m_pMF->m_vs != m_pMF->Pause)
 		{
-			m_pMF->m_vs = m_pMF->Pause;
-			m_pVBar->ToggleTool(ID_TB_RUN, false);
-			m_pVBar->ToggleTool(ID_TB_PAUSE, true);
-			m_pVBar->ToggleTool(ID_TB_STOP, false);
+			m_pMF->m_vs = m_pMF->Pause;			
+			m_pButtonPause->Hide();
+			m_pButtonRun->Show();
 			m_pMF->m_pVideo->Pause();
 		}
 	}
 	else
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pButtonPause->Disable();
+		m_pButtonRun->Disable();
+		m_pButtonStop->Disable();
 	}
 }
 
@@ -748,14 +917,16 @@ void CVideoBox::OnBnClickedStop(wxCommandEvent& event)
 	}
 	else
 	{
-		m_pVBar->ToggleTool(ID_TB_RUN, false);
-		m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-		m_pVBar->ToggleTool(ID_TB_STOP, false);
+		m_pButtonPause->Disable();
+		m_pButtonRun->Disable();
+		m_pButtonStop->Disable();
 	}
 }
 
 void CVideoBox::OnKeyDown(wxKeyEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	s64 Cur;
 	int key_code = event.GetKeyCode();
 	wxCommandEvent evt;
@@ -772,31 +943,33 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 		case 'u':
 		case 'I':
 		case 'i':
-			g_color_ranges = GetColorRanges(g_use_filter_color);
-			g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
+			// This fix issue in case of Run Search and redefining g_color_ranges and g_outline_color_ranges
+			{
+				std::vector<color_range> color_ranges = GetColorRanges(g_use_filter_color);
+				std::vector<color_range> outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
 
-			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
-			{				
-				m_pVBox->m_pVideoWnd->Reparent(m_pFullScreenWin);
-
-				int w = wxSystemSettings::GetMetric(wxSYS_SCREEN_X);
-				int h = wxSystemSettings::GetMetric(wxSYS_SCREEN_Y);
-				m_pVBox->m_pVideoWnd->SetSize(0, 0, w, h);
-
-				if (m_pFullScreenWin != NULL)
+				if (g_color_ranges != color_ranges)
 				{
-					if (!m_pFullScreenWin->IsFullScreen())
-					{
-						m_pFullScreenWin->ShowFullScreen(true);
-					}
-					if (!m_pFullScreenWin->IsShown())
-					{
-						m_pFullScreenWin->Show(true);
-					}
+					g_color_ranges = color_ranges;
 				}
 
+				if (g_outline_color_ranges != outline_color_ranges)
+				{
+					g_outline_color_ranges = outline_color_ranges;
+				}
+			}
+
+			if (m_pVBox->m_pVideoWnd->CheckFilterImage())
+			{
 				if (!m_timer.IsRunning())
 				{
+					m_pVBox->m_pVideoWnd->Reparent(m_pFullScreenWin);
+
+					wxSize cl_size = m_pFullScreenWin->GetClientSize();
+					m_pVBox->m_pVideoWnd->SetSize(0, 0, cl_size.x, cl_size.y);
+
+					m_pFullScreenWin->Show();
+
 					m_timer.Start(100);
 				}
 
@@ -872,6 +1045,8 @@ void CVideoBox::OnKeyDown(wxKeyEvent& event)
 
 void CVideoBox::OnKeyUp(wxKeyEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	int key_code = event.GetKeyCode();
 
 	switch (key_code)
@@ -914,35 +1089,27 @@ void CVideoBox::OnTimer(wxTimerEvent& event)
 			m_timer.Stop();
 		}
 
-		if (m_pFullScreenWin) // Linux case
+		if (m_pFullScreenWin->IsShown())
 		{
-			if (m_pFullScreenWin->IsShown())
-			{
-				// note: this is the hack for bring separating lines to top of video window
-				m_pFullScreenWin->Hide();
-				m_pVBox->m_pHSL1->Reparent(m_pFullScreenWin);
-				m_pVBox->m_pHSL2->Reparent(m_pFullScreenWin);
-				m_pVBox->m_pVSL1->Reparent(m_pFullScreenWin);
-				m_pVBox->m_pVSL2->Reparent(m_pFullScreenWin);
+			// note: this is the hack for bring separating lines to top of video window
+			m_pFullScreenWin->Hide();
+			m_pVBox->m_pHSL1->Reparent(m_pFullScreenWin);
+			m_pVBox->m_pHSL2->Reparent(m_pFullScreenWin);
+			m_pVBox->m_pVSL1->Reparent(m_pFullScreenWin);
+			m_pVBox->m_pVSL2->Reparent(m_pFullScreenWin);
 
-				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
-				m_pVBox->m_pHSL1->Reparent(m_pVBox);
-				m_pVBox->m_pHSL2->Reparent(m_pVBox);
-				m_pVBox->m_pVSL1->Reparent(m_pVBox);
-				m_pVBox->m_pVSL2->Reparent(m_pVBox);
+			m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
+			m_pVBox->m_pHSL1->Reparent(m_pVBox);
+			m_pVBox->m_pHSL2->Reparent(m_pVBox);
+			m_pVBox->m_pVSL1->Reparent(m_pVBox);
+			m_pVBox->m_pVSL2->Reparent(m_pVBox);
 
-				wxSizeEvent event;
-				m_pVBox->OnSize(event);
-			}
-		}
-		else
-		{
-			if (m_pVBox->m_pVideoWnd->GetParent() == NULL)
-			{
-				m_pVBox->m_pVideoWnd->Reparent(m_pVBox);
-				wxSizeEvent event;
-				m_pVBox->OnSize(event);
-			}
+			m_pHW->Hide();
+
+			wxSizeEvent event;
+			m_pVBox->OnSize(event);
+
+			this->SetFocus();
 		}
 	}
 }
@@ -951,20 +1118,15 @@ void CVideoBox::OnMouseWheel(wxMouseEvent& event)
 {
 	if (m_pMF->m_VIsOpen)
 	{
-		s64 Cur;
+		wxCommandEvent cmd_event;
 
 		if (event.m_wheelRotation > 0)
 		{
-			m_pMF->PauseVideo();
-			m_pMF->m_pVideo->OneStep();
+			m_pMF->OnNextFrame(cmd_event);
 		}
 		else
 		{
-			m_pMF->PauseVideo();
-			Cur = m_pMF->m_pVideo->GetPos();
-			Cur -= m_pMF->m_dt;
-			if (Cur < 0) Cur = 0;
-			m_pMF->m_pVideo->SetPosFast(Cur);
+			m_pMF->OnPreviousFrame(cmd_event);
 		}
 	}
 	else
@@ -994,8 +1156,14 @@ void CVideoBox::ViewImage(simple_buffer<int> &Im, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		m_pVBox->m_pVideoWnd->Refresh(false);
-		m_pVBox->m_pVideoWnd->Update();
+		if (m_timer.IsRunning())
+		{
+			m_pVBox->m_pVideoWnd->Refresh(false);
+		}
+		else
+		{
+			m_pVBox->Refresh(false);
+		}
 	}
 }
 
@@ -1018,8 +1186,14 @@ void CVideoBox::ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		m_pVBox->m_pVideoWnd->Refresh(false);
-		m_pVBox->m_pVideoWnd->Update();
+		if (m_timer.IsRunning())
+		{
+			m_pVBox->m_pVideoWnd->Refresh(false);
+		}
+		else
+		{
+			m_pVBox->Refresh(false);
+		}
 	}
 }
 
@@ -1041,8 +1215,14 @@ void CVideoBox::ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h)
 		if (m_pImage != NULL) delete m_pImage;
 		m_pImage = new wxImage(w, h, img_data);
 
-		m_pVBox->m_pVideoWnd->Refresh(false);
-		m_pVBox->m_pVideoWnd->Update();
+		if (m_timer.IsRunning())
+		{
+			m_pVBox->m_pVideoWnd->Refresh(false);
+		}
+		else
+		{
+			m_pVBox->Refresh(false);
+		}
 	}
 }
 
@@ -1056,7 +1236,15 @@ void CVideoBox::ClearScreen()
 		delete m_pImage;
 		m_pImage = new wxImage(w, h);
 	}
-	m_pVBox->m_pVideoWnd->Refresh(false);
+	
+	if (m_timer.IsRunning())
+	{
+		m_pVBox->m_pVideoWnd->Refresh(false);
+	}
+	else
+	{
+		m_pVBox->Refresh(false);
+	}
 }
 
 void CVideoBox::OnHScroll(wxScrollEvent& event)

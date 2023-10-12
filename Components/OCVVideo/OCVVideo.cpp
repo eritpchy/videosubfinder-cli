@@ -127,8 +127,6 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 	m_VC.open(movie_name);
 	bool res = m_VC.isOpened();
-    fprintf(stderr, "m_VC.isOpened(): %d path: %s %s\n",res, csMovieName.ToStdString().c_str(), strerror(errno));
-    fflush(stderr);
 	if (res)
 	{
 		m_MovieName = csMovieName;

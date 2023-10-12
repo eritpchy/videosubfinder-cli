@@ -1,45 +1,101 @@
 
-#########################################################################################################
+#######################################################################################
 About Program
-#########################################################################################################
+#######################################################################################
 
-The main purpose of this program is to provide functionality for extract hardcoded text (hardsub) from video.
+The main purpose of this program is to provide functionality for extract hardcoded subtitles (hardsub) from video.
 
 It provides two main features:
 1) Autodetection of frames with hardcoded text (hardsub) on video with saving info about timing positions.
-2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader or Subtitle Edit) to generate complete subtitle with original text and timing.
+2) Generation of cleared from background text images, which allows with usage of OCR programs (like FineReader, Subtitle Edit, Google Drive) to generate complete subtitles with original text and timing.
 
-For working of this program will be required "Microsoft Visual C++ Redistributable for Visual Studio 2015, 2017 and 2019": https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
-x64: https://aka.ms/vs/16/release/vc_redist.x64.exe
-x86: https://aka.ms/vs/16/release/vc_redist.x86.exe
-Latest versions were built and tested on: Windows 10
+For working of this program on Windows will be required "Microsoft Visual C++ Redistributable runtime libraries 2022":
+https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
-#########################################################################################################
+For working of this program on Linux possibly will be required libraries for gtk3.0.
+
+Latest versions were built and tested on: Windows 10 x64, Ubuntu 20.04.5 LTS, Arch Linux (EndeavourOS Cassini Nova 03-2023)
+
+For faster support in case of bug fixes please contact me in: https://vk.com/skosnits
+
+#######################################################################################
+Used Terms:
+#######################################################################################
+
+*) ISAImages - Intersected (detected) Subtitles Areas (by using frames in video on which subtitle was detected)
+
+*) ILAImages - Intersected Luminance Areas (by using frames in video on which subtitle was detected), the areas where pixels are not change too much in luminance in range:
+"Max luminance diff from down for IL image generation"
+"Max luminance diff from up for IL image generation"
+First image of "Sub Frames Length" sequence (~8-12 (dependently from settings) nearest frames in video on which subtitle was detected) is taken as reference,
+all next images in "Sub Frames Length" sequence are compared with it by luminance change. On produced ILAImages also affect "Use Filter Colors"
+and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (first image of "Sub Frames Length" sequence).
+
+*) kmeans (K-Means Clustering)
+https://docs.opencv.org/4.x/d1/d5c/tutorial_py_kmeans_opencv.html
+https://en.wikipedia.org/wiki/K-means_clustering
+
+*) Sobel Operator
+https://en.wikipedia.org/wiki/Sobel_operator
+Improved Sobel Operator
+"Adding 45 degrees and 135 degrees direction template in a basis of the traditional Sobel operator"
+https://www.atlantis-press.com/article/25867843.pdf
+
+*) (OLD) "VEdgesPointsImage" is translated as an image obtained from points vertical color boundaries. This image is obtained by converting frame into a black and white image,
+then applying a horizontal operator Sobel to determine the strength of the color difference. Then by threshold Filtering (all points whose strength is lower than
+the threshold set in the settings "H-Vertical Threshold" is replaced with black or white). These images Are used when checking whether adjacent frames with identical text or no)
+
+*) VEdges - vertical color boundaries in YUV color space image representation.
+*) HEdges - horizontal color boundaries in YUV color space image representation.
+*) NEdges - northeast diagonal color boundaries in YUV color space image representation.
+*) In all VEdges, HEdges, NEdges mostly used color boundaries from Y component (grayscale image representation) of YUV color space image representation.
+VEdges, HEdges, NEdges relates to "Automatic Image Segmentation by Integrating Color-Edge Extraction and Seeded Region Growing" article.
+https://typeset.io/papers/automatic-image-segmentation-by-integrating-color-edge-y2azjosgo3
+YUV color space - https://en.wikipedia.org/wiki/YUV
+
+*) (OLD) "After First Filtration" is the resulting image as a result
+initial processing of the frame, the result of the processing is affected by all the "Settings for Operators Sobel"
+except one H-Vertical Threshold, all "Settings For Color Filter "except for one Sum Multiple Color Diff.
+
+*) (OLD) ""After Second Filtration" is the resulting image as a result secondary image processing (processing applied to the image resulting from "After First Filtration"),
+result of processing affects all the "Settings for Linear Filtering", all "Settings for Points Color Borders", all "Settings for Color Filter" except one Sum Color Diff.
+
+
+#######################################################################################
 Quick Start Guide
-#########################################################################################################
+#######################################################################################
+
 How to use without deep details:
 1) Click in menu "File->Open Video" (any variant)
 2) Check boundary box in "Video Box" where most subs will appear (for that you can move split lines in it): by default it is whole video.
 It is recommended to reduce area for search for getting less wrong detections and less timings splits.
-3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab.
-Center - is in most case, so it set by default.
+3) Check what horizontal alignment subtitles has on video relatively to selected boundary box "Center/Left/Right/Any" and set related value in "Text Alignment" property in "Settings" tab page.
+Center - is in most case, so it is set by default.
 4) It is strongly recommended to use "Use Filter Colors" but you can skip this step.
-For this you need:
-* - scroll video to subtitle frame
-* - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
+IMPORTANT NOTE: It is strongly "not recommended" to use "Use Outline Filter Colors" if you are not sure that it is applicable for your case, more details in topic [Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"] in 2-2 and 2-3 subtopics.
+For define "Use Filter Colors" you need:
+* - scroll video in Video Box to frame containing subtitle
+* - press and hold 'U' when Video Box is selected and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
+* - check "Use Filter Colors" by pressing and holding 'R' (will show how all Color Filters will affect on "Run Search") and 'T' (will show pixels related to Color Filters) keyboard buttons when Video Box is selected
 * - if there are many subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-5) Click "Run Search" in the first tab page, if you need to get only timing and original images with potential subs go after this step to the last tab page and press "Create Empty Sub",
+5) Click "Run Search" in the "Search" tab page, if you need to get only timing and original images with potential subs go after this step to "OCR" tab page and press "Create Empty Sub From Found Video Frames With Text (RGBImages->Sub)",
 found original images with subtitles will be located in "RGBImages" folder.
-6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken, 
-which is possible if you use too strong Color Filters or subtitles pop-up on video and disappear, in this case it is better to change program settings or delete such ILA Images.
+6) Check ILA Images in "ILAImages" folder: subtitles symbols by default will be searched inside white pixels in ILA images, if white pixels in ILA images will not contain some symbols or they are broken,
+which is possible if you:
+* use too strong Color Filters
+* or you define "Use Outline Filter Colors" but subtitles have not good outlines
+* or subtitles pop-up on video and disappear
+in this case it is better to change program settings or delete such ILA Images.
 7) [MOST IMPORTANT PART IF YOU DON’T USE COLOR FILTERING]
-Before continue: Check does subtitles has darker border color then subtitles text color.
-In most case it is so, if not than disable checkbox "Characters Border Is Darker" in first right setting in "Settings tab".
-In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according this setting.
+Before continue: Check does subtitles have darker border color then subtitles text color.
+In most cases it is so, if not then disable checkbox "Characters Border Is Darker" in first right setting in "Settings" tab.
+In most cases program correctly identify which color is related to subtitles text but in some cases it is too complicated, in such cases decision will be applied according to this setting.
 8) If you are using "Use Filter Colors" and have too good ILAImages - all characters separated from background,
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
-9) Click "Create Cleared TXTImages" on the last tab page for get text symbols separation from background, after this you can do OCR text in other software as described in separate topic "For OCR".
+9) Click "Create Cleared Text Images (RGBImages->TXTImages)" on the "OCR" tab page for get text symbols separation from background.
+10) Do OCR text from TXTImages or RGBImages in other software as described in separate topic "For OCR".
+11) Generate subtitle (*.srt or *.ass) from TXTResults or TXTImages/RGBImages (with only timing) by clicking related button in "OCR" tab.
 
 Video instructions:
 There are many instructions which can be found in youtube and was made by this program users.
@@ -47,26 +103,29 @@ One of most recommended by them are:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 
-#########################################################################################################
+#######################################################################################
 Known Issues
-#########################################################################################################
+#######################################################################################
 
 1) Different timing in OpenCV vs FFMPEG video open but now they are very close with difference ~ 000-001 milliseconds.
 2) In case of Center alignment, which is by default, take into the note that if whole subtitle will be in right half part of selected boundary box it will be removed.
 3) Missed subtitles. Check that missed subtitles are not < 12 frames length (going less then 0.5s), if so you can change "Sub Frames Length" to 6 or other in "Settings" tab.
 4) For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
 5) For playback sound on Linux currently is used "canberra-gtk-play", so it will be required if you wish to have finish work sound. (Unfortunately wxWidgets doesn't play sound on Ubuntu 20.04.5 LTS)
+6) Broken TXTImages "missed some symbols on them" multiple splits and incorrect timing in case if you define "Use Outline Filter Colors" but subtitles have not good outlines:
+subtitles has not solid outlines from all sides, some symbols are not contained in inside figures produced by pixels which are in outline filter colors range.
+In this case "Use Outline Filter Colors" breaks ILAImages and ISAImages generation which affect on "Run Search" and "Create Cleared TXTImages".
 
-#########################################################################################################
+#######################################################################################
 Recommended Settings And Some Solutions For "Run Search" and "Create Cleared TXTImages"
-#########################################################################################################
+#######################################################################################
 
 1) For getting best results during "Run Search" and "Create Cleared TXTImages":
 --------------------------------
 1-1) Before starting "Run Search":
 --------------------------------
 After opening video:
-*) Test all setting in "Settings" tab by pressing "Test" button with selection different video frames with too light and to dark background and so on.
+*) Test all settings in "Settings" tab by pressing "Test" button with selection different video frames with too light and to dark background and so on.
 *) Check boundary box in "Video Box" where most subs will appear (you can move split lines for that in it): by default it is whole video.
 It is recommended to reduce area for search for getting less wrong detections and less timings splits.
 In worse cases, you can detect each line separately by running program multiple times with different video area selection (this can fix
@@ -130,7 +189,7 @@ For this you need:
 * - press 'U' in Video Box and select subtitle pixel by 'Left Mouse' click
 * - copy Lab color record from right bottom part in "Settings" tab to "Use Filter Colors" in left top side of "Settings" tab
 * - if there are may subtitles with different colors you can add all of them to "Use Filter Colors" by adding new line records with "Ctrl+Enter"
-*) Use not too strong color filtering if subtitles are mostly stable and have same colors: 
+2-1) Use not too strong color filtering if subtitles are mostly stable and have same colors:
 "Use Filter Colors" - inline color - color of subtitles symbols, located in "Settings" tab in left panel.
 Example of values which are working in most case of white subtitles:
 Lab: l:180-255 a:108-148 b:108-148  (mostly working in all cases)
@@ -151,23 +210,26 @@ when 'a' and 'b' like chroma components.
 if min_l_val==max_l_val or only l_val is specified then will be used dL value from settings for define 'L'/'l' range: [l_val-dL, l_val+dL]
 if min_a_val==max_a_val or only a_val is specified then will be used dA value from settings for define 'a' range: [a_val-dA, a_val+dA]
 if min_b_lab_val==max_b_lab_val or only b_lab_val is specified then will be used dB value from settings for define 'b' range: [b_lab_val-dB, b_lab_val+dB]
-*) Use not too strong "Use Outline Filter Colors" only if all symbols are contained inside borders:
+2-2) "Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
+"Use Outline Filter Colors" only if all symbols are contained inside good solid outline borders:
 subtitles has solid outlines from all sides, symbols are contained in inside figures produced by pixels which are in outline filter colors range.
-"Use Outline Filter Colors" - outline color - color of symbols borders, located in "Settings" tab in left panel.
+Usage "Use Outline Filter Colors" can lead to broken ILAImages, ISAImages and TXTImages in other case.
+Use not too strong "Use Outline Filter Colors".
 Example in case if borders are mostly black color.
 Lab: l:0-30 a:0-255 b:0-255
-*) Find optimal values for color filters by using 'T' button in Video Box
-Press left/right/space for check that during video symbols are shown stable (not broken), check on different scenes.
-* - all pixels which are in inline color filters will be shown as 'red' (pixels related to searched symbols)
-* - all pixels which are in outline color filters will be shown as 'green' (pixels related to searched symbols borders)
-* - all pixels which are in inline and outline color filters will be shown as 'yellow' (better that no one will be in yellow (no intersection))
-Also:
-Using 'U' button in Video Box will show original video frame but in full screen.
-Using 'R' button in Video Box will show original video frame filtered by color filters in case of "Run Search" version - which extend inline/outline pixels area.
-Using 'Y' button in Video Box will show pixels related to inline color without change, all others in black color.
-Using 'I' button in Video Box will show pixels related to outline color without change, all others in black color.
+2-3) Find optimal values for Color Filters by pressing and holding 'R' (will show how all Color Filters will affect on "Run Search") and 'T' (will show pixels related to Color Filters) keyboard buttons when Video Box is selected.
+Press left/right/space keyboard buttons or mouse wheel for check that during video symbols are shown stable (not broken), check on different scenes.
+Use hot keys:
+Press and hold 'U' keyboard button when Video Box is selected: will show original video frame but in full screen.
+Press and hold 'R' keyboard button when Video Box is selected: will show original video frame filtered by all Color Filters in case of "Run Search" version (which extend inline/outline pixels area).
+Press and hold 'T' keyboard button when Video Box is selected: will show:
+* - all pixels which are in inline Color Filters will be shown as 'red' (pixels related to searched symbols)
+* - all pixels which are in outline Color Filters will be shown as 'green' (pixels related to searched symbols borders)
+* - all pixels which are in inline and outline Color Filters will be shown as 'yellow' (better that no one will be in yellow (no intersection))
+Press and hold 'Y' keyboard button when Video Box is selected: will show pixels related to inline color with their original colors, all others with black (or white) color.
+Press and hold 'I' keyboard button when Video Box is selected: will show pixels related to outline color with their original colors, all others with black (or white) color.
 You can get pixel color by left mouse click in Video box or in shown full screen image (its values and color will be shown in "Settings" tab in bottom right part)
-*) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
+2-4) If you are using "Use Outline Filter Colors" or have too good ILAImages (all characters separated from background)
 it is recommended to turn on "Use ILAImages for getting TXT symbols areas" which can reduce amount of garbage.
 
 3) "Create Cleared TXTImages" from subs with bad quality:
@@ -209,7 +271,7 @@ In this case you can use "Use Filter Colors" with define all of used colors in s
 In case of logo present or some other issues program now support also AviSynth+ scripts by opening *.avs script like video file with FFPMEG CPU device video decoding:
 https://github.com/AviSynth/AviSynthPlus/releases/download/v3.6.1/AviSynthPlus_3.6.1_20200619.exe
 NOTE1: HW Acceleration (GPU) doesn't support AviSynth. So you need to set CPU device in "FFMPEG HW Devices" in "Settings" tab (which is by default).
-NOTE2: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use 
+NOTE2: It will not work if use DirectShowSource, in this case decoded frames will be broken. For open video is recommended to use
 FFmpegSource or LSMASHSource plugin usage in which it was tested and worked without issues.
 Examples of avs scripts for DeLogo purpose you can find in:
 https://sourceforge.net/p/videosubfinder/discussion/684990/thread/bddff843f5/?page=2
@@ -217,7 +279,10 @@ Tested with AviSynth plugins:
 FFmpegSource plugin v2.40: https://github.com/FFMS/ffms2/releases/tag/2.40
 LSMASHSource plugin 20200728 : https://github.com/HolyWu/L-SMASH-Works/releases/tag/20200728
 MaskTools2 v2.2.26: https://github.com/pinterf/masktools/releases/tag/2.2.26
-All AviSynth plugins can be found in: http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+All AviSynth plugins can be found in:
+http://avisynth.nl/index.php/AviSynth%2B_x64_plugins
+http://avisynth.nl/index.php/Category:Plugins_x64
+http://avisynth.nl/index.php/External_filters
 NOTE3: Plugins dll should be placed to "C:\Program Files (x86)\AviSynth+\plugins64+"
 NOTE4: LSmashVideoSource failed to open mkv but FFVideoSource open it successfully in my case.
 6-2)
@@ -241,43 +306,42 @@ A process affinity mask is a bit vector in which each bit represents a logical p
 By default it is set to '-1' == threads on all logical processors is allowed to run.
 https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask
 
-#########################################################################################################
-Used terms:
-#########################################################################################################
-
-*) ISAImages - Intersected Subtitles Areas (by multiframe usage)
-*) ILAImages - Intersected Luminance Areas (by multiframe usage), the areas where pixels are not change too much in luminance in range:
-"Max luminance diff from down for IL image generation"
-"Max luminance diff from up for IL image generation"
-First image of DL sequence (~12 nearest frames in video) are taked as reference, all next images in DL sequence are compared with it by luminance change.
-On produced ILAImages also affect "Use Filter Colors" and "Use Outline Filter Colors" which are applied on each frame and intersected with reference (First image of DL sequence).
-
-#########################################################################################################
+#######################################################################################
 For OCR (conversion of images of text into machine-encoded text) can be used:
-#########################################################################################################
+#######################################################################################
 
 NOTE:
-For create subtitle in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
+For create subtitles in VideoSubFinder from TXTResults all txt files should be in UTF-8 format.
+
+#-----------------------------------------------------
 
 (1) FineReader: https://www.abbyy.com/finereader/
+
 1_1. Video instructions:
 https://www.youtube.com/watch?v=Cd36qODmYF8
 https://www.youtube.com/watch?v=VHsUfqqAkWY&t=124s
 
+1_2. OCR TXTImages by FineReader with generating TXTResults/*.txt files.
+In this case result txt files after OCR should have:
+*) UTF8 format
+*) same names as original TXTImages
+
+1_3. Generate subtitle (*.srt or *.ass) from TXTResults/*.txt files by clicking "Create Sub From Text Results (TXTResults->Sub)" button in "OCR" tab.
+
 #-----------------------------------------------------
 
 (2) Subtitle Edit (Free software): https://www.videohelp.com/software/Subtitle-Edit
-NOTE: The instruction below was tested on 3.5.16 version with images with English and Croatian (Tesseract 3.02) Text and it works
+NOTE: The instruction below was tested on 3.6.12 version with images with English, Croatian, Vietnamese (Tesseract 5.3.0) Text and it works
 In VideoSubFinder:
 2_1_1. Click in menu "File->Open Video" (any variant: FFMPEG variant give better performance if use top GPU and video has 720p or higher resolution)
 2_1_2. Click "Run Search" and get images (in the first tab page: "Search").
-2_1_3. Click "Create Cleared TXTImages" (in the last tab page: "Search").
+2_1_3. Click "Create Cleared Text Images (RGBImages->TXTImages)" (in the last tab page: "Search").
 2_1_4. [Note: This step can be skipped] Open "TXTImages" folder and remove images without text.
-2_1_5. Click "Create Empty Sub From Cleared TXTImages" which will generate "sub.srt" file with timing only (in the last tab page: "Search").
+2_1_5. Click "Create Empty Sub From Cleared Text Images (TXTImages->Sub)" which will generate "sub.srt" file with timing only (in the "OCR" tab page).
 In Subtitle Edit:
 2_2_1. Click in menu "File->Open" and select sub.srt file
 2_2_2. Click in menu "File->Import images.." + Click "..." in top right and select all files in "TXTImages" (CTRL+A)
-2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree (select any record and press CTRL+A), right mouse click, select "Image preprocessing...",
+2_2_3. IMPORTANT_PART: Select all records in "Subtitle text" tree (select any record and press CTRL+A), right mouse click, select "Image pre-processing...",
 select check box with "Invert colors", press "OK"
 2_2_4. Select "OCR Method" (any Tesseract method works good on English Text)
 2_2_5. Select Right "Language" also as it in Dictionary and download it by pressing "..." and "Download"
@@ -289,11 +353,60 @@ https://digitalaladore.wordpress.com/2014/11/17/using-tesseract-via-command-line
 
 #-----------------------------------------------------
 
-(3) baidu ocr
+(3) Google Drive (free web service): https://drive.google.com/drive/my-drive
+
+3_1. Join TXT/RGBImages by "Join TXT/RGBImages (TXT/RGBImages->ImagesJoined)" button in "OCR" tab, after generation of joined images it will auto create "TXTResults/join_txt_results.txt" file if it is not exist yet.
+In settings in the left side of "OCR" tab page you can change:
+*) "Join RGBImages" switch what images to join TXTImages or RGBImages by turn on or off
+*) "Use TXTImages Info For Join RGBImages" switch, in case of turn on (which is the most preferred variant) it will join only those RGBImages which data still exist in TXTImages and will join only related areas to TXTImages.
+*) "Join Images Max Number" max number of joined TXT/RGBImages to single (combined) generated images,
+in some cases with "Join Images Scale (From Original RGBImages Size)" == 1 it can work even with "Join Images Max Number" == 160
+but according users experience OCR can be more accurate with "Join Images Max Number" == 50 than with "Join Images Max Number" == 100
+*) if font size is "-1" it will try to automatically find optimal font size for "Join Images Split Line" according average Images heights (and info about found number of lines in them in case of TXTImages), but you can specify it manually in range [1-80].
+*) "Join Images Scale (From Original RGBImages Size)"
+*) "Join Images Split Line Text" support macro definitions: [sub_id], [begin_time], [end_time].
+[MOST IMPORTANT] But for find sub data currently supported only [sub_id] which format can be changed.
+*) "Format For Generate [sub_id]" and related "Format For Search Subtitle Data By [sub_id] In "TXTResults/join_txt_results.txt""
+NOTE: when program search related subtitle data in "TXTResults/join_txt_results.txt" it add additional [sub_id] to the end.
+[MOST IMPORTANT] You don't need to change them but in case if OCR fail to correctly decode [sub_id] in generated "Join Images Split Line Text" you can try to change them.
+
+3_2. Upload joined TXT/RGB images from "ImagesJoined" folder to some directory in Google Drive.
+
+3_3. Right mouse click on each joined TXT/RGB image -> "Open with" -> "Google Docs" (it will should automatically OCR image and generate doc file).
+NOTE: If OCR failed and result doc file is empty you can try to change:
+*) scale from original "RGBImages" size, in most case it works better with unscaled images: "Join Images Scale (From Original RGBImages Size)" == 1
+*) manually specify font size for "Join Images Split Line"
+*) max number of joined TXT/RGBImages to single (combined) generated images
+
+3_4. Open each generated doc file and copy all texts to single file "TXTResults/join_txt_results.txt" with saving in UTF8 format.
+NOTE: '\n' is no matter, just simply copy each text result to the end of result txt file with simple concatenation.
+
+3_5. Generate subtitle (*.srt or *.ass) from "TXTResults/join_txt_results.txt" files by clicking "Create Sub From Text Results (TXTResults->Sub)" button in "OCR" tab.
+
+#-----------------------------------------------------
+
+(4) Google vision API
+https://cloud.google.com/vision
+
+Some possible solutions:
+
+Batch images processing python script:
+https://sourceforge.net/p/videosubfinder/discussion/684990/thread/352389f0e9/#c00e
+https://github.com/Abu3safeer/image-ocr-google-docs-srt
+https://youtu.be/JXbL-PEoT4I
+https://youtu.be/vt_PtZ6KYIE
+
+Batch whole process with translation:
+https://sourceforge.net/p/videosubfinder/discussion/684990/thread/af99aafebf/#f2ed
+https://gist.github.com/kumorikuma/e4deca4e9384c0391acc784de3a8f015
+
+#-----------------------------------------------------
+
+(5) Baidu OCR
 You can try to write a program in python with usage baidu ocr api for ocr images.
 
 Useful links:
-http://www.baidu.com 
+http://www.baidu.com
 https://rapidapi.com/blog/directory/baidu-ocr-text-recognition/
 https://github.com/Baidu-AIP/python-sdk
 https://programmer.ink/think/5d35803c404e4.html
@@ -301,17 +414,9 @@ https://ai.baidu.com/ai-doc/OCR/Dk3h7yf8m
 https://ai.baidu.com/ai-doc/OCR/Kk3h7y7vq
 https://ai.baidu.com/sdk#ocr
 
-#-----------------------------------------------------
-
-(4) Google vision API
-https://cloud.google.com/vision
-
-Some possible solution is described in bottom:
-https://sourceforge.net/p/videosubfinder/discussion/684990/thread/352389f0e9/
-
-#########################################################################################################
+#######################################################################################
 OUTDATED OLD INFORMATION:
-#########################################################################################################
+#######################################################################################
 
 How to use in details:
 1) Run VideoSubFinder.exe
@@ -348,28 +453,6 @@ How to use in details:
    After After Filtration, After Second Filtration, VEdgesPointsImage
    they can be viewed by clicking the buttons in the left and in the right above the Test button,
    and also in the TSTImages folder.
-   
-   "After First Filtration" is the resulting image as a result
-   initial processing of the frame, the result of the processing is affected by all the "Settings for
-   Operators Sobel "except one H-Vertical Threshold, all" Settings For
-   Color Filter "except for one Sum Multiple Color Diff.
-   
-   "After Second Filtration" is the resulting image as a result
-   secondary image processing (processing applied to the image
-   resulting from "After First Filtration"), the result of processing
-   affect all the "Settings for Linear Filtering", all "Settings for Points
-   Color Borders ", all" Settings for Color Filter "except one
-   Sum Color Diff.
- 
-   "VEdgesPointsImage" is translated as an image obtained from points
-   vertical color boundaries. This image is obtained by converting
-   frame into a black and white image, then applying a horizontal
-   operator Sobel to determine the strength of the color difference. Then by threshold
-   Filtering (all points whose strength is lower than the threshold set in the settings
-   "H-Vertical Threshold" is replaced with black or white). These images
-   Are used when checking whether adjacent frames with identical text or
-   no)
-
 
 6) At the end of the search for the sub it is desirable to go to the folder RGBImages and delete all
    those frames that are dummy, then on these images you can
@@ -491,15 +574,18 @@ studied and implemented in this program), namely, the main used
    Min Cai, Jiqiang Song, and Michael R. Lyu,
    Department of Computer Science & Engineering
    The Chinese University of Hong Kong Hong Kong SAR, China
+   https://www.cse.cuhk.edu.hk/~lyu/staff/CaiMin/1781_cai_m.pdf
 
-2) Automatic Image Segmentation by Integrating Color-Edge Extraction
-   and Seeded Region Growing 2001.
+2) "Automatic Image Segmentation by Integrating Color-Edge Extraction and Seeded Region Growing"
+   01 Oct 2001
    Jianping Fan, David. K. Y. Yau, Member, IEEE, Ahmed. K. Elmagarmid,
    Senior Member, IEEE, and Walid G. Aref, Member, IEEE
- 
+   https://typeset.io/papers/automatic-image-segmentation-by-integrating-color-edge-y2azjosgo3
+
 3) Automatic Location of Text in Video Frames.
    Xian-Sheng Hua, Xiang-Rong Chen, Liu Wenyin, Hong-Jiang Zhang
    Microsoft Research China
+   https://www.researchgate.net/publication/2489112_Automatic_Location_of_Text_in_Video_Frames
 
 4) EFFICIENT VIDEO TEXT RECOGNITION USING MULTIPLE FRAME INTEGRATION
    Xian-Sheng Hua, Pei Yin, Hong-Jiang Zhang

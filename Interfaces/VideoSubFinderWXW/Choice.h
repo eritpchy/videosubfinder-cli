@@ -1,4 +1,4 @@
-                              //StaticText.h//                                
+                              //Choice.h//                                
 //////////////////////////////////////////////////////////////////////////////////
 //																				//
 // Author:  Simeon Kosnitsky													//
@@ -15,52 +15,50 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include <wx/panel.h>
-#include <wx/stattext.h>
+#include <wx/choice.h>
 #include "Control.h"
 
-class CStaticText : public wxPanel, public CControl
+class CChoice : public wxChoice, public CControl
 {
 public:
-	CStaticText(wxWindow* parent,
-				   const wxString& label,
-				   wxWindowID id = wxID_ANY,
-				   long text_style = wxALIGN_CENTER,
-				   long panel_style = wxTAB_TRAVERSAL | wxBORDER,
-				   const wxPoint& pos = wxDefaultPosition,
-				   const wxSize& size = wxDefaultSize);
-	
-	CStaticText(wxWindow* parent,
-		const wxString&& label,
+	CChoice(wxWindow* parent,
+		wxArrayString& vals,
+		wxString* p_str_selection,
 		wxWindowID id = wxID_ANY,
-		long text_style = wxALIGN_CENTER,
-		long panel_style = wxTAB_TRAVERSAL | wxBORDER,
 		const wxPoint& pos = wxDefaultPosition,
-		const wxSize& size = wxDefaultSize) = delete;
+		const wxSize& size = wxDefaultSize);
 
-	~CStaticText();
+	CChoice(wxWindow* parent,
+		wxArrayString& vals,
+		int* p_int_selection,
+		wxWindowID id = wxID_ANY,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
+	
+	~CChoice();
 	
 	wxWindow		*m_pParent;
-	wxStaticText	*m_pST;
-	long			m_text_style;
-	bool			m_allow_auto_set_min_width = true;
 
 public:
 	void SetMinSize(wxSize& size);
 	void SetFont(wxFont& font);
 	void SetTextColour(wxColour& colour);
-	void SetBackgroundColour(wxColour& colour);
-	void SetLabel(const wxString& label);
-	void SetLabel(const wxString&& label) = delete;	
-	void OnSize(wxSizeEvent& event);
+	void SetBackgroundColour(wxColour& colour);	
+	wxSize GetOptimalSize(int vgap = 0, int hgap = 0);
 	void RefreshData();
-	wxSize GetOptimalSize(int add_gap = 6);
+	
+	void OnChoice(wxCommandEvent& event);
 
 private:
+	int m_vgap;
+	int m_hgap;
+	wxArrayString m_vals;
+	wxString* m_p_str_selection = NULL;
+	int* m_p_int_selection = NULL;
 	wxSize m_min_size;
-	const wxString* m_p_label;
 	wxFont *m_pFont = NULL;
 	wxColour* m_pTextColour = NULL;
 	wxColour* m_pBackgroundColour = NULL;
+
 	DECLARE_EVENT_TABLE()
 };

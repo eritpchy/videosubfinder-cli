@@ -25,9 +25,12 @@
 #include "ScrollBar.h"
 #include "SeparatingLine.h"
 #include "ResizableWindow.h"
+#include "BitmapButton.h"
+#include "Control.h"
 
 class CVideoBox;
 class CVideoWindow;
+class CPopupHelpWindow;
 
 class CVideoWnd : public wxWindow
 {
@@ -42,7 +45,6 @@ public:
 
 public:
 	void OnPaint( wxPaintEvent &event );
-	void OnSetFocus( wxFocusEvent &event );
 	void OnEraseBackGround(wxEraseEvent& event);
 	void OnLeftDown(wxMouseEvent& event);
 	//void OnKeyUp(wxKeyEvent& event);
@@ -82,22 +84,26 @@ private:
    DECLARE_EVENT_TABLE()
 };
 
-class CVideoBox : public CResizableWindow
+class CVideoBox : public CResizableWindow, public CControl
 {
 public:
-	CVideoBox(CMainFrame* pMF, wxColour	bc);
+	CVideoBox(CMainFrame* pMF);
 	~CVideoBox();
 
-	wxToolBar		*m_pVBar;
+	std::mutex m_mutex;
+
+	CBitmapButton	*m_pButtonRun;
+	CBitmapButton	*m_pButtonPause;
+	CBitmapButton	*m_pButtonStop;
 	CStaticText		*m_plblVB;
 	CStaticText		*m_plblTIME;
 	CVideoWindow	*m_pVBox;
 	CScrollBar		*m_pSB;
 
-	wxColour	m_VBX;
-	wxColour	m_CL1;
-	wxColour	m_CL2;
-	wxColour	m_bc;
+	wxImage	m_tb_run_origImage;
+	wxImage	m_tb_pause_origImage;
+	wxImage	m_tb_stop_origImage;
+	wxColour m_prevBackgroundColour;
 
 	wxImage	*m_pImage;
 	wxFrame *m_pFullScreenWin;
@@ -107,12 +113,16 @@ public:
 
 	wxTimer		m_timer;
 
+	CPopupHelpWindow* m_pHW;
+
 public:
 	void Init();
 	void ViewImage(simple_buffer<int> &Im, int w, int h);
 	void ViewGrayscaleImage(simple_buffer<u8>& Im, int w, int h);
 	void ViewBGRImage(simple_buffer<u8>& ImBGR, int w, int h);
 	void ClearScreen();
+	void UpdateSize() override;
+	void RefreshData() override;
 
 public:
 	void OnSize(wxSizeEvent& event);	
@@ -124,6 +134,7 @@ public:
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnHScroll(wxScrollEvent& event);
 	void OnTimer(wxTimerEvent& event);
+	void OnRButtonDown(wxMouseEvent& event);
 
 private:
 	std::mutex m_view_mutex;

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#define VSF_VERSION	"5.70.3"
+#define VSF_VERSION	"6.10.0"
 
 #define ID_APP_ABOUT                    1100
 
@@ -107,6 +107,11 @@
 
 #define ID_BTN_JOIN					    1281
 
+#define ID_LBL_BEGIN_TIME               1282
+
+#define ID_LBL_END_TIME                 1283
+
+
 ///////////////////////////////////////////////////////////
 
 #define IDR_MAINFRAME                   1
@@ -174,5 +179,17 @@
 #define _APS_NEXT_SYMED_VALUE           63
 #define TIMER_ID						64
 #define TIMER_ID_VB						65
+#define ID_SCALE_TEXT_SIZE_INC			66
+#define ID_SCALE_TEXT_SIZE_DEC			67
+#define ID_NEXT_FRAME                   68
+#define ID_PREVIOUS_FRAME               69
+#define ID_APP_CMD_ARGS_INFO            70
+#define ID_APP_USAGE_DOCS               71
+#define ID_FONTS                        72
+#define ID_APP_WEBSITE                  73
+#define ID_APP_FORUM                    74
+#define ID_APP_BUG_TRACKER              75
+#define TIMER_ID_IB						76
 
-
+// !NOTE: SHOULD BE WITH THE HIGHEST VALUE
+#define FIRST_ID_FOR_LOCALIZATIONS      77

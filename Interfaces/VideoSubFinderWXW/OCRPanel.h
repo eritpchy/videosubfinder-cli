@@ -18,6 +18,8 @@
 #include "SSOWnd.h"
 #include "DataTypes.h"
 #include "MyResource.h"
+#include "DataGrid.h"
+#include "StaticBox.h"
 #include "CheckBox.h"
 #include "TextCtrl.h"
 #include "Button.h"
@@ -32,6 +34,7 @@ extern bool g_use_ILA_images_for_get_txt_area;
 
 extern int g_IsCreateClearedTextImages;
 extern int g_RunCreateClearedTextImages;
+extern int g_IsJoinTXTImages;
 extern bool g_ValidateAndCompareTXTImages;
 extern bool g_DontDeleteUnrecognizedImages1;
 extern bool g_DontDeleteUnrecognizedImages2;
@@ -63,17 +66,19 @@ public:
 	int	m_xmax = 0;
 	int	m_ymax = 0;
 
-	vector<wxString> m_SavedFiles;
+	wxString m_SaveDir;
+	wxString m_BaseImgName;
 	simple_buffer<u8> m_ImBGR;
-	simple_buffer<u8> m_ImClearedText;
+	simple_buffer<u8> m_ImClearedTextScaled;
 	simple_buffer<u8>* m_pImFF = NULL;
 	simple_buffer<u8>* m_pImSF = NULL;
 	simple_buffer<u8>* m_pImTF = NULL;
 	simple_buffer<u8>* m_pImNE = NULL;
 	simple_buffer<u8>* m_pImY = NULL;
 
-	FindTextLinesRes()
+	FindTextLinesRes(wxString SaveDir)
 	{
+		m_SaveDir = SaveDir;
 	}
 };
 
@@ -153,19 +158,10 @@ public:
 	wxString  m_Name;
 };
 
-class ThreadCreateClearedTextImages : public wxThread
-{
-public:
-    ThreadCreateClearedTextImages(CMainFrame *pMF, vector<wxString> &FileNamesVector, wxThreadKind kind = wxTHREAD_DETACHED);
+void CreateClearedTextImages();
+void JoinImages();
 
-    virtual void *Entry();
-
-public:
-    CMainFrame	*m_pMF;
-	vector<wxString> m_FileNamesVector;
-};
-
-class COCRPanel : public wxPanel
+class COCRPanel : public wxPanel, public CControl
 {
 public:
 	COCRPanel(CSSOWnd* pParent);
@@ -175,31 +171,35 @@ public:
 
 	wxString m_sub_path;
 
-	CStaticText *m_plblMSD;
-	CStaticText	*m_plblJTXTSL;
-	CCheckBox	*m_pcbJSACT;
-	CCheckBox	*m_pcbCTXTF;
-	CCheckBox	*m_pcbSESS;
-	CCheckBox	*m_pcbSSI;
-	CTextCtrl	*m_pMSD;
-	CTextCtrl	*m_pJTXTSL;
-	CButton	 *m_pCCTI;
-	CButton	 *m_pCES;
-	CButton  *m_pJOIN;
-	CButton	 *m_pCSCTI;
-	CButton	 *m_pCSTXT;
-	wxPanel		 *m_pP3;
-
-	wxColour   m_CLOCR;
-	wxColour   m_CL1;
+	CStaticBox	*m_pGB;
+	CDataGrid	*m_pDG;
+	CButton		*m_pCCTI;
+	CButton		*m_pCES;
+	CButton		*m_pJOIN;
+	CButton		*m_pCSCTI;
+	CButton		*m_pCSTXT;
+	wxPanel		*m_pP3;	
 
 	CSSOWnd		*m_pParent;
 	CMainFrame	*m_pMF;
 
-	ThreadCreateClearedTextImages *m_pSearchThread;
+	wxSizerItem* m_pSpacerBNs;
+	wxBoxSizer* m_gb_hor_box_sizer;
+	wxBoxSizer* m_vert_box_buttons_sizer;
+
+	bool m_was_sub_save = false;
+
+	const int m_dx = 10;
+
+	vector<wxString> m_FileNamesVector;
+	wxString m_SaveDir;
+
+	std::thread m_CCTIThread;
+	std::thread m_JoinTXTImagesThread;
 
 	void Init();
 
+	void CreateSubFromJoinTXTResults(wxString join_txt_res_path);
 	void CreateSubFromTXTResults();
 
 public:
@@ -211,6 +211,9 @@ public:
 	void OnBnClickedJoinTXTImages(wxCommandEvent& event);
 	void SaveSub(wxString srt_sub, wxString ass_sub);
 	void ThreadCreateClearedTextImagesEnd(wxCommandEvent& event);
+	void ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event);
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
 	DECLARE_EVENT_TABLE()

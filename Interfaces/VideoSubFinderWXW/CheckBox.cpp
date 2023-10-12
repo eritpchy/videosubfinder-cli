@@ -16,6 +16,8 @@
 
 #pragma once
 #include "CheckBox.h"
+#include <wx/dcmemory.h>
+#include <wx/sizer.h>
 
 BEGIN_EVENT_TABLE(CCheckBox, wxCheckBox)
 	EVT_SIZE(CCheckBox::OnSize)
@@ -33,7 +35,7 @@ CCheckBox::CCheckBox(wxWindow* parent,
 {
 	m_pParent = parent;
 	m_p_val = p_val;
-	m_pFont = NULL;
+	m_p_label = &label;
 
 	m_text_style = text_style;
 	m_check_box_style = check_box_style;
@@ -43,38 +45,79 @@ CCheckBox::CCheckBox(wxWindow* parent,
 	
 	m_pCB->SetValue(*m_p_val);
 
-	m_pCB->Bind(wxEVT_CHECKBOX, &CCheckBox::OnCheckBoxEvent, this);
+	m_pCB->Bind(wxEVT_CHECKBOX, &CCheckBox::OnCheckBoxEvent, this);	
 }
 
 void CCheckBox::SetFont(wxFont& font)
 {
 	m_pFont = &font;
+	if (m_pFont) m_pST->SetFont(*m_pFont);
+
 	wxSizeEvent event;
 	OnSize(event);
+}
+
+void CCheckBox::SetTextColour(wxColour& colour)
+{
+	m_pTextColour = &colour;
+	m_pST->SetForegroundColour(*m_pTextColour);
+}
+
+void CCheckBox::SetBackgroundColour(wxColour& colour)
+{
+	m_pBackgroundColour = &colour;
+	wxPanel::SetBackgroundColour(*m_pBackgroundColour);
+	m_pST->SetBackgroundColour(*m_pBackgroundColour);
 }
 
 void CCheckBox::SetLabel(const wxString& label)
 {
-	m_pST->SetLabel(label);
-
+	m_p_label = &label;
+	m_pST->SetLabel(*m_p_label);
 	wxSizeEvent event;
 	OnSize(event);
 }
 
-bool CCheckBox::SetBackgroundColour(const wxColour& colour)
+void CCheckBox::SetMinSize(wxSize& size)
 {
-	return (wxPanel::SetBackgroundColour(colour) &&
-		m_pST->SetBackgroundColour(colour));
-}
-
-void CCheckBox::SetTextColour(const wxColour& colour)
-{
-	m_pST->SetForegroundColour(colour);
+	m_min_size = size;
 }
 
 void CCheckBox::RefreshData()
-{
+{	
+	m_pST->SetLabel(*m_p_label);
 	m_pCB->SetValue(*m_p_val);
+	if (m_pFont) m_pST->SetFont(*m_pFont);
+	if (m_pTextColour) m_pST->SetForegroundColour(*m_pTextColour);
+	if (m_pBackgroundColour)
+	{
+		wxPanel::SetBackgroundColour(*m_pBackgroundColour);
+		m_pST->SetBackgroundColour(*m_pBackgroundColour);
+	}
+
+	wxSizer* pSizer = GetContainingSizer();
+	if (pSizer)
+	{
+		wxMemoryDC dc;
+		if (m_pFont) dc.SetFont(*m_pFont);
+		wxSize best_size = dc.GetMultiLineTextExtent(*m_p_label);
+		wxSize cur_size = this->GetSize();
+		wxSize cur_client_size = this->GetClientSize();
+		wxSize cb_size = m_pCB->GetSize();
+		wxSize opt_size;
+		best_size.x += cur_size.x - cur_client_size.x + 6 + (m_cb_offset * 2) + cb_size.x;
+		best_size.y += cur_size.y - cur_client_size.y + 6;
+
+		opt_size.x = std::max<int>(best_size.x, m_min_size.x);
+		opt_size.y = std::max<int>({best_size.y, m_min_size.y, cb_size.y});
+
+		if (opt_size != cur_size)
+		{
+			pSizer->SetItemMinSize(this, opt_size);
+			pSizer->Layout();
+		}
+	}
+
 	wxSizeEvent event;
 	OnSize(event);
 }
@@ -89,66 +132,79 @@ void CCheckBox::OnCheckBoxEvent(wxCommandEvent& evt)
 	{
 		*m_p_val = false;
 	}
+
+	evt.Skip();
 }
 
 void CCheckBox::OnSize(wxSizeEvent& event)
 {
 	int w, h, stw, sth, cbw, cbh, x, y, stp_beg_x, stp_end_x, stp_w, cb_x, cb_y = m_cb_offset;
 
-	if (m_pFont) m_pST->SetFont(*m_pFont);	
-
 	this->GetClientSize(&w, &h);
-	m_pST->GetSize(&stw, &sth);
-	m_pCB->GetSize(&cbw, &cbh);
 
-	if (m_check_box_style & wxALIGN_RIGHT)
+	if ((w > 0) && (h > 0))
 	{
-		stp_beg_x = 0;
-		stp_end_x = w - cbw - 1 - (m_cb_offset * 2);
-		cb_x = stp_end_x + 1 + m_cb_offset;
-	}
-	else // left aligned
-	{
-		stp_beg_x = cbw + (m_cb_offset * 2) + 1; // add +1 due to text become too close to check box
-		stp_end_x = w - 1;
-		cb_x = m_cb_offset;
-	}
+		{
+			wxMemoryDC dc;
+			if (m_pFont) dc.SetFont(*m_pFont);
+			wxSize text_size = dc.GetMultiLineTextExtent(*m_p_label);
+			wxSize st_cur_size = m_pST->GetSize();
+			wxSize st_cur_client_size = m_pST->GetClientSize();
+			stw = text_size.x + st_cur_size.x - st_cur_client_size.x;
+			sth = text_size.y + st_cur_size.y - st_cur_client_size.y;
+		}
 
-	stp_w = stp_end_x - stp_beg_x + 1 - 1; // add -1 due to text become too close to check box
+		m_pCB->GetSize(&cbw, &cbh);
 
-	if (m_check_box_style & wxALIGN_CENTER_VERTICAL)
-	{
-		cb_y = (h - sth) / 2;
-	}
+		if (m_check_box_style & wxALIGN_RIGHT)
+		{
+			stp_beg_x = 0;
+			stp_end_x = w - cbw - 1 - (m_cb_offset * 2);
+			cb_x = stp_end_x + 1 + m_cb_offset;
+		}
+		else // left aligned
+		{
+			stp_beg_x = cbw + (m_cb_offset * 2) + 1; // add +1 due to text become too close to check box
+			stp_end_x = w - 1;
+			cb_x = m_cb_offset;
+		}
 
-	if (m_text_style & wxALIGN_CENTER_HORIZONTAL)
-	{
-		x = stp_beg_x + (stp_w - stw) / 2;
-	}
-	else if (m_text_style & wxALIGN_RIGHT)
-	{
-		x = stp_beg_x + stp_w - stw;
-	}
-	else
-	{
-		x = stp_beg_x;
-	}
+		stp_w = stp_end_x - stp_beg_x + 1 - 1; // add -1 due to text become too close to check box
 
-	if (m_text_style & wxALIGN_CENTER_VERTICAL)
-	{
-		y = (h - sth) / 2;
-	}
-	else if (m_text_style & wxALIGN_BOTTOM)
-	{
-		y = h - sth;
-	}
-	else
-	{
-		y = 0;
-	}
+		if (m_check_box_style & wxALIGN_CENTER_VERTICAL)
+		{
+			cb_y = (h - sth) / 2;
+		}
 
-	m_pST->SetSize(x, y, stw, sth);
-	m_pCB->SetPosition(wxPoint(cb_x, cb_y));
+		if (m_text_style & wxALIGN_CENTER_HORIZONTAL)
+		{
+			x = stp_beg_x + (stp_w - stw) / 2;
+		}
+		else if (m_text_style & wxALIGN_RIGHT)
+		{
+			x = stp_beg_x + stp_w - stw;
+		}
+		else
+		{
+			x = stp_beg_x;
+		}
+
+		if (m_text_style & wxALIGN_CENTER_VERTICAL)
+		{
+			y = (h - sth) / 2;
+		}
+		else if (m_text_style & wxALIGN_BOTTOM)
+		{
+			y = h - sth;
+		}
+		else
+		{
+			y = 0;
+		}
+
+		m_pST->SetSize(x, y, stw, sth);
+		m_pCB->SetPosition(wxPoint(cb_x, cb_y));
+	}
 
 	event.Skip();
 }

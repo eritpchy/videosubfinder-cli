@@ -29,4 +29,4 @@ public:
     void LoadSettings(wxString file_name);
 };
 
-wxIMPLEMENT_APP(CVideoSubFinderApp);
+wxIMPLEMENT_APP_CONSOLE(CVideoSubFinderApp);

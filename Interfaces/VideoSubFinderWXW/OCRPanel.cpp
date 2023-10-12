@@ -38,18 +38,23 @@ bool g_clear_txt_folders = true;
 
 int g_IsCreateClearedTextImages = 0;
 int g_RunCreateClearedTextImages = 0;
+int g_IsJoinTXTImages = 0;
+int g_RunJoinTXTImages = 0;
 bool g_ValidateAndCompareTXTImages = false;
 bool g_DontDeleteUnrecognizedImages1 = true;
 bool g_DontDeleteUnrecognizedImages2 = true;
 
-wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
+wxString g_DefStringForEmptySub;
 
 bool g_CLEAN_RGB_IMAGES = false;
 
 int  g_ocr_threads = 8;
 
+void GetFileNames(wxString dir_path, vector<wxString>& FileNamesVector);
+
 wxDEFINE_EVENT(UPDATE_CCTI_PROGRESS, wxThreadEvent);
 wxDEFINE_EVENT(THREAD_CCTI_END, wxCommandEvent);
+wxDEFINE_EVENT(THREAD_JOIN_TXT_IMAGES_END, wxCommandEvent);
 
 AssTXTLine::AssTXTLine()
 {
@@ -178,6 +183,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\
 
 BEGIN_EVENT_TABLE(COCRPanel, wxPanel)
 	EVT_COMMAND(wxID_ANY, THREAD_CCTI_END, COCRPanel::ThreadCreateClearedTextImagesEnd)
+	EVT_COMMAND(wxID_ANY, THREAD_JOIN_TXT_IMAGES_END, COCRPanel::ThreadJoinTXTImagesThreadEnd)
 	EVT_BUTTON(ID_BTN_CES, COCRPanel::OnBnClickedCreateEmptySub)
 	EVT_BUTTON(ID_BTN_CSCTI, COCRPanel::OnBnClickedCreateSubFromClearedTXTImages)
 	EVT_BUTTON(ID_BTN_CSTXT, COCRPanel::OnBnClickedCreateSubFromTXTResults)
@@ -200,13 +206,12 @@ void COCRPanel::Init()
 {
 	SaveToReportLog("COCRPanel::Init(): starting...\n");
 
-	m_CL1 = wxColour(255, 215, 0);
-	m_CLOCR = wxColour(170, 170, 170);
-
 	wxRect rcCCTI, rcCES, rcP3, rcClP3, rlMSD, reMSD, rlJTXTSL, reJTXTSL, rlJSACT, rlCTXTF, rlSESS, rlSSI, rcTEST, rcCSCTI, rcCSTXT, rcJOIN;
-	int w, h, cbh, dw, dh, txt_dw = m_pMF->m_cfg.m_txt_dw, txt_dy = m_pMF->m_cfg.m_txt_dy;
-	const int dx = 20;
+	int w, h, cbh, dw, dh, txt_dw = g_cfg.m_txt_dw, txt_dy = g_cfg.m_txt_dy;
+	const int dx = m_dx;
 	const int dy = 20;
+	const int cb_dist = 3;
+	const int btn_dist = 8;
 	const int BTNW = 410;
 	const int LBLW = 250;
 	const int PW = BTNW + LBLW + dx*3;
@@ -225,31 +230,29 @@ void COCRPanel::Init()
 	rcCCTI.height = h;
 
 	rcCSTXT.x = rcCCTI.x;
-	rcCSTXT.y = rcCCTI.GetBottom() + 10;
+	rcCSTXT.y = rcCCTI.GetBottom() + btn_dist;
 	rcCSTXT.width = BTNW;
 	rcCSTXT.height = h;
 
 	rcCSCTI.x = rcCCTI.x;
-	rcCSCTI.y = rcCSTXT.GetBottom() + 10;
+	rcCSCTI.y = rcCSTXT.GetBottom() + btn_dist;
 	rcCSCTI.width = BTNW;
 	rcCSCTI.height = h;
 
 	rcCES.x = rcCCTI.x;
-	rcCES.y = rcCSCTI.GetBottom() + 10;
+	rcCES.y = rcCSCTI.GetBottom() + btn_dist;
 	rcCES.width = BTNW;
 	rcCES.height = h;
 
 	rcJOIN.x = rcCCTI.x;
-	rcJOIN.y = rcCES.GetBottom() + 10;
+	rcJOIN.y = rcCES.GetBottom() + btn_dist;
 	rcJOIN.width = BTNW;
 	rcJOIN.height = h;
 
 	rcTEST.x = rcCCTI.GetRight() + 30;
 	rcTEST.y = rcCCTI.GetBottom() + 5 - h/2;
 	rcTEST.width = 100;
-	rcTEST.height = h;
-
-	int cb_dist = 3;
+	rcTEST.height = h;	
 
 	reMSD.x = rlMSD.x;
 	reMSD.y = rlMSD.GetBottom() + cb_dist;
@@ -302,98 +305,173 @@ void COCRPanel::Init()
 	rcP3.height = rlSSI.GetBottom() + dy + dh;
 
 	SaveToReportLog("COCRPanel::Init(): this->SetSize(rcP3)...\n");
-	this->SetSize(rcP3);	
+	this->SetSize(rcP3);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pP3...\n");
 	m_pP3 = new wxPanel( this, wxID_ANY, rcP3.GetPosition(), rcP3.GetSize() );
-	m_pP3->SetMinSize(rcP3.GetSize());
-	m_pP3->SetBackgroundColour( m_CLOCR );
+	wxSize p3_min_size = rcP3.GetSize();
+	m_pP3->SetMinSize(p3_min_size);
+	m_pP3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
-	SaveToReportLog("COCRPanel::Init(): init m_plblMSD...\n");
-	m_plblMSD = new CStaticText(m_pP3, wxID_ANY, m_pMF->m_cfg.m_ocr_label_msd_text);
-	m_plblMSD->SetSize(rlMSD);
-	m_plblMSD->SetFont(m_pMF->m_LBLFont);
-	m_plblMSD->SetBackgroundColour( m_CL1 );
+	SaveToReportLog("COCRPanel::Init(): init m_pGB...\n");
+	g_cfg.m_ocr_GB_label = wxT("");
+	m_pGB = new CStaticBox(m_pP3, wxID_ANY, g_cfg.m_ocr_GB_label);
+	m_pGB->SetFont(m_pMF->m_LBLFont);
+	m_pGB->SetTextColour(g_cfg.m_main_text_colour);
+	m_pGB->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 
-	SaveToReportLog("COCRPanel::Init(): init m_pMSD...\n");
-	m_pMSD = new CTextCtrl(m_pP3, wxID_ANY,
-		&(m_pMF->m_cfg.m_ocr_min_sub_duration), reMSD.GetPosition(), reMSD.GetSize());
-	m_pMSD->SetFont(m_pMF->m_LBLFont);
+	SaveToReportLog("COCRPanel::Init(): init m_pDG...\n");
+	m_pDG = new CDataGrid(m_pGB, g_cfg.m_grid_col_property_label, g_cfg.m_grid_col_value_label, wxID_ANY, &(m_pMF->m_LBLFont), &(g_cfg.m_main_text_colour));
+	m_pDG->SetBackgroundColour(g_cfg.m_notebook_colour);
+	m_pDG->SetGridLineColour(g_cfg.m_grid_line_colour);
 
-	SaveToReportLog("COCRPanel::Init(): init m_plblJTXTSL...\n");
-	m_plblJTXTSL = new CStaticText(m_pP3, wxID_ANY, m_pMF->m_cfg.m_ocr_label_join_txt_images_split_line_text);
-	m_plblJTXTSL->SetSize(rlJTXTSL);
-	m_plblJTXTSL->SetFont(m_pMF->m_LBLFont);
-	m_plblJTXTSL->SetBackgroundColour(m_CL1);
+	m_pDG->AddSubGroup(g_cfg.m_ocr_dg_sub_group_settings_for_create_txt_images, g_cfg.m_grid_sub_gropes_colour);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_clear_txt_folders, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_clear_txt_folders);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_save_each_substring_separately, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_save_each_substring_separately);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_save_scaled_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_save_scaled_images);
 
-	SaveToReportLog("COCRPanel::Init(): init m_pJTXTSL...\n");
-	m_pJTXTSL = new CTextCtrl(m_pP3, wxID_ANY,
-		&(m_pMF->m_cfg.m_ocr_join_txt_images_split_line), reJTXTSL.GetPosition(), reJTXTSL.GetSize());
-	m_pJTXTSL->SetFont(m_pMF->m_LBLFont);
+	m_pDG->AddSubGroup(g_cfg.m_ocr_dg_sub_group_settings_for_join_images, g_cfg.m_grid_sub_gropes_colour);	
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_join_rgb_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_join_rgb_images));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_clear_dir, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_clear_dir));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_split_line_text, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_split_line));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_split_line_font_size, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_split_line_font_size), -1, g_max_font_size);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_split_line_font_bold, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_split_line_font_bold));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_sub_id_format, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_sub_id_format));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_sub_search_by_id_format, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_sub_search_by_id_format));
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_scale, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_scale), 1, 4);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_join_images_max_number, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_join_images_max_number), 2, 5000);
 
-	SaveToReportLog("COCRPanel::Init(): init m_pcbJSACT...\n");
-	m_pcbJSACT = new CCheckBox(m_pP3, wxID_ANY, &g_join_subs_and_correct_time,
-		m_pMF->m_cfg.m_ocr_label_jsact_text, rlJSACT.GetPosition(), rlJSACT.GetSize());
-	m_pcbJSACT->SetFont(m_pMF->m_LBLFont);
-	m_pcbJSACT->SetBackgroundColour(m_CL1);
-
-	SaveToReportLog("COCRPanel::Init(): init m_pcbCTXTF...\n");
-	m_pcbCTXTF = new CCheckBox(m_pP3, wxID_ANY, &g_clear_txt_folders,
-		m_pMF->m_cfg.m_ocr_label_clear_txt_folders, rlCTXTF.GetPosition(), rlCTXTF.GetSize());
-	m_pcbCTXTF->SetFont(m_pMF->m_LBLFont);
-	m_pcbCTXTF->SetBackgroundColour(m_CL1);
-
-	SaveToReportLog("COCRPanel::Init(): init m_pcbSESS...\n");
-	m_pcbSESS = new CCheckBox(m_pP3, wxID_ANY, &g_save_each_substring_separately,
-		m_pMF->m_cfg.m_ocr_label_save_each_substring_separately, rlSESS.GetPosition(), rlSESS.GetSize());
-	m_pcbSESS->SetFont(m_pMF->m_LBLFont);
-	m_pcbSESS->SetBackgroundColour(m_CL1);
-
-	SaveToReportLog("COCRPanel::Init(): init m_pcbSSI...\n");
-	m_pcbSSI = new CCheckBox(m_pP3, wxID_ANY, &g_save_scaled_images,
-		m_pMF->m_cfg.m_ocr_label_save_scaled_images, rlSSI.GetPosition(), rlSSI.GetSize());
-	m_pcbSSI->SetFont(m_pMF->m_LBLFont);
-	m_pcbSSI->SetBackgroundColour(m_CL1);
+	m_pDG->AddSubGroup(g_cfg.m_ocr_dg_sub_group_settings_for_create_sub, g_cfg.m_grid_sub_gropes_colour);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_msd_text, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &(g_cfg.m_ocr_min_sub_duration), 0.0, 100.0);
+	m_pDG->AddProperty(g_cfg.m_ocr_label_jsact_text, g_cfg.m_main_labels_background_colour, g_cfg.m_main_text_ctls_background_colour, &g_join_subs_and_correct_time);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCCTI...\n");
-	m_pCCTI = new CButton(m_pP3, ID_BTN_CCTI,
-		m_pMF->m_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
+	m_pCCTI = new CButton(m_pP3, ID_BTN_CCTI, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_ocr_button_ccti_text, rcCCTI.GetPosition(), rcCCTI.GetSize());
 	m_pCCTI->SetFont(m_pMF->m_BTNFont);
+	m_pCCTI->SetTextColour(g_cfg.m_main_text_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSTXT...\n");
-	m_pCSTXT = new CButton(m_pP3, ID_BTN_CSTXT,
-		m_pMF->m_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
+	m_pCSTXT = new CButton(m_pP3, ID_BTN_CSTXT, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_ocr_button_csftr_text, rcCSTXT.GetPosition(), rcCSTXT.GetSize());
 	m_pCSTXT->SetFont(m_pMF->m_BTNFont);
+	m_pCSTXT->SetTextColour(g_cfg.m_main_text_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCSCTI...\n");
-	m_pCSCTI = new CButton(m_pP3, ID_BTN_CSCTI,
-		m_pMF->m_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
+	m_pCSCTI = new CButton(m_pP3, ID_BTN_CSCTI, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_ocr_button_cesfcti_text, rcCSCTI.GetPosition(), rcCSCTI.GetSize());
 	m_pCSCTI->SetFont(m_pMF->m_BTNFont);
+	m_pCSCTI->SetTextColour(g_cfg.m_main_text_colour);
 
 	SaveToReportLog("COCRPanel::Init(): init m_pCES...\n");
-	m_pCES = new CButton( m_pP3, ID_BTN_CES,
-		m_pMF->m_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
+	m_pCES = new CButton( m_pP3, ID_BTN_CES, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_ocr_button_ces_text, rcCES.GetPosition(), rcCES.GetSize());
 	m_pCES->SetFont(m_pMF->m_BTNFont);
+	m_pCES->SetTextColour(g_cfg.m_main_text_colour);
 	
 	SaveToReportLog("COCRPanel::Init(): init m_pJOIN...\n");
-	m_pJOIN = new CButton(m_pP3, ID_BTN_JOIN,
-		m_pMF->m_cfg.m_ocr_button_join_text, rcJOIN.GetPosition(), rcJOIN.GetSize());
+	m_pJOIN = new CButton(m_pP3, ID_BTN_JOIN, g_cfg.m_main_buttons_colour, g_cfg.m_main_buttons_colour_focused, g_cfg.m_main_buttons_colour_selected, g_cfg.m_main_buttons_border_colour,
+		g_cfg.m_ocr_button_join_text, rcJOIN.GetPosition(), rcJOIN.GetSize());
 	m_pJOIN->SetFont(m_pMF->m_BTNFont);
-
-	wxBoxSizer *top_sizer = new wxBoxSizer( wxVERTICAL );
-
-	wxBoxSizer *button_sizer = new wxBoxSizer( wxHORIZONTAL );
-
-	button_sizer->Add(m_pP3, 1, wxALIGN_CENTER, 0 );
-
-	top_sizer->Add(button_sizer, 1, wxALIGN_CENTER );
-
-	SaveToReportLog("COCRPanel::Init(): this->SetSizer(top_sizer)...\n");
-	this->SetSizer(top_sizer);
+	m_pJOIN->SetTextColour(g_cfg.m_main_text_colour);
 
 	this->Bind(UPDATE_CCTI_PROGRESS, &COCRPanel::OnUpdateCCTIProgress, this);
 
+	// m_pP3 location sizer
+	{
+		wxBoxSizer* top_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* button_sizer = new wxBoxSizer(wxHORIZONTAL);
+		button_sizer->Add(m_pP3, 1, wxALIGN_CENTER, 0);
+		top_sizer->Add(button_sizer, 1, wxALIGN_CENTER);
+		SaveToReportLog("COCRPanel::Init(): this->SetSizer(top_sizer)...\n");
+		this->SetSizer(top_sizer);
+	}
+
+	// m_pP3 elements location sizer
+	{
+		wxBoxSizer* gb_vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		m_gb_hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+		wxStaticBoxSizer *gb_sizer = new wxStaticBoxSizer(m_pGB, wxVERTICAL);
+
+		m_gb_hor_box_sizer->Add(m_pDG, 1, wxEXPAND | wxALL);
+		gb_vert_box_sizer->Add(m_gb_hor_box_sizer, 1, wxEXPAND | wxALL, 4);
+		gb_sizer->Add(gb_vert_box_sizer);
+
+		m_vert_box_buttons_sizer = new wxBoxSizer(wxVERTICAL);
+		m_pSpacerBNs = m_vert_box_buttons_sizer->AddSpacer(1);
+		m_vert_box_buttons_sizer->Add(m_pCCTI, 0, wxEXPAND | wxALL);
+		m_vert_box_buttons_sizer->AddSpacer(btn_dist);
+		m_vert_box_buttons_sizer->Add(m_pCSTXT, 0, wxEXPAND | wxALL);
+		m_vert_box_buttons_sizer->AddSpacer(btn_dist);
+		m_vert_box_buttons_sizer->Add(m_pCSCTI, 0, wxEXPAND | wxALL);
+		m_vert_box_buttons_sizer->AddSpacer(btn_dist);
+		m_vert_box_buttons_sizer->Add(m_pCES, 0, wxEXPAND | wxALL);
+		m_vert_box_buttons_sizer->AddSpacer(btn_dist);
+		m_vert_box_buttons_sizer->Add(m_pJOIN, 0, wxEXPAND | wxALL);
+
+		wxBoxSizer* hor_box_all_ctrls_sizer = new wxBoxSizer(wxHORIZONTAL);
+		hor_box_all_ctrls_sizer->AddSpacer(dx/2);
+		hor_box_all_ctrls_sizer->Add(gb_sizer, 0, wxALIGN_TOP);
+		hor_box_all_ctrls_sizer->AddSpacer(dx);
+		hor_box_all_ctrls_sizer->Add(m_vert_box_buttons_sizer, 0, wxALIGN_TOP);
+		hor_box_all_ctrls_sizer->AddSpacer(dx/2);
+
+		wxBoxSizer* vert_box_sizer = new wxBoxSizer(wxVERTICAL);
+		wxBoxSizer* hor_box_sizer = new wxBoxSizer(wxHORIZONTAL);
+
+		hor_box_sizer->Add(hor_box_all_ctrls_sizer, 0, wxALIGN_CENTER);
+		vert_box_sizer->Add(hor_box_sizer, 1, wxALIGN_CENTER);
+
+		m_pP3->SetSizer(vert_box_sizer);
+	}
+
 	SaveToReportLog("COCRPanel::Init(): finished.\n");
+}
+
+void COCRPanel::UpdateSize()
+{
+	wxSize client_size = this->GetClientSize();
+
+	wxSize dg_opt_size = m_pDG->GetOptimalSize();
+	dg_opt_size.x += 10;
+	dg_opt_size.y = client_size.y - 10;
+	bool res = m_gb_hor_box_sizer->SetItemMinSize(m_pDG, dg_opt_size);
+	
+	wxSize p3_best_size = m_pP3->GetSizer()->GetMinSize();
+
+	wxSize p3_cur_size = m_pP3->GetSize();
+	wxSize p3_cur_client_size = m_pP3->GetClientSize();
+	p3_best_size.x += p3_cur_size.x - p3_cur_client_size.x + 20;
+	p3_best_size.y += p3_cur_size.y - p3_cur_client_size.y + 20;
+
+	if (p3_best_size.x > client_size.x - 8)
+	{
+		wxSize gb_cur_size = m_pGB->GetSize();
+		wxSize dg_cur_size = m_pDG->GetSize();
+
+		wxSize buttons_best_size = m_vert_box_buttons_sizer->GetMinSize();
+		dg_opt_size.x = std::max<int>(client_size.x - 8 - buttons_best_size.x - 2 * m_dx - (gb_cur_size.x - dg_cur_size.x), 50);
+		m_gb_hor_box_sizer->SetItemMinSize(m_pDG, dg_opt_size);
+	}
+
+	p3_best_size.x = std::min<int>(p3_best_size.x, client_size.x - 8);
+	p3_best_size.y = std::min<int>(p3_best_size.y, client_size.y - 8);
+
+	this->GetSizer()->SetItemMinSize(m_pP3, p3_best_size);
+	this->GetSizer()->Layout();
+
+	wxPoint  client_pos = ClientToScreen(wxPoint(0, 0));
+	wxPoint  dg_pos = m_pDG->GetScreenPosition();
+
+	m_pSpacerBNs->AssignSpacer(0, dg_pos.y - client_pos.y);
+
+	this->GetSizer()->Layout();
+}
+
+void COCRPanel::RefreshData()
+{
+	m_pP3->SetBackgroundColour(g_cfg.m_notebook_panels_colour);
 }
 
 void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
@@ -416,6 +494,8 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 
         res = dir.GetNext(&filename);
     }
+
+	if (FileNamesVector.size() == 0) return;
 	
 	for (i=0; i<(int)FileNamesVector.size()-1; i++)
 	for (j=i+1; j<(int)FileNamesVector.size(); j++)
@@ -428,7 +508,7 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 		}
 	}	
 
-	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	for(k=0; k<(int)FileNamesVector.size(); k++)
 	{
@@ -495,9 +575,9 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 
 		SubStr = g_DefStringForEmptySub;
 
-		if (g_DefStringForEmptySub.Contains("%sub_duration%"))
+		if (g_DefStringForEmptySub.Contains("[sub_duration]"))
 		{			
-			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
+			SubStr.Replace("[sub_duration]", sec1 + "," + msec1);
 		}
 
 		srt_sub << (k+1) << wxT("\n") << Str << wxT("\n") << SubStr << "\n\n";
@@ -539,7 +619,16 @@ void COCRPanel::OnBnClickedCreateEmptySub(wxCommandEvent& event)
 
 void COCRPanel::OnBnClickedCreateSubFromTXTResults(wxCommandEvent& event)
 {
-	CreateSubFromTXTResults();
+	wxString path = wxString(g_work_dir + wxT("/TXTResults/join_txt_results.txt"));
+
+	if (wxFileExists(path))
+	{
+		CreateSubFromJoinTXTResults(path);
+	}
+	else
+	{
+		CreateSubFromTXTResults();
+	}
 }
 
 void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
@@ -564,6 +653,8 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
         res = dir.GetNext(&filename);
     }
 
+	if (FileNamesVector.size() == 0) return;
+
 	for (i=0; i<(int)FileNamesVector.size()-1; i++)
 	for (j=i+1; j<(int)FileNamesVector.size(); j++)
 	{
@@ -575,7 +666,7 @@ void COCRPanel::OnBnClickedCreateSubFromClearedTXTImages(wxCommandEvent& event)
 		}
 	}
 
-	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 
 	k = 0;
 	while (k < (int)FileNamesVector.size())
@@ -706,10 +797,38 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 {
 	if (!(m_pMF->m_blnNoGUI))
 	{
-		wxString sub_name = (m_pMF->m_FileName.size() > 0) ? GetFileName(m_pMF->m_FileName) : wxT("sub");
+		wxString sub_name;
+		wxString sub_dir;
+
+		if (m_was_sub_save)
+		{
+			sub_name = GetFileNameWithExtension(m_pMF->m_last_saved_sub_file_path);
+			sub_dir = GetFileDir(m_pMF->m_last_saved_sub_file_path);
+		}
+		else if (m_pMF->m_FileName.size() > 0)
+		{
+			sub_name = GetFileName(m_pMF->m_FileName) + wxT(".srt");
+			sub_dir = GetFileDir(m_pMF->m_FileName);
+		}
+		else if (m_pMF->m_last_video_file_path.size() > 0)
+		{
+			sub_name = GetFileName(m_pMF->m_last_video_file_path) + wxT(".srt");
+			sub_dir = GetFileDir(m_pMF->m_last_video_file_path);
+		}
+		else if (m_pMF->m_last_saved_sub_file_path.size() > 0)
+		{
+			sub_name = GetFileNameWithExtension(m_pMF->m_last_saved_sub_file_path);
+			sub_dir = GetFileDir(m_pMF->m_last_saved_sub_file_path);
+		}
+		else
+		{
+			sub_name = wxT("sub.srt");
+			sub_dir = g_work_dir;
+		}
+
 		m_sub_path.Clear();
-		wxFileDialog fd(m_pMF, wxT("Save subtitle as..."),
-			g_work_dir, sub_name, wxT("SubRip(*.srt)|*.srt|Advanced Sub Station Alpha(*.ass)|*.ass|All Files (*.*)|*.*"), wxFD_SAVE);
+		wxFileDialog fd(m_pMF, g_cfg.m_file_dialog_title_save_subtitle_as,
+			sub_dir, sub_name, g_cfg.m_file_dialog_title_save_subtitle_as_wild_card, wxFD_SAVE);
 		int res = fd.ShowModal();
 
 		if (res == wxID_OK)
@@ -729,6 +848,9 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 			fout << srt_sub;
 			fout.Flush();
 			ffout.Close();
+
+			m_pMF->m_last_saved_sub_file_path = m_sub_path;
+			m_was_sub_save = true;
 		}
 		else if (ext == wxT("ass"))
 		{
@@ -737,12 +859,307 @@ void COCRPanel::SaveSub(wxString srt_sub, wxString ass_sub)
 			fout << ass_sub;
 			fout.Flush();
 			ffout.Close();
+
+			m_pMF->m_last_saved_sub_file_path = m_sub_path;
+			m_was_sub_save = true;
 		}
 		else
 		{
-			wxMessageBox("Only .ass and .srt output subtitles formats are supported", "Error", wxOK, this);
+			SaveError("ERROR: SaveSub(): Only .ass and .srt output subtitles formats are supported\n");
 		}
 	}
+}
+
+void COCRPanel::CreateSubFromJoinTXTResults(wxString join_txt_res_path)
+{
+	wxString Str, SubStr, Name, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
+	int i, j, k, kb, sec, msec, fn;
+	wxString str_int;
+	wxString filename, img_data_BaseName;
+	int img_data_W, img_data_H, img_data_min_x, img_data_min_y, img_data_w, img_data_h, img_data_ln;
+	u64 bt, et, dt, mdt;
+
+	wxString dir_txt_images_path = wxString(g_work_dir + wxT("/TXTImages/"));
+	wxString dir_rgb_images_path = wxString(g_work_dir + wxT("/RGBImages/"));
+	vector<wxString> TXTFileNamesVector, RGBFileNamesVector;
+	vector<wxString>* pFileNamesVector;
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		GetFileNames(dir_rgb_images_path, RGBFileNamesVector);
+	}
+
+	if (!g_cfg.m_ocr_join_images_join_rgb_images || (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images))
+	{
+		GetFileNames(dir_txt_images_path, TXTFileNamesVector);
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		pFileNamesVector = &RGBFileNamesVector;
+	}
+	else
+	{
+		pFileNamesVector = &TXTFileNamesVector;
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		return;
+	}
+
+	std::map<wxString, int> base_names_map;
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+	{
+		for (int i = 0; i < (int)TXTFileNamesVector.size(); i++)
+		{			
+
+			filename = TXTFileNamesVector[i];
+			DecodeImData(GetFileName(filename), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+			base_names_map[img_data_BaseName] = 1;
+		}
+
+		int fi = 0;
+		while (fi < (int)RGBFileNamesVector.size())
+		{
+			filename = RGBFileNamesVector[fi];
+			DecodeImData(GetFileName(filename), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+
+			if (base_names_map.find(img_data_BaseName) == base_names_map.end())
+			{
+				for (int i = fi; i < RGBFileNamesVector.size() - 1; i++)
+				{
+					RGBFileNamesVector[i] = RGBFileNamesVector[i + 1];
+				}
+
+				RGBFileNamesVector.pop_back();
+				continue;
+			}
+
+			fi++;
+		}
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		return;
+	}
+
+	vector<u64> BT, ET;
+	vector<wxString> TXTVector;	
+
+	vector<wxString> sub_strs(fn);
+
+	{
+		wxFileInputStream ffin(join_txt_res_path);
+		size_t size = ffin.GetSize();
+		custom_buffer<char> data(size + 1);
+		ffin.ReadAll(data.m_pData, size);
+		data.m_pData[size] = '\0';
+		int offset = 0;
+
+		// removing UTF-8 BOM bytes
+		if ((data.m_pData[0] == '\xEF') &&
+			(data.m_pData[1] == '\xBB') &&
+			(data.m_pData[2] == '\xBF'))
+		{
+			offset = 3;
+		}
+
+		wxString str, sub_str;
+		wxWCharBuffer buf = wxConvUTF8.cMB2WX(data.m_pData + offset);
+		if (buf.length() > 0)
+			str = wxString(buf);
+		else
+			str = wxString(data.m_pData, wxConvLocal);
+
+		str.Replace(wxString(wxT("\r")), wxString(), true);
+		str.Trim(true);
+		str.Trim(false);
+		str += wxString::Format(g_cfg.m_ocr_join_images_sub_id_format, 0);
+
+		for (i = 0; i < fn; i++)
+		{
+			wxString str_sub_search_by_id = wxString::Format(g_cfg.m_ocr_join_images_sub_search_by_id_format, i + 1);
+			wxRegEx re_sub_search_by_id(str_sub_search_by_id);
+			
+			if (re_sub_search_by_id.Matches(str))
+			{
+				sub_str = re_sub_search_by_id.GetMatch(str, 1);
+				sub_str.Trim(true);
+				sub_str.Trim(false);
+
+				if (sub_str.size() == 0)
+				{
+					sub_str = wxT("OCR_EMPTY_RESULT");
+				}
+
+				sub_strs[i] = sub_str;
+			}
+			else
+			{
+				sub_strs[i] = wxT("NOT_FOUND");
+			}
+		}
+	}
+
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
+
+	k = 0;
+	while (k < fn)
+	{
+		kb = k;
+		i = 0;
+
+		wxString sub_str;
+
+		if (g_join_subs_and_correct_time)
+		{
+			while ((k < fn) &&
+				((*pFileNamesVector)[kb].Mid(0, 11) == (*pFileNamesVector)[k].Mid(0, 11))
+				)
+			{
+				sub_str += sub_strs[k] + wxT("\n");
+				k++;
+			}
+		}
+		else
+		{
+			sub_str += sub_strs[k] + wxT("\n");
+			k++;
+		}
+
+		sub_str.Trim(true);
+		sub_str.Trim(false);
+
+		Str = (*pFileNamesVector)[kb];
+
+		hour1 = Str.Mid(0, 1);
+		min1 = Str.Mid(2, 2);
+		sec1 = Str.Mid(5, 2);
+		msec1 = Str.Mid(8, 3);
+
+		hour2 = Str.Mid(13, 1);
+		min2 = Str.Mid(15, 2);
+		sec2 = Str.Mid(18, 2);
+		msec2 = Str.Mid(21, 3);
+
+		bt = (wxAtoi(hour1) * 3600 + wxAtoi(min1) * 60 + wxAtoi(sec1)) * 1000 + wxAtoi(msec1);
+		et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);
+
+		BT.push_back(bt);
+		ET.push_back(et);
+		TXTVector.push_back(sub_str);
+	}
+
+	k = 0;
+	while (k < TXTVector.size())
+	{
+		if (TXTVector[k].size() == 0)
+		{
+			if (g_DontDeleteUnrecognizedImages2 == false)
+			{
+				if (g_join_subs_and_correct_time)
+				{
+					for (i = k; i < (int)TXTVector.size() - 1; i++)
+					{
+						BT[i] = BT[i + 1];
+						ET[i] = ET[i + 1];
+						TXTVector[i] = TXTVector[i + 1];
+					}
+					BT.pop_back();
+					ET.pop_back();
+					TXTVector.pop_back();
+
+					continue;
+				}
+			}
+			else
+			{
+				TXTVector[k] = wxT("#unrecognized text#");
+			}
+		}
+
+		if ((g_join_subs_and_correct_time) && (k < ((int)TXTVector.size() - 1)))
+		{
+			if (BT[k + 1] - ET[k] <= 333)
+			{
+				if (TXTVector[k + 1] == TXTVector[k])
+				{
+					ET[k] = ET[k + 1];
+
+					for (i = k + 1; i < (int)TXTVector.size() - 1; i++)
+					{
+						BT[i] = BT[i + 1];
+						ET[i] = ET[i + 1];
+						TXTVector[i] = TXTVector[i + 1];
+					}
+					BT.pop_back();
+					ET.pop_back();
+					TXTVector.pop_back();
+
+					continue;
+				}
+			}
+		}
+
+		k++;
+	}
+
+	if (g_join_subs_and_correct_time)
+	{
+		for (k = 0; k < (int)TXTVector.size() - 1; k++)
+		{
+			if (ET[k] - BT[k] < mdt)
+			{
+				if (BT[k] + mdt < BT[k + 1])
+				{
+					ET[k] = BT[k] + mdt;
+				}
+				else
+				{
+					ET[k] = BT[k + 1] - 1;
+				}
+			}
+		}
+	}
+
+	wxString srt_sub;
+	for (k = 0; k < (int)TXTVector.size(); k++)
+	{
+		bt = BT[k];
+		et = ET[k];
+
+		Str = VideoTimeToStr2(bt) +
+			" --> " +
+			VideoTimeToStr2(et);
+
+		srt_sub << (k + 1) << wxT("\n") << Str << wxT("\n") << TXTVector[k] << wxT("\n\n");
+	}
+
+	wxString ass_sub;
+	ass_sub << AssSubHead;
+	for (k = 0; k < (int)TXTVector.size(); k++)
+	{
+		bt = BT[k];
+		et = ET[k];
+
+		//example: Dialogue: 0,0:00:03.29,0:00:05.00,Default,,0,0,0,,Regulars gather up!
+
+		wxString txt = TXTVector[k];
+		wxRegEx re(wxT("\n"));
+
+		re.ReplaceAll(&txt, wxT("\\\\N"));
+
+		ass_sub << wxT("Dialogue: 0,") + VideoTimeToStr3(bt) + wxT(",") + VideoTimeToStr3(et) + wxT(",Default,,0,0,0,,") + txt + wxT("\n");
+	}
+
+	SaveSub(srt_sub, ass_sub);
 }
 
 void COCRPanel::CreateSubFromTXTResults()
@@ -785,7 +1202,7 @@ void COCRPanel::CreateSubFromTXTResults()
 		}
 	}
 
-	mdt = (s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
+	mdt = (s64)(g_cfg.m_ocr_min_sub_duration * (double)1000);
 	
 	int W, H;
     
@@ -820,47 +1237,33 @@ void COCRPanel::CreateSubFromTXTResults()
 		{
 			Name = g_work_dir + wxT("/TXTResults/") + FileNamesVector[k];
 
-			/*
 			wxFileInputStream ffin(Name);
 			size_t size = ffin.GetSize();
-			custom_buffer<char> data(size);
+			custom_buffer<char> data(size+1);
 			ffin.ReadAll(data.m_pData, size);
-			wxString str(data.m_pData, wxCSConv(wxT("GB2312")), size);
-			*/
+			data.m_pData[size] = '\0';
+			int offset = 0;
+
+			// removing UTF-8 BOM bytes
+			if ((data.m_pData[0] == '\xEF') &&
+				(data.m_pData[1] == '\xBB') &&
+				(data.m_pData[2] == '\xBF'))
+			{
+				offset = 3;
+			}			
 
 			wxString str;
+			wxWCharBuffer buf = wxConvUTF8.cMB2WX(data.m_pData + offset);
+			if (buf.length() > 0)
+				str = wxString(buf);
+			else
+				str = wxString(data.m_pData, wxConvLocal);			
 
-			{
-				wxFileInputStream ffin(Name);
-				wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
-
-				while (ffin.IsOk() && !ffin.Eof())
-				{
-					str += fin.ReadLine();
-					if (ffin.IsOk() && !ffin.Eof())
-					{
-						str += wxT("\n");
-					}
-				}
-			}
-
-			if (str.size() == 0)
-			{
-				wxFileInputStream ffin(Name);
-				wxTextInputStream fin(ffin, wxT("\x09"), wxConvLocal);
-
-				while (ffin.IsOk() && !ffin.Eof())
-				{
-					str += fin.ReadLine();
-					if (ffin.IsOk() && !ffin.Eof())
-					{
-						str += wxT("\n");
-					}
-				}
-			}
+			str.Replace(wxString(wxT("\r")), wxString(), true);
+			str.Trim(true);
 
 			if (str.size() > 0)
-			{
+			{				
 				if (i > 0) Str += wxT("\n");
 				Str += str;
 				i++;
@@ -877,8 +1280,6 @@ void COCRPanel::CreateSubFromTXTResults()
 		TXTVector.push_back(Str);
 	}
 
-	// создаем srt subtitle
-	
 	k=0;
 	while(k < TXTVector.size())
 	{
@@ -986,17 +1387,72 @@ void COCRPanel::CreateSubFromTXTResults()
 
 void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 {
-	wxString Str;
-	wxString dir_path = wxString(g_work_dir + wxT("/TXTImages/"));
-	wxDir dir(dir_path);
-	vector<wxString> FileNamesVector;
-	wxString file_name, file_path;
-	bool res;
-	const int max_joins_size = 300;
+	const std::lock_guard<std::mutex> lock(m_mutex);
 
-	m_pMF->m_pPanel->m_pSSPanel->Disable();
-	m_pMF->m_pPanel->m_pSHPanel->Disable();
-	m_pMF->m_pPanel->m_pOCRPanel->Disable();
+	if (g_IsJoinTXTImages == 0)
+	{
+		g_IsJoinTXTImages = 1;
+		g_RunJoinTXTImages = 1;
+
+		if (!(g_pMF->m_blnNoGUI))
+		{
+			m_pJOIN->SetLabel(g_cfg.m_ocr_button_join_stop_text);
+			this->UpdateSize();
+
+			m_pCCTI->Disable();
+			m_pCES->Disable();
+			m_pCSCTI->Disable();
+			m_pCSTXT->Disable();
+			m_pDG->Disable();
+
+			m_pMF->m_pPanel->m_pSSPanel->Disable();
+			m_pMF->m_pPanel->m_pSHPanel->Disable();
+		}
+
+		m_JoinTXTImagesThread = std::thread(JoinImages);
+
+		if (m_pMF->m_blnNoGUI)
+		{
+			m_JoinTXTImagesThread.join();
+		}
+	}
+	else
+	{
+		g_RunJoinTXTImages = 0;
+		m_JoinTXTImagesThread.join();
+	}
+}
+
+void COCRPanel::ThreadJoinTXTImagesThreadEnd(wxCommandEvent& event)
+{
+	std::unique_lock<std::mutex> lock(m_mutex);
+	
+	if (m_JoinTXTImagesThread.joinable())
+	{
+		m_JoinTXTImagesThread.join();
+	}
+
+	m_pJOIN->SetLabel(g_cfg.m_ocr_button_join_text);
+	this->UpdateSize();
+
+	m_pCCTI->Enable();
+	m_pCES->Enable();
+	m_pCSCTI->Enable();
+	m_pCSTXT->Enable();
+	m_pDG->Enable();
+
+	m_pMF->m_pPanel->m_pSSPanel->Enable();
+	m_pMF->m_pPanel->m_pSHPanel->Enable();
+
+	g_IsJoinTXTImages = 0;
+}
+
+void GetFileNames(wxString dir_path, vector<wxString>& FileNamesVector)
+{
+	wxDir dir(dir_path);
+	wxString file_name;
+	wxString Str;
+	bool res;
 
 	res = dir.GetFirst(&file_name);
 	while (res)
@@ -1007,6 +1463,7 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 	}
 
 	for (int i = 0; i < (int)FileNamesVector.size() - 1; i++)
+	{
 		for (int j = i + 1; j < (int)FileNamesVector.size(); j++)
 		{
 			if (FileNamesVector[i] > FileNamesVector[j])
@@ -1016,92 +1473,325 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 				FileNamesVector[j] = Str;
 			}
 		}
+	}
+}
 
-	int fn = FileNamesVector.size();
+void JoinImages()
+{
+	wxString Str;
+	wxString dir_txt_images_path = wxString(g_work_dir + wxT("/TXTImages/"));
+	wxString dir_rgb_images_path = wxString(g_work_dir + wxT("/RGBImages/"));
+	vector<wxString> TXTFileNamesVector, RGBFileNamesVector;
+	vector<wxString> *pFileNamesVector;
+	wxString file_name, file_path, dir_path;
+	int fn;
+	bool res;
+
+	auto end_func = []() {
+		if (!(g_pMF->m_blnNoGUI))
+		{
+			SaveToReportLog("JoinImages: wxPostEvent THREAD_JOIN_TXT_IMAGES_END ...\n");
+			wxCommandEvent event(THREAD_JOIN_TXT_IMAGES_END);
+			wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
+		}
+		else
+		{
+			g_IsJoinTXTImages = 0;
+		}
+	};
+
+	if (g_cfg.m_ocr_join_images_clear_dir)
+	{
+		g_pMF->ClearDir(g_work_dir + "/ImagesJoined");
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		GetFileNames(dir_rgb_images_path, RGBFileNamesVector);		
+	}
+
+	if (!g_cfg.m_ocr_join_images_join_rgb_images || (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images))
+	{
+		GetFileNames(dir_txt_images_path, TXTFileNamesVector);
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		pFileNamesVector = &RGBFileNamesVector;
+		dir_path = dir_rgb_images_path;
+	}
+	else
+	{
+		pFileNamesVector = &TXTFileNamesVector;
+		dir_path = dir_txt_images_path;
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		end_func();
+		return;
+	}
+
+	int orig_scale = 1;
+	int first_img_data_W, img_data_W, img_data_H, img_data_min_x, img_data_min_y, img_data_w, img_data_h, img_data_ln;
+	wxString img_data_BaseName;
+	int res_w = 0, res_h = 0, first_w = 0, first_h = 0, dh = 0, dth = 0, average_h = 0;
+	int font_size = 0;
+	wxFontWeight font_weight = g_cfg.m_ocr_join_images_split_line_font_bold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL;
+
+	{
+		file_name = (*pFileNamesVector)[0];
+		file_path = dir_path + file_name;
+		GetImageSize(file_path, first_w, first_h);
+		
+		if (!DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln))
+		{
+			SaveError(wxString::Format(wxT("ERROR: JoinImages(): File \"%s\" has wrong img name format\n"), file_name));
+			end_func();
+			return;
+		}
+
+		first_img_data_W = img_data_W;
+		orig_scale = first_h / img_data_h;
+
+		res_w = (first_w * g_cfg.m_ocr_join_images_scale) / orig_scale;
+	}
+
+	if (!g_cfg.m_ocr_join_images_split_line.empty())
+	{
+		if (g_cfg.m_ocr_join_images_split_line_font_size == -1)
+		{
+			if (g_cfg.m_ocr_join_images_join_rgb_images && !g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+			{
+				SaveError(wxString(wxT("ERROR: JoinImages(): Font size should be manually specified in case of turned off: ")) + g_cfg.m_ocr_label_join_images_use_txt_images_data_for_join_rgb_images + wxString(wxT("\n")));
+				end_func();
+				return;
+			}
+
+			if (!g_cfg.m_ocr_join_images_join_rgb_images || (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images))
+			{
+				pFileNamesVector = &TXTFileNamesVector;
+				dir_path = dir_txt_images_path;
+			}
+			else
+			{
+				pFileNamesVector = &RGBFileNamesVector;
+				dir_path = dir_rgb_images_path;
+			}
+
+			fn = pFileNamesVector->size();
+
+			if (fn == 0)
+			{
+				end_func();
+				return;
+			}
+
+			for (int fi = 0; fi < fn; fi++)
+			{
+				file_name = (*pFileNamesVector)[fi];
+				if (!DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln))
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): File \"%s\" has wrong img name format\n"), file_name));
+					end_func();
+					return;
+				}
+
+				if (img_data_W != first_img_data_W)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): File \"%s\": img_data_w (%d) != first_img_data_W (%d)\n"), file_name, img_data_W, first_img_data_W));
+					end_func();
+					return;
+				}
+
+				average_h += img_data_h / img_data_ln;
+			}
+			average_h /= fn;
+
+			average_h *= g_cfg.m_ocr_join_images_scale;
+
+			if (average_h < (res_w / 16))
+			{
+				dh = average_h;
+				dth = (dh * 6) / 10;
+			}
+			else
+			{
+				dh = res_w / 16;
+				dth = (dh * 6) / 10;
+			}
+
+			wxMemoryDC dc;
+			wxSize text_size;
+
+			do
+			{
+				font_size++;
+				wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, font_weight, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+				dc.SetFont(font);
+				text_size = dc.GetTextExtent(wxT("12345678987654321"));
+			} while ((text_size.GetWidth() < res_w) && (text_size.GetHeight() <= dth));
+			font_size--;
+
+			if (font_size == 0)
+			{
+				SaveError(wxT("ERROR: JoinImages(): Unfortunately optimal font size is too small\n"));
+				end_func();
+				return;
+			}
+		}
+		else
+		{
+			font_size = g_cfg.m_ocr_join_images_split_line_font_size;
+
+			wxMemoryDC dc;
+			wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, font_weight, false, wxEmptyString, wxFONTENCODING_DEFAULT);
+			dc.SetFont(font);
+			wxSize text_size = dc.GetTextExtent(wxT("12345678987654321"));
+			dth = text_size.y;
+			dh = (dth * 10) / 6;
+		}
+	}
+
+	struct img_data
+	{
+		int m_min_y;
+		int m_max_y;
+	};
+	
+	std::map<wxString, img_data> txt_imgs_data_map;
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+	{
+		for (int i = 0; i < (int)TXTFileNamesVector.size(); i++)
+		{
+			file_name = TXTFileNamesVector[i];
+			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+
+			if (txt_imgs_data_map.find(img_data_BaseName) == txt_imgs_data_map.end())
+			{
+				txt_imgs_data_map[img_data_BaseName].m_min_y = img_data_min_y;
+				txt_imgs_data_map[img_data_BaseName].m_max_y = img_data_min_y + img_data_h - 1;
+			}
+			else
+			{
+				if (img_data_min_y < txt_imgs_data_map[img_data_BaseName].m_min_y)
+				{
+					txt_imgs_data_map[img_data_BaseName].m_min_y = img_data_min_y;
+				}
+
+				if (img_data_min_y + img_data_h - 1 > txt_imgs_data_map[img_data_BaseName].m_max_y)
+				{
+					txt_imgs_data_map[img_data_BaseName].m_max_y = img_data_min_y + img_data_h - 1;
+				}
+			}
+		}
+		
+		int fi = 0;
+		while (fi < (int)RGBFileNamesVector.size())
+		{
+			file_name = RGBFileNamesVector[fi];
+			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+
+			if (txt_imgs_data_map.find(img_data_BaseName) == txt_imgs_data_map.end())
+			{
+				for (int i = fi; i < RGBFileNamesVector.size() - 1; i++)
+				{
+					RGBFileNamesVector[i] = RGBFileNamesVector[i + 1];					
+				}
+				
+				RGBFileNamesVector.pop_back();
+				continue;
+			}
+
+			fi++;
+		}
+	}
+
+	if (g_cfg.m_ocr_join_images_join_rgb_images)
+	{
+		pFileNamesVector = &RGBFileNamesVector;
+		dir_path = dir_rgb_images_path;
+	}
+	else
+	{
+		pFileNamesVector = &TXTFileNamesVector;
+		dir_path = dir_txt_images_path;
+	}
+
+	fn = pFileNamesVector->size();
+
+	if (fn == 0)
+	{
+		end_func();
+		return;
+	}
 
 	int fi = 0;
 	while (fi < fn)
 	{
 		int fi_start = fi;
-		int fi_end = std::min<int>(fi_start + max_joins_size - 1, fn - 1);
-		int w = 0, h, w_prev = -1, H = 0, dh = 0;
+		int fi_end = fn - 1;
+		int cur_w, cur_h, save_h, res_h = 0;
 
-		for (; fi <= fi_end; fi++)
+		fi = fi_start;
+		while (fi < fn)
 		{
-			file_name = FileNamesVector[fi];
-			file_path = dir_path + file_name;
-			GetImageSize(file_path, w, h);
-			if (fi == fi_start)
-			{
-				w_prev = w;
+			file_name = (*pFileNamesVector)[fi];
+			DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
 
-				if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
-				{
-					dh = (w / 16);
-				}
+			if (g_cfg.m_ocr_join_images_join_rgb_images && g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+			{
+				save_h = (txt_imgs_data_map[img_data_BaseName].m_max_y - txt_imgs_data_map[img_data_BaseName].m_min_y + 1) * g_cfg.m_ocr_join_images_scale;
 			}
 			else
 			{
-				if (w != w_prev)
-				{
-					wxMessageBox(wxString::Format(wxT("ERROR: File \"%s\" has not same width %d as file \"%\" with width %d"), file_name, w, FileNamesVector[fi_start], w_prev), wxT("JoinTXTImages"));
-					m_pMF->m_pPanel->m_pSHPanel->Enable();
-					m_pMF->m_pPanel->m_pSSPanel->Enable();
-					m_pMF->m_pPanel->m_pOCRPanel->Enable();
-					return;
-				}
+				save_h = img_data_h * g_cfg.m_ocr_join_images_scale;
 			}
 
-			if (H + dh + h > 65500)
+			if (res_h + dh + save_h > 65500)
 			{
 				fi_end = fi - 1;
 				break;
 			}
 
-			H += dh + h;
+			res_h += dh + save_h;
+
+			if ((fi - fi_start + 1) == g_cfg.m_ocr_join_images_max_number)
+			{
+				fi_end = fi;
+				break;
+			}
+
+			fi++;
 		}
 
-		wxBitmap bitmap(w, (dh > 0) ? dh: 1);
-		wxMemoryDC dc;
-		dc.SelectObject(bitmap);
-		wxSize text_size;
+		wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, font_weight, false, wxEmptyString, wxFONTENCODING_DEFAULT);		
 
-		if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
-		{			
-			int font_size = 0;
+		simple_buffer<u8> ImRes(res_w * res_h * (g_cfg.m_ocr_join_images_join_rgb_images ? 3 : 1), (u8)255);
 
-			do
+		int h_ofset = 0;
+		for (fi = fi_start; fi <= fi_end; fi++)
+		{
+			if (g_RunJoinTXTImages == 0)
 			{
-				font_size++;
-				wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-				dc.SetFont(font);
-				text_size = dc.GetTextExtent(wxT("12345678987654321"));
-			} while ((text_size.GetWidth() < w) && (text_size.GetHeight() <= (dh * 6) / 10));
-			font_size--;
-
-			if (font_size == 0)
-			{
-				wxMessageBox(wxT("ERROR: Unfortunately optimal font size is too small"), wxT("JoinTXTImages"));
-				m_pMF->m_pPanel->m_pSHPanel->Enable();
-				m_pMF->m_pPanel->m_pSSPanel->Enable();
-				m_pMF->m_pPanel->m_pOCRPanel->Enable();
+				end_func();
 				return;
 			}
 
-			wxFont font(font_size, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString, wxFONTENCODING_DEFAULT);
-			dc.SetFont(font);
-		}
-
-		simple_buffer<u8> ImRes(w * H, 255);
-
-		int h_ofset = 0;
-		for (int fi = fi_start; fi <= fi_end; fi++)
-		{
-			file_name = FileNamesVector[fi];
+			file_name = (*pFileNamesVector)[fi];
 			file_path = dir_path + file_name;
 
-			if (!m_pMF->m_cfg.m_ocr_join_txt_images_split_line.empty())
+			if (!g_cfg.m_ocr_join_images_split_line.empty())
 			{
+				wxBitmap bitmap(res_w, dh);
+				wxMemoryDC dc;
+				dc.SelectObject(bitmap);
+				dc.SetFont(font);
+				wxSize text_size;
+
 				wxString hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
 				u64 bt, et;
 
@@ -1118,40 +1808,74 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 				msec2 = Str.Mid(21, 3);
 
 				bt = (wxAtoi(hour1) * 3600 + wxAtoi(min1) * 60 + wxAtoi(sec1)) * 1000 + wxAtoi(msec1);
-				et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);
+				et = (wxAtoi(hour2) * 3600 + wxAtoi(min2) * 60 + wxAtoi(sec2)) * 1000 + wxAtoi(msec2);				
 
-				wxString str_bt = VideoTimeToStr2(bt);
-				wxString str_et = VideoTimeToStr2(et);
-
-				Str = m_pMF->m_cfg.m_ocr_join_txt_images_split_line;
+				Str = g_cfg.m_ocr_join_images_split_line;
 
 				wxRegEx re_bt(wxT("\\[begin_time\\]"));
-				wxRegEx re_et(wxT("\\[end_time\\]"));
-				
+				wxString str_bt = VideoTimeToStr2(bt);
 				if (re_bt.Matches(Str))
 				{
 					re_bt.Replace(&Str, str_bt);
 				}
 
+				wxRegEx re_et(wxT("\\[end_time\\]"));
+				wxString str_et = VideoTimeToStr2(et);
 				if (re_et.Matches(Str))
 				{
 					re_et.Replace(&Str, str_et);
-				}				
+				}
+
+				wxRegEx re_sub_id(wxT("\\[sub_id\\]"));
+				wxString str_sub_id = wxString::Format(g_cfg.m_ocr_join_images_sub_id_format, fi + 1);
+				if (re_sub_id.Matches(Str))
+				{
+					re_sub_id.Replace(&Str, str_sub_id);
+				}
 
 				text_size = dc.GetTextExtent(Str);
-				dc.Clear();
-				dc.DrawText(Str, (w - text_size.GetWidth()) / 2, (dh - text_size.GetHeight()) / 2);
+				int text_x = (res_w - text_size.GetWidth()) / 2;
+				int text_y = (dh - text_size.GetHeight()) / 2;
+
+				wxBrush brush(wxColour(255, 255, 255));
+				wxPen pen(wxColour(255, 255, 255));
+				dc.SetBrush(brush);
+				dc.SetPen(pen);
+				dc.DrawRectangle(0, 0, res_w, dh);
+
+				SaveToReportLog(wxString::Format(wxT("JoinImages: DrawText(%s, %d, %d) res_w(%d) dh(%d)...\n"), Str, text_x, text_y, res_w, dh));				
+				dc.SetTextForeground(wxColour(0, 0, 0));
+				dc.DrawText(Str, text_x, text_y);
 
 				wxImage img = bitmap.ConvertToImage();
 				u8* img_data = img.GetData();
 
-				for (int y = 0; y < img.GetHeight(); y++)
+				if (g_cfg.m_ocr_join_images_join_rgb_images)
 				{
-					for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
+					for (int y = 0; y < img.GetHeight(); y++)
 					{
-						if ((img_data[0] <= 30) && (img_data[1] <= 30) && (img_data[2] <= 30))
+						for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
 						{
-							ImRes[((h_ofset + y) * w) + x] = 0;
+							if ((img_data[0] != 255) || (img_data[1] != 255) || (img_data[2] != 255))
+							{
+								int offset = (((h_ofset + y) * res_w) + x) * 3;
+								ImRes[offset] = 0;
+								ImRes[offset + 1] = 0;
+								ImRes[offset + 2] = 0;
+							}
+						}
+					}
+				}
+				else
+				{
+					for (int y = 0; y < img.GetHeight(); y++)
+					{
+						for (int x = 0; x < img.GetWidth(); x++, img_data += 3)
+						{
+							if ((img_data[0] != 255) || (img_data[1] != 255) || (img_data[2] != 255))
+							{
+								ImRes[((h_ofset + y) * res_w) + x] = 0;
+							}
 						}
 					}
 				}
@@ -1159,31 +1883,193 @@ void COCRPanel::OnBnClickedJoinTXTImages(wxCommandEvent& event)
 
 			h_ofset += dh;
 
-			simple_buffer<u8> ImRes_sub_buffer(ImRes, w* h_ofset, true);
-			LoadBinaryImage(ImRes_sub_buffer, file_path, w, h);
-			h_ofset += h;
+			if (g_cfg.m_ocr_join_images_join_rgb_images)
+			{
+				int cur_w, cur_h;
+				simple_buffer<u8> Img;
+				LoadBGRImage(Img, file_path, cur_w, cur_h, true);
+
+				if (res_w != (cur_w * g_cfg.m_ocr_join_images_scale) / orig_scale)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): res_w (%d) != (cur_w (%d) * g_cfg.m_ocr_join_images_scale (%d)) / orig_scale (%d)\n"), file_path, res_w, cur_w, g_cfg.m_ocr_join_images_scale, orig_scale));
+					end_func();
+					return;
+				}
+
+				DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln, &img_data_BaseName);
+				if (img_data_h != cur_h / orig_scale)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): img_data_h (%d) != cur_h (%d) / orig_scale (%d)\n"), file_path, img_data_h, cur_h, orig_scale));
+					end_func();
+					return;
+				}
+
+				int yb;
+
+				if (g_cfg.m_ocr_join_images_use_txt_images_data_for_join_rgb_images)
+				{
+					save_h = (txt_imgs_data_map[img_data_BaseName].m_max_y - txt_imgs_data_map[img_data_BaseName].m_min_y + 1) * g_cfg.m_ocr_join_images_scale;
+					yb = (txt_imgs_data_map[img_data_BaseName].m_min_y - img_data_min_y) * g_cfg.m_ocr_join_images_scale;
+				}
+				else
+				{
+					save_h = img_data_h * g_cfg.m_ocr_join_images_scale;
+					yb = 0;
+				}
+
+				if (g_cfg.m_ocr_join_images_scale != orig_scale)
+				{
+					cv::Mat cv_Im, cv_ImRes;
+					BGRImageToMat(Img, cur_w, cur_h, cv_Im);
+					cv::resize(cv_Im, cv_ImRes, cv::Size(0, 0),
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale,
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale);
+
+					simple_buffer<u8> ImgRes(cv_ImRes.cols * cv_ImRes.rows * 3);
+					BGRMatToImage(cv_ImRes, cv_ImRes.cols, cv_ImRes.rows, ImgRes);
+
+					if (cv_ImRes.cols != res_w)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.cols (%d) != res_w (%d)\n"), file_path, cv_ImRes.cols, res_w));
+						end_func();
+						return;
+					}
+
+					if (cv_ImRes.rows < yb + save_h)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.rows (%d) < yb (%d) + save_h (%d)\n"), file_path, cv_ImRes.rows, yb, save_h));
+						end_func();
+						return;
+					}
+
+					ImRes.copy_data(ImgRes, res_w * h_ofset * 3, res_w * yb * 3, res_w * save_h * 3);
+				}
+				else
+				{
+					if (cur_w != res_w)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_w (%d) != res_w (%d)\n"), file_path, cur_w, res_w));
+						end_func();
+						return;
+					}
+
+					if (cur_h < yb + save_h)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_h (%d) < yb (%d) + save_h (%d)\n"), file_path, cur_h, yb, save_h));
+						end_func();
+						return;
+					}
+
+					ImRes.copy_data(Img, res_w * h_ofset * 3, res_w * yb * 3, res_w * save_h * 3);
+				}
+			}
+			else
+			{			
+				int cur_w, cur_h;
+				simple_buffer<u8> Img;
+				LoadBinaryImage(Img, file_path, cur_w, cur_h, (u8)255, true);
+				
+				if (res_w != (cur_w * g_cfg.m_ocr_join_images_scale) / orig_scale)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): res_w (%d) != (cur_w (%d) * g_cfg.m_ocr_join_images_scale (%d)) / orig_scale (%d)\n"), file_path, res_w, cur_w, g_cfg.m_ocr_join_images_scale, orig_scale));
+					end_func();
+					return;
+				}
+
+				DecodeImData(GetFileName(file_name), &img_data_W, &img_data_H, &img_data_min_x, &img_data_min_y, &img_data_w, &img_data_h, &img_data_ln);
+				if (img_data_h != cur_h / orig_scale)
+				{
+					SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): img_data_h (%d) != cur_h (%d) / orig_scale (%d)\n"), file_path, img_data_h, cur_h, orig_scale));
+					end_func();
+					return;
+				}
+
+				save_h = img_data_h * g_cfg.m_ocr_join_images_scale;
+
+				if (g_cfg.m_ocr_join_images_scale != orig_scale)
+				{
+					cv::Mat cv_Im, cv_ImRes;
+					GreyscaleImageToMat(Img, cur_w, cur_h, cv_Im);
+					cv::resize(cv_Im, cv_ImRes, cv::Size(0, 0),
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale,
+						(double)g_cfg.m_ocr_join_images_scale / (double)orig_scale);
+
+					simple_buffer<u8> ImgRes(cv_ImRes.cols * cv_ImRes.rows);
+					BinaryMatToImage(cv_ImRes, cv_ImRes.cols, cv_ImRes.rows, ImgRes, (u8)255);
+
+					if (cv_ImRes.cols != res_w)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.cols (%d) != res_w (%d)\n"), file_path, cv_ImRes.cols, res_w));
+						end_func();
+						return;
+					}
+
+					if (cv_ImRes.rows < save_h)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cv_ImRes.rows (%d) < save_h (%d)\n"), file_path, cv_ImRes.rows, save_h));
+						end_func();
+						return;
+					}
+
+					ImRes.copy_data(ImgRes, res_w * h_ofset, 0, res_w * save_h);
+				}
+				else
+				{
+					if (cur_w != res_w)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_w (%d) != res_w (%d)\n"), file_path, cur_w, res_w));
+						end_func();
+						return;
+					}
+
+					if (cur_h < save_h)
+					{
+						SaveError(wxString::Format(wxT("ERROR: JoinImages(): file (%s): cur_h (%d) < save_h (%d)\n"), file_path, cur_h, save_h));
+						end_func();
+						return;
+					}
+
+					ImRes.copy_data(Img, res_w* h_ofset, 0, res_w * save_h);
+				}
+			}
+			
+			h_ofset += save_h;
 		}
 
-		dc.SelectObject(wxNullBitmap);
+		Str = wxString::Format(wxT("%s%s%s"), wxT("/ImagesJoined/"), GetFileName((*pFileNamesVector)[fi_start]), g_im_save_format);
 
-		Str = wxString::Format(wxT("%s%s%s"), wxT("/TXTImagesJoined/"), GetFileName(FileNamesVector[fi_start]), g_im_save_format);
-		SaveGreyscaleImage(ImRes, Str, w, H);
+		if (g_cfg.m_ocr_join_images_join_rgb_images)
+		{
+			SaveBGRImage(ImRes, Str, res_w, res_h);
+		}
+		else
+		{
+			SaveGreyscaleImage(ImRes, Str, res_w, res_h);
+		}
+
+		fi = fi_end + 1;
 	}
 
-	m_pMF->m_pPanel->m_pSHPanel->Enable();
-	m_pMF->m_pPanel->m_pSSPanel->Enable();
-	m_pMF->m_pPanel->m_pOCRPanel->Enable();
+	wxString path = wxString(g_work_dir + wxT("/TXTResults/join_txt_results.txt"));
+
+	if (!wxFileExists(path))
+	{
+		wxFFileOutputStream ffout(path, wxT("wb"));
+		ffout.Close();
+	}
+
+	end_func();
 }
 
 void FindTextLinesWithExcFilter(FindTextLinesRes *res, simple_buffer<u8>* pImF, simple_buffer<u8>* pImNF, simple_buffer<u8>* pImNE, simple_buffer<u8>* pImIL)
 {
 	try
 	{
-		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedText, *pImF, *pImNF, *pImNE, *pImIL, res->m_SavedFiles, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
+		res->m_res = FindTextLines(res->m_ImBGR, res->m_ImClearedTextScaled, *pImF, *pImNF, *pImNE, *pImIL, res->m_SaveDir, res->m_BaseImgName, res->m_w, res->m_h, res->m_W, res->m_H, res->m_xmin, res->m_ymin);
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLinesWithExcFilter:FindTextLines()") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in FindTextLinesWithExcFilter:FindTextLines()") + wxString(e.what()) + wxT("\n"));
 		res->m_res = -1;
 	}
 }
@@ -1206,8 +2092,8 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 		res.m_ymin = ymin;
 		res.m_xmax = xmax;
 		res.m_ymax = ymax;
-		res.m_ImBGR = simple_buffer<u8>(w * h * 3, 0);
-		res.m_ImClearedText = simple_buffer<u8>(w * h, 0);
+		res.m_ImBGR = simple_buffer<u8>(w * h * 3, (u8)0);
+		res.m_ImClearedTextScaled = simple_buffer<u8>(w * g_scale * h * g_scale, (u8)0);
 
 		LoadBGRImage(res.m_ImBGR, FileName);
 
@@ -1224,9 +2110,9 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 
 			if (g_show_results)
 			{
-				SaveBGRImage(res.m_ImBGR, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImBGR" + g_im_save_format, w, h);
-				SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
-				SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTF" + g_im_save_format, w, h);
+				SaveBGRImage(res.m_ImBGR, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImBGR" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
+				SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTF" + g_im_save_format, w, h);
 			}
 		}		
 
@@ -1236,7 +2122,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 			Str = GetFileName(Str);
 			Str = g_work_dir + "/TXTImages/" + Str + g_im_save_format;
 			SaveGreyscaleImage(ImTF, wxString(Str), w, h);
-			res.m_ImClearedText = ImTF;
+			res.m_ImClearedTextScaled = ImTF;
 			return;
 		}
 
@@ -1258,7 +2144,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 				{
 					simple_buffer<u8> ImTFOrig(ImTF);
 					LoadBinaryImage(ImTF, Str, w2, h2);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w2, h2);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w2, h2);
 
 					if (h2 != h)
 					{
@@ -1266,30 +2152,29 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 						GreyscaleImageToMat(ImTF, w2, h2, cv_ImGROrig);
 						cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), (double)w/w2, (double)h/h2);
 						BinaryMatToImage(cv_ImGR, w, h, ImTF, (u8)255);
-						if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageScaled" + g_im_save_format, w, h);
+						if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageScaled" + g_im_save_format, w, h);
 					}
 
-					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrig" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrig" + g_im_save_format, w, h);
 					CombineTwoImages(ImTFOrig, ImTF, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrigCombinedWithISAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTFOrig, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImTFOrigCombinedWithISAImage" + g_im_save_format, w, h);
 
-					RestoreStillExistLines(ImTF, ImTFOrig, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageRestoredStillExistLinesByImTFOrig" + g_im_save_format, w, h);
+					RestoreStillExistLines(ImTF, ImTFOrig, w, h, W, H);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageRestoredStillExistLinesByImTFOrig" + g_im_save_format, w, h);
 
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
 					CombineTwoImages(ImFF, ImTF, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFCombinedWithISAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFCombinedWithISAImage" + g_im_save_format, w, h);
 
 					ExtendImFWithDataFromImNF(ImTF, ImFF, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageExtImFF" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageExtImFF" + g_im_save_format, w, h);
 				}
 				else
 				{
 					g_pMF->ShowErrorMessage(wxString::Format(wxT("ISA Image \"%s\" has wrong size"), GetFileName(FileName) + g_im_save_format));
 
 					if (g_RunCreateClearedTextImages)
-					{
-						g_pMF->m_pPanel->m_pOCRPanel->Disable();
+					{						
 						g_RunCreateClearedTextImages = 0;
 					}
 					return;
@@ -1310,7 +2195,7 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 				{
 					ImIL.set_size(w * h);
 					LoadBinaryImage(ImIL, wxString(Str), w2, h2);
-					if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImage" + g_im_save_format, w2, h2);
+					if (g_show_results) SaveGreyscaleImage(ImIL, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImage" + g_im_save_format, w2, h2);
 
 					if (h2 != h)
 					{
@@ -1318,23 +2203,22 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 						GreyscaleImageToMat(ImIL, w2, h2, cv_ImGROrig);
 						cv::resize(cv_ImGROrig, cv_ImGR, cv::Size(0, 0), (double)w / w2, (double)h / h2);
 						BinaryMatToImage(cv_ImGR, w, h, ImIL, (u8)255);
-						if (g_show_results) SaveGreyscaleImage(ImIL, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImageScaled" + g_im_save_format, w, h);
+						if (g_show_results) SaveGreyscaleImage(ImIL, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ILAImageScaled" + g_im_save_format, w, h);
 					}
 
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImage" + g_im_save_format, w, h);
 					IntersectTwoImages(ImTF, ImIL, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImTF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageIntILAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImTF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ISAImageIntILAImage" + g_im_save_format, w, h);
 
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFF" + g_im_save_format, w, h);
 					IntersectTwoImages(ImFF, ImIL, w, h);
-					if (g_show_results) SaveGreyscaleImage(ImFF, "/TestImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFIntILAImage" + g_im_save_format, w, h);
+					if (g_show_results) SaveGreyscaleImage(ImFF, "/DebugImages/OCRPanel_FindTextLines_line" + wxString::Format(wxT("%i"), __LINE__) + "_ImFFIntILAImage" + g_im_save_format, w, h);
 				}
 				else
 				{
 					g_pMF->ShowErrorMessage(wxString::Format(wxT("ILA Image \"%s\" has wrong size"), GetFileName(FileName) + g_im_save_format));
 					if (g_RunCreateClearedTextImages)
 					{
-						g_pMF->m_pPanel->m_pOCRPanel->Disable();
 						g_RunCreateClearedTextImages = 0;
 					}
 					return;
@@ -1342,25 +2226,25 @@ void FindTextLines(wxString FileName, FindTextLinesRes& res)
 			}			
 		}		
 
-		res.m_SavedFiles.push_back(BaseImgName);
+		res.m_BaseImgName = BaseImgName;
 
 		FindTextLinesWithExcFilter(&res, &ImTF, &ImFF, &ImNE, &ImIL);
 
 		if (res.m_res == -1)
 		{
-			g_pMF->SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileName);
+			SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileName + wxT("\n"));
 		}
 
 		// free memory for reduce usage
 		if (g_pMF->m_blnNoGUI)
 		{
 			res.m_ImBGR.set_size(0);
-			res.m_ImClearedText.set_size(0);
+			res.m_ImClearedTextScaled.set_size(0);
 		}
 	}
 	catch (const exception& e)
 	{
-		g_pMF->SaveError(wxT("Got C++ Exception: got error in FindTextLines: ") + wxString(e.what()));
+		SaveError(wxT("Got C++ Exception: got error in FindTextLines: ") + wxString(e.what()) + wxT("\n"));
 	}
 }
 
@@ -1421,6 +2305,8 @@ s64 getTotalSystemMemory()
 
 void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 {
+	std::unique_lock<std::mutex> lock(m_mutex);
+
 	if (g_IsCreateClearedTextImages == 0)
 	{
 		wxDir dir(g_work_dir + "/RGBImages");
@@ -1459,17 +2345,19 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 			{
 				m_pMF->ClearDir(g_work_dir + "/TXTImages");
 				m_pMF->ClearDir(g_work_dir + "/TXTResults");
-				m_pMF->ClearDir(g_work_dir + "/TXTImagesJoined");
+				m_pMF->ClearDir(g_work_dir + "/ImagesJoined");
 			}
 
 			if (!(m_pMF->m_blnNoGUI))
 			{
-				m_pCCTI->SetLabel("Stop CCTXTImages");
+				m_pCCTI->SetLabel(g_cfg.m_ocr_button_ccti_stop_text);
+				this->UpdateSize();
 
 				m_pCES->Disable();
 				m_pJOIN->Disable();
 				m_pCSCTI->Disable();
 				m_pCSTXT->Disable();
+				m_pDG->Disable();
 
 				if (m_pMF->m_VIsOpen)
 				{
@@ -1485,15 +2373,16 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 
 					m_pMF->m_ct = -1;
 
-					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_RUN, false);
-					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_PAUSE, false);
-					m_pMF->m_pVideoBox->m_pVBar->ToggleTool(ID_TB_STOP, false);
+					m_pMF->m_pVideoBox->m_pButtonPause->Disable();
+					m_pMF->m_pVideoBox->m_pButtonRun->Disable();
+					m_pMF->m_pVideoBox->m_pButtonStop->Disable();
 					m_pMF->m_pImageBox->ClearScreen();
 					m_pMF->m_pVideo->SetNullRender();
 				}
 
-				m_pMF->m_pVideoBox->m_plblVB->SetLabel("VideoBox");
-				m_pMF->m_pVideoBox->m_plblTIME->SetLabel("");
+				m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_title);
+				g_cfg.m_video_box_lblTIME_label = wxT("");
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
 
 				m_pMF->m_pPanel->m_pSSPanel->Disable();
 				m_pMF->m_pPanel->m_pSHPanel->Disable();
@@ -1517,19 +2406,26 @@ void COCRPanel::OnBnClickedCreateClearedTextImages(wxCommandEvent& event)
 				m_pMF->m_pImageBox->ClearScreen();
 
 				wxString str;
-				str.Printf(wxT("progress: 0%%   |   0 : %.5d   "), NImages);
-				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(str);
+				str.Printf(g_cfg.m_ccti_start_progress_format_string + wxT("   "), NImages);
+				g_cfg.m_video_box_lblTIME_label = str;
+				m_pMF->m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
 			}
 
-			m_pSearchThread = new ThreadCreateClearedTextImages(m_pMF, FileNamesVector, m_pMF->m_blnNoGUI ? wxTHREAD_JOINABLE : wxTHREAD_DETACHED);
-			m_pSearchThread->Create();
-			m_pSearchThread->Run();
+			m_FileNamesVector = FileNamesVector;
+			m_SaveDir = wxString(wxT("/TXTImages/"));
+			
+			m_CCTIThread = std::thread(CreateClearedTextImages);
+
+			if (m_pMF->m_blnNoGUI)
+			{
+				m_CCTIThread.join();
+			}
 		}
 	}
 	else
 	{
-		m_pMF->m_pPanel->m_pOCRPanel->Disable();
 		g_RunCreateClearedTextImages = 0;
+		m_CCTIThread.join();
 	}
 }
 
@@ -1545,20 +2441,18 @@ void COCRPanel::OnUpdateCCTIProgress(wxThreadEvent& event)
 	const std::lock_guard<std::mutex> lock(m_mutex);
 	ProgressData pd = event.GetPayload<ProgressData>();	
 
-	m_pMF->m_pVideoBox->m_plblTIME->SetLabel(pd.m_ProgressStr);
-	m_pMF->m_pVideoBox->m_plblVB->SetLabel(pd.m_VBLabel);
+	g_cfg.m_video_box_lblTIME_label = pd.m_ProgressStr;
+	m_pMF->m_pVideoBox->m_plblTIME->SetLabel(g_cfg.m_video_box_lblTIME_label);
+	g_cfg.m_video_box_lblVB_title = pd.m_VBLabel;
+	m_pMF->m_pVideoBox->m_plblVB->SetLabel(g_cfg.m_video_box_lblVB_title);
 	m_pMF->m_pVideoBox->m_pSB->SetScrollPos(pd.m_SBpos);
 }
 
-ThreadCreateClearedTextImages::ThreadCreateClearedTextImages(CMainFrame* pMF, vector<wxString>& FileNamesVector, wxThreadKind kind)
-	: wxThread(kind)
+void CreateClearedTextImages()
 {
-	m_pMF = pMF;
-	m_FileNamesVector = FileNamesVector;
-}
-
-void *ThreadCreateClearedTextImages::Entry()
-{
+	vector<wxString> FileNamesVector = g_pMF->m_pPanel->m_pOCRPanel->m_FileNamesVector;
+	wxString SaveDir = g_pMF->m_pPanel->m_pOCRPanel->m_SaveDir;
+	
 	g_IsCreateClearedTextImages = 1;
 	
 	g_color_ranges = GetColorRanges(g_use_filter_color);
@@ -1606,9 +2500,9 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	//t1 = GetTickCount();	
 
-	if (g_clear_test_images_folder) m_pMF->ClearDir(g_work_dir + "/TestImages");
+	if (g_clear_test_images_folder) g_pMF->ClearDir(g_work_dir + "/DebugImages");
 		
-	int NImages = m_FileNamesVector.size();
+	int NImages = FileNamesVector.size();
 
 	if (NImages > 0)
 	{
@@ -1620,9 +2514,9 @@ void *ThreadCreateClearedTextImages::Entry()
 
 		for (k = 0; k < NImages; k++)
 		{
-			task_results[k] = new FindTextLinesRes();
+			task_results[k] = new FindTextLinesRes(SaveDir);
 			task_events[k] = new my_event();
-			find_text_queue_data queue_data{ m_FileNamesVector[k], task_results[k], task_events[k] };
+			find_text_queue_data queue_data{ FileNamesVector[k], task_results[k], task_events[k] };
 			task_queue.push(queue_data);
 		}
 
@@ -1654,10 +2548,10 @@ void *ThreadCreateClearedTextImages::Entry()
 
 				if (res == -1)
 				{
-					m_pMF->SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + m_FileNamesVector[k]);
+					SaveError(wxT("Got C Exception during FindTextLinesWithExcFilter on FileName: ") + FileNamesVector[k] + wxT("\n"));
 				}
 
-				if (!(m_pMF->m_blnNoGUI))
+				if (!(g_pMF->m_blnNoGUI))
 				{
 					{
 						simple_buffer<u8> ImTMP_BGR(p_task_res->m_W * p_task_res->m_H * 3);
@@ -1666,9 +2560,9 @@ void *ThreadCreateClearedTextImages::Entry()
 					}
 
 					{
-						simple_buffer<u8> ImTMP_ClearedText(p_task_res->m_W * p_task_res->m_H);
-						ImToNativeSize(p_task_res->m_ImClearedText, ImTMP_ClearedText, p_task_res->m_w, p_task_res->m_h, p_task_res->m_W, p_task_res->m_H, p_task_res->m_xmin, p_task_res->m_xmax, p_task_res->m_ymin, p_task_res->m_ymax);
-						g_pViewGreyscaleImage[1](ImTMP_ClearedText, p_task_res->m_W, p_task_res->m_H);
+						simple_buffer<u8> ImTMP_ClearedTextScaled(p_task_res->m_W * g_scale * p_task_res->m_H * g_scale);
+						ImToNativeSize(p_task_res->m_ImClearedTextScaled, ImTMP_ClearedTextScaled, p_task_res->m_w * g_scale, p_task_res->m_h * g_scale, p_task_res->m_W * g_scale, p_task_res->m_H * g_scale, p_task_res->m_xmin * g_scale, p_task_res->m_xmax * g_scale, p_task_res->m_ymin * g_scale, p_task_res->m_ymax * g_scale);
+						g_pViewGreyscaleImage[1](ImTMP_ClearedTextScaled, p_task_res->m_W * g_scale, p_task_res->m_H * g_scale);
 					}
 
 					std::chrono::time_point<std::chrono::high_resolution_clock> cur_time = std::chrono::high_resolution_clock::now();
@@ -1679,27 +2573,27 @@ void *ThreadCreateClearedTextImages::Entry()
 
 					ProgressData pd;
 
-					pd.m_ProgressStr.Printf(wxT("progress: %%%2.2f eta : %s run_time : %s   |   %.5d : %.5d   "), progress, m_pMF->ConvertTime(eta), m_pMF->ConvertTime(run_time), k + 1, NImages);
+					pd.m_ProgressStr.Printf(g_cfg.m_ccti_progress_format_string + wxT("   "), progress, g_pMF->ConvertTime(eta), g_pMF->ConvertTime(run_time), k + 1, NImages);
 					
-					Str = m_FileNamesVector[k];
+					Str = FileNamesVector[k];
 					Str = GetFileName(Str);
-					pd.m_VBLabel = wxString(wxT("VideoBox \"")) + Str + wxT("\"");
+					pd.m_VBLabel = wxString(g_cfg.m_video_box_title + wxT(" \"")) + Str + wxT("\"");
 
 					pd.m_SBpos = k + 1;
 
 					auto event = new wxThreadEvent(UPDATE_CCTI_PROGRESS);
 					event->SetPayload(pd);
-					wxQueueEvent(m_pMF->m_pPanel->m_pOCRPanel, event);
+					wxQueueEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
 				}
 				
 
 				if ((res == 0) && (g_DontDeleteUnrecognizedImages1 == true))
 				{
-					Str = m_FileNamesVector[k];
+					Str = FileNamesVector[k];
 					Str = GetFileName(Str);
 					Str = wxT("/TXTImages/") + Str + wxT("_00001") + g_im_save_format;
 
-					simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale) * (int)(p_task_res->m_h / g_scale), 255);
+					simple_buffer<u8> ImRES1((int)(p_task_res->m_w * g_scale) * (int)(p_task_res->m_h / g_scale), (u8)255);
 					SaveGreyscaleImage(ImRES1, wxString(Str), p_task_res->m_w * g_scale, p_task_res->m_h / g_scale);
 				}
 
@@ -1710,7 +2604,7 @@ void *ThreadCreateClearedTextImages::Entry()
 			}
 			catch (const exception& e)
 			{
-				m_pMF->SaveError(wxT("Got C++ Exception: got error in ThreadCreateClearedTextImages: ") + wxString(e.what()));
+				SaveError(wxT("Got C++ Exception: got error in CreateClearedTextImages: ") + wxString(e.what()) + wxT("\n"));
 			}
 		}
 
@@ -1719,48 +2613,44 @@ void *ThreadCreateClearedTextImages::Entry()
 
 	//(void)wxMessageBox("dt: " + std::to_string(GetTickCount() - t1));
 
-	if (!(m_pMF->m_blnNoGUI))
+	if (!(g_pMF->m_blnNoGUI))
 	{
+		SaveToReportLog("CreateClearedTextImages: wxPostEvent THREAD_CCTI_END ...\n");
 		wxCommandEvent event(THREAD_CCTI_END);
-		wxPostEvent(m_pMF->m_pPanel->m_pOCRPanel, event);
+		wxPostEvent(g_pMF->m_pPanel->m_pOCRPanel, event);
 	}
 	else
 	{
 		g_IsCreateClearedTextImages = 0;
 	}
-
-	return 0;
 }
 
 void COCRPanel::ThreadCreateClearedTextImagesEnd(wxCommandEvent& event)
 {
-	m_pMF->m_pPanel->m_pOCRPanel->m_pCCTI->SetLabel("Create Cleared TXT Images");
+	std::unique_lock<std::mutex> lock(m_mutex);
+
+	if (m_CCTIThread.joinable())
+	{
+		m_CCTIThread.join();
+	}
+
+	m_pCCTI->SetLabel(g_cfg.m_ocr_button_ccti_text);
+	this->UpdateSize();
 
 	m_pMF->m_pPanel->m_pSHPanel->Enable();
 	m_pMF->m_pPanel->m_pSSPanel->Enable();
-	m_pMF->m_pPanel->m_pOCRPanel->Enable();
-
+	
 	m_pCES->Enable();
 	m_pJOIN->Enable();
 	m_pCSCTI->Enable();
-	m_pCSTXT->Enable();
+	m_pCSTXT->Enable();	
+	m_pDG->Enable();
 
 	if ((g_RunCreateClearedTextImages == 1) && g_playback_sound)
 	{
+		SaveToReportLog("ThreadCreateClearedTextImagesEnd: trying to play sound ...\n");
 		wxString Str = g_app_dir + wxT("/finished.wav");
-#ifdef WIN32
-		if (wxFileExists(Str))
-		{
-			wxSound sound(Str);
-			if (sound.IsOk())
-			{
-				sound.Play();
-			}
-		}
-#else
-		// Unfortunately wxWidgets doesn't play sound
-		system(wxString::Format(wxT("canberra-gtk-play -f \"%s\""), Str).c_str());		
-#endif
+		PlaySound(Str);
 	}
 
 	g_IsCreateClearedTextImages = 0;

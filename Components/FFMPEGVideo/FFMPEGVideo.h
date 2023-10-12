@@ -68,7 +68,6 @@ public:
     s64     m_st;
 	int		m_type; //video open type
 	bool	m_show_video;
-	bool	m_play_video;
 	double		m_frameNumbers;
 	double		m_fps;
 	long		m_origWidth;
@@ -86,7 +85,7 @@ public:
 	AVBufferRef *hw_device_ctx = NULL;		
 	AVCodecContext *decoder_ctx = NULL;		
 	AVStream *video = NULL;
-#if LIBAVFORMAT_VERSION_MAJOR >= 60
+#if LIBAVFORMAT_VERSION_MAJOR > 58
 	const AVCodec *decoder = NULL;
 #else
 	AVCodec *decoder = NULL;

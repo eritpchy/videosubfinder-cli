@@ -29,7 +29,7 @@
 class CMainFrame;
 class CSSOWnd;
 
-class CSettingsPanel : public wxPanel
+class CSettingsPanel : public wxPanel, public CControl
 {
 public:
 	CSettingsPanel(CSSOWnd* pParent);
@@ -56,8 +56,9 @@ public:
 	CTextCtrl* m_pPixelColorLab;
 	CStaticText* m_pPixelColorExample;
 
+	wxColour m_PixelColorExample;
+
 	int		m_cn;
-	int		m_n;
 	
 	int		m_W = 0;
 	int		m_H = 0;
@@ -67,14 +68,6 @@ public:
 	int		m_ymin = 0;
 	int		m_xmax = 0;
 	int		m_ymax = 0;
-
-	wxColour   m_CLDBG;
-	wxColour   m_CLSP;
-	wxColour   m_CL1;
-	wxColour   m_CL2;
-	wxColour   m_CL3;
-	wxColour   m_CL4;
-	wxColour   m_CLGG;
 
 	//HCURSOR  m_hCursor;
 
@@ -91,9 +84,8 @@ public:
 	void OnBnClickedLeft(wxCommandEvent& event);
 	void OnBnClickedRight(wxCommandEvent& event);
 	void ViewCurImF();
-	//afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
-	//afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	//afx_msg void OnPaint();
+	void UpdateSize() override;
+	void RefreshData() override;
 
 private:
    DECLARE_EVENT_TABLE()

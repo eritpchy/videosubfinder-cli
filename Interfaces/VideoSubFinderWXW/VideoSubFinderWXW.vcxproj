@@ -157,11 +157,17 @@
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswud;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\OCVVideo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib\mswud;$(WX_WIDGETS_PATH)\include;..\..\Components\Include;..\..\Components\IPAlgorithms;..\..\Components\OCVVideo;..\..\Components\FFMPEGVideo;$(OPENCV_BUILD_PATH_X64)\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;__WXMSW__;__WXDEBUG__;_WINDOWS;NOPCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -181,10 +187,10 @@
       <AdditionalIncludeDirectories>$(WX_WIDGETS_PATH)\lib\vc_lib\mswd;$(WX_WIDGETS_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>wxmsw31ud_aui.lib;wxmsw31ud_media.lib;wxmsw31ud_core.lib;wxmsw31ud_adv.lib;wxbase31ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Debug\OCVVideo.lib;..\..\Components\IPAlgorithms\x64\Debug\IPAlgorithms.lib;..\..\Components\CUDAKernels\x64\Debug\CUDAKernels.lib;cudart.lib;cudadevrt.lib;opencv_world430d.lib;vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw32ud_aui.lib;wxmsw32ud_media.lib;wxmsw32ud_core.lib;wxmsw32ud_adv.lib;wxbase32ud.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wxexpatd.lib;winmm.lib;comctl32.lib;rpcrt4.lib;wsock32.lib;odbc32.lib;..\..\Components\OCVVideo\x64\Debug\OCVVideo.lib;..\..\Components\FFMPEGVideo\x64\Debug\FFMPEGVideo.lib;..\..\Components\IPAlgorithms\x64\Debug\IPAlgorithms.lib;..\..\Components\CUDAKernels\x64\Debug\CUDAKernels.lib;cudart.lib;nppicc.lib;nppig.lib;vfw32.lib;avdevice.lib;avformat.lib;avfilter.lib;avcodec.lib;swresample.lib;swscale.lib;avutil.lib;opencv_world$(OPENCV_LIBS_VER)d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)VideoSubFinderWXW.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_BUILD_PATH_X64)\lib\Release;$(CUDA_TOOLKIT_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WX_WIDGETS_PATH)\lib\vc_x64_lib;$(OPENCV_BUILD_PATH_X64)\lib\Debug;$(CUDA_TOOLKIT_PATH)\lib\x64;$(FFMPEG_PATH_X64)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)VideoSubFinderWXW.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -192,6 +198,12 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -228,7 +240,10 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|Win32'">
@@ -267,6 +282,12 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -307,7 +328,10 @@
       </DataExecutionPrevention>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWithDebugInfo|x64'">
@@ -349,13 +373,17 @@
       </DataExecutionPrevention>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y ..\..\Docs\readme*.* $(OutDir)Docs\</Command>
+      <Command>xcopy /Y ..\..\Docs\readme*.txt $(OutDir)Docs\
+xcopy /Y /S ..\..\Settings\Localization\*.cfg $(OutDir)settings\
+xcopy /Y ..\..\Settings\general.cfg $(OutDir)settings\
+xcopy /Y /S ..\..\Data\ $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BitmapButton.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="CheckBox.cpp" />
+    <ClCompile Include="Choice.cpp" />
     <ClCompile Include="CommonFunctions.cpp" />
     <ClCompile Include="DataGrid.cpp" />
     <ClCompile Include="ImageBox.cpp" />
@@ -377,6 +405,7 @@
     <ClInclude Include="BitmapButton.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="CheckBox.h" />
+    <ClInclude Include="Choice.h" />
     <ClInclude Include="CommonFunctions.h" />
     <ClInclude Include="Control.h" />
     <ClInclude Include="DataGrid.h" />

@@ -20,7 +20,17 @@
 
 class CBitmapButton : public wxWindow
 {
+	enum ShownBitmap { Default, Focused, Selected };
+
 public:
+	CBitmapButton(wxWindow* parent,
+		wxWindowID id,
+		const wxImage& image,
+		const wxImage& image_focused,
+		const wxImage& image_selected,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
+
 	CBitmapButton(wxWindow* parent,
 		wxWindowID id,
 		const wxImage& image,
@@ -28,17 +38,32 @@ public:
 		const wxPoint& pos = wxDefaultPosition,
 		const wxSize& size = wxDefaultSize);
 
+	CBitmapButton(wxWindow* parent,
+		wxWindowID id,
+		const wxPoint& pos = wxDefaultPosition,
+		const wxSize& size = wxDefaultSize);
+
 	void OnLButtonDown( wxMouseEvent& event );
 	void OnLButtonUp( wxMouseEvent& event );
-	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);
+	void OnMouseEnter(wxMouseEvent& event);
+	void OnMouseLeave(wxMouseEvent& event);
+	void OnMouseMove(wxMouseEvent& event);
+	void OnMouseCaptureLost(wxMouseCaptureLostEvent& event);	
 	void OnPaint(wxPaintEvent& event);
-	void SetBitmapSelected(const wxBitmap& bitmap);
+	void SetBitmaps(const wxImage& image,
+		const wxImage& image_focused,
+		const wxImage& image_selected);
+	wxSize GetOptimalSize(int req_w = 0, int req_h = 0);
 
-	bool	m_bDown;
-	wxImage m_image;
-	wxImage m_image_selected;
-	wxWindow* m_parent;
+	wxImage 	m_image;
+	wxImage 	m_image_focused;
+	wxImage 	m_image_selected;
 
 private:
+	ShownBitmap m_ShownBitmap = ShownBitmap::Default;
+	bool		m_bDown;
+	bool		m_bImagesDefined;
+	wxWindow*	m_parent;
+
 	DECLARE_EVENT_TABLE()
 };

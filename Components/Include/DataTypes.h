@@ -18,6 +18,8 @@
 #include <time.h>
 #include <memory.h>
 #include <wx/wx.h>
+#include <wx/wfstream.h>
+#include <wx/txtstrm.h>
 #include "wx.h"
 #include "opencv2/imgcodecs.hpp"
 #include <condition_variable>
@@ -41,7 +43,32 @@ typedef long long	                s64;
 
 wxString get_add_info();
 
-extern void SaveToReportLog(wxString msg, wxString mode = wxT("ab"));
+extern void PlaySound(wxString path);
+
+extern wxString g_ReportFileName;
+extern wxString g_ErrorFileName;
+extern wxString GetFileNameWithExtension(wxString FilePath);
+
+inline void SaveToReportLog(char const* file, int line, wxString msg, wxString mode = wxT("ab"))
+{
+	wxFFileOutputStream ffout(g_ReportFileName, mode);
+	wxTextOutputStream fout(ffout);
+	fout << GetFileNameWithExtension(wxString(file)) << wxT(":") << line << wxT(" ") << msg;
+	fout.Flush();
+	ffout.Close();
+}
+#define SaveToReportLog(...) SaveToReportLog(__FILE__, __LINE__, __VA_ARGS__)
+
+inline void SaveError(char const* file, int line, wxString error)
+{
+	wxFFileOutputStream ffout(g_ErrorFileName, wxT("ab"));
+	wxTextOutputStream fout(ffout);
+	fout << GetFileNameWithExtension(wxString(file)) << wxT(":") << line << wxT(" ") << error;
+	fout.Flush();
+	ffout.Close();
+}
+#define SaveError(error) SaveError(__FILE__, __LINE__, error)
+
 extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, char* det);
 
 // NOTE: for debugging!!!
@@ -89,13 +116,20 @@ enum ColorSpace {
 
 struct color_range
 {
-	int m_min_data[3];
-	int m_max_data[3];
+	std::array<int, 3> m_min_data;
+	std::array<int, 3> m_max_data;
 	ColorSpace m_color_space;
 };
 
-enum TextAlignment {
-	Center,
+inline bool operator==(const color_range& lhs, const color_range& rhs)
+{
+	return ((lhs.m_min_data == rhs.m_min_data) &&
+		(lhs.m_max_data == rhs.m_max_data) &&
+		(lhs.m_color_space == rhs.m_color_space));
+}
+
+enum TextAlignment : int {
+	Center = 0,
 	Left,
 	Right,	
 	Any
@@ -348,7 +382,7 @@ public:
 
 	shared_custom_task & operator= (const shared_custom_task& other)
 	{
-		custom_assert(static_cast<bool>(m_data) == false, "shared_custom_task: 'operator= &&' m_data != false");
+		custom_assert(static_cast<bool>(m_data) == false, "shared_custom_task: 'operator= &' m_data != false");
 
 		if (other.m_data)
 		{
@@ -477,7 +511,7 @@ public:
 	}
 
 	// return sub buffer
-	custom_buffer(const custom_buffer<T>& obj, int offset, bool)
+	custom_buffer(const custom_buffer<T>& obj, int offset)
 	{
 		custom_assert(offset < obj.m_size, "custom_buffer(const custom_buffer<T>& obj, int offset): not: offset < obj.m_size");
 		m_pData = obj.m_pData + offset;
@@ -743,7 +777,7 @@ public:
 	}
 
 	// return sub buffer
-	simple_buffer(const simple_buffer<T>& obj, int offset, bool)
+	simple_buffer(const simple_buffer<T>& obj, int offset)
 	{
 		custom_assert(offset < obj.m_size, "simple_buffer(const simple_buffer<T>& obj, int offset): not: offset < obj.m_size");
 		this->m_pData = obj.m_pData + offset;

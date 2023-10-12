@@ -44,7 +44,7 @@ extern bool g_replace_ISA_by_filtered_version;
 extern int g_max_dl_down;
 extern int g_max_dl_up;
 
-s64 FastSearchSubtitles(wxThread *pThr, CVideo *pV, s64 Begin, s64 End);
+s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
 int AnalyseImage(simple_buffer<u8> &Im, simple_buffer<u16> *pImILA, int w, int h);
 
@@ -67,7 +67,8 @@ s64 GetVideoTime(int minute, int sec, int mili_sec);
 
 wxString GetFileName(wxString FilePath);
 wxString GetFileExtension(wxString FilePath);
-
+wxString GetFileNameWithExtension(wxString FilePath);
+wxString GetFileDir(wxString FilePath);
 
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height

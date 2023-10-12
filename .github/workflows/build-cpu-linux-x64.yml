@@ -49,6 +49,9 @@ jobs:
         name: Build cpu
         run: bash ./Build/Docker/cpu/build.sh
       -
+        name: Test
+        run: bash ./Build/Docker/cpu/test.sh
+      -
         name: Upload artifact
         uses: actions/upload-artifact@v3
         with:

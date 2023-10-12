@@ -29,6 +29,28 @@ class CSearchPanel;
 class CSettingsPanel;
 class COCRPanel;
 
+class CTabArt : public wxAuiGenericTabArt
+{
+public:
+	CMainFrame* m_pMF;
+
+	CTabArt(CMainFrame* pMF);
+
+	wxAuiTabArt* Clone() wxOVERRIDE
+	{
+		return new CTabArt(*this);
+	}
+
+	void DrawTab(wxDC& dc,
+		wxWindow* wnd,
+		const wxAuiNotebookPage& pane,
+		const wxRect& inRect,
+		int closeButtonState,
+		wxRect* outTabRect,
+		wxRect* outButtonRect,
+		int* xExtent) wxOVERRIDE;
+};
+
 class CSSOWnd : public wxAuiNotebook, public CControl
 {
 public:
@@ -41,7 +63,8 @@ public:
 	COCRPanel	   *m_pOCRPanel;
 
 	bool			m_WasInited;
-	CMainFrame	   *m_pMF;
+	CMainFrame	    *m_pMF;
+	CTabArt			*m_pTabArt;
 
 public:
 	void Init();

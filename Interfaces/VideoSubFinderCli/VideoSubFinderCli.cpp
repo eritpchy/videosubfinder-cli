@@ -45,26 +45,6 @@ wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
 
 bool g_join_subs_and_correct_time = true;
 
- class MyGUIThread : public wxThread
- {
-    public:
-    MyGUIThread(CVideo* g_pVideo, s64 beginTime, s64 endTime) : wxThread(wxTHREAD_JOINABLE) {
-        this->g_pVideo = g_pVideo;
-        this->g_BegTime = beginTime;
-        this->g_EndTime = endTime;
-    }
-
-    ExitCode Entry() {
-        FastSearchSubtitles(this, g_pVideo, g_BegTime, g_EndTime);
-        return 0;
-    }
-
-    private:
-    CVideo* g_pVideo;
-    s64 g_BegTime;
-    s64 g_EndTime;
- };
-
 void ClearDir(wxString DirName)
 {
 	wxDir dir(DirName);
@@ -92,16 +72,43 @@ void ClearDir(wxString DirName)
 	FileNamesVector.clear();
 }
 
+/////////////////////////////////////////////////////////////////////////////
 
-void SaveToReportLog(wxString msg, wxString mode)
+wxString ConvertTextAlignmentToString(TextAlignment val)
 {
-	wxFFileOutputStream ffout(g_ReportFileName, mode);
-	wxTextOutputStream fout(ffout);
-	fout << msg;
-	fout.Flush();
-	ffout.Close();
-    wxLogMessage(msg);
+	switch (val)
+	{
+	case TextAlignment::Center:
+		return "Center";
+	case TextAlignment::Left:
+		return "Left";
+	case TextAlignment::Right:
+		return "Right";
+	case TextAlignment::Any:
+		return "Any";
+	}
+}
 
+TextAlignment ConvertStringToTextAlignment(wxString val)
+{
+	TextAlignment res;
+	if (val == ConvertTextAlignmentToString(TextAlignment::Center))
+	{
+		res = TextAlignment::Center;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Left))
+	{
+		res = TextAlignment::Left;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Right))
+	{
+		res = TextAlignment::Right;
+	}
+	else if (val == ConvertTextAlignmentToString(TextAlignment::Any))
+	{
+		res = TextAlignment::Any;
+	}
+	return res;
 }
 
 void CVideoSubFinderApp::OnInitCmdLine(wxCmdLineParser& parser) {
@@ -112,7 +119,6 @@ void CVideoSubFinderApp::OnInitCmdLine(wxCmdLineParser& parser) {
 
 bool CVideoSubFinderApp::OnCmdLineParsed(wxCmdLineParser& parser) {
     wxAppConsole::OnCmdLineParsed(parser);
-    wxLogMessage("Logging wxScroll1");
     wxString Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
     Str.Replace("\\", "/");
     g_app_dir = Str;
@@ -589,7 +595,9 @@ void CVideoSubFinderApp::LoadSettings(wxString file_name)
 
 	ReadProperty(m_general_settings, g_border_is_darker, "border_is_darker");
 
+    wxString g_text_alignment_string;
 	ReadProperty(m_general_settings, g_text_alignment_string, "text_alignment");
+    g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
 
 	ReadProperty(m_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
 	ReadProperty(m_general_settings, g_allow_min_luminance, "allow_min_luminance");
@@ -613,13 +621,12 @@ int CVideoSubFinderApp::OnRun()
 	g_pViewRGBImage = ViewImageInNull;
 
     g_pVideo->SetVideoWindowSettins(g_DxMin, g_DxMax, g_DyMin, g_DyMax);
-    auto thread = new MyGUIThread(g_pVideo, g_BegTime, g_EndTime);
-    thread->Create();
-    thread->Run();
-    thread->Wait();
+    g_RunSubSearch = 1;
+    FastSearchSubtitles(g_pVideo, g_BegTime, g_EndTime);
     if (g_sub_path.size() > 0) {
         createEmptySub();
     }
+    wxLogMessage("FINISH");
     return false;
 }
 

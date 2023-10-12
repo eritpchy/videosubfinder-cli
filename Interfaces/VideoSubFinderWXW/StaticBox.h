@@ -27,10 +27,27 @@ public:
         const wxSize& size = wxDefaultSize,
         long style = 0,
         const wxString& name = wxStaticBoxNameStr);
+    CStaticBox(wxWindow* parent, wxWindowID id,
+        const wxString&& label,
+        const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = 0,
+        const wxString& name = wxStaticBoxNameStr) = delete;
 
 	void RefreshData();
 	void SetFont(wxFont& font);
+    void SetTextColour(wxColour& colour);
+    void SetBackgroundColour(wxColour& colour);
+    void SetLabel(const wxString& label);
+    void SetLabel(const wxString&& label) = delete;
+    void SetMinSize(wxSize& size);
+    void UpdateSize();
 	
 private:
-	wxFont* m_pFont;
+    wxSize m_min_size;
+    wxWindow* m_pParent;
+	wxFont* m_pFont = NULL;
+    wxColour* m_pTextColour = NULL;
+    wxColour* m_pBackgroundColour = NULL;
+    const wxString* m_p_label;
 };
