@@ -23,6 +23,7 @@
 #ifdef USE_GUI
 #include <X11/Xlib.h>
 #endif
+
 #endif
 #include "DataTypes.h"
 

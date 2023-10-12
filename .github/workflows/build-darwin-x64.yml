@@ -187,6 +187,8 @@ jobs:
           cp -fv /usr/local/lib/libpcre2-8.0.dylib lib/ || true; \
           cp -fv ../Interfaces/VideoSubFinderCli/VideoSubFinderCli . && \
           cp -rfv ../Darwin_x64/* . && \
+          mkdir ./settings && \
+          cp -rf ../../Settings/general.cfg ./settings/ && \
           true
       -
         name: Archive artifacts

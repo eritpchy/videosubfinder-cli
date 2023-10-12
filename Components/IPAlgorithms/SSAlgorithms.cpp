@@ -1221,7 +1221,7 @@ s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End)
 	simple_buffer<u8> ImFSP(size * 3, (u8)0); //image for save prev
 	simple_buffer<u8> ImNES(size, (u8)0), ImNESP(size, (u8)0);
 	simple_buffer<u16> ImYInt(size, (u16)0), ImYS(size, (u16)0), ImYSP(size, (u16)0), * pImYInt, * pImY;
-    simple_buffer<u8>* pImBGR;
+	simple_buffer<u8>* pImBGR;
 	simple_buffer<u8> *pIm, *pImInt, *pImNE;
 	simple_buffer<u8> prevImBGR(size * 3, (u8)0);
 	simple_buffer<u8> prevImNE(size, (u8)0), prevIm(size, (u8)0);

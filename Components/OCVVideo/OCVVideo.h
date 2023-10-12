@@ -58,7 +58,7 @@ public:
 	int		m_type; //video open type
 	bool	m_show_video;
 #ifdef USE_GUI
-	wxBitmap	*m_pBmp;	
+	wxBitmap	*m_pBmp;
 	wxBitmap	*m_pBmpScaled;
 #endif
 	double m_frameNumbers;
