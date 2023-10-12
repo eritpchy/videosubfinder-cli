@@ -9,5 +9,12 @@ else
 fi
 mkdir -p out
 docker run --rm -v $PWD/out:$PWD/out videosubfinder-build:cpu-static \
-  bash -c "cd /tmp/work/ && tar cvzf $PWD/out/videosubfinder-cli-cpu-static-linux-x64.tar.gz \
-    VideoSubFinderCli VideoSubFinderCli.run settings"
+  bash -c "ARCH=\$(uname -m) \
+    && ARCH=\${ARCH/x86_64/x64} \
+    && cd /tmp/work/ \
+    && tar cvzf $PWD/out/videosubfinder-cli-cpu-static-linux-\$ARCH.tar.gz \
+    VideoSubFinderCli VideoSubFinderCli.run settings \
+    && mv -fv ./VideoSubFinderCli.upx ./VideoSubFinderCli \
+    && tar cvzf $PWD/out/videosubfinder-cli-cpu-static-upx-linux-\$ARCH.tar.gz \
+    VideoSubFinderCli VideoSubFinderCli.run settings \
+  "

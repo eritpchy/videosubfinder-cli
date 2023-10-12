@@ -1,9 +1,9 @@
 FROM ubuntu:20.04 as builder
 # Allow ubuntu to cache package downloads
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt update
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
+    echo 1; apt update
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     DEBIAN_FRONTEND=noninteractive apt install -y git cmake wget libtbb-dev \
       libavcodec-dev libgtk-3-dev libavformat-dev libswscale-dev libavfilter-dev build-essential \
     && if [[ "USE_GUI" = "1" ]] ; then DEBIAN_FRONTEND=noninteractive apt install -y \

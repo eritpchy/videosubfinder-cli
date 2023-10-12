@@ -34,7 +34,9 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          submodules: true
       -
         name: Get current date
         id: date
@@ -56,6 +58,7 @@ jobs:
           name: videosubfinder-cli-cpu-linux-x64.tar.gz
           path: |
             ./Build/Docker/cpu_static/out/videosubfinder-cli-cpu-static-linux-x64.tar.gz
+            ./Build/Docker/cpu_static/out/videosubfinder-cli-cpu-static-upx-linux-x64.tar.gz
       -
         name: Release draft
         uses: softprops/action-gh-release@v1
@@ -65,4 +68,5 @@ jobs:
           tag_name: "${{ env.release_version }}-ci"
           files: |
             ./Build/Docker/cpu_static/out/videosubfinder-cli-cpu-static-linux-x64.tar.gz
+            ./Build/Docker/cpu_static/out/videosubfinder-cli-cpu-static-upx-linux-x64.tar.gz
           body: "[Github Action](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})"

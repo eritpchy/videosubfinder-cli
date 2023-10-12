@@ -20,7 +20,5 @@ RUN cd /tmp/work/videosubfinder-src \
 RUN --mount=type=cache,target=/var/cache/apt \
     DEBIAN_FRONTEND=noninteractive apt install -y upx-ucl \
     && cd /tmp/work \
-    && mv ./VideoSubFinderCli ./VideoSubFinderCli.1 \
-    && upx -f -o ./VideoSubFinderCli ./VideoSubFinderCli.1 \
-    && rm -fv ./VideoSubFinderCli.1 \
+    && upx -f -o ./VideoSubFinderCli.upx ./VideoSubFinderCli \
     && true

@@ -609,7 +609,7 @@ public:
 		int ymax = m_ymax;
 		bool convert_to_lab = m_convert_to_lab;
 
-		m_thrs_save_images.push(([ImFrameData, ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab](int id) mutable {
+		m_thrs_save_images.push(([ImBGR, ImISA, ImILA, name, w, h, W, H, xmin, xmax, ymin, ymax, convert_to_lab](int id) mutable {
                     g_file_names_vector.push_back(name);
 		            fprintf(stderr, "Frame: %s\n", name.ToStdString().c_str());
                     fflush(stderr);
