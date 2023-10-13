@@ -211,7 +211,10 @@ bool CVideoSubFinderApp::OnCmdLineParsed(wxCmdLineParser& parser) {
         wxLogMessage("ERROR: g_pVideo->SetNullRender() failed\n");
         return false;
     }
-
+    g_DxMin = 0;
+    g_DxMax = 1;
+    g_DyMin = 1 - 1;
+    g_DyMax = 1 - 0;
     if (parser.Found("le", &g_DxMin))
     {
         if ((g_DxMin < 0) || (g_DxMin > 1.0))
