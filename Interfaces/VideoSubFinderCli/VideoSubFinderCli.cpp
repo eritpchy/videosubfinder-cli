@@ -72,45 +72,6 @@ void ClearDir(wxString DirName)
 	FileNamesVector.clear();
 }
 
-/////////////////////////////////////////////////////////////////////////////
-
-wxString ConvertTextAlignmentToString(TextAlignment val)
-{
-	switch (val)
-	{
-	case TextAlignment::Center:
-		return "Center";
-	case TextAlignment::Left:
-		return "Left";
-	case TextAlignment::Right:
-		return "Right";
-	case TextAlignment::Any:
-		return "Any";
-	}
-}
-
-TextAlignment ConvertStringToTextAlignment(wxString val)
-{
-	TextAlignment res;
-	if (val == ConvertTextAlignmentToString(TextAlignment::Center))
-	{
-		res = TextAlignment::Center;
-	}
-	else if (val == ConvertTextAlignmentToString(TextAlignment::Left))
-	{
-		res = TextAlignment::Left;
-	}
-	else if (val == ConvertTextAlignmentToString(TextAlignment::Right))
-	{
-		res = TextAlignment::Right;
-	}
-	else if (val == ConvertTextAlignmentToString(TextAlignment::Any))
-	{
-		res = TextAlignment::Any;
-	}
-	return res;
-}
-
 void CVideoSubFinderApp::OnInitCmdLine(wxCmdLineParser& parser) {
     wxAppConsole::OnInitCmdLine(parser);
 
@@ -511,81 +472,81 @@ static void ReadSettings(wxString file_name, std::map<wxString, wxString>& setti
 
 void CVideoSubFinderApp::LoadSettings(wxString file_name)
 {
-	std::map<wxString, wxString> m_general_settings;
-	ReadSettings(file_name, m_general_settings);
+	std::map<wxString, wxString> g_general_settings;
+	ReadSettings(file_name, g_general_settings);
 
-	ReadProperty(m_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
-	ReadProperty(m_general_settings, g_show_results, "dump_debug_images");
-	ReadProperty(m_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
-	ReadProperty(m_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
-	ReadProperty(m_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
-	ReadProperty(m_general_settings, g_use_ocl, "use_ocl");
-	ReadProperty(m_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
+	ReadProperty(g_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
+	ReadProperty(g_general_settings, g_show_results, "dump_debug_images");
+	ReadProperty(g_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
+	ReadProperty(g_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
+	ReadProperty(g_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
+	ReadProperty(g_general_settings, g_use_ocl, "use_ocl");
+	ReadProperty(g_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
 
-	ReadProperty(m_general_settings, g_use_filter_color, "use_filter_color");
-	ReadProperty(m_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
-	ReadProperty(m_general_settings, g_dL_color, "dL_color");
-	ReadProperty(m_general_settings, g_dA_color, "dA_color");
-	ReadProperty(m_general_settings, g_dB_color, "dB_color");
-	ReadProperty(m_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
+	ReadProperty(g_general_settings, g_use_filter_color, "use_filter_color");
+	ReadProperty(g_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
+	ReadProperty(g_general_settings, g_dL_color, "dL_color");
+	ReadProperty(g_general_settings, g_dA_color, "dA_color");
+	ReadProperty(g_general_settings, g_dB_color, "dB_color");
+	ReadProperty(g_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
 
-	ReadProperty(m_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
-	ReadProperty(m_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
-	ReadProperty(m_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
-	ReadProperty(m_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
+	ReadProperty(g_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
+	ReadProperty(g_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
+	ReadProperty(g_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
+	ReadProperty(g_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
 
-	ReadProperty(m_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
-	ReadProperty(m_general_settings, g_mthr, "moderate_threshold");
-	ReadProperty(m_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
-	ReadProperty(m_general_settings, g_segw, "segment_width");
-	ReadProperty(m_general_settings, g_segh, "segment_height");
-	ReadProperty(m_general_settings, g_msegc, "minimum_segments_count");
-	ReadProperty(m_general_settings, g_scd, "min_sum_color_diff");
-	ReadProperty(m_general_settings, g_btd, "between_text_distace");
-	ReadProperty(m_general_settings, g_to, "text_centre_offset");
-	ReadProperty(m_general_settings, g_scale, "image_scale_for_clear_image");
+	ReadProperty(g_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
+	ReadProperty(g_general_settings, g_mthr, "moderate_threshold");
+	ReadProperty(g_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
+	ReadProperty(g_general_settings, g_segw, "segment_width");
+	ReadProperty(g_general_settings, g_segh, "segment_height");
+	ReadProperty(g_general_settings, g_msegc, "minimum_segments_count");
+	ReadProperty(g_general_settings, g_scd, "min_sum_color_diff");
+	ReadProperty(g_general_settings, g_btd, "between_text_distace");
+	ReadProperty(g_general_settings, g_to, "text_centre_offset");
+	ReadProperty(g_general_settings, g_scale, "image_scale_for_clear_image");
 
 
-	ReadProperty(m_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
-	ReadProperty(m_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
+	ReadProperty(g_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
 
-	ReadProperty(m_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
-	ReadProperty(m_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
-	ReadProperty(m_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");
+	ReadProperty(g_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
+	ReadProperty(g_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");
 
-	ReadProperty(m_general_settings, g_mpn, "min_points_number");
-	ReadProperty(m_general_settings, g_mpd, "min_points_density");
-	ReadProperty(m_general_settings, g_msh, "min_symbol_height");
-	ReadProperty(m_general_settings, g_msd, "min_symbol_density");
-	ReadProperty(m_general_settings, g_mpned, "min_NEdges_points_density");
+	ReadProperty(g_general_settings, g_mpn, "min_points_number");
+	ReadProperty(g_general_settings, g_mpd, "min_points_density");
+	ReadProperty(g_general_settings, g_msh, "min_symbol_height");
+	ReadProperty(g_general_settings, g_msd, "min_symbol_density");
+	ReadProperty(g_general_settings, g_mpned, "min_NEdges_points_density");
 
-	ReadProperty(m_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
+	ReadProperty(g_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
 
-	ReadProperty(m_general_settings, g_threads, "threads");
-	ReadProperty(m_general_settings, g_DL, "sub_frame_length");
-	ReadProperty(m_general_settings, g_tp, "text_percent");
-	ReadProperty(m_general_settings, g_mtpl, "min_text_len_in_percent");
-	ReadProperty(m_general_settings, g_veple, "vedges_points_line_error");
-	ReadProperty(m_general_settings, g_ilaple, "ila_points_line_error");
+	ReadProperty(g_general_settings, g_threads, "threads");
+	ReadProperty(g_general_settings, g_DL, "sub_frame_length");
+	ReadProperty(g_general_settings, g_tp, "text_percent");
+	ReadProperty(g_general_settings, g_mtpl, "min_text_len_in_percent");
+	ReadProperty(g_general_settings, g_veple, "vedges_points_line_error");
+	ReadProperty(g_general_settings, g_ilaple, "ila_points_line_error");
 
-	ReadProperty(m_general_settings, g_video_contrast, "video_contrast");
-	ReadProperty(m_general_settings, g_video_gamma, "video_gamma");
+	ReadProperty(g_general_settings, g_video_contrast, "video_contrast");
+	ReadProperty(g_general_settings, g_video_gamma, "video_gamma");
 
-	ReadProperty(m_general_settings, g_clear_image_logical, "clear_image_logical");
+	ReadProperty(g_general_settings, g_clear_image_logical, "clear_image_logical");
 
-	ReadProperty(m_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
+	ReadProperty(g_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
 
-	ReadProperty(m_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
-	ReadProperty(m_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
-	ReadProperty(m_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
-	ReadProperty(m_general_settings, g_max_dl_down, "max_dl_down");
-	ReadProperty(m_general_settings, g_max_dl_up, "max_dl_up");
+	ReadProperty(g_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
+	ReadProperty(g_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
+	ReadProperty(g_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
+	ReadProperty(g_general_settings, g_max_dl_down, "max_dl_down");
+	ReadProperty(g_general_settings, g_max_dl_up, "max_dl_up");
 
-	ReadProperty(m_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
+	ReadProperty(g_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
 
-	ReadProperty(m_general_settings, g_hw_device, "hw_device");
+	ReadProperty(g_general_settings, g_hw_device, "hw_device");
 
-	if (ReadProperty(m_general_settings, g_filter_descr, "filter_descr"))
+	if (ReadProperty(g_general_settings, g_filter_descr, "filter_descr"))
 	{
 		if (g_filter_descr == wxT("none"))
 		{
@@ -593,17 +554,17 @@ void CVideoSubFinderApp::LoadSettings(wxString file_name)
 		}
 	}
 
-	ReadProperty(m_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
-	ReadProperty(m_general_settings, g_save_scaled_images, "save_scaled_images");
+	ReadProperty(g_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
+	ReadProperty(g_general_settings, g_save_scaled_images, "save_scaled_images");
 
-	ReadProperty(m_general_settings, g_border_is_darker, "border_is_darker");
+	ReadProperty(g_general_settings, g_border_is_darker, "border_is_darker");
 
-    wxString g_text_alignment_string;
-	ReadProperty(m_general_settings, g_text_alignment_string, "text_alignment");
-    g_text_alignment = ConvertStringToTextAlignment(g_text_alignment_string);
+	int text_alignment;
+	ReadProperty(g_general_settings, text_alignment, "text_alignment");
+	g_text_alignment = (TextAlignment)text_alignment;
 
-	ReadProperty(m_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
-	ReadProperty(m_general_settings, g_allow_min_luminance, "allow_min_luminance");
+	ReadProperty(g_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
+	ReadProperty(g_general_settings, g_allow_min_luminance, "allow_min_luminance");
 }
 
 
