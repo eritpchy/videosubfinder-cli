@@ -1,3 +1,10 @@
+#ifdef _WIN32
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#else
+#include <unistd.h>
+#endif
 #include "VideoSubFinderCli.h"
 #include <algorithm>
 #include <chrono>
@@ -9,13 +16,7 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
-#ifdef _WIN32
-#include <windows.h>
-#elif defined(__APPLE__)
-#include <mach-o/dyld.h>
-#else
-#include <unistd.h>
-#endif
+
 
 namespace fs = std::filesystem;
 std::string g_ReportFileName;

@@ -227,6 +227,8 @@ jobs:
     timeout-minutes: 120
     env:
       VCPKG_DEFAULT_TRIPLET: x64-windows-static
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-cache
+      VCPKG_BINARY_SOURCES: clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite
       VSF_TEST_MEDIA: ${{ github.workspace }}/test-media
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -239,8 +241,10 @@ jobs:
       - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         id: vcpkg-cache
         with:
-          path: ~/AppData/Local/vcpkg/archives
-          key: windows-static-release-${{ hashFiles('vcpkg.json', 'triplets/*.cmake') }}
+          path: |
+            .vcpkg-cache
+            build/vcpkg_installed
+          key: windows-static-release-v2-${{ hashFiles('vcpkg.json', 'triplets/*.cmake') }}
       - name: Synchronize pinned vcpkg baseline
         shell: pwsh
         run: |
@@ -255,12 +259,15 @@ jobs:
         id: configure
         shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force "$env:VCPKG_DEFAULT_BINARY_CACHE" | Out-Null
           cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DVCPKG_OVERLAY_TRIPLETS="$pwd/triplets" -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         if: steps.vcpkg-cache.outputs.cache-hit != 'true' && steps.configure.outcome == 'success'
         with:
-          path: ~/AppData/Local/vcpkg/archives
+          path: |
+            .vcpkg-cache
+            build/vcpkg_installed
           key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
       - name: Build static Windows CLI binary
         shell: pwsh

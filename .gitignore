@@ -6,3 +6,4 @@ __pycache__/
 /test-media/
 *.AppImage
 Build/Docker/*/out/
+/.vcpkg-cache/
