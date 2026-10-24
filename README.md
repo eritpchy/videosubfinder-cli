@@ -15,6 +15,7 @@ placeholder text, not recognized dialogue.
 - [Command-line reference](#command-line-reference)
 - [Troubleshooting](#troubleshooting)
 - [Build from source](#build-from-source)
+- [Donate](#donate)
 
 ## Download and install
 
@@ -25,7 +26,6 @@ For normal CPU use, choose the package matching your operating system and CPU:
 | --- | --- | --- |
 | Linux Intel/AMD 64-bit | `videosubfinder-cli-linux-x64.tar.gz` or `videosubfinder-cli-linux-x64.AppImage` | CPU libraries are included and statically linked; no system OpenCV, FFmpeg or glibc version requirement. |
 | Linux ARM 64-bit | `videosubfinder-cli-linux-arm64.tar.gz` or `videosubfinder-cli-linux-arm64.AppImage` | Same portable CPU runtime as x64. |
-| Linux ARM 32-bit (ARMv7 hard-float) | `videosubfinder-cli-linux-armv7.tar.gz` or `videosubfinder-cli-linux-armv7.AppImage` | ARMv7-A with VFPv3-D16; NEON is not required. Fully static CPU runtime. |
 | macOS Apple Silicon | `videosubfinder-cli-macos-arm64.tar.gz` | Bundled libraries; Homebrew is not needed. |
 | macOS Intel | `videosubfinder-cli-macos-x64.tar.gz` | Bundled libraries; Homebrew is not needed. |
 | macOS, either CPU | `videosubfinder-cli-macos-universal.tar.gz` | Includes both CPU architectures and their libraries. |
@@ -35,9 +35,9 @@ For normal CPU use, choose the package matching your operating system and CPU:
 Linux CPU packages are tested in Ubuntu 16.04-26.04 LTS, Debian 10-13, CentOS 7,
 AlmaLinux 8-10, Rocky Linux 8/9, Fedora, openSUSE Leap/Tumbleweed, Arch and Alpine
 containers. ARM64 uses the supported subset in the [CI matrix](.github/workflows/portable.yml).
-ARMv7 archives and AppImages run under QEMU in Ubuntu 16.04-24.04 LTS, Debian
-10-13 and Alpine 3.15/3.18/3.22 containers. Container tests check user-space
-compatibility on a current host kernel; they do not validate every old kernel.
+ARM64 packages are built and tested on native ARM64 runners, including Windows 11.
+Linux container tests validate old user-space on a current host kernel; they do
+not validate every old kernel.
 macOS packages are tested on macOS 15 on both architectures; compatibility with
 older macOS versions has not been verified. Windows binaries are tested on
 Windows Server 2022 (x64) and Windows 11 (native ARM64).
@@ -304,12 +304,7 @@ H.264 fixtures. Alternatively, set `VSF_TEST_MEDIA` to a directory containing
 
 Packaging workflows and dependencies are in [portable.yml](.github/workflows/portable.yml).
 For fully static Linux CPU builds, use `scripts/build-static-linux.sh` in Alpine
-3.22. For Linux ARMv7 cross-builds on Linux x64, install CMake, Ninja, Make,
-Python, curl, pkg-config and binutils, register QEMU ARM with binfmt_misc, and run
-`sh scripts/build-armv7-linux.sh`. It downloads the pinned Bootlin musl/GCC toolchain
-and tests the resulting ARM executable. CI additionally runs with NEON disabled. Set `VSF_ARCH=armv7` when subsequently
-running `scripts/appimage.sh` to package the ARM runtime using the host tool.
-For Windows, use the checked-in vcpkg manifest with `x64-windows-static` or
+3.22. For Windows, use the checked-in vcpkg manifest with `x64-windows-static` or
 `arm64-windows-static`, the matching CMake architecture (`-A x64` / `-A ARM64`),
 and `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded`. CUDA builds use `-DUSE_CUDA=ON`.
 
@@ -328,3 +323,8 @@ packages, Torch or an OCR engine.
 Licensed under [GPL-2.0](LICENSE). Bundled library notices are in
 [THIRD_PARTY.md](THIRD_PARTY.md) and the release packages' `licenses` directory.
 Matching source is available as `videosubfinder-cli-source.tar.gz` in each release.
+
+## Donate
+
+If you use and love videosubfinder-cli, please consider sending some Bitcoin (BTC) to bc1q9t4t6g42hge2stvu96rzr6kn7ynq52al5uv0pg
+In case you want to be mentioned as a sponsor, let me know!

@@ -17,7 +17,7 @@ def invoke(command, *, success=True, cwd=None):
     if os.environ.get('VSF_TEST_CUDA') == '1' and any(str(arg) in ('-r','--run_search','-ccti','--create_cleared_text_images') for arg in command):
         command = [*command, '--use_cuda']
     result = subprocess.run(prefix + [str(x) for x in command], cwd=cwd, text=True, encoding="utf-8", errors="replace",
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=int(os.environ.get('VSF_TEST_TIMEOUT', '90')))
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=90)
     if (result.returncode == 0) != success:
         raise AssertionError(f"Exit {result.returncode}: {command}\n{result.stdout}")
     if re.search(r"AddressSanitizer|runtime error:", result.stdout):

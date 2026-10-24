@@ -11,9 +11,8 @@ The Linux static build uses these source revisions:
 
 - OpenCV 4.14.0: https://github.com/opencv/opencv/tree/0654a42e19215ef25b1d367d822f3c630447e7c7
 - FFmpeg 8.0.1: https://github.com/FFmpeg/FFmpeg/tree/894da5ca7d742e4429ffb2af534fcda0103ef593
-- musl: https://musl.libc.org/ (Alpine 3.22 native toolchain; Bootlin 2024.05-1 ARMv7 toolchain)
-- GCC runtime: https://gcc.gnu.org/ (Alpine 3.22 native toolchain; Bootlin GCC 13.3 ARMv7 toolchain)
-- ARMv7 cross toolchain: https://toolchains.bootlin.com/releases_armv7-eabihf.html (musl stable-2024.05-1, checksum pinned by scripts/build-armv7-linux.sh)
+- musl: https://musl.libc.org/ (Alpine 3.22 build toolchain)
+- GCC runtime: https://gcc.gnu.org/ (Alpine 3.22 build toolchain)
 
 FFmpeg is built without GPL or nonfree components and with external dependency
 autodetection disabled. OpenCV's bundled JPEG, PNG and zlib implementations retain

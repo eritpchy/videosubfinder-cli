@@ -9,9 +9,7 @@ data = Path(binary).read_bytes()
 if data[:4] == b"\x7fELF":
     assert data[5] == 1, "Expected little-endian ELF"
     machine = struct.unpack_from("<H", data, 18)[0]
-    actual = {(1, 40): "armv7", (2, 183): "arm64", (2, 62): "x64"}.get((data[4], machine))
-    if actual == "armv7":
-        assert struct.unpack_from("<I", data, 36)[0] & 0x400, "Expected ARM hard-float ABI"
+    actual = {(2, 183): "arm64", (2, 62): "x64"}.get((data[4], machine))
 elif data[:2] == b"MZ":
     offset = struct.unpack_from("<I", data, 60)[0]
     assert data[offset:offset+4] == b"PE\0\0", "Invalid PE signature"
