@@ -30,6 +30,7 @@ Homebrew or development packages are required at runtime.
 ```
 
 On systems without FUSE, launch the AppImage with `APPIMAGE_EXTRACT_AND_RUN=1`.
+AppImages use checksum-pinned appimagetool 1.9.1 and type2-runtime 20251108.
 
 On Windows use `VideoSubFinderCli.exe` with the same arguments. Existing single-dash
 multi-character options and double-dash long options remain accepted. FFmpeg via
