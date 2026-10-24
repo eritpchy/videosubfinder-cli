@@ -134,7 +134,7 @@ covered by regression tests. Decoding uses OpenCV's FFmpeg backend by default.
 | --- | --- |
 | `Results/RGBImages/` | Detected subtitle frames, with timestamps and crop metadata in their filenames. |
 | `Results/ISAImages/`, `Results/ILAImages/` | Intermediate images used by subtitle processing. |
-| `Results/subtitles.srt` | Detected intervals with placeholder text such as `sub duration: 1,960`. |
+| `Results/subtitles.srt` | Detected intervals with placeholder text (`[sub_duration]` in the supplied settings). |
 | `Results/TXTImages/` | Cleared text images after running `-ccti`. |
 
 To rerun into an existing output directory, add `-c` to clear generated image
