@@ -26,6 +26,10 @@ jobs:
     timeout-minutes: 45
     container: ubuntu:20.04
     steps:
+      - name: Bootstrap source checkout
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git ca-certificates
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -225,6 +229,10 @@ jobs:
     timeout-minutes: 45
     container: nvidia/cuda:12.6.3-devel-ubuntu22.04
     steps:
+      - name: Bootstrap source checkout
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git ca-certificates
       - uses: actions/checkout@v4
         with:
           submodules: recursive
