@@ -5,13 +5,15 @@ import os
 from pathlib import Path
 import re
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
 
 
 def invoke(command, *, success=True, cwd=None):
-    result = subprocess.run([str(x) for x in command], cwd=cwd, text=True,
+    prefix = shlex.split(os.environ.get('VSF_EXEC_PREFIX', ''))
+    result = subprocess.run(prefix + [str(x) for x in command], cwd=cwd, text=True,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=90)
     if (result.returncode == 0) != success:
         raise AssertionError(f"Exit {result.returncode}: {command}\n{result.stdout}")
@@ -27,11 +29,12 @@ def fixtures(root):
             shutil.copy2(Path(supplied)/f'input video.{extension}', root/f'input video.{extension}')
     else:
         fonts = [Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
+                 Path('/usr/share/fonts/ttf-dejavu/DejaVuSans.ttf'),
                  Path('/System/Library/Fonts/Supplemental/Arial.ttf'),
                  Path('C:/Windows/Fonts/arial.ttf')]
         font = next((p for p in fonts if p.is_file()), None)
         assert font, 'A system TrueType font is required for fixture generation'
-        shutil.copy2(font, root/'font.ttf')
+        shutil.copyfile(font, root/'font.ttf')
         filters = ','.join(
             f"drawtext=fontfile=font.ttf:text='{text}':fontsize=32:fontcolor=white:"
             f"borderw=2:bordercolor=black:x=(w-text_w)/2:y=h-65:enable='between(t,{start},{end})'"

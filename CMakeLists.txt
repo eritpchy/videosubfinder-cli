@@ -44,6 +44,9 @@ set_target_properties(VideoSubFinderCli PROPERTIES
     BUILD_RPATH_USE_ORIGIN ON INSTALL_RPATH "$ORIGIN/lib;@loader_path/lib")
 install(TARGETS VideoSubFinderCli RUNTIME DESTINATION .)
 install(FILES Settings/general.cfg DESTINATION settings)
+install(FILES LICENSE THIRD_PARTY.md DESTINATION licenses)
+install(FILES 3rdparty/json/LICENSE.MIT DESTINATION licenses RENAME json-LICENSE.MIT)
+install(FILES 3rdparty/thread-pool/LICENSE.txt DESTINATION licenses RENAME thread-pool-LICENSE.txt)
 
 include(CTest)
 if(BUILD_TESTING)

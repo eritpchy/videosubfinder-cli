@@ -17,7 +17,9 @@ def linux(root):
     library = root/'lib'
     library.mkdir(exist_ok=True)
     executable = root/'VideoSubFinderCli'
-    pending = [executable]
+    headers = output('readelf','-l',str(executable))
+    static = 'INTERP' not in headers
+    pending = [] if static else [executable]
     seen = set()
     system = re.compile(r'^(ld-linux.*|lib(c|m|pthread|dl|rt|resolv|util|nss_.*)\.so(?:\..*)?)$')
     while pending:
@@ -34,7 +36,8 @@ def linux(root):
                 shutil.copy2(path,dest)
             subprocess.run(['patchelf','--set-rpath','$ORIGIN',str(dest)],check=True)
             pending.append(dest)
-    subprocess.run(['patchelf','--set-rpath','$ORIGIN/lib',str(executable)],check=True)
+    if not static:
+        subprocess.run(['patchelf','--set-rpath','$ORIGIN/lib',str(executable)],check=True)
     (root/'VideoSubFinderCli.run').write_text(
         '#!/bin/sh\n'
         'VSF_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1\n'

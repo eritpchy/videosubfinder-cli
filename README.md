@@ -10,8 +10,9 @@ Two pinned, header-only submodules supply JSON callback data and task queues.
 ## Downloads
 
 GitHub Releases contain Linux x64/arm64 bundles and AppImages, macOS x64/arm64
-and Universal bundles, a Windows x64 CLI ZIP, and `SHA256SUMS`. Linux bundles need
-glibc 2.31 or newer. Other multimedia libraries are included. macOS bundles include
+and Universal bundles, a Windows x64 CLI ZIP, and `SHA256SUMS`. Linux CPU binaries
+link musl, OpenCV and FFmpeg statically and do not depend on the host glibc or
+multimedia libraries. macOS bundles include
 their transitive non-system libraries and do not require Homebrew at runtime.
 The Universal package contains both Intel and Apple Silicon slices in every Mach-O
 library. The Windows ZIP uses static libraries and includes `VideoSubFinderCli.exe`.
@@ -51,14 +52,19 @@ Install a C++17 compiler, CMake 3.24+, Python 3 and OpenCV 4 development package
 Tests additionally use FFmpeg and a system TrueType font to generate independently
 timed MKV and MP4 subtitle fixtures. Set `VSF_TEST_MEDIA` to a directory containing
 pre-generated `input video.mkv` and `input video.mp4` to run tests without FFmpeg.
+For fully static Linux CPU builds, run `sh scripts/build-static-linux.sh` in
+Alpine 3.22 with the dependencies listed in the CI workflow. OpenCV 4.14.0 and
+FFmpeg 8.0.1 source commits are pinned in that script.
 On Windows use the checked-in vcpkg manifest with `x64-windows-static` and
 `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded`. CUDA 12 builds use `-DUSE_CUDA=ON`;
 CPU binaries reject `--use_cuda` explicitly.
 
 All builds run remotely or in GitHub Actions. The CI tests installed artifacts,
 not only source-tree executables. Linux distribution checks run the tar bundle
-and AppImage in clean Ubuntu, Debian, Fedora, openSUSE and Arch containers without
-installing multimedia libraries. macOS runs native Intel/ARM tests and verifies the
+and AppImage in Ubuntu 16.04-26.04 LTS, Debian 10-13, CentOS 7, AlmaLinux 8-10,
+Rocky Linux 8/9, Fedora, openSUSE Leap/Tumbleweed, Arch and Alpine containers
+without installing guest packages. Host Python drives the guest executable, so
+EOL package mirrors and old Python versions do not affect runtime validation. macOS runs native Intel/ARM tests and verifies the
 Universal slices. Windows runs the actual installed CLI binary. ASan/UBSan execute
 the same extraction and cleared-text tests. CUDA CI compiles against CUDA 12 and
 exercises the CPU path; GPU execution requires a CUDA-capable test host.

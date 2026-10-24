@@ -9,7 +9,7 @@ permissions:
   contents: read
 concurrency:
   group: portable-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+  cancel-in-progress: false
 jobs:
   linux:
     strategy:
@@ -23,23 +23,27 @@ jobs:
     runs-on: ${{ matrix.runner }}
     env:
       VSF_ARCH: ${{ matrix.arch }}
-    timeout-minutes: 45
-    container: ubuntu:20.04
+    timeout-minutes: 90
     steps:
-      - name: Bootstrap source checkout
-        run: |
-          apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y git ca-certificates
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install build dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg fonts-dejavu-core file desktop-file-utils
+      - uses: actions/cache@v4
+        with:
+          path: |
+            build/static-prefix
+            build/sources
+            build/opencv-static
+          key: musl-${{ matrix.arch }}-${{ hashFiles('scripts/build-static-linux.sh') }}
+      - name: Build and test static bundle
         run: |
-          apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core patchelf curl file libfuse2 desktop-file-utils
-          python3 -m pip install cmake==3.31.6
-      - name: Build and test installed bundle
-        run: sh scripts/build-linux.sh
+          docker run --rm -v "$PWD:/src" -w /src alpine:3.22 sh -c '
+            apk add --no-cache build-base cmake ninja linux-headers git curl python3 nasm pkgconf ffmpeg font-dejavu binutils patchelf
+            sh scripts/build-static-linux.sh'
+          sudo chown -R "$(id -u):$(id -g)" build dist-static
+          mv dist-static dist
       - name: Build and test AppImage
         run: sh scripts/appimage.sh
       - name: Archive portable bundle and fixture videos
@@ -73,7 +77,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:24.04', 'debian:bullseye-slim', 'debian:bookworm-slim', 'debian:trixie-slim', 'fedora:43', 'opensuse/leap:15.6', 'archlinux:base']
+        image:
+          - ubuntu:16.04
+          - ubuntu:18.04
+          - ubuntu:20.04
+          - ubuntu:22.04
+          - ubuntu:24.04
+          - ubuntu:26.04
+          - debian:buster-slim
+          - debian:bullseye-slim
+          - debian:bookworm-slim
+          - debian:trixie-slim
+          - centos:7
+          - almalinux:8
+          - almalinux:9
+          - almalinux:10
+          - rockylinux:8
+          - rockylinux:9
+          - fedora:42
+          - fedora:43
+          - fedora:44
+          - opensuse/leap:15.6
+          - opensuse/leap:16.0
+          - opensuse/tumbleweed:latest
+          - archlinux:base
+          - alpine:3.15
+          - alpine:3.18
+          - alpine:3.22
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -92,7 +122,7 @@ jobs:
           mkdir bundle
           tar -C bundle -xzf packages/videosubfinder-cli-linux-x64.tar.gz
           chmod +x packages/*.AppImage
-          docker run --rm -v "$PWD:/test" -w /test "$TEST_IMAGE" sh scripts/test-distro.sh
+          sh scripts/test-distro.sh
   linux-arm64:
     needs: linux
     runs-on: ubuntu-24.04-arm
@@ -100,7 +130,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['ubuntu:24.04', 'debian:bookworm-slim', 'fedora:43']
+        image: ['ubuntu:18.04', 'ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:24.04', 'ubuntu:26.04', 'debian:buster-slim', 'debian:bullseye-slim', 'debian:bookworm-slim', 'debian:trixie-slim', 'almalinux:8', 'almalinux:9', 'fedora:43', 'alpine:3.18', 'alpine:3.22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -114,11 +144,12 @@ jobs:
           merge-multiple: true
       - env:
           TEST_IMAGE: ${{ matrix.image }}
+          VSF_ARCH: arm64
         run: |
           mkdir bundle
           tar -C bundle -xzf packages/videosubfinder-cli-linux-arm64.tar.gz
           chmod +x packages/*.AppImage
-          docker run --rm -e VSF_ARCH=arm64 -v "$PWD:/test" -w /test "$TEST_IMAGE" sh scripts/test-distro.sh
+          sh scripts/test-distro.sh
   windows:
     runs-on: windows-2022
     timeout-minutes: 120
@@ -253,9 +284,21 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='75;80;86;89;90'
           cmake --build build --parallel 4
           ctest --test-dir build --output-on-failure
+  source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: python3 scripts/source-package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-package
+          path: videosubfinder-cli-source.tar.gz
+          if-no-files-found: error
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux-distros, linux-arm64, windows, universal, sanitizers, cuda]
+    needs: [linux-distros, linux-arm64, windows, universal, sanitizers, cuda, source]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
