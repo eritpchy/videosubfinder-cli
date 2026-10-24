@@ -23,7 +23,7 @@ with tempfile.TemporaryDirectory(prefix='universal-',dir=work) as directory:
         libraries = destination/'lib'/arch
         shutil.copytree(source/'lib',libraries)
         for library in libraries.iterdir():
-            subprocess.run(['lipo','-verify_arch',arch,str(library)],check=True)
+            subprocess.run(['lipo',str(library),'-verify_arch',arch],check=True)
         binary = Path(directory)/arch
         shutil.copy2(source/'VideoSubFinderCli',binary)
         listing = subprocess.check_output(['otool','-L',str(binary)],text=True)
@@ -38,5 +38,5 @@ with tempfile.TemporaryDirectory(prefix='universal-',dir=work) as directory:
         slices.append(str(binary))
     target = destination/'VideoSubFinderCli'
     subprocess.run(['lipo','-create',*slices,'-output',str(target)],check=True)
-    subprocess.run(['lipo','-verify_arch','x86_64','arm64',str(target)],check=True)
+    subprocess.run(['lipo',str(target),'-verify_arch','x86_64','arm64'],check=True)
     subprocess.run(['codesign','--force','--sign','-',str(target)],check=True)
