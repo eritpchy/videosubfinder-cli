@@ -242,7 +242,7 @@ jobs:
         with:
           platforms: arm
       - name: Enable ARM AppImage emulation
-        run: sudo python3 scripts/register-arm-appimage.py
+        run: python3 scripts/register-arm-appimage.py
       - name: Install cross-build dependencies
         run: |
           sudo apt-get update -qq
@@ -294,7 +294,7 @@ jobs:
         with:
           platforms: arm
       - name: Enable ARM AppImage emulation
-        run: sudo python3 scripts/register-arm-appimage.py
+        run: python3 scripts/register-arm-appimage.py
       - name: Execute ARMv7 archive and AppImage in distribution
         env:
           TEST_IMAGE: ${{ matrix.image }}

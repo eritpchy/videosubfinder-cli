@@ -27,9 +27,11 @@ target.chmod(0o755)
 name = 'vsf-arm-appimage'
 registered = Path('/proc/sys/fs/binfmt_misc') / name
 if registered.exists():
-    registered.write_text('-1')
+    subprocess.run(['sudo', 'tee', str(registered)], input='-1', text=True,
+                   stdout=subprocess.DEVNULL, check=True)
 def escape(data):
     return ''.join(f'\\x{value:02x}' for value in data)
-Path('/proc/sys/fs/binfmt_misc/register').write_text(
-    f':{name}:M::{escape(magic)}:{escape(mask)}:{target}:{flags}')
+subprocess.run(['sudo', 'tee', '/proc/sys/fs/binfmt_misc/register'],
+               input=f':{name}:M::{escape(magic)}:{escape(mask)}:{target}:{flags}',
+               text=True, stdout=subprocess.DEVNULL, check=True)
 print(registered.read_text())
