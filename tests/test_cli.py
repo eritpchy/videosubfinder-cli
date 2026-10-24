@@ -13,6 +13,8 @@ import tempfile
 
 def invoke(command, *, success=True, cwd=None):
     prefix = shlex.split(os.environ.get('VSF_EXEC_PREFIX', ''))
+    if os.environ.get('VSF_TEST_CUDA') == '1' and any(str(arg) in ('-r','--run_search','-ccti','--create_cleared_text_images') for arg in command):
+        command = [*command, '--use_cuda']
     result = subprocess.run(prefix + [str(x) for x in command], cwd=cwd, text=True,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=90)
     if (result.returncode == 0) != success:

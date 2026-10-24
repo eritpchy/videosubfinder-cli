@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: portable-${{ github.ref }}
+  group: portable-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 jobs:
   linux:
@@ -281,7 +281,7 @@ jobs:
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core
           python3 -m pip install cmake==3.31.6
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='75;80;86;89;90'
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='61;75;80;86;89;90'
           cmake --build build --parallel 4
           ctest --test-dir build --output-on-failure
   source:

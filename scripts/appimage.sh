@@ -21,11 +21,11 @@ cat > build/AppDir/videosubfinder-cli.svg <<'ICON'
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="20" fill="#183649"/><path d="M32 40h64v8H32zm0 24h64v8H32zm0 24h40v8H32z" fill="white"/></svg>
 ICON
 case "${VSF_ARCH:-x64}" in
-    x64) APPIMAGE_ARCH=x86_64; TOOL_SHA=95cbe7cce9717fce90c484e34052ee7c7f1d7635b33c12525b4776826a7d29b6 ;;
-    arm64) APPIMAGE_ARCH=aarch64; TOOL_SHA=a595ea34cd6136c7f595e9dcbb16f3e9725d7610efb9e43b38c3c6e86cafc270 ;;
+    x64) APPIMAGE_ARCH=x86_64; TOOL_SHA=ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0 ;;
+    arm64) APPIMAGE_ARCH=aarch64; TOOL_SHA=f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158 ;;
     *) echo 'Unsupported AppImage architecture' >&2; exit 1 ;;
 esac
-curl -fsSL "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$APPIMAGE_ARCH.AppImage" -o build/appimagetool
+curl -fsSL "https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-$APPIMAGE_ARCH.AppImage" -o build/appimagetool
 echo "$TOOL_SHA  build/appimagetool" | sha256sum -c -
 chmod 755 build/appimagetool
 ARCH=$APPIMAGE_ARCH APPIMAGE_EXTRACT_AND_RUN=1 build/appimagetool build/AppDir "videosubfinder-cli-linux-${VSF_ARCH:-x64}.AppImage"
