@@ -42,7 +42,7 @@ public:
 public:
 	bool		m_play_video;
 
-	wxString	m_MovieName;
+	std::string	m_MovieName;
 	bool		m_Inited;
 
 	long		m_Width;
@@ -51,8 +51,8 @@ public:
 	s64			m_Duration;
 	s64			m_Pos;
 
-	wxString		m_log;
-	wxString		m_Dir;
+	std::string		m_log;
+	std::string		m_Dir;
 	void	*m_pVideoWindow;
 
 	// VideoWindowSettins
@@ -76,7 +76,7 @@ public:
 		m_h = m_ymax - m_ymin + 1;
 	}
 
-	virtual bool OpenMovie(wxString csMovieName, void	*pVideoWindow, int type)
+	virtual bool OpenMovie(std::string csMovieName, void	*pVideoWindow, int type)
 	{
 		return false;
 	}
@@ -175,4 +175,4 @@ public:
 
 extern CVideo *g_pV;
 
-extern wxString ConvertVideoTime(s64 pos);
+extern std::string ConvertVideoTime(s64 pos);

@@ -20,9 +20,10 @@
 #include "DataTypes.h"
 #include "MyClosedFigure.h"
 #include "Video.h"
-#include <wx/string.h>
 #include <chrono>
 #include <vector>
+#include "ImageCropper.h"
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -36,7 +37,7 @@ extern double	g_mtpl;  //min text len (in percent)
 extern double	g_veple; //vedges points line error
 extern double	g_ilaple; //ILA points line error
 extern bool     g_save_images;
-extern vector<wxString> g_file_names_vector;
+extern vector<std::string> g_file_names_vector;
 
 extern bool g_use_ISA_images_for_search_subtitles;
 extern bool g_use_ILA_images_for_search_subtitles;
@@ -44,31 +45,56 @@ extern bool g_replace_ISA_by_filtered_version;
 extern int g_max_dl_down;
 extern int g_max_dl_up;
 
+struct FrameData {
+    const char* task_id;
+    ImageCropper image_cropper;
+    cv::Mat* cv_ImBGR;
+    void* flutter_context;
+    const char* name;
+    const char* begin_time_str;
+    const char* end_time_str;
+    int64_t begin_time;
+    int64_t end_time;
+    int64_t video_finish_time;
+    uint64_t starttime_nanoseconds;
+    int xmin;
+    int ymin;
+    int xmax;
+    int ymax;
+    int width;
+    int height;
+    nlohmann::json ocr_result_json;
+};
+
+typedef std::function<void(const FrameData*)> FrameFoundCallback;
+extern FrameFoundCallback g_frame_found_callback;
+extern void* g_flutter_context;
+extern std::string g_flutter_task_id;
+extern uint64_t g_starttime_nanoseconds;
+
+
 s64 FastSearchSubtitles(CVideo *pV, s64 Begin, s64 End);
 
 int AnalyseImage(simple_buffer<u8> &Im, simple_buffer<u16> *pImILA, int w, int h);
 
-int CompareTwoSubs(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, wxString iter_det);
+int CompareTwoSubs(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, std::string iter_det);
 
-int DifficultCompareTwoSubs2(simple_buffer<u8> &ImF1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImNE11, simple_buffer<u8> &ImNE12, simple_buffer<u8> &ImF2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImNE2, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
+int DifficultCompareTwoSubs2(simple_buffer<u8> &ImF1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImNE11, simple_buffer<u8> &ImNE12, simple_buffer<u8> &ImF2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImNE2, int w, int h, int W, int H, int min_x, int max_x, std::string iter_det);
 
-int CompareTwoSubsOptimal(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, int min_x, int max_x, wxString iter_det);
+int CompareTwoSubsOptimal(simple_buffer<u8> &Im1, simple_buffer<u16> *pImILA1, simple_buffer<u8> &ImVE11, simple_buffer<u8> &ImVE12, simple_buffer<u8> &Im2, simple_buffer<u16> *pImILA2, simple_buffer<u8> &ImVE2, int w, int h, int W, int H, int min_x, int max_x, std::string iter_det);
 
 template <class T>
 void AddTwoImages(simple_buffer<T> &Im1, simple_buffer<T> &Im2, simple_buffer<T> &ImRES, int size);
 template <class T>
 void AddTwoImages(simple_buffer<T> &Im1, simple_buffer<T> &Im2, int size);
 
-void ImBGRToNativeSize(simple_buffer<u8> &ImBGROrig, simple_buffer<u8> &ImBGRRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
+void ImBGRToNativeSize(const simple_buffer<u8> &ImBGROrig, simple_buffer<u8> &ImBGRRes, int w, int h, int W, int H, int xmin, int xmax, int ymin, int ymax);
 
-wxString VideoTimeToStr(s64 pos);
-s64 GetVideoTime(wxString time);
+std::string VideoTimeToStr(s64 pos);
+s64 GetVideoTime(std::string time);
 s64 GetVideoTime(int minute, int sec, int mili_sec);
 
-wxString GetFileName(wxString FilePath);
-wxString GetFileExtension(wxString FilePath);
-wxString GetFileNameWithExtension(wxString FilePath);
-wxString GetFileDir(wxString FilePath);
+
 
 // W - full image include scale (if is) width
 // H - full image include scale (if is) height
@@ -99,3 +125,4 @@ void ImToNativeSize(simple_buffer<T>& Im, int w, int h, int W, int H, int xmin, 
 	simple_buffer<T> ImTMP(Im, 0, w*h);
 	ImToNativeSize(ImTMP, Im, w, h, W, H, xmin, xmax, ymin, ymax);
 }
+extern std::function<void(s64, s64)> g_progress_callback;

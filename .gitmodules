@@ -1,3 +1,6 @@
-[submodule "3rdparty/CTPL"]
-	path = 3rdparty/CTPL
-	url = https://github.com/vit-vit/CTPL.git
+[submodule "3rdparty/json"]
+	path = 3rdparty/json
+	url = https://github.com/nlohmann/json.git
+[submodule "3rdparty/thread-pool"]
+	path = 3rdparty/thread-pool
+	url = https://github.com/bshoshany/thread-pool.git

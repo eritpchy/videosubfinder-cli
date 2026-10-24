@@ -121,11 +121,11 @@ void OCVVideo::ShowFrame(cv::Mat &img, void *dc, int left, int top, int width, i
 
 /////////////////////////////////////////////////////////////////////////////
 
-bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
+bool OCVVideo::OpenMovie(std::string csMovieName, void *pVideoWindow, int type)
 { 
-	cv::String movie_name(csMovieName.ToUTF8());
+	cv::String movie_name(csMovieName.c_str());
 
-	m_VC.open(movie_name);
+	m_VC.open(movie_name, type);
 	bool res = m_VC.isOpened();
 	if (res)
 	{
@@ -139,9 +139,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 
 		if ((m_origWidth == 0) || (m_origHeight == 0))
 		{
-			wxString msg = wxString::Format(wxT("ERROR: Video \"%s\" has wrong frame sizes: FRAME_WIDTH: %d, FRAME_HEIGHT: %d\n"), csMovieName, m_origWidth, m_origHeight);
-			SaveToReportLog(wxString::Format(wxT("OCVVideo::OpenMovie(): %s\n"), msg));
-			wxMessageBox(msg, wxT("OCVVideo::OpenMovie"));
+			APPEND_TO_REPORT_LOG("OCVVideo::OpenMovie(): ERROR: Video \"%s\" has wrong frame sizes: FRAME_WIDTH: %ld, FRAME_HEIGHT: %ld\n", csMovieName.c_str(), m_origWidth, m_origHeight);
 			CloseMovie();
 			return false;
 		}
@@ -163,7 +161,7 @@ bool OCVVideo::OpenMovie(wxString csMovieName, void *pVideoWindow, int type)
 		m_frameNumbers = m_VC.get(cv::CAP_PROP_FRAME_COUNT);
 		m_Duration = -1;
 		
-		if (m_frameNumbers > 0)
+		if (m_frameNumbers > 0 && m_fps > 0)
 		{
 			m_Duration = ((m_frameNumbers * 1000.0) / m_fps);
 		}
@@ -244,7 +242,7 @@ void OCVVideo::SetPos(s64 Pos)
 		}
 		else
 		{
-			if (m_frameNumbers > 0)
+			if (m_frameNumbers > 0 && m_fps > 0)
 			{
 				m_VC.set(cv::CAP_PROP_POS_FRAMES, ((double)Pos * m_frameNumbers) / (double)m_Duration);
 				OneStep();
@@ -278,24 +276,38 @@ void OCVVideo::OneStep()
 			Pause();
 		}
 
-		s64 prevPos, curPos;
-		s64 prevNumFrameToBeDecoded, curNumFrameToBeDecoded;
-		int num_tries = 0;
+		double prevPos, curPos;
+		double prevNumFrameToBeDecoded, curNumFrameToBeDecoded;
+        int num_tries = 0;
+        const int max_tries = 100;
 
-		do
-		{
-			prevPos = m_VC.get(cv::CAP_PROP_POS_MSEC);
-			prevNumFrameToBeDecoded = m_VC.get(cv::CAP_PROP_POS_FRAMES);
-			m_VC >> m_cur_frame;
-			curPos = m_VC.get(cv::CAP_PROP_POS_MSEC);
-			curNumFrameToBeDecoded = m_VC.get(cv::CAP_PROP_POS_FRAMES);
-			num_tries++;
+        do
+        {
+            prevPos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+            prevNumFrameToBeDecoded = m_VC.get(cv::CAP_PROP_POS_FRAMES);
+            m_VC >> m_cur_frame;
+            curPos = m_VC.get(cv::CAP_PROP_POS_MSEC);
+            curNumFrameToBeDecoded = m_VC.get(cv::CAP_PROP_POS_FRAMES);
+            num_tries++;
 
-			if ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded))
-			{
-				num_tries = 0;
-			}
-		} while ((m_cur_frame.empty()) && ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded) || (num_tries < 100)));				
+            if ((curPos != prevPos) || (curNumFrameToBeDecoded != prevNumFrameToBeDecoded)) {
+                if (!m_cur_frame.empty()) {
+                    num_tries = 0;  // Reset the number of tries if a new frame is successfully read
+                }
+            }
+
+            if (num_tries >= max_tries) {
+                APPEND_TO_REPORT_LOG("Failed to read a new frame after %d tries.", max_tries);
+                break;
+            }
+
+            if (curPos == prevPos && curNumFrameToBeDecoded == prevNumFrameToBeDecoded) {
+                APPEND_TO_REPORT_LOG("Video ended or cannot read new frames.");
+                break;
+            }
+
+        }
+        while (m_cur_frame.empty());
 
 		m_Pos = curPos;
 
@@ -327,9 +339,9 @@ s64 OCVVideo::OneStepWithTimeout()
 
 /////////////////////////////////////////////////////////////////////////////
 
-void OCVVideo::ErrorMessage(wxString str)
+void OCVVideo::ErrorMessage(std::string str)
 {
-	wxMessageBox(str, "ERROR MESSAGE");
+	fprintf(stderr, "ERROR MESSAGE: %s\n", str.c_str());
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -422,7 +434,9 @@ void OCVVideo::GetFrameData(simple_buffer<u8>& FrameData)
 	{
 		custom_assert(FrameData.size() == m_origWidth * m_origHeight * 3, "void OCVVideo::GetFrameData(simple_buffer<u8>& FrameData)\nnot: FrameData.size() == m_origWidth * m_origHeight * 3");
 		FrameData.copy_data(m_cur_frame.data, m_origWidth * m_origHeight * 3);
-	}
+	} else {
+        FrameData.set_values(0);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -439,7 +453,7 @@ void OCVVideo::RunWithTimeout(s64 timeout)
 	if (m_VC.isOpened())
 	{
 		Run();
-		wxMilliSleep(timeout);
+		std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
 		Pause();
 	}
 }
@@ -466,8 +480,8 @@ void OCVVideo::Run()
 				m_play_video = true;
 
 				m_pThreadRunVideo = new ThreadRunVideo(this);
-				m_pThreadRunVideo->Create();
-				m_pThreadRunVideo->Run();
+				std::thread pThreadRunVideoThread(*m_pThreadRunVideo);
+				pThreadRunVideoThread.join();
 				//m_pThreadRunVideo->SetPriority(30); //THREAD_PRIORITY_BELOW_NORMAL
 			}
 		}
@@ -486,7 +500,10 @@ void OCVVideo::Pause()
 		{
 			
 			m_play_video = false;
-			while (!m_pThreadRunVideo->IsDetached()) { wxMilliSleep(30); }
+			// TODO
+			// while (!m_pThreadRunVideo->IsDetached()) {
+			// 	std::this_thread::sleep_for(std::chrono::milliseconds(30));
+			// }
 		}
 	}
 }
@@ -520,13 +537,11 @@ void OCVVideo::SetVideoWindowPosition(int left, int top, int width, int height, 
 	ShowFrame(m_cur_frame, dc, left, top, width, height);
 }
 
-ThreadRunVideo::ThreadRunVideo(OCVVideo *pVideo) : wxThread()
-{
+ThreadRunVideo::ThreadRunVideo(OCVVideo *pVideo) {
 	m_pVideo = pVideo;
 }
 
-void *ThreadRunVideo::Entry()
-{
+void ThreadRunVideo::operator()() {
 	double startPos = m_pVideo->m_VC.get(cv::CAP_PROP_POS_MSEC);
 	std::chrono::time_point<std::chrono::high_resolution_clock> start_t = std::chrono::high_resolution_clock::now();
 
@@ -547,9 +562,7 @@ void *ThreadRunVideo::Entry()
 		int dt = (m_pVideo->m_Pos - startPos) - (int)(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_t).count());
 		if (dt > 0)
 		{
-			wxMilliSleep(dt);
+			std::this_thread::sleep_for(std::chrono::milliseconds(dt));
 		}
 	}	
-
-	return 0;
 }

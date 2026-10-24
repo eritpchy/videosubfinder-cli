@@ -19,20 +19,18 @@
 #include "DataTypes.h"
 #include "Video.h"
 #include "opencv2/opencv.hpp"
-#include <wx/wx.h>
-#include "wx.h"
 #include <mutex>
 
 class OCVVideo;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class ThreadRunVideo : public wxThread
+class ThreadRunVideo
 {
 public:
 	ThreadRunVideo(OCVVideo *pVideo);
 
-	virtual void *Entry();
+	virtual void operator()();
 
 public:
 	OCVVideo	*m_pVideo;
@@ -74,7 +72,7 @@ public:
 public:
 	void ShowFrame(cv::Mat &img, void *dc = NULL, int left = -1, int top = -1, int width = -1, int height = -1);
 
-	bool OpenMovie(wxString csMovieName, void *pVideoWindow, int type);
+	bool OpenMovie(std::string csMovieName, void *pVideoWindow, int type);
 
 	bool SetVideoWindowPlacement(void *pVideoWindow);
 	bool SetNullRender();
@@ -109,5 +107,5 @@ public:
 
 	void SetVideoWindowPosition(int left, int top, int width, int height, void *dc);
 
-	void ErrorMessage(wxString str);
+	void ErrorMessage(std::string str);
 };

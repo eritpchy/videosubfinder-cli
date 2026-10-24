@@ -1,599 +1,262 @@
-#include <wx/regex.h>
-
 #include "VideoSubFinderCli.h"
-#include "IPAlgorithms.h"
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <regex>
+#include <sstream>
+#include <stdexcept>
+#ifdef _WIN32
+#include <windows.h>
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#else
+#include <unistd.h>
+#endif
 
+namespace fs = std::filesystem;
+std::string g_ReportFileName;
+static std::string g_DefStringForEmptySub = "sub duration: %sub_duration%";
+static bool g_join_subs_and_correct_time = true;
 
-static const wxCmdLineEntryDesc cmdLineDesc[] =
-{
-	{ wxCMD_LINE_SWITCH, "c", "clear_dirs", "Clear Folders (remove all images), performed before any other steps" },
-	{ wxCMD_LINE_SWITCH, "r", "run_search", "Run Search (find frames with hardcoded text (hardsub) on video)" },
-    { wxCMD_LINE_OPTION, "ces", "create_empty_sub", "Create Empty Sub With Provided Output File Name (*.srt)" },
-    { wxCMD_LINE_OPTION, "i", "input_video", "input video file" },
-	{ wxCMD_LINE_SWITCH, "ovocv", "open_video_opencv", "open video by OpenCV (default)" },
-	{ wxCMD_LINE_SWITCH, "ovffmpeg", "open_video_ffmpeg", "open video by FFMPEG" },
-	{ wxCMD_LINE_SWITCH, "uc", "use_cuda", "use cuda" },
-	{ wxCMD_LINE_SWITCH, "dsi", "dont_save_images", "Don't save images" },
-	{ wxCMD_LINE_OPTION, "s", "start_time", "start time, default = 0:00:00:000 (in format hour:min:sec:milisec)" },
-	{ wxCMD_LINE_OPTION, "e", "end_time", "end time, default = video length" },
-	{ wxCMD_LINE_OPTION, "te", "top_video_image_percent_end", "top video image percent offset from image bottom, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
-	{ wxCMD_LINE_OPTION, "be", "bottom_video_image_percent_end", "bottom video image percent offset from image bottom, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
-	{ wxCMD_LINE_OPTION, "le", "left_video_image_percent_end", "left video image percent end, can be in range [0.0,1.0], default = 0.0", wxCMD_LINE_VAL_DOUBLE },
-	{ wxCMD_LINE_OPTION, "re", "right_video_image_percent_end", "right video image percent end, can be in range [0.0,1.0], default = 1.0", wxCMD_LINE_VAL_DOUBLE },
-	{ wxCMD_LINE_OPTION, "o", "output_dir",  "output dir (root directory where results will be stored)" },
-    { wxCMD_LINE_OPTION, "gs", "general_settings",  "general settings (path to general settings *.cfg file, default = settings/general.cfg)" },
-    { wxCMD_LINE_OPTION, "nthr", "num_threads", "number of threads used for Run Search", wxCMD_LINE_VAL_NUMBER },
-	{ wxCMD_LINE_SWITCH, "h", "help", "show this help message\n\nExample of usage:\nVideoSubFinderWXW.exe -c -r -ccti -i \"C:\\test_video.mp4\" -cscti \"C:\\test_video.srt\" -o \"C:\\ResultsDir\" -te 0.5 -be 0.1 -le 0.1 -re 0.9 -s 0:00:10:300 -e 0:00:13:100\n" },
-	{ wxCMD_LINE_NONE }
-};
-
-wxString g_ReportFileName;
-wxString g_InputFileName;
-wxString g_sub_path;
-CVideo* g_pVideo;
-double g_DxMin;
-double g_DxMax;
-double g_DyMin;
-double g_DyMax;
-s64 g_BegTime;
-s64	g_EndTime;
-
-extern int g_IsCreateClearedTextImages;
-extern int g_RunCreateClearedTextImages;
-extern bool g_ValidateAndCompareTXTImages;
-wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
-
-bool g_join_subs_and_correct_time = true;
-
-void ClearDir(wxString DirName)
-{
-	wxDir dir(DirName);
-	vector<wxString> FileNamesVector;
-	wxString filename;
-	bool res;
-
-	res = dir.GetFirst(&filename);
-    while ( res )
-    {
-        if ( (filename != wxT(".")) &&
-			 (filename != wxT("..")) )
-		{
-			FileNamesVector.push_back(filename);
-		}
-
-        res = dir.GetNext(&filename);
-    }
-
-	for(int i=0; i<(int)FileNamesVector.size(); i++)
-	{
-		res = wxRemoveFile(dir.GetName() + "/" + FileNamesVector[i]);
-	}
-
-	FileNamesVector.clear();
+static fs::path executablePath() {
+#ifdef _WIN32
+    std::vector<wchar_t> path(32768);
+    auto size = GetModuleFileNameW(nullptr, path.data(), static_cast<DWORD>(path.size()));
+    if (!size || size == path.size()) throw std::runtime_error("Cannot locate executable");
+    return fs::path(path.data());
+#elif defined(__APPLE__)
+    uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    std::vector<char> path(size);
+    if (_NSGetExecutablePath(path.data(), &size)) throw std::runtime_error("Cannot locate executable");
+    return fs::canonical(path.data());
+#else
+    return fs::canonical("/proc/self/exe");
+#endif
 }
 
-void CVideoSubFinderApp::OnInitCmdLine(wxCmdLineParser& parser) {
-    wxAppConsole::OnInitCmdLine(parser);
-
-    parser.SetDesc(cmdLineDesc);
+static std::string trim(const std::string& s) {
+    auto first = s.find_first_not_of(" \t\r\n");
+    return first == std::string::npos ? "" : s.substr(first, s.find_last_not_of(" \t\r\n") - first + 1);
 }
 
-bool CVideoSubFinderApp::OnCmdLineParsed(wxCmdLineParser& parser) {
-    wxAppConsole::OnCmdLineParsed(parser);
-    wxString Str = wxFileName(wxStandardPaths::Get().GetExecutablePath()).GetPath();
-    Str.Replace("\\", "/");
-    g_app_dir = Str;
-    g_work_dir = g_app_dir;
+using Settings = std::map<std::string, std::string>;
+template<class T> static void ReadProperty(const Settings& settings, T& value, const std::string& key) {
+    auto it = settings.find(key);
+    if (it == settings.end()) return;
+    std::istringstream input(it->second);
+    T parsed;
+    if (!(input >> parsed) || !(input >> std::ws).eof())
+        throw std::runtime_error("Invalid setting: " + key);
+    value = parsed;
+}
+static void ReadProperty(const Settings& settings, std::string& value, const std::string& key) {
+    auto it = settings.find(key);
+    if (it != settings.end()) value = it->second;
+}
+static void ReadProperty(const Settings& settings, std::vector<std::string>& value, const std::string& key) {
+    auto it = settings.find(key);
+    if (it == settings.end()) return;
+    value.clear();
+    if (it->second == "none") return;
+    std::istringstream input(it->second);
+    std::string item;
+    while (std::getline(input, item, ';')) if (!trim(item).empty()) value.push_back(trim(item));
+}
 
-    g_ReportFileName = g_app_dir + wxT("/report.log");
+#include "Settings.h"
 
-    SaveToReportLog("Starting program...\n", wxT("wb"));
-    SaveToReportLog("CVideoSubFinderApp::OnInitCmdLine...\n");
+static s64 parseTime(const std::string& value) {
+    std::smatch match;
+    if (!std::regex_match(value, match, std::regex(R"((\d+):(\d{1,2}):(\d{1,2}):(\d{1,3}))")))
+        throw std::runtime_error("Time must use hour:min:sec:millisec");
+    auto h = std::stoll(match[1]), m = std::stoll(match[2]);
+    auto s = std::stoll(match[3]), ms = std::stoll(match[4]);
+    if (h > 100000 || m > 59 || s > 59 || ms > 999) throw std::runtime_error("Time is out of range");
+    return ((h * 60 + m) * 60 + s) * 1000 + ms;
+}
 
-    wxString wxStr;
-    if (parser.Found("gs", &wxStr))
-    {
-        wxStr.Replace("\\", "/");
-        LoadSettings(wxStr);
-    } else {
-        LoadSettings(g_app_dir + wxT("/settings/general.cfg"));
+static std::string srtTime(s64 ms) {
+    char value[40];
+    std::snprintf(value, sizeof(value), "%02lld:%02lld:%02lld,%03lld",
+        ms / 3600000, ms / 60000 % 60, ms / 1000 % 60, ms % 1000);
+    return value;
+}
+
+static void writeSubtitles(const fs::path& path) {
+    std::vector<std::pair<s64, s64>> intervals;
+    const std::regex pattern(R"((\d+)_(\d+)_(\d+)_(\d+)__(\d+)_(\d+)_(\d+)_(\d+)_.*)");
+    for (const auto& name : g_file_names_vector) {
+        std::smatch m;
+        if (!std::regex_match(name, m, pattern)) throw std::runtime_error("Invalid frame timestamp: " + name);
+        auto time = [&](int n) { return ((std::stoll(m[n]) * 60 + std::stoll(m[n+1])) * 60 + std::stoll(m[n+2])) * 1000 + std::stoll(m[n+3]); };
+        intervals.emplace_back(time(1), time(5));
     }
-
-    if (parser.FoundSwitch("dsi")) {
-        g_save_images = false;
-    } else {
-        g_save_images = true;
+    std::sort(intervals.begin(), intervals.end());
+    if (!path.parent_path().empty()) fs::create_directories(path.parent_path());
+    std::ofstream out(path, std::ios::binary);
+    if (!out) throw std::runtime_error("Cannot write subtitle file: " + path.string());
+    size_t index = 0;
+    for (const auto& [begin, end] : intervals) {
+        std::ostringstream duration;
+        duration << (end - begin) / 1000 << ',';
+        duration.width(3); duration.fill('0'); duration << (end - begin) % 1000;
+        out << ++index << '\n' << srtTime(begin) << " --> " << srtTime(end) << '\n'
+            << std::regex_replace(g_DefStringForEmptySub, std::regex("%sub_duration%"), duration.str()) << "\n\n";
     }
-    long threads;
-    if (parser.Found("nthr", &threads))
-    {
-        g_threads = threads;
-    }
+    if (!out) throw std::runtime_error("Failed to write subtitle file");
+}
 
-    if (parser.FoundSwitch("uc"))
-    {
-        if (g_use_cuda_gpu == false)
-        {
-            g_use_cuda_gpu = true;
-
-            if (!InitCUDADevice())
-            {
-                g_use_cuda_gpu = false;
-            }
+static void clearTextImages() {
+    for (const auto& entry : fs::directory_iterator(fs::u8path(g_work_dir) / "RGBImages")) {
+        if (!entry.is_regular_file()) continue;
+        auto image = cv::imread(entry.path().string(), cv::IMREAD_COLOR);
+        if (image.empty()) throw std::runtime_error("Cannot read frame: " + entry.path().string());
+        int w = image.cols, h = image.rows, W = w, H = h, xmin = 0, ymin = 0;
+        auto stem = entry.path().stem().string();
+        GetImInfo(stem, w, h, &W, &H, &xmin, nullptr, &ymin, nullptr, &stem);
+        simple_buffer<u8> bgr(w*h*3), ff(w*h), sf(w*h), tf(w*h), ne(w*h), y(w*h), il;
+        BGRMatToImage(image, w, h, bgr);
+        if (GetTransformedImage(bgr, ff, sf, tf, ne, y, w, h, W, H, 0, w-1)) {
+            simple_buffer<u8> cleared(w*h*g_scale*g_scale, static_cast<u8>(255));
+            FindTextLines(bgr, cleared, tf, ff, ne, il, "/TXTImages/", stem, w, h, W, H, xmin, ymin);
         }
     }
-    parser.Found("i", &g_InputFileName);
-    if (parser.Found("o", &wxStr))
-    {
-        wxStr.Replace("\\", "/");
-        g_work_dir = wxStr;
-    }
-    if (wxCMD_SWITCH_ON == parser.FoundSwitch("c"))
-    {
-        ClearDir(g_work_dir + "/RGBImages");
-        ClearDir(g_work_dir + "/ISAImages");
-        ClearDir(g_work_dir + "/ILAImages");
-        ClearDir(g_work_dir + "/TXTImages");
-        ClearDir(g_work_dir + "/TXTImagesJoined");
-        ClearDir(g_work_dir + "/TestImages");
-        ClearDir(g_work_dir + "/TXTResults");
-    }
+}
 
-    wxFileName::Mkdir(g_work_dir + "/RGBImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    wxFileName::Mkdir(g_work_dir + "/ISAImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    wxFileName::Mkdir(g_work_dir + "/ILAImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    wxFileName::Mkdir(g_work_dir + "/TestImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    wxFileName::Mkdir(g_work_dir + "/TXTImages", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    wxFileName::Mkdir(g_work_dir + "/TXTImagesJoined", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    wxFileName::Mkdir(g_work_dir + "/TXTResults", wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL);
-    if (parser.FoundSwitch("ovffmpeg")) {
-        g_pVideo = GetFFMPEGVideoObject();
-    } else {
-        g_pVideo = GetOCVVideoObject();
+static int runCli(const std::vector<std::string>& argv) {
+    const std::map<std::string, std::string> aliases = {
+        {"h","help"},{"c","clear_dirs"},{"r","run_search"},{"ces","create_empty_sub"},
+        {"i","input_video"},{"o","output_dir"},{"gs","general_settings"},{"nthr","num_threads"},
+        {"s","start_time"},{"e","end_time"},{"te","top"},{"be","bottom"},{"le","left"},{"re","right"},
+        {"top_video_image_percent_end","top"},{"bottom_video_image_percent_end","bottom"},
+        {"left_video_image_percent_end","left"},{"right_video_image_percent_end","right"},
+        {"ovocv","open_video_opencv"},{"ovffmpeg","open_video_ffmpeg"},{"uc","use_cuda"},
+        {"dsi","dont_save_images"},{"ccti","create_cleared_text_images"}};
+    const std::vector<std::string> flags = {"help","version","verbose","clear_dirs","run_search", "dont_save_images", "create_cleared_text_images", "open_video_opencv", "open_video_ffmpeg", "use_cuda"};
+    const std::vector<std::string> values = {"input_video","output_dir","general_settings","num_threads", "start_time","end_time","top","bottom","left","right","create_empty_sub"};
+    Settings options;
+    for (size_t i=1; i<argv.size(); ++i) {
+        auto arg = argv[i];
+        if (arg.empty() || arg[0]!='-') throw std::runtime_error("Unexpected argument: " + arg);
+        arg.erase(0, arg.find_first_not_of('-'));
+        auto equals = arg.find('=');
+        auto key = arg.substr(0, equals);
+        if (aliases.count(key)) key = aliases.at(key);
+        if (std::find(flags.begin(), flags.end(), key)!=flags.end()) {
+            if (equals!=std::string::npos) throw std::runtime_error("Flag does not take a value: " + key);
+            options[key]="1";
+        } else if (std::find(values.begin(), values.end(), key)!=values.end()) {
+            if (equals!=std::string::npos) options[key]=arg.substr(equals+1);
+            else if (i+1<argv.size()) options[key]=argv[++i];
+            else throw std::runtime_error("Missing option value: " + key);
+        } else throw std::runtime_error("Unknown option: " + key);
     }
-    g_pVideo->m_Dir = g_work_dir;
-    if (!g_pVideo->OpenMovie(g_InputFileName, NULL, 0)) {
-        wxLogMessage("ERROR: input video file was not provided\n");
-        return false;
+    if (options.count("version")) { std::cout << "VideoSubFinderCli " << VSF_VERSION << '\n'; return 0; }
+    if (options.count("help")) {
+        std::cout << "VideoSubFinderCli " << VSF_VERSION << "\n"
+            "Usage: VideoSubFinderCli -r -i VIDEO -o OUTPUT [options]\n"
+            "  -c, --clear_dirs                 Clear generated image files\n"
+            "  -r, --run_search                 Search for hardcoded subtitles\n"
+            "  -ces, --create_empty_sub PATH    Write SRT intervals\n"
+            "  -ccti, --create_cleared_text_images  Create TXTImages from RGBImages\n"
+            "  -dsi, --dont_save_images         Write intervals without images\n"
+            "  -gs, --general_settings PATH     Load settings/general.cfg\n"
+            "  -nthr, --num_threads N           Search threads (2-64)\n"
+            "  -s, --start_time H:M:S:MS        Start timestamp\n"
+            "  -e, --end_time H:M:S:MS          End timestamp\n"
+            "  -te, -be, -le, -re NUMBER        Crop fractions (0-1)\n"
+            "  -ovffmpeg, --open_video_ffmpeg   Use OpenCV's FFmpeg backend\n"
+            "  -ovocv, --open_video_opencv      Select the available OpenCV backend\n"
+            "  -uc, --use_cuda                 Require CUDA support\n"
+            "  --verbose --version -h --help\n";
+        return 0;
     }
-    g_BegTime = 0;
-    g_EndTime = g_pVideo->m_Duration;
-
-    if (parser.Found("s", &wxStr))
-    {
-        g_BegTime = GetVideoTime(wxStr);
-    }
-
-    if (parser.Found("e", &wxStr))
-    {
-        g_EndTime = GetVideoTime(wxStr);
-    }
-    if (!g_pVideo->SetNullRender()) {
-        wxLogMessage("ERROR: g_pVideo->SetNullRender() failed\n");
-        return false;
-    }
-    g_DxMin = 0;
-    g_DxMax = 1;
-    g_DyMin = 1 - 1;
-    g_DyMax = 1 - 0;
-    if (parser.Found("le", &g_DxMin))
-    {
-        if ((g_DxMin < 0) || (g_DxMin > 1.0))
-        {
-            wxLogMessage("ERROR: wrong \"le\" command line option value\n");
-            return false;
+    if (!options.count("run_search") && !options.count("create_cleared_text_images"))
+        throw std::runtime_error("Specify --run_search or --create_cleared_text_images");
+    g_app_dir = executablePath().parent_path().string();
+    auto settings = options.count("general_settings") ? fs::u8path(options.at("general_settings")) : fs::path(g_app_dir)/"settings/general.cfg";
+    if (options.count("general_settings") || fs::exists(settings)) loadSettings(settings);
+    auto output = fs::absolute(fs::u8path(options.count("output_dir") ? options.at("output_dir") : "."));
+    fs::create_directories(output);
+    g_work_dir = output.string();
+    g_ReportFileName = (output/"report.log").string();
+    for (const auto& folder : {"RGBImages","ISAImages","ILAImages","TXTImages","TXTImagesJoined","TestImages","TXTResults","DebugImages"}) {
+        auto path = output/folder;
+        if (fs::is_symlink(path)) throw std::runtime_error("Output image directory must not be a symbolic link");
+        fs::create_directories(path);
+        if (options.count("clear_dirs")) for (const auto& entry : fs::directory_iterator(path)) {
+            auto extension = entry.path().extension().string();
+            if (entry.is_regular_file() && (extension==".jpeg" || extension==".jpg" || extension==".png" || extension==".bmp")) fs::remove(entry.path());
         }
     }
-    if (parser.Found("re", &g_DxMax))
-    {
-        if ((g_DxMax < 0) || (g_DxMax > 1.0))
-        {
-            wxLogMessage("ERROR: wrong \"re\" command line option value\n");
-            return false;
-        }
+    g_save_images = !options.count("dont_save_images");
+    g_im_save_format = ".jpeg";
+    ReadProperty(options, g_threads, "num_threads");
+    if (g_threads!=-1 && (g_threads<2 || g_threads>64)) throw std::runtime_error("Thread count must be 2-64");
+    if (g_DL<2 || g_DL>64 || g_scale<1 || g_scale>8) throw std::runtime_error("Invalid sub_frame_length or image scale");
+    g_pViewRGBImage = [](simple_buffer<int>&,int,int) {};
+    for (int i=0;i<2;++i) {
+        g_pViewImage[i] = [](simple_buffer<int>&,int,int) {};
+        g_pViewBGRImage[i] = [](simple_buffer<u8>&,int,int) {};
+        g_pViewGreyscaleImage[i] = [](simple_buffer<u8>&,int,int) {};
     }
-    if (parser.Found("te", &g_DyMin))
-    {
-        if ((g_DyMin < 0) || (g_DyMin > 1.0))
-        {
-            wxLogMessage("ERROR: wrong \"te\" command line option value\n");
-            return false;
-        }
-        g_DyMin = 1 - g_DyMin;
-    }
-    if (parser.Found("be", &g_DyMax))
-    {
-        if ((g_DyMax < 0) || (g_DyMax > 1.0))
-        {
-            wxLogMessage("ERROR: wrong \"be\" command line option value\n");
-            return false;
-        }
-        g_DyMax = 1 - g_DyMax;
-    }
-
-    if (parser.Found("ces", &wxStr))
-    {
-        g_sub_path = wxStr;
-    }
-
     g_color_ranges = GetColorRanges(g_use_filter_color);
     g_outline_color_ranges = GetColorRanges(g_use_outline_filter_color);
-	return true;
-}
-
-wxString VideoTimeToStr2(s64 pos)
- {
- 	wxString str;
- 	int hour, min, sec, msec, val;
-
- 	val = (int)(pos / 1000); // seconds
- 	msec = pos - (s64)val * 1000;
- 	hour = val / 3600;
- 	val -= hour * 3600;
- 	min = val / 60;
- 	val -= min * 60;
- 	sec = val;
-
- 	str.Printf(wxT("%02d:%02d:%02d,%03d"), hour, min, sec, msec);
-
- 	return str;
- }
-
-void createEmptySub()
-{
-	wxString Str, SubStr, hour1, hour2, min1, min2, sec1, sec2, msec1, msec2;
-	int i, j, k, sec, msec;
-	u64 bt, et, dt, mdt;
-	wxString str_int;
-
-	vector<wxString> FileNamesVector = g_file_names_vector;
-	vector<u64> BT, ET;
-	wxString filename;
-	for (i=0; i<(int)FileNamesVector.size()-1; i++)
-	for (j=i+1; j<(int)FileNamesVector.size(); j++)
-	{
-		if (FileNamesVector[i] > FileNamesVector[j])
-		{
-			Str = FileNamesVector[i];
-			FileNamesVector[i] = FileNamesVector[j];
-			FileNamesVector[j] = Str;
-		}
-	}
-
-	mdt = 0; //(s64)(m_pMF->m_cfg.m_ocr_min_sub_duration * (double)1000);
-
-	for(k=0; k<(int)FileNamesVector.size(); k++)
-	{
-		Str = FileNamesVector[k];
-
-		hour1 = Str.Mid(0,1);
-		min1 = Str.Mid(2,2);
-		sec1 = Str.Mid(5,2);
-		msec1 = Str.Mid(8,3);
-
-		hour2 = Str.Mid(13,1);
-		min2 = Str.Mid(15,2);
-		sec2 = Str.Mid(18,2);
-		msec2 = Str.Mid(21,3);
-
-		bt = (wxAtoi(hour1)*3600 + wxAtoi(min1)*60 + wxAtoi(sec1))*1000 + wxAtoi(msec1);
-		et = (wxAtoi(hour2)*3600 + wxAtoi(min2)*60 + wxAtoi(sec2))*1000 + wxAtoi(msec2);
-
-		BT.push_back(bt);
-		ET.push_back(et);
-	}
-
-	if (g_join_subs_and_correct_time)
-	{
-		for (k = 0; k < (int)FileNamesVector.size() - 1; k++)
-		{
-			if (ET[k] - BT[k] < mdt)
-			{
-				if (BT[k] + mdt < BT[k + 1])
-				{
-					ET[k] = BT[k] + mdt;
-				}
-				else
-				{
-					ET[k] = BT[k + 1] - 1;
-				}
-			}
-		}
-	}
-
-	wxString srt_sub;
-	for(k=0; k<(int)FileNamesVector.size(); k++)
-	{
-		bt = BT[k];
-		et = ET[k];
-
-		Str = VideoTimeToStr2(bt)+
-			  " --> "+
-			  VideoTimeToStr2(et);
-
-		dt = et - bt;
-		sec = (int)(dt/1000);
-		msec = (int)(dt%1000);
-
-		sec1 = wxString::Format(wxT("%i"), sec);
-
-		str_int = wxString::Format(wxT("%i"), msec);
-		if (msec < 10) msec1 = wxT("00") + str_int;
-		else
-		{
-			if (msec < 100) msec1 = wxT("0")+ str_int;
-			else msec1 = str_int;
-		}
-
-        //"def_string_for_empty_sub"
-        wxString g_DefStringForEmptySub = "sub duration: %sub_duration%";
-		SubStr = g_DefStringForEmptySub;
-
-		if (g_DefStringForEmptySub.Contains("%sub_duration%"))
-		{
-			SubStr.Replace("%sub_duration%", sec1 + "," + msec1);
-		}
-
-		srt_sub << (k+1) << wxT("\n") << Str << wxT("\n") << SubStr << "\n\n";
-	}
-	wxFFileOutputStream ffout(g_sub_path);
-    wxTextOutputStream fout(ffout);
-    fout << srt_sub;
-    fout.Flush();
-    ffout.Close();
-}
-
-bool ReadProperty(std::map<wxString, wxString>& settings, int& val, wxString Name)
-{
-	bool res = false;
-	auto search = settings.find(Name);
-
-	if (search != settings.end()) {
-		wxString _val = search->second;
-		val = wxAtoi(_val);
-		res = true;
-	}
-
-	return res;
-}
-
-bool ReadProperty(std::map<wxString, wxString>& settings, bool& val, wxString Name)
-{
-	bool res = false;
-	auto search = settings.find(Name);
-
-	if (search != settings.end()) {
-		wxString _val = search->second;
-		int get_val = wxAtoi(_val);
-		if (get_val != 0)
-		{
-			val = true;
-		}
-		else
-		{
-			val = false;
-		}
-		res = true;
-	}
-
-	return res;
-}
-
-bool ReadProperty(std::map<wxString, wxString>& settings, double& val, wxString Name)
-{
-	bool res = false;
-	auto search = settings.find(Name);
-
-	if (search != settings.end()) {
-		wxString _val = search->second;
-		_val.ToDouble(&val);
-		res = true;
-	}
-
-	return res;
-}
-
-bool ReadProperty(std::map<wxString, wxString>& settings, wxString& val, wxString Name)
-{
-	bool res = false;
-	auto search = settings.find(Name);
-
-	if (search != settings.end()) {
-		val = search->second;
-		val = wxJoin(wxSplit(val, ';'), '\n');
-		res = true;
-	}
-
-	return res;
-}
-
-bool ReadProperty(std::map<wxString, wxString>& settings, wxArrayString& val, wxString Name)
-{
-	bool res = false;
-	auto search = settings.find(Name);
-
-	if (search != settings.end()) {
-		if (search->second == "none") {
-			val.clear();
-		}
-		else {
-			val = wxSplit(search->second, ';');
-		}
-		res = true;
-	}
-
-	return res;
-}
-
-static void ReadSettings(wxString file_name, std::map<wxString, wxString>& settings)
-{
-	wxFileInputStream ffin(file_name);
-
-	if (!ffin.IsOk())
-	{
-		wxLogMessage("ERROR: Can't open settings file: " + file_name);
-		exit(1);
-	}
-
-	wxTextInputStream fin(ffin, wxT("\x09"), wxConvUTF8);
-	wxString name, val, line;
-	wxRegEx re(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*([^[:space:]].*[^[:space:]]|[^[:space:]])[[:space:]]*$"));
-	wxRegEx re_empty(wxT("^[[:space:]]*([^[:space:]]+)[[:space:]]*=[[:space:]]*$"));
-
-	while (ffin.IsOk() && !ffin.Eof())
-	{
-		line = fin.ReadLine();
-
-		if (line.size() > 0)
-		{
-			if (re.Matches(line))
-			{
-				name = re.GetMatch(line, 1);
-				val = re.GetMatch(line, 2);
-				settings[name] = val;
-			}
-			else
-			{
-				if (re_empty.Matches(line))
-				{
-					name = re.GetMatch(line, 1);
-					val = wxString(wxT(""));
-					settings[name] = val;
-				}
-				else
-				{
-					wxLogMessage(wxT("Unsupported line format: ") + line + wxT("\nin file: ") + file_name);
-					exit(1);
-				}
-			}
-		}
-	}
-}
-
-void CVideoSubFinderApp::LoadSettings(wxString file_name)
-{
-	std::map<wxString, wxString> g_general_settings;
-	ReadSettings(file_name, g_general_settings);
-
-	ReadProperty(g_general_settings, g_generate_cleared_text_images_on_test, "generate_cleared_text_images_on_test");
-	ReadProperty(g_general_settings, g_show_results, "dump_debug_images");
-	ReadProperty(g_general_settings, g_show_sf_results, "dump_debug_second_filtration_images");
-	ReadProperty(g_general_settings, g_clear_test_images_folder, "clear_test_images_folder");
-	ReadProperty(g_general_settings, g_show_transformed_images_only, "show_transformed_images_only");
-	ReadProperty(g_general_settings, g_use_ocl, "use_ocl");
-	ReadProperty(g_general_settings, g_use_cuda_gpu, "use_cuda_gpu");
-
-	ReadProperty(g_general_settings, g_use_filter_color, "use_filter_color");
-	ReadProperty(g_general_settings, g_use_outline_filter_color, "use_outline_filter_color");
-	ReadProperty(g_general_settings, g_dL_color, "dL_color");
-	ReadProperty(g_general_settings, g_dA_color, "dA_color");
-	ReadProperty(g_general_settings, g_dB_color, "dB_color");
-	ReadProperty(g_general_settings, g_combine_to_single_cluster, "combine_to_single_cluster");
-
-	ReadProperty(g_general_settings, g_cuda_kmeans_initial_loop_iterations, "cuda_kmeans_initial_loop_iterations");
-	ReadProperty(g_general_settings, g_cuda_kmeans_loop_iterations, "cuda_kmeans_loop_iterations");
-	ReadProperty(g_general_settings, g_cpu_kmeans_initial_loop_iterations, "cpu_kmeans_initial_loop_iterations");
-	ReadProperty(g_general_settings, g_cpu_kmeans_loop_iterations, "cpu_kmeans_loop_iterations");
-
-	ReadProperty(g_general_settings, g_smthr, "moderate_threshold_for_scaled_image");
-	ReadProperty(g_general_settings, g_mthr, "moderate_threshold");
-	ReadProperty(g_general_settings, g_mnthr, "moderate_threshold_for_NEdges");
-	ReadProperty(g_general_settings, g_segw, "segment_width");
-	ReadProperty(g_general_settings, g_segh, "segment_height");
-	ReadProperty(g_general_settings, g_msegc, "minimum_segments_count");
-	ReadProperty(g_general_settings, g_scd, "min_sum_color_diff");
-	ReadProperty(g_general_settings, g_btd, "between_text_distace");
-	ReadProperty(g_general_settings, g_to, "text_centre_offset");
-	ReadProperty(g_general_settings, g_scale, "image_scale_for_clear_image");
-
-
-	ReadProperty(g_general_settings, g_use_ILA_images_for_getting_txt_symbols_areas, "use_ILA_images_for_getting_txt_symbols_areas");
-	ReadProperty(g_general_settings, g_use_ILA_images_before_clear_txt_images_from_borders, "use_ILA_images_before_clear_txt_images_from_borders");
-
-	ReadProperty(g_general_settings, g_use_gradient_images_for_clear_txt_images, "use_gradient_images_for_clear_txt_images");
-	ReadProperty(g_general_settings, g_clear_txt_images_by_main_color, "clear_txt_images_by_main_color");
-	ReadProperty(g_general_settings, g_use_ILA_images_for_clear_txt_images, "use_ILA_images_for_clear_txt_images");
-
-	ReadProperty(g_general_settings, g_mpn, "min_points_number");
-	ReadProperty(g_general_settings, g_mpd, "min_points_density");
-	ReadProperty(g_general_settings, g_msh, "min_symbol_height");
-	ReadProperty(g_general_settings, g_msd, "min_symbol_density");
-	ReadProperty(g_general_settings, g_mpned, "min_NEdges_points_density");
-
-	ReadProperty(g_general_settings, g_join_subs_and_correct_time, "join_subs_and_correct_time");
-
-	ReadProperty(g_general_settings, g_threads, "threads");
-	ReadProperty(g_general_settings, g_DL, "sub_frame_length");
-	ReadProperty(g_general_settings, g_tp, "text_percent");
-	ReadProperty(g_general_settings, g_mtpl, "min_text_len_in_percent");
-	ReadProperty(g_general_settings, g_veple, "vedges_points_line_error");
-	ReadProperty(g_general_settings, g_ilaple, "ila_points_line_error");
-
-	ReadProperty(g_general_settings, g_video_contrast, "video_contrast");
-	ReadProperty(g_general_settings, g_video_gamma, "video_gamma");
-
-	ReadProperty(g_general_settings, g_clear_image_logical, "clear_image_logical");
-
-	ReadProperty(g_general_settings, g_DefStringForEmptySub, "def_string_for_empty_sub");
-
-	ReadProperty(g_general_settings, g_use_ISA_images_for_search_subtitles, "use_ISA_images_for_search_subtitles");
-	ReadProperty(g_general_settings, g_use_ILA_images_for_search_subtitles, "use_ILA_images_for_search_subtitles");
-	ReadProperty(g_general_settings, g_replace_ISA_by_filtered_version, "replace_ISA_by_filtered_version");
-	ReadProperty(g_general_settings, g_max_dl_down, "max_dl_down");
-	ReadProperty(g_general_settings, g_max_dl_up, "max_dl_up");
-
-	ReadProperty(g_general_settings, g_remove_wide_symbols, "remove_wide_symbols");
-
-	ReadProperty(g_general_settings, g_hw_device, "hw_device");
-
-	if (ReadProperty(g_general_settings, g_filter_descr, "filter_descr"))
-	{
-		if (g_filter_descr == wxT("none"))
-		{
-			g_filter_descr = wxT("");
-		}
-	}
-
-	ReadProperty(g_general_settings, g_save_each_substring_separately, "save_each_substring_separately");
-	ReadProperty(g_general_settings, g_save_scaled_images, "save_scaled_images");
-
-	ReadProperty(g_general_settings, g_border_is_darker, "border_is_darker");
-
-	int text_alignment;
-	ReadProperty(g_general_settings, text_alignment, "text_alignment");
-	g_text_alignment = (TextAlignment)text_alignment;
-
-	ReadProperty(g_general_settings, g_extend_by_grey_color, "extend_by_grey_color");
-	ReadProperty(g_general_settings, g_allow_min_luminance, "allow_min_luminance");
-}
-
-
-static void ViewImageInNull(simple_buffer<int>& Im, int w, int h) {
-}
-static void ViewBGRImageInNull(simple_buffer<u8>& ImBGR, int w, int h) {
-}
-static void ViewGreyscaleImageInNull(simple_buffer<u8>& Im, int w, int h) {
-}
-int CVideoSubFinderApp::OnRun()
-{
-	g_pViewImage[0] = ViewImageInNull;
-	g_pViewImage[1] = ViewImageInNull;
-	g_pViewBGRImage[0] = ViewBGRImageInNull;
-	g_pViewBGRImage[1] = ViewBGRImageInNull;
-	g_pViewGreyscaleImage[0] = ViewGreyscaleImageInNull;
-	g_pViewGreyscaleImage[1] = ViewGreyscaleImageInNull;
-	g_pViewRGBImage = ViewImageInNull;
-
-    g_pVideo->SetVideoWindowSettins(g_DxMin, g_DxMax, g_DyMin, g_DyMax);
-    g_RunSubSearch = 1;
-    FastSearchSubtitles(g_pVideo, g_BegTime, g_EndTime);
-    if (g_sub_path.size() > 0) {
-        createEmptySub();
+    if (options.count("use_cuda")) {
+#ifndef USE_CUDA
+        throw std::runtime_error("This binary was built without CUDA");
+#else
+        if (!InitCUDADevice()) throw std::runtime_error("CUDA device is unavailable");
+        g_use_cuda_gpu = true;
+#endif
     }
-    wxLogMessage("FINISH");
-    return false;
+    if (options.count("run_search")) {
+        if (!options.count("input_video")) throw std::runtime_error("Input video is required");
+        auto input = fs::absolute(fs::u8path(options.at("input_video")));
+        if (!fs::is_regular_file(input)) throw std::runtime_error("Input video does not exist: " + input.string());
+        auto* video = GetOCVVideoObject();
+        video->m_Dir = g_work_dir;
+        int backend = options.count("open_video_opencv") ? cv::CAP_ANY : cv::CAP_FFMPEG;
+        if (!video->OpenMovie(input.string(), nullptr, backend)) throw std::runtime_error("Cannot decode input video: " + input.string());
+        double left=0,right=1,top=1,bottom=0;
+        ReadProperty(options,left,"left"); ReadProperty(options,right,"right");
+        ReadProperty(options,top,"top"); ReadProperty(options,bottom,"bottom");
+        if (!std::isfinite(left+right+top+bottom) || left<0 || right>1 || left>=right || bottom<0 || top>1 || bottom>=top)
+            throw std::runtime_error("Crop fractions must satisfy 0 <= left < right <= 1 and 0 <= bottom < top <= 1");
+        s64 begin = options.count("start_time") ? parseTime(options.at("start_time")) : 0;
+        s64 end = options.count("end_time") ? parseTime(options.at("end_time")) : video->m_Duration;
+        if (end<=begin || begin>=video->m_Duration) throw std::runtime_error("Invalid video time interval");
+        video->SetVideoWindowSettins(left,right,1-top,1-bottom);
+        if (video->m_w<8 || video->m_h<8) throw std::runtime_error("Crop must be at least 8x8 pixels");
+        if (!video->SetNullRender()) throw std::runtime_error("Cannot initialize decoder");
+        const auto started=std::chrono::steady_clock::now();
+        auto last=started-std::chrono::seconds(1);
+        g_progress_callback = [begin,end,started,&last](s64 current,s64) {
+            auto now=std::chrono::steady_clock::now();
+            if (now-last<std::chrono::seconds(1)) return;
+            last=now;
+            std::cerr << "Progress: " << std::clamp(100*(current-begin)/(end-begin),0LL,99LL)
+                << "% elapsed=" << std::chrono::duration_cast<std::chrono::seconds>(now-started).count() << "s\n";
+        };
+        g_file_names_vector.clear();
+        g_RunSubSearch=1;
+        FastSearchSubtitles(video,begin,end);
+        g_progress_callback = {};
+        video->CloseMovie();
+        std::cerr << "Progress: 100%\n";
+        if (options.count("create_empty_sub")) writeSubtitles(fs::u8path(options.at("create_empty_sub")));
+    }
+    if (options.count("create_cleared_text_images")) clearTextImages();
+    std::cerr << "FINISH\n";
+    return 0;
 }
 
-CVideoSubFinderApp::~CVideoSubFinderApp()
-{
+int main(int argc, char** argv) {
+    try { return runCli(std::vector<std::string>(argv,argv+argc)); }
+    catch (const std::exception& error) { std::cerr << "ERROR: " << error.what() << '\n'; return 1; }
 }

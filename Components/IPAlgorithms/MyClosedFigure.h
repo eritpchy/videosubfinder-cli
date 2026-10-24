@@ -18,8 +18,6 @@
 
 #include "DataTypes.h"
 #include <vector>
-#include <wx/wx.h>
-#include "wx.h"
 
 using namespace std;
 
@@ -284,7 +282,7 @@ u64 SearchClosedFigures(simple_buffer<T>& Im, int w, int h, T white, custom_buff
 	//Finding all closed figures on image
 
 	// doesn't give difference with n_splits == 32 (work a little longer)
-	// std::for_each(std::execution::par, ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(n_splits), [&](int i_split)
+	// std::for_each(ForwardIteratorForDefineRange<int>(0), ForwardIteratorForDefineRange<int>(n_splits), [&](int i_split)
 	//{
 	for (int i_split = 0; i_split < n_splits; i_split++)
 	{

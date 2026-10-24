@@ -11,3 +11,9 @@
 # Or directories
 !*/
 .idea
+/build/
+/dist/
+/test-media/
+*.AppImage
+*.DS_Store
+__pycache__/
