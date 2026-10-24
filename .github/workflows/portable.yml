@@ -1,0 +1,258 @@
+name: Portable CLI
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: portable-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      VSF_ARCH: ${{ matrix.arch }}
+    timeout-minutes: 45
+    container: ubuntu:20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install build dependencies
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core patchelf curl file libfuse2 desktop-file-utils
+          python3 -m pip install cmake==3.31.6
+      - name: Build and test installed bundle
+        run: sh scripts/build-linux.sh
+      - name: Build and test AppImage
+        run: sh scripts/appimage.sh
+      - name: Archive portable bundle and fixture videos
+        run: |
+          tar -C dist -czf videosubfinder-cli-linux-${{ matrix.arch }}.tar.gz .
+          mkdir -p test-media
+          python3 -c "import sys; from pathlib import Path; sys.path.insert(0, 'tests'); from test_cli import fixtures; fixtures(Path('test-media').resolve())"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages-${{ matrix.arch }}
+          path: |
+            videosubfinder-cli-linux-${{ matrix.arch }}.tar.gz
+            videosubfinder-cli-linux-${{ matrix.arch }}.AppImage
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: matrix.arch == 'x64'
+        with:
+          name: test-media
+          path: test-media/*.mkv
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: matrix.arch == 'x64'
+        with:
+          name: test-media-mp4
+          path: test-media/*.mp4
+          if-no-files-found: error
+  linux-distros:
+    needs: linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['ubuntu:20.04', 'ubuntu:22.04', 'ubuntu:24.04', 'debian:bullseye-slim', 'debian:bookworm-slim', 'debian:trixie-slim', 'fedora:43', 'opensuse/leap:15.6', 'archlinux:base']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-packages-x64
+          path: packages
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: test-media*
+          path: test-media
+          merge-multiple: true
+      - name: Test without host multimedia libraries or FUSE
+        env:
+          TEST_IMAGE: ${{ matrix.image }}
+        run: |
+          mkdir bundle
+          tar -C bundle -xzf packages/videosubfinder-cli-linux-x64.tar.gz
+          chmod +x packages/*.AppImage
+          docker run --rm -v "$PWD:/test" -w /test "$TEST_IMAGE" sh scripts/test-distro.sh
+  linux-arm64:
+    needs: linux
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['ubuntu:24.04', 'debian:bookworm-slim', 'fedora:43']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-packages-arm64
+          path: packages
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: test-media*
+          path: test-media
+          merge-multiple: true
+      - env:
+          TEST_IMAGE: ${{ matrix.image }}
+        run: |
+          mkdir bundle
+          tar -C bundle -xzf packages/videosubfinder-cli-linux-arm64.tar.gz
+          chmod +x packages/*.AppImage
+          docker run --rm -e VSF_ARCH=arm64 -v "$PWD:/test" -w /test "$TEST_IMAGE" sh scripts/test-distro.sh
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/cache@v4
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: windows-static-${{ hashFiles('vcpkg.json') }}
+      - name: Build static Windows CLI binary
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --build build --config Release --parallel 4
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cmake --install build --config Release --prefix "$pwd/dist"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Install fixture encoder
+        run: choco install ffmpeg --no-progress -y
+      - name: Test relocated Windows CLI binary
+        shell: pwsh
+        run: |
+          $env:PATH += ';C:\ProgramData\chocolatey\bin'
+          python tests/test_cli.py "$pwd/dist/VideoSubFinderCli.exe"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Compress-Archive -Path dist/* -DestinationPath videosubfinder-cli-windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: videosubfinder-cli-windows-x64.zip
+          if-no-files-found: error
+  macos:
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x64
+          - runner: macos-15
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: brew install opencv ffmpeg
+      - name: Build and test portable CLI
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/dist"
+          cmake --build build --parallel 4
+          ctest --test-dir build --output-on-failure
+          cmake --install build
+          python3 scripts/bundle.py dist
+          python3 tests/test_cli.py "$PWD/dist/VideoSubFinderCli.run"
+          tar -C dist -czf videosubfinder-cli-macos-${{ matrix.arch }}.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: videosubfinder-cli-macos-${{ matrix.arch }}.tar.gz
+          if-no-files-found: error
+  universal:
+    needs: macos
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: macos-*
+          merge-multiple: true
+          path: packages
+      - run: |
+          mkdir x64 arm64
+          tar -C x64 -xzf packages/videosubfinder-cli-macos-x64.tar.gz
+          tar -C arm64 -xzf packages/videosubfinder-cli-macos-arm64.tar.gz
+          python3 scripts/universal.py x64 arm64 dist
+          brew install ffmpeg
+          python3 tests/test_cli.py "$PWD/dist/VideoSubFinderCli.run"
+          /usr/bin/arch -x86_64 dist/VideoSubFinderCli --version
+          tar -C dist -czf videosubfinder-cli-macos-universal.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: universal-package
+          path: videosubfinder-cli-macos-universal.tar.gz
+          if-no-files-found: error
+  sanitizers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libopencv-dev ffmpeg fonts-dejavu-core ninja-build
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DVSF_SANITIZERS=ON
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure
+  cuda:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container: nvidia/cuda:12.6.3-devel-ubuntu22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core
+          python3 -m pip install cmake==3.31.6
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='75;80;86;89;90'
+          cmake --build build --parallel 4
+          ctest --test-dir build --output-on-failure
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux-distros, linux-arm64, windows, universal, sanitizers, cuda]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*package*'
+          path: packages
+          merge-multiple: true
+      - name: Publish tested assets with checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd packages
+          sha256sum *.tar.gz *.zip *.AppImage > SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --generate-notes --title "$RELEASE_TAG" ./*

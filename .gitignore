@@ -1,19 +1,8 @@
-# Ignore Everything
-*
-
-# But not:
-!*.cpp
-!*.c
-!*.hpp
-!*.h
-!*.cu
-!.gitignore
-# Or directories
-!*/
-.idea
+.idea/
+.DS_Store
+__pycache__/
 /build/
 /dist/
 /test-media/
 *.AppImage
-*.DS_Store
-__pycache__/
+Build/Docker/*/out/
