@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(VideoSubFinderCli VERSION 6.11.0 LANGUAGES CXX)
+project(VideoSubFinderCli VERSION 6.12.0 LANGUAGES CXX)
 
 option(USE_CUDA "Enable CUDA image processing" OFF)
 option(VSF_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
@@ -56,5 +56,9 @@ if(BUILD_TESTING)
     find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
     add_test(NAME cli-regression COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_SOURCE_DIR}/tests/test_cli.py $<TARGET_FILE:VideoSubFinderCli>)
-    set_tests_properties(cli-regression PROPERTIES TIMEOUT 180)
+    if(CMAKE_CROSSCOMPILING)
+        set_tests_properties(cli-regression PROPERTIES TIMEOUT 1200)
+    else()
+        set_tests_properties(cli-regression PROPERTIES TIMEOUT 180)
+    endif()
 endif()
