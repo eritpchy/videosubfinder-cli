@@ -234,11 +234,11 @@ jobs:
             generator: Visual Studio 17 2022
             vs-range: '[17.0,18.0)'
             vs-component: Microsoft.VisualStudio.Component.VC.Tools.x86.x64
-          - runner: windows-11-vs2026-arm
+          - runner: windows-11-arm
             arch: arm64
             platform: ARM64
-            generator: Visual Studio 18 2026
-            vs-range: '[18.0,19.0)'
+            generator: Visual Studio 17 2022
+            vs-range: '[17.0,18.0)'
             vs-component: Microsoft.VisualStudio.Component.VC.Tools.ARM64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
