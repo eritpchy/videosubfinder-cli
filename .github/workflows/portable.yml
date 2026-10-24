@@ -457,8 +457,8 @@ jobs:
           python3 - <<'PYTHON'
           import os, re
           from pathlib import Path
-          version = re.search(r'project\(VideoSubFinderCli VERSION ([0-9.]+)',Path('CMakeLists.txt').read_text()).group(1)
-          assert os.environ['RELEASE_TAG'] == 'v'+version, 'Release tag does not match CMake version'
+          version = re.search(r'^#define\s+VSF_VERSION\s+"([0-9.]+)"',Path('Interfaces/VideoSubFinderWXW/MyResource.h').read_text(),re.MULTILINE).group(1)
+          assert os.environ['RELEASE_TAG'] == 'v'+version, 'Release tag does not match the upstream version'
           PYTHON
       - run: python3 scripts/source-package.py
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -486,4 +486,4 @@ jobs:
         run: |
           cd packages
           sha256sum *.tar.gz *.zip *.AppImage > SHA256SUMS
-          gh release create "$RELEASE_TAG" --verify-tag --generate-notes --title "$RELEASE_TAG" ./*
+          gh release create "$RELEASE_TAG" --verify-tag --generate-notes --latest --title "$RELEASE_TAG" ./*

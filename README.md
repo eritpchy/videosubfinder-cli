@@ -219,7 +219,7 @@ Use `-ccti` or `--create_cleared_text_images`, including on Windows.
 The release's `--help` output is:
 
 ```text
-VideoSubFinderCli 6.12.0
+VideoSubFinderCli 6.10
 Usage: VideoSubFinderCli -r -i VIDEO -o OUTPUT [options]
   -c, --clear_dirs                 Clear generated image files
   -r, --run_search                 Search for hardcoded subtitles
@@ -312,6 +312,9 @@ CI tests the installed packages on Linux, macOS and Windows, including AppImage,
 Universal, dynamic-worker and sanitizer checks. CUDA CI exercises the CPU path;
 set `VSF_TEST_CUDA=1` on a CUDA host to run GPU extraction and CCTI regressions.
 A `v*` tag publishes a release only after the required jobs pass.
+The CLI version and release tag follow the official VideoSubFinder version,
+read directly from its version header. Fork changes are described in release
+notes and Git history.
 
 ## Credits and license
 
