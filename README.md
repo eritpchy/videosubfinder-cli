@@ -57,8 +57,8 @@ cmake --install build --prefix dist
 
 Install a C++17 compiler, CMake 3.24+, Python 3 and OpenCV 4 development packages.
 Tests additionally use FFmpeg and a system TrueType font to generate independently
-timed MKV and MP4 subtitle fixtures. Set `VSF_TEST_MEDIA` to a directory containing
-pre-generated `input video.mkv` and `input video.mp4` to run tests without FFmpeg.
+timed MKV, MPEG-4 and H.264 subtitle fixtures. Set `VSF_TEST_MEDIA` to a directory containing
+pre-generated `input video.mkv`, `input video.mp4` and `input h264.mp4` to run tests without FFmpeg.
 For fully static Linux CPU builds, run `sh scripts/build-static-linux.sh` in
 Alpine 3.22 with the dependencies listed in the CI workflow. OpenCV 4.14.0 and
 FFmpeg 8.0.1 source commits are pinned in that script.

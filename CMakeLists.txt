@@ -53,7 +53,7 @@ install(FILES 3rdparty/thread-pool/LICENSE.txt DESTINATION licenses RENAME threa
 
 include(CTest)
 if(BUILD_TESTING)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
     add_test(NAME cli-regression COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_SOURCE_DIR}/tests/test_cli.py $<TARGET_FILE:VideoSubFinderCli>)
     set_tests_properties(cli-regression PROPERTIES TIMEOUT 180)

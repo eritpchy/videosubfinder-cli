@@ -28,8 +28,8 @@ def invoke(command, *, success=True, cwd=None):
 def fixtures(root):
     supplied = os.environ.get('VSF_TEST_MEDIA')
     if supplied:
-        for extension in ['mkv','mp4']:
-            shutil.copy2(Path(supplied)/f'input video.{extension}', root/f'input video.{extension}')
+        for name in ['input video.mkv','input video.mp4','input h264.mp4']:
+            shutil.copy2(Path(supplied)/name, root/name)
     else:
         fonts = [Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
                  Path('/usr/share/fonts/ttf-dejavu/DejaVuSans.ttf'),
@@ -47,7 +47,9 @@ def fixtures(root):
                 '-vf',filters,'-c:v','ffv1','input video.mkv'],cwd=root)
         invoke(['ffmpeg','-v','error','-y','-i','input video.mkv','-c:v','mpeg4','-q:v','2',
                 'input video.mp4'],cwd=root)
-    return root/'input video.mkv', root/'input video.mp4'
+        invoke(['ffmpeg','-v','error','-y','-i','input video.mkv','-c:v','libx264',
+                '-preset','ultrafast','-crf','18','input h264.mp4'],cwd=root)
+    return root/'input video.mkv', root/'input video.mp4', root/'input h264.mp4'
 
 
 def check_srt(path):
@@ -77,7 +79,7 @@ def main():
             poison.mkdir()
             (poison/'libstdc++.so.6').write_bytes(b'incompatible host runtime')
             invoke(['env',f'LD_LIBRARY_PATH={poison}',binary,'--version'],cwd=root)
-        mkv, mp4 = fixtures(root)
+        mkv, mp4, h264 = fixtures(root)
         results = {}
         base = [binary,'-r','-i',mkv,'-o',root/'invalid']
         for extra in [['--unknown'],['-te','2'],['-le','0.8','-re','0.2'],['-te','nan'],
@@ -88,13 +90,13 @@ def main():
         invoke([binary,'-r','-i',root/'broken.mkv','-o',root/'broken'],success=False,cwd=root)
         (root/'bad.cfg').write_text('text_alignment = 99\n')
         invoke(base+['-gs',root/'bad.cfg'],success=False,cwd=root)
-        for media in [mkv,mp4]:
-            output = root/media.suffix[1:]
+        for media in [mkv,mp4,h264]:
+            output = root/(media.stem+' output')
             subtitle = output/'subtitle.srt'
             log=invoke([binary,'-c','-r','-i',media,'-o',output,'-ces',subtitle,
                         '-te','0.4','-be','0','-nthr','2','-ovffmpeg'],cwd=root)
             assert 'Progress: 100%' in log and 'FINISH' in log, log
-            results[media.suffix] = check_srt(subtitle)
+            results[media.name] = check_srt(subtitle)
             frames=list((output/'RGBImages').glob('*.jpeg'))
             assert frames, log
             assert all(':' not in f.name for f in frames), frames
@@ -120,7 +122,7 @@ def main():
         invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
                 '-dsi','-te','0.4','-nthr','2'],cwd=root)
         check_srt(relative/'sub.srt')
-        results['checks']='help, version, validation, MKV, MP4, SRT timing, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
+        results['checks']='help, version, validation, MKV, MPEG-4, H.264, SRT timing, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
         print(json.dumps(results,indent=2))
 
 
