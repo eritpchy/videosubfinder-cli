@@ -29,6 +29,8 @@ Homebrew or development packages are required at runtime.
 ./videosubfinder-cli-linux-x64.AppImage --help
 ```
 
+On systems without FUSE, launch the AppImage with `APPIMAGE_EXTRACT_AND_RUN=1`.
+
 On Windows use `VideoSubFinderCli.exe` with the same arguments. Existing single-dash
 multi-character options and double-dash long options remain accepted. FFmpeg via
 OpenCV is the default video backend; `-ovocv` selects OpenCV's automatic backend.

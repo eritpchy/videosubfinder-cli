@@ -311,7 +311,7 @@ jobs:
           tar -C dist -czf videosubfinder-cli-macos-${{ matrix.arch }}.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-${{ matrix.arch }}
+          name: macos-packages-${{ matrix.arch }}
           path: videosubfinder-cli-macos-${{ matrix.arch }}.tar.gz
           if-no-files-found: error
   universal:
@@ -324,7 +324,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: macos-*
+          pattern: macos-packages-*
           merge-multiple: true
           path: packages
       - uses: actions/download-artifact@v4
@@ -393,6 +393,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Check release tag matches the built version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PYTHON'
+          import os, re
+          from pathlib import Path
+          version = re.search(r'project\(VideoSubFinderCli VERSION ([0-9.]+)',Path('CMakeLists.txt').read_text()).group(1)
+          assert os.environ['RELEASE_TAG'] == 'v'+version, 'Release tag does not match CMake version'
+          PYTHON
       - run: python3 scripts/source-package.py
       - uses: actions/upload-artifact@v4
         with:
