@@ -8812,16 +8812,10 @@ void ReadFile(cv::Mat& res_data, std::string path) {
     res_data = cv::Mat(bytes).clone();
 }
 
-void WriteFile(std::vector<uchar>& write_data, std::string path)
-{
-
-	FILE *fp = fopen(path.c_str(), "wb");
-	if (fp == NULL) {
-		APPEND_TO_REPORT_LOG("ERROR: Failed to open file for write: %s\n", path.c_str());
-		return;
-	}
-	fwrite(write_data.data(), 1, sizeof(uchar) * write_data.size(), fp);
-	fclose(fp);
+void WriteFile(std::vector<uchar>& write_data, std::string path) {
+    std::ofstream file(std::filesystem::u8path(path), std::ios::binary);
+    file.write(reinterpret_cast<const char*>(write_data.data()), write_data.size());
+    if (!file) throw std::runtime_error("Cannot write image: " + path);
 }
 
 void GetImageSize(std::string name, int &w, int &h)

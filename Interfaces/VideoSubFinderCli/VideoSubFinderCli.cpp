@@ -114,7 +114,9 @@ static void writeSubtitles(const fs::path& path) {
 static void clearTextImages() {
     for (const auto& entry : fs::directory_iterator(fs::u8path(g_work_dir) / "RGBImages")) {
         if (!entry.is_regular_file()) continue;
-        auto image = cv::imread(entry.path().string(), cv::IMREAD_COLOR);
+        cv::Mat encoded;
+        ReadFile(encoded, entry.path().u8string());
+        auto image = cv::imdecode(encoded, cv::IMREAD_COLOR);
         if (image.empty()) throw std::runtime_error("Cannot read frame: " + entry.path().string());
         int w = image.cols, h = image.rows, W = w, H = h, xmin = 0, ymin = 0;
         auto stem = entry.path().stem().string();
@@ -178,13 +180,13 @@ static int runCli(const std::vector<std::string>& argv) {
     }
     if (!options.count("run_search") && !options.count("create_cleared_text_images"))
         throw std::runtime_error("Specify --run_search or --create_cleared_text_images");
-    g_app_dir = executablePath().parent_path().string();
+    g_app_dir = executablePath().parent_path().u8string();
     auto settings = options.count("general_settings") ? fs::u8path(options.at("general_settings")) : fs::path(g_app_dir)/"settings/general.cfg";
     if (options.count("general_settings") || fs::exists(settings)) loadSettings(settings);
     auto output = fs::absolute(fs::u8path(options.count("output_dir") ? options.at("output_dir") : "."));
     fs::create_directories(output);
-    g_work_dir = output.string();
-    g_ReportFileName = (output/"report.log").string();
+    g_work_dir = output.u8string();
+    g_ReportFileName = (output/"report.log").u8string();
     for (const auto& folder : {"RGBImages","ISAImages","ILAImages","TXTImages","TXTImagesJoined","TestImages","TXTResults","DebugImages"}) {
         auto path = output/folder;
         if (fs::is_symlink(path)) throw std::runtime_error("Output image directory must not be a symbolic link");
@@ -222,7 +224,7 @@ static int runCli(const std::vector<std::string>& argv) {
         auto* video = GetOCVVideoObject();
         video->m_Dir = g_work_dir;
         int backend = options.count("open_video_opencv") ? cv::CAP_ANY : cv::CAP_FFMPEG;
-        if (!video->OpenMovie(input.string(), nullptr, backend)) throw std::runtime_error("Cannot decode input video: " + input.string());
+        if (!video->OpenMovie(input.u8string(), nullptr, backend)) throw std::runtime_error("Cannot decode input video: " + input.string());
         double left=0,right=1,top=1,bottom=0;
         ReadProperty(options,left,"left"); ReadProperty(options,right,"right");
         ReadProperty(options,top,"top"); ReadProperty(options,bottom,"bottom");
@@ -256,7 +258,24 @@ static int runCli(const std::vector<std::string>& argv) {
     return 0;
 }
 
+#ifdef _WIN32
+int wmain(int argc, wchar_t** argv) {
+    try {
+        std::vector<std::string> arguments;
+        for (int i=0;i<argc;++i) {
+            int size=WideCharToMultiByte(CP_UTF8,0,argv[i],-1,nullptr,0,nullptr,nullptr);
+            if (!size) throw std::runtime_error("Cannot decode command line");
+            std::string argument(size, '\0');
+            WideCharToMultiByte(CP_UTF8,0,argv[i],-1,argument.data(),size,nullptr,nullptr);
+            argument.pop_back();
+            arguments.push_back(std::move(argument));
+        }
+        return runCli(arguments);
+    } catch (const std::exception& error) { std::cerr << "ERROR: " << error.what() << '\n'; return 1; }
+}
+#else
 int main(int argc, char** argv) {
     try { return runCli(std::vector<std::string>(argv,argv+argc)); }
     catch (const std::exception& error) { std::cerr << "ERROR: " << error.what() << '\n'; return 1; }
 }
+#endif

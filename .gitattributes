@@ -1,0 +1,3 @@
+*.cpp whitespace=cr-at-eol
+*.h whitespace=cr-at-eol
+*.cfg whitespace=cr-at-eol

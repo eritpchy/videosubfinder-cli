@@ -88,7 +88,7 @@ def main():
             assert all(':' not in f.name for f in frames), frames
             invoke([binary,'--create_cleared_text_images','-o',output],cwd=root)
             assert list((output/'TXTImages').glob('*.jpeg')), 'No cleared text images'
-        output=root/'no images'
+        output=root/'no images 字幕'
         output.mkdir()
         log=invoke([binary,'--run_search','--input_video',mkv,'--output_dir',output,
                     '--create_empty_sub',output/'sub.srt','--dont_save_images',
@@ -96,6 +96,12 @@ def main():
         check_srt(output/'sub.srt')
         assert not list((output/'RGBImages').iterdir()), log
         # A relocated binary must use its own settings and retain caller-relative paths.
+        unicode_video=root/'字幕 input.mkv'
+        shutil.copy2(mkv,unicode_video)
+        unicode_output=root/'Unicode 字幕'
+        invoke([binary,'-r','-i',unicode_video,'-o',unicode_output,'-ces',unicode_output/'字幕.srt',
+                '-dsi','-te','0.4','-nthr','2'],cwd=root)
+        check_srt(unicode_output/'字幕.srt')
         relative=root/'relative'
         invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
                 '-dsi','-te','0.4','-nthr','2'],cwd=root)
