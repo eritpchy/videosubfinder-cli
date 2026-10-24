@@ -181,7 +181,7 @@ static int runCli(const std::vector<std::string>& argv) {
     if (!options.count("run_search") && !options.count("create_cleared_text_images"))
         throw std::runtime_error("Specify --run_search or --create_cleared_text_images");
     g_app_dir = executablePath().parent_path().u8string();
-    auto settings = options.count("general_settings") ? fs::u8path(options.at("general_settings")) : fs::path(g_app_dir)/"settings/general.cfg";
+    auto settings = options.count("general_settings") ? fs::u8path(options.at("general_settings")) : fs::u8path(g_app_dir)/"settings/general.cfg";
     if (options.count("general_settings") || fs::exists(settings)) loadSettings(settings);
     auto output = fs::absolute(fs::u8path(options.count("output_dir") ? options.at("output_dir") : "."));
     fs::create_directories(output);

@@ -100,8 +100,10 @@ def main():
         shutil.copy2(mkv,unicode_video)
         unicode_output=root/'Unicode 字幕'
         invoke([binary,'-r','-i',unicode_video,'-o',unicode_output,'-ces',unicode_output/'字幕.srt',
-                '-dsi','-te','0.4','-nthr','2'],cwd=root)
+                '-te','0.4','-nthr','2'],cwd=root)
         check_srt(unicode_output/'字幕.srt')
+        invoke([binary,'-ccti','-o',unicode_output],cwd=root)
+        assert list((unicode_output/'TXTImages').glob('*.jpeg'))
         relative=root/'relative'
         invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
                 '-dsi','-te','0.4','-nthr','2'],cwd=root)

@@ -30,7 +30,8 @@ def linux(root):
                 continue
             seen.add(name)
             dest=library/name
-            shutil.copy2(path,dest)
+            if Path(path).resolve()!=dest.resolve():
+                shutil.copy2(path,dest)
             subprocess.run(['patchelf','--set-rpath','$ORIGIN',str(dest)],check=True)
             pending.append(dest)
     subprocess.run(['patchelf','--set-rpath','$ORIGIN/lib',str(executable)],check=True)
@@ -47,7 +48,8 @@ def macos(root):
     library.mkdir(exist_ok=True)
     pending=[root/'VideoSubFinderCli']
     seen=set()
-    search=[Path(output('brew','--prefix').strip())/'lib']
+    search=[Path(output('brew','--prefix').strip())/'lib',
+            Path(output('brew','--prefix','opencv@4').strip())/'lib']
     while pending:
         target=pending.pop()
         lines=output('otool','-L',str(target)).splitlines()[1:]
@@ -69,7 +71,8 @@ def macos(root):
             if name not in seen:
                 seen.add(name)
                 dest=library/name
-                shutil.copy2(source,dest)
+                if source.resolve()!=dest.resolve():
+                    shutil.copy2(source,dest)
                 dest.chmod(0o755)
                 subprocess.run(['install_name_tool','-id',f'@rpath/{name}',str(dest)],check=True)
                 pending.append(dest)

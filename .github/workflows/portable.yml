@@ -132,6 +132,16 @@ jobs:
         with:
           path: ~/AppData/Local/vcpkg/archives
           key: windows-static-${{ hashFiles('vcpkg.json') }}
+      - name: Synchronize pinned vcpkg baseline
+        shell: pwsh
+        run: |
+          $baseline = (Get-Content vcpkg.json | ConvertFrom-Json).'builtin-baseline'
+          git -C "$env:VCPKG_INSTALLATION_ROOT" fetch origin $baseline --depth 1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git -C "$env:VCPKG_INSTALLATION_ROOT" checkout --detach $baseline
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & "$env:VCPKG_INSTALLATION_ROOT/bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build static Windows CLI binary
         shell: pwsh
         run: |
@@ -171,10 +181,10 @@ jobs:
         with:
           submodules: recursive
       - name: Install dependencies
-        run: brew install opencv ffmpeg
+        run: brew install opencv@4 ffmpeg
       - name: Build and test portable CLI
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/dist"
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/dist" -DOpenCV_DIR="$(brew --prefix opencv@4)/lib/cmake/opencv4"
           cmake --build build --parallel 4
           ctest --test-dir build --output-on-failure
           cmake --install build
