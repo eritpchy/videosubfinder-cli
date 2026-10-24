@@ -71,6 +71,7 @@ def macos(root):
                 source=candidate
             else:
                 source=Path(dependency)
+            search.append(source.resolve().parent)
             if name not in seen:
                 seen.add(name)
                 dest=library/name

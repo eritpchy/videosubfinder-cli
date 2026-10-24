@@ -14,8 +14,13 @@ and Universal bundles, a Windows x64 CLI ZIP, and `SHA256SUMS`. Linux CPU binari
 link musl, OpenCV and FFmpeg statically and do not depend on the host glibc or
 multimedia libraries. macOS bundles include
 their transitive non-system libraries and do not require Homebrew at runtime.
-The Universal package contains both Intel and Apple Silicon slices in every Mach-O
-library. The Windows ZIP uses static libraries and includes `VideoSubFinderCli.exe`.
+The Universal executable contains both Intel and Apple Silicon slices, with
+architecture-specific runtime libraries isolated in separate directories. The Windows ZIP uses static libraries and includes `VideoSubFinderCli.exe`.
+Worker-specific dynamic archives are built separately for Ubuntu 20.04, 22.04 and
+24.04 on x64/arm64. They include only four minimal OpenCV shared libraries and
+reuse the matching system FFmpeg ABI. They need the `ffmpeg` runtime package;
+choose the archive matching the worker's Ubuntu version. No system OpenCV,
+Homebrew or development packages are required at runtime.
 
 ```sh
 ./VideoSubFinderCli.run -c -r -i './input video.mkv' -o './Results' \
@@ -57,7 +62,9 @@ Alpine 3.22 with the dependencies listed in the CI workflow. OpenCV 4.14.0 and
 FFmpeg 8.0.1 source commits are pinned in that script.
 On Windows use the checked-in vcpkg manifest with `x64-windows-static` and
 `CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded`. CUDA 12 builds use `-DUSE_CUDA=ON`;
-CPU binaries reject `--use_cuda` explicitly.
+CPU binaries reject `--use_cuda` explicitly. The separate Linux x64 CUDA 12
+archive includes CUDA runtime libraries and targets Ubuntu 22.04 / glibc 2.35 or
+newer; it requires a compatible NVIDIA driver. Run it with `--use_cuda`.
 
 All builds run remotely or in GitHub Actions. The CI tests installed artifacts,
 not only source-tree executables. Linux distribution checks run the tar bundle
@@ -67,7 +74,8 @@ without installing guest packages. Host Python drives the guest executable, so
 EOL package mirrors and old Python versions do not affect runtime validation. macOS runs native Intel/ARM tests and verifies the
 Universal slices. Windows runs the actual installed CLI binary. ASan/UBSan execute
 the same extraction and cleared-text tests. CUDA CI compiles against CUDA 12 and
-exercises the CPU path; GPU execution requires a CUDA-capable test host.
+exercises the CPU path; GPU execution requires a CUDA-capable test host. Set `VSF_TEST_CUDA=1` to run
+the extraction and CCTI regressions on an actual GPU.
 
 Pushes and pull requests build artifacts. A `v*` tag publishes a release only after
 all required platform, distribution and sanitizer jobs pass. No PR publishes a

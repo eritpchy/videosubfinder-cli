@@ -72,6 +72,11 @@ def main():
     root_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='cli regression ',dir=root_dir) as temporary:
         root = Path(temporary)
+        if sys.platform.startswith('linux') and binary.suffix in ('.run','.AppImage'):
+            poison = root/'foreign runtime'
+            poison.mkdir()
+            (poison/'libstdc++.so.6').write_bytes(b'incompatible host runtime')
+            invoke(['env',f'LD_LIBRARY_PATH={poison}',binary,'--version'],cwd=root)
         mkv, mp4 = fixtures(root)
         results = {}
         base = [binary,'-r','-i',mkv,'-o',root/'invalid']
@@ -115,7 +120,7 @@ def main():
         invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
                 '-dsi','-te','0.4','-nthr','2'],cwd=root)
         check_srt(relative/'sub.srt')
-        results['checks']='help, version, validation, MKV, MP4, SRT timing, frames, CCTI, no-images, relative paths'
+        results['checks']='help, version, validation, MKV, MP4, SRT timing, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
         print(json.dumps(results,indent=2))
 
 

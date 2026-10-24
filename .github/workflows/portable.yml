@@ -76,6 +76,67 @@ jobs:
             videosubfinder-cli-linux-${{ matrix.arch }}.tar.gz
             videosubfinder-cli-linux-${{ matrix.arch }}.AppImage
           if-no-files-found: error
+  worker-linux:
+    needs: fixtures
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+            ubuntu: '20.04'
+          - runner: ubuntu-24.04
+            arch: x64
+            ubuntu: '22.04'
+          - runner: ubuntu-24.04
+            arch: x64
+            ubuntu: '24.04'
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            ubuntu: '20.04'
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            ubuntu: '22.04'
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            ubuntu: '24.04'
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-media
+          path: test-media
+      - uses: actions/cache@v4
+        with:
+          path: |
+            build/sources/opencv
+            build/dynamic-ubuntu${{ matrix.ubuntu }}
+          key: worker-${{ matrix.ubuntu }}-${{ matrix.arch }}-${{ hashFiles('scripts/build-dynamic-linux.sh', 'scripts/bundle-worker.py') }}
+      - name: Build worker CLI against system FFmpeg
+        env:
+          WORKER_UBUNTU: ${{ matrix.ubuntu }}
+        run: |
+          docker run --rm -e VSF_TEST_MEDIA=/src/test-media -v "$PWD:/src" -w /src "ubuntu:$WORKER_UBUNTU" sh -c '
+            apt-get update -qq
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends g++ ninja-build python3-pip curl ca-certificates libavcodec-dev libavformat-dev libavutil-dev libswscale-dev pkg-config patchelf nasm
+            python3 -m pip install --break-system-packages cmake==3.31.6 2>/dev/null || python3 -m pip install cmake==3.31.6
+            sh scripts/build-dynamic-linux.sh'
+          sudo chown -R "$(id -u):$(id -g)" build dist-dynamic
+      - name: Test on a clean FFmpeg runtime image
+        env:
+          TEST_IMAGE: ubuntu:${{ matrix.ubuntu }}
+        run: sh scripts/test-worker.sh
+      - name: Archive worker package
+        run: tar -C dist-dynamic -czf videosubfinder-cli-linux-dynamic-ubuntu${{ matrix.ubuntu }}-${{ matrix.arch }}.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: worker-packages-${{ matrix.ubuntu }}-${{ matrix.arch }}
+          path: videosubfinder-cli-linux-dynamic-ubuntu${{ matrix.ubuntu }}-${{ matrix.arch }}.tar.gz
+          if-no-files-found: error
   linux-distros:
     needs: linux
     runs-on: ubuntu-24.04
@@ -276,7 +337,7 @@ jobs:
           tar -C arm64 -xzf packages/videosubfinder-cli-macos-arm64.tar.gz
           python3 scripts/universal.py x64 arm64 dist
           python3 tests/test_cli.py "$PWD/dist/VideoSubFinderCli.run"
-          /usr/bin/arch -x86_64 dist/VideoSubFinderCli --version
+          VSF_EXEC_PREFIX='/usr/bin/arch -x86_64' python3 tests/test_cli.py "$PWD/dist/VideoSubFinderCli"
           tar -C dist -czf videosubfinder-cli-macos-universal.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
@@ -310,11 +371,22 @@ jobs:
           submodules: recursive
       - run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core
+          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core patchelf
           python3 -m pip install cmake==3.31.6
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='61;75;80;86;89;90'
           cmake --build build --parallel 4
           ctest --test-dir build --output-on-failure
+      - name: Package CUDA 12 CLI with runtime libraries
+        run: |
+          cmake --install build --prefix "$PWD/dist"
+          python3 scripts/bundle.py dist
+          python3 tests/test_cli.py "$PWD/dist/VideoSubFinderCli.run"
+          tar -C dist -czf videosubfinder-cli-linux-cuda12-x64.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cuda12-package
+          path: videosubfinder-cli-linux-cuda12-x64.tar.gz
+          if-no-files-found: error
   source:
     runs-on: ubuntu-24.04
     steps:
@@ -329,7 +401,7 @@ jobs:
           if-no-files-found: error
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux-distros, linux-arm64, windows, universal, sanitizers, cuda, source]
+    needs: [linux-distros, linux-arm64, worker-linux, windows, universal, sanitizers, cuda, source]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
