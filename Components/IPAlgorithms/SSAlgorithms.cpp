@@ -2942,7 +2942,7 @@ s64 GetVideoTime(std::string time)
 	}
 	else
 	{
-		ASSERT(sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) == 4, "Wrong video time format '%s'", time.c_str());
+		if (sscanf(time.c_str(), "%d:%d:%d:%d", &hour, &min, &sec, &msec) != 4) return -1;
 		res = (s64)(((hour * 60 + min) * 60 + sec) * 1000 + msec);
 	}
 	return res;

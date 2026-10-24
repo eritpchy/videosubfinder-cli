@@ -171,10 +171,11 @@ jobs:
         with:
           name: test-media
           path: test-media
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
+        id: vcpkg-cache
         with:
           path: ~/AppData/Local/vcpkg/archives
-          key: windows-static-${{ hashFiles('vcpkg.json') }}
+          key: windows-static-release-${{ hashFiles('vcpkg.json', 'triplets/*.cmake') }}
       - name: Synchronize pinned vcpkg baseline
         shell: pwsh
         run: |
@@ -185,11 +186,20 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           & "$env:VCPKG_INSTALLATION_ROOT/bootstrap-vcpkg.bat" -disableMetrics
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Configure static Windows dependencies
+        id: configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DVCPKG_OVERLAY_TRIPLETS="$pwd/triplets" -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/cache/save@v4
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true' && steps.configure.outcome == 'success'
+        with:
+          path: ~/AppData/Local/vcpkg/archives
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
       - name: Build static Windows CLI binary
         shell: pwsh
         run: |
-          cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cmake --build build --config Release --parallel 4
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cmake --install build --config Release --prefix "$pwd/dist"

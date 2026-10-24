@@ -1,6 +1,6 @@
 VideoSubFinder is distributed under GPL version 2 as declared by the official
 SourceForge project: https://sourceforge.net/projects/videosubfinder/.
-The original author is skosnits (Dmitry Kosnitskiy). The source history is retained
+The original author is skosnits (Simeon Kosnitsky). The source history is retained
 from https://git.code.sf.net/p/videosubfinder/src.
 
 The portable CLI includes code from the Subrazen standard C++ port and

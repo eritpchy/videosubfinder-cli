@@ -99,7 +99,7 @@ static void writeSubtitles(const fs::path& path) {
     std::sort(intervals.begin(), intervals.end());
     if (!path.parent_path().empty()) fs::create_directories(path.parent_path());
     std::ofstream out(path, std::ios::binary);
-    if (!out) throw std::runtime_error("Cannot write subtitle file: " + path.string());
+    if (!out) throw std::runtime_error("Cannot write subtitle file: " + path.u8string());
     size_t index = 0;
     for (const auto& [begin, end] : intervals) {
         std::ostringstream duration;
@@ -117,9 +117,9 @@ static void clearTextImages() {
         cv::Mat encoded;
         ReadFile(encoded, entry.path().u8string());
         auto image = cv::imdecode(encoded, cv::IMREAD_COLOR);
-        if (image.empty()) throw std::runtime_error("Cannot read frame: " + entry.path().string());
+        if (image.empty()) throw std::runtime_error("Cannot read frame: " + entry.path().u8string());
         int w = image.cols, h = image.rows, W = w, H = h, xmin = 0, ymin = 0;
-        auto stem = entry.path().stem().string();
+        auto stem = entry.path().stem().u8string();
         GetImInfo(stem, w, h, &W, &H, &xmin, nullptr, &ymin, nullptr, &stem);
         simple_buffer<u8> bgr(w*h*3), ff(w*h), sf(w*h), tf(w*h), ne(w*h), y(w*h), il;
         BGRMatToImage(image, w, h, bgr);
@@ -192,7 +192,7 @@ static int runCli(const std::vector<std::string>& argv) {
         if (fs::is_symlink(path)) throw std::runtime_error("Output image directory must not be a symbolic link");
         fs::create_directories(path);
         if (options.count("clear_dirs")) for (const auto& entry : fs::directory_iterator(path)) {
-            auto extension = entry.path().extension().string();
+            auto extension = entry.path().extension().u8string();
             if (entry.is_regular_file() && (extension==".jpeg" || extension==".jpg" || extension==".png" || extension==".bmp")) fs::remove(entry.path());
         }
     }
@@ -220,11 +220,11 @@ static int runCli(const std::vector<std::string>& argv) {
     if (options.count("run_search")) {
         if (!options.count("input_video")) throw std::runtime_error("Input video is required");
         auto input = fs::absolute(fs::u8path(options.at("input_video")));
-        if (!fs::is_regular_file(input)) throw std::runtime_error("Input video does not exist: " + input.string());
+        if (!fs::is_regular_file(input)) throw std::runtime_error("Input video does not exist: " + input.u8string());
         auto* video = GetOCVVideoObject();
         video->m_Dir = g_work_dir;
         int backend = options.count("open_video_opencv") ? cv::CAP_ANY : cv::CAP_FFMPEG;
-        if (!video->OpenMovie(input.u8string(), nullptr, backend)) throw std::runtime_error("Cannot decode input video: " + input.string());
+        if (!video->OpenMovie(input.u8string(), nullptr, backend)) throw std::runtime_error("Cannot decode input video: " + input.u8string());
         double left=0,right=1,top=1,bottom=0;
         ReadProperty(options,left,"left"); ReadProperty(options,right,"right");
         ReadProperty(options,top,"top"); ReadProperty(options,bottom,"bottom");
