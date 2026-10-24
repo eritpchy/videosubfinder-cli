@@ -306,8 +306,8 @@ Packaging workflows and dependencies are in [portable.yml](.github/workflows/por
 For fully static Linux CPU builds, use `scripts/build-static-linux.sh` in Alpine
 3.22. For Linux ARMv7 cross-builds on Linux x64, install CMake, Ninja, Make,
 Python, curl, pkg-config and binutils, register QEMU ARM with binfmt_misc, and run
-`scripts/build-armv7-linux.sh`. It downloads the pinned Bootlin musl/GCC toolchain
-and tests the resulting ARM executable. Set `VSF_ARCH=armv7` when subsequently
+`sh scripts/build-armv7-linux.sh`. It downloads the pinned Bootlin musl/GCC toolchain
+and tests the resulting ARM executable. CI additionally runs with NEON disabled. Set `VSF_ARCH=armv7` when subsequently
 running `scripts/appimage.sh` to package the ARM runtime using the host tool.
 For Windows, use the checked-in vcpkg manifest with `x64-windows-static` or
 `arm64-windows-static`, the matching CMake architecture (`-A x64` / `-A ARM64`),
