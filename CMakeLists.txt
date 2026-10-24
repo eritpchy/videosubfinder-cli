@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.24)
-project(VideoSubFinderCli VERSION 6.12.0 LANGUAGES CXX)
+file(STRINGS "Interfaces/VideoSubFinderWXW/MyResource.h" VSF_VERSION_LINE
+    REGEX "^#define[ \t]+VSF_VERSION[ \t]+\"[0-9.]+\"")
+string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" VSF_UPSTREAM_VERSION "${VSF_VERSION_LINE}")
+if(NOT VSF_UPSTREAM_VERSION)
+    message(FATAL_ERROR "Cannot read the upstream VideoSubFinder version")
+endif()
+if(NOT VSF_UPSTREAM_VERSION MATCHES "^6\\.10(\\.[0-9]+)?$")
+    message(FATAL_ERROR "VideoSubFinder CLI releases must remain in the 6.10.x series")
+endif()
+project(VideoSubFinderCli VERSION ${VSF_UPSTREAM_VERSION} LANGUAGES CXX)
 
 option(USE_CUDA "Enable CUDA image processing" OFF)
 option(VSF_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)

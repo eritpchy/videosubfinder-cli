@@ -69,7 +69,7 @@ def main():
     binary = Path(sys.argv[1]).resolve()
     assert binary.is_file(), binary
     assert 'create_cleared_text_images' in invoke([binary,'--help'])
-    assert re.search(r'VideoSubFinderCli \d+\.\d+\.\d+',invoke([binary,'--version']))
+    assert re.fullmatch(r'VideoSubFinderCli \d+\.\d+(?:\.\d+)?\s*',invoke([binary,'--version']))
     root_dir = Path(os.environ.get('VSF_TEST_ROOT','build/test-work')).resolve()
     root_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='cli regression ',dir=root_dir) as temporary:

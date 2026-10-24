@@ -11,7 +11,20 @@ concurrency:
   group: portable-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
 jobs:
+  version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate release series and version sources
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            python3 scripts/check-version.py --tag "$GITHUB_REF_NAME"
+          else
+            python3 scripts/check-version.py
+          fi
   fixtures:
+    needs: version
     timeout-minutes: 10
     runs-on: ubuntu-24.04
     steps:
@@ -277,6 +290,8 @@ jobs:
             .vcpkg-cache
             build/vcpkg_installed
           key: windows-static-release-v4-${{ matrix.arch }}-${{ steps.windows-toolchain.outputs.image }}-${{ steps.windows-toolchain.outputs.visual-studio }}-${{ hashFiles('vcpkg.json', 'triplets/*.cmake') }}
+          restore-keys: |
+            windows-static-release-v4-${{ matrix.arch }}-${{ steps.windows-toolchain.outputs.image }}-${{ steps.windows-toolchain.outputs.visual-studio }}-
       - name: Synchronize pinned vcpkg baseline
         shell: pwsh
         run: |
@@ -414,6 +429,7 @@ jobs:
       - name: Run extraction and CCTI regressions with ASan and UBSan
         run: ctest --test-dir build --output-on-failure
   cuda:
+    needs: version
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     container: nvidia/cuda:12.6.3-devel-ubuntu22.04
@@ -444,22 +460,12 @@ jobs:
           path: videosubfinder-cli-linux-cuda12-x64.tar.gz
           if-no-files-found: error
   source:
+    needs: version
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-      - name: Check release tag matches the built version
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          python3 - <<'PYTHON'
-          import os, re
-          from pathlib import Path
-          version = re.search(r'project\(VideoSubFinderCli VERSION ([0-9.]+)',Path('CMakeLists.txt').read_text()).group(1)
-          assert os.environ['RELEASE_TAG'] == 'v'+version, 'Release tag does not match CMake version'
-          PYTHON
       - run: python3 scripts/source-package.py
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -486,4 +492,12 @@ jobs:
         run: |
           cd packages
           sha256sum *.tar.gz *.zip *.AppImage > SHA256SUMS
-          gh release create "$RELEASE_TAG" --verify-tag --generate-notes --title "$RELEASE_TAG" ./*
+          default_version=$(gh api "repos/$GH_REPO/contents/Interfaces/VideoSubFinderWXW/MyResource.h?ref=main" --jq .content | python3 -c 'import base64,re,sys; print(re.search(r"#define\s+VSF_VERSION\s+\"([0-9.]+)\"",base64.b64decode(sys.stdin.read()).decode()).group(1))')
+          latest=false
+          if [ "$RELEASE_TAG" = "v$default_version" ]; then latest=true; fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" --clobber ./*
+            gh release edit "$RELEASE_TAG" --verify-tag --draft=false --latest="$latest" --title "$RELEASE_TAG"
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --generate-notes --latest="$latest" --title "$RELEASE_TAG" ./*
+          fi
