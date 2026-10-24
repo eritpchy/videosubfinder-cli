@@ -32,6 +32,7 @@ def fixtures(root):
     else:
         fonts = [Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
                  Path('/usr/share/fonts/ttf-dejavu/DejaVuSans.ttf'),
+                 Path('/usr/share/fonts/dejavu/DejaVuSans.ttf'),
                  Path('/System/Library/Fonts/Supplemental/Arial.ttf'),
                  Path('C:/Windows/Fonts/arial.ttf')]
         font = next((p for p in fonts if p.is_file()), None)
