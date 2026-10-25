@@ -156,6 +156,16 @@ bool OCVVideo::OpenMovie(std::string csMovieName, void *pVideoWindow, int type)
 		m_pVideoWindow ? m_show_video = true : m_show_video = false;
 
 		m_VC >> m_cur_frame;
+		// Opening container metadata does not prove the codec can decode frames.
+		// Without this guard an unsupported/corrupt stream reports FINISH and
+		// writes an empty SRT as if subtitle extraction had succeeded.
+		if (m_cur_frame.empty())
+		{
+			APPEND_TO_REPORT_LOG("OCVVideo::OpenMovie(): ERROR: Cannot decode the first frame of video \"%s\"\n", csMovieName.c_str());
+			m_ImageGeted = false;
+			CloseMovie();
+			return false;
+		}
 
 		m_Pos = m_VC.get(cv::CAP_PROP_POS_MSEC);
 		m_fps = m_VC.get(cv::CAP_PROP_FPS);

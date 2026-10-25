@@ -1,8 +1,23 @@
 {
   "name": "videosubfinder-cli",
-  "version": "6.12.0",
+  "version": "6.11.1",
   "builtin-baseline": "0c2a9ace1964b818b15f7ae50ba1c42404918a7b",
   "dependencies": [
-    {"name": "opencv4", "default-features": false, "features": ["ffmpeg", "jpeg", "png"]}
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "ffmpeg",
+        "jpeg",
+        "png"
+      ]
+    },
+    {
+      "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "dav1d"
+      ]
+    }
   ]
 }

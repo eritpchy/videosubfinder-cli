@@ -28,7 +28,7 @@ def invoke(command, *, success=True, cwd=None):
 def fixtures(root):
     supplied = os.environ.get('VSF_TEST_MEDIA')
     if supplied:
-        for name in ['input video.mkv','input video.mp4','input h264.mp4']:
+        for name in ['input video.mkv','input video.mp4','input h264.mp4','input av1.mkv','undecodable.mp4']:
             shutil.copy2(Path(supplied)/name, root/name)
     else:
         fonts = [Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
@@ -49,7 +49,23 @@ def fixtures(root):
                 'input video.mp4'],cwd=root)
         invoke(['ffmpeg','-v','error','-y','-i','input video.mkv','-c:v','libx264',
                 '-preset','ultrafast','-crf','18','input h264.mp4'],cwd=root)
-    return root/'input video.mkv', root/'input video.mp4', root/'input h264.mp4'
+        invoke(['ffmpeg','-v','error','-y','-i','input video.mkv','-c:v','libaom-av1',
+                '-usage','realtime','-lag-in-frames','0','-cpu-used','8','-crf','28','-b:v','0',
+                '-threads','2','input av1.mkv'],cwd=root)
+        # Keep a valid MP4 container and metadata while corrupting its encoded
+        # payload. isOpened() alone accepts this file; decoding must fail.
+        content = bytearray((root/'input h264.mp4').read_bytes())
+        cursor = 0
+        while cursor + 8 <= len(content):
+            size = int.from_bytes(content[cursor:cursor+4], 'big')
+            if size < 8 or cursor + size > len(content):
+                raise AssertionError('Invalid generated MP4 fixture')
+            if content[cursor+4:cursor+8] == b'mdat':
+                content[cursor+8:cursor+size] = bytes(size-8)
+            cursor += size
+        (root/'undecodable.mp4').write_bytes(content)
+    return (root/'input video.mkv', root/'input video.mp4',
+            root/'input h264.mp4', root/'input av1.mkv')
 
 
 def check_srt(path):
@@ -79,7 +95,7 @@ def main():
             poison.mkdir()
             (poison/'libstdc++.so.6').write_bytes(b'incompatible host runtime')
             invoke(['env',f'LD_LIBRARY_PATH={poison}',binary,'--version'],cwd=root)
-        mkv, mp4, h264 = fixtures(root)
+        mkv, mp4, h264, av1 = fixtures(root)
         results = {}
         base = [binary,'-r','-i',mkv,'-o',root/'invalid']
         for extra in [['--unknown'],['-te','2'],['-le','0.8','-re','0.2'],['-te','nan'],
@@ -88,9 +104,13 @@ def main():
         invoke([binary,'-r','-i',root/'missing.mkv','-o',root/'missing'],success=False,cwd=root)
         (root/'broken.mkv').write_bytes(b'not a video')
         invoke([binary,'-r','-i',root/'broken.mkv','-o',root/'broken'],success=False,cwd=root)
+        failed = invoke([binary,'-r','-i',root/'undecodable.mp4','-o',root/'undecodable',
+                         '-ces',root/'undecodable/sub.srt'],success=False,cwd=root)
+        assert 'FINISH' not in failed and 'Progress: 100%' not in failed, failed
+        assert not (root/'undecodable/sub.srt').exists(), 'Decode failure must not create a success SRT'
         (root/'bad.cfg').write_text('text_alignment = 99\n')
         invoke(base+['-gs',root/'bad.cfg'],success=False,cwd=root)
-        for media in [mkv,mp4,h264]:
+        for media in [mkv,mp4,h264,av1]:
             output = root/(media.stem+' output')
             subtitle = output/'subtitle.srt'
             log=invoke([binary,'-c','-r','-i',media,'-o',output,'-ces',subtitle,
@@ -122,7 +142,7 @@ def main():
         invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
                 '-dsi','-te','0.4','-nthr','2'],cwd=root)
         check_srt(relative/'sub.srt')
-        results['checks']='help, version, validation, MKV, MPEG-4, H.264, SRT timing, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
+        results['checks']='help, version, validation, MKV, MPEG-4, H.264, AV1, undecodable-payload rejection, SRT timing, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
         print(json.dumps(results,indent=2))
 
 

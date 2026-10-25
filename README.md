@@ -17,6 +17,15 @@ placeholder text, not recognized dialogue.
 - [Build from source](#build-from-source)
 - [Donate](#donate)
 
+## Release policy and 6.11.1 codec fix
+
+New fork releases follow `6.11.x` patch increments (see [project rules](AGENTS.md)).
+The historical tags remain immutable. Version 6.11.1 adds explicit software AV1
+decoding to portable Linux and Windows builds and rejects inputs whose metadata
+opens but whose first frame cannot decode, instead of reporting successful empty
+subtitle output. All packaged runtimes are gated by a real AV1 subtitle-timing
+regression and a corrupt-payload rejection regression.
+
 ## Download and install
 
 Get a prebuilt package from [the latest release](https://github.com/eritpchy/videosubfinder-cli/releases/latest).
@@ -219,7 +228,7 @@ Use `-ccti` or `--create_cleared_text_images`, including on Windows.
 The release's `--help` output is:
 
 ```text
-VideoSubFinderCli 6.10
+VideoSubFinderCli 6.11.1
 Usage: VideoSubFinderCli -r -i VIDEO -o OUTPUT [options]
   -c, --clear_dirs                 Clear generated image files
   -r, --run_search                 Search for hardcoded subtitles

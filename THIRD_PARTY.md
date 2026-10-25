@@ -10,12 +10,13 @@ instructions are available in this repository and the release source archive.
 The Linux static build uses these source revisions:
 
 - OpenCV 4.14.0: https://github.com/opencv/opencv/tree/0654a42e19215ef25b1d367d822f3c630447e7c7
+- dav1d 1.5.4 (AV1 software decoding): https://github.com/videolan/dav1d/tree/54706fc6bc0cdecab7e9593974a4039cc038fca7
 - FFmpeg 8.0.1: https://github.com/FFmpeg/FFmpeg/tree/894da5ca7d742e4429ffb2af534fcda0103ef593
 - musl: https://musl.libc.org/ (Alpine 3.22 build toolchain)
 - GCC runtime: https://gcc.gnu.org/ (Alpine 3.22 build toolchain)
 
 FFmpeg is built without GPL or nonfree components and with external dependency
-autodetection disabled. OpenCV's bundled JPEG, PNG and zlib implementations retain
+autodetection disabled; the BSD-licensed dav1d decoder is enabled explicitly. OpenCV's bundled JPEG, PNG and zlib implementations retain
 their original notices. Dependency license files are included in Linux packages.
 Header-only JSON and thread-pool dependency licenses are included in every package.
 Windows dependency versions are pinned by vcpkg.json. macOS dependencies are

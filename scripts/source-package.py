@@ -15,6 +15,7 @@ with tarfile.open('videosubfinder-cli-source.tar.gz', 'w:gz') as archive:
             if path.is_file():
                 archive.add(path, arcname=Path('videosubfinder-cli')/path, recursive=False)
     for name, repo, revision in [
+        ('dav1d','videolan/dav1d','54706fc6bc0cdecab7e9593974a4039cc038fca7'),
         ('ffmpeg','FFmpeg/FFmpeg','894da5ca7d742e4429ffb2af534fcda0103ef593'),
         ('opencv','opencv/opencv','0654a42e19215ef25b1d367d822f3c630447e7c7')]:
         with urllib.request.urlopen(f'https://codeload.github.com/{repo}/tar.gz/{revision}', timeout=120) as response:

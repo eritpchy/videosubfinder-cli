@@ -16,15 +16,25 @@ fetch() {
     fi
     test "$(cat "build/sources/$name/.revision")" = "$revision"
 }
+fetch dav1d videolan/dav1d 54706fc6bc0cdecab7e9593974a4039cc038fca7
 fetch ffmpeg FFmpeg/FFmpeg 894da5ca7d742e4429ffb2af534fcda0103ef593
 fetch opencv opencv/opencv 0654a42e19215ef25b1d367d822f3c630447e7c7
-if [ ! -f "$prefix/lib/libavformat.a" ]; then
+export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
+if [ ! -f "$prefix/lib/libdav1d.a" ]; then
+    meson setup build/dav1d-static build/sources/dav1d --prefix="$prefix" --libdir=lib \
+        --buildtype=release --default-library=static -Db_staticpic=true \
+        -Denable_tools=false -Denable_tests=false
+    meson compile -C build/dav1d-static -j "$jobs"
+    meson install -C build/dav1d-static
+fi
+if [ ! -f "$prefix/lib/libavformat.a" ] || [ ! -f "$prefix/.vsf-dav1d-1.5.4" ]; then
     (cd build/sources/ffmpeg
      ./configure --prefix="$prefix" --disable-shared --enable-static --enable-pic \
-        --disable-autodetect --disable-programs --disable-doc --disable-network \
+        --disable-autodetect --enable-libdav1d --pkg-config-flags=--static --disable-programs --disable-doc --disable-network \
         --disable-avdevice --disable-avfilter --disable-encoders --disable-muxers --disable-debug
      make -j"$jobs"
      make install)
+    touch "$prefix/.vsf-dav1d-1.5.4"
 fi
 export PKG_CONFIG_PATH="$prefix/lib/pkgconfig"
 cmake -S build/sources/opencv -B build/opencv-static -G Ninja \
@@ -32,7 +42,7 @@ cmake -S build/sources/opencv -B build/opencv-static -G Ninja \
     -DBUILD_LIST=core,imgproc,imgcodecs,videoio -DBUILD_SHARED_LIBS=OFF \
     -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF \
     -DBUILD_JAVA=OFF -DBUILD_opencv_python3=OFF -DBUILD_opencv_apps=OFF \
-    -DWITH_FFMPEG=ON -DOPENCV_FFMPEG_USE_FIND_PACKAGE=OFF \
+    -DWITH_FFMPEG=ON -DOPENCV_FFMPEG_USE_FIND_PACKAGE=OFF -DPKG_CONFIG_ARGN=--static \
     -DWITH_GSTREAMER=OFF -DWITH_GTK=OFF -DWITH_QT=OFF -DWITH_V4L=OFF \
     -DWITH_IPP=OFF -DWITH_OPENCL=OFF -DWITH_TBB=OFF -DWITH_OPENEXR=OFF \
     -DWITH_TIFF=OFF -DWITH_WEBP=OFF -DWITH_JASPER=OFF -DWITH_AVIF=OFF \
@@ -56,5 +66,6 @@ python3 tests/test_cli.py "$PWD/dist-static/VideoSubFinderCli.run"
 
 mkdir -p dist-static/licenses/ffmpeg dist-static/licenses/opencv
 cp build/sources/ffmpeg/COPYING* dist-static/licenses/ffmpeg/
+cp build/sources/dav1d/COPYING dist-static/licenses/dav1d-COPYING
 cp build/sources/opencv/LICENSE dist-static/licenses/opencv/
 cp -R build/sources/opencv/3rdparty/libjpeg-turbo/LICENSE* dist-static/licenses/opencv/
