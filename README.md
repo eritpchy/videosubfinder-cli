@@ -99,8 +99,10 @@ they contain spaces.
 For NVIDIA GPU processing on Linux x64, download
 `videosubfinder-cli-linux-cuda12-x64.tar.gz` and add `--use_cuda` to the command.
 It includes CUDA 12 runtime libraries, targets Ubuntu 22.04 / glibc 2.35 or newer,
-and requires a compatible NVIDIA driver. GPU extraction and cleared-text image
-creation have also been tested on a real CUDA device. CPU packages reject
+and requires a compatible NVIDIA driver. The current compact CUDA package has
+passed compilation, dependency/size auditing, and CPU-path media tests. Actual
+GPU extraction and cleared-text image creation have not yet been verified for
+this build; CI success is not evidence of GPU execution. CPU packages reject
 `--use_cuda` with an explicit error.
 
 For an Ubuntu worker/container that already provides FFmpeg, use the smaller

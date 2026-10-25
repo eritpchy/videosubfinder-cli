@@ -500,8 +500,9 @@ jobs:
           latest=false
           if [ "$RELEASE_TAG" = "v$default_version" ]; then latest=true; fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" --clobber ./*
-            gh release edit "$RELEASE_TAG" --verify-tag --draft=false --latest="$latest" --title "$RELEASE_TAG"
+            echo "Release $RELEASE_TAG already exists; refusing to overwrite published assets. Choose the next unused 6.10.x version." >&2
+            exit 1
           else
-            gh release create "$RELEASE_TAG" --verify-tag --generate-notes --latest="$latest" --title "$RELEASE_TAG" ./*
+            gh release create "$RELEASE_TAG" --verify-tag --generate-notes --latest="$latest" --title "$RELEASE_TAG" \
+              --notes 'Validation: portable CPU builds and real-media tests passed. The optional CUDA package passed build, dependency/size audits and CPU-path tests; actual GPU execution is not verified by this CI. It requires a compatible NVIDIA driver. SHA256SUMS provides integrity checks for the attached archives.' ./*
           fi
