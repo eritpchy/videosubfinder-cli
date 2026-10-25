@@ -76,18 +76,5 @@ for dependency in libpng zlib; do
     done
 done
 
-# Preserve the toolkit's distribution terms alongside copied CUDA runtime libs.
-mkdir -p dist-cuda/licenses/cuda
-cuda_root=${CUDA_HOME:-/usr/local/cuda}
-license_found=false
-for notice in "$cuda_root/EULA.txt" "$cuda_root/doc/EULA.txt" "$cuda_root/targets/x86_64-linux/share/doc/EULA.txt"; do
-    if [ -f "$notice" ]; then
-        cp "$notice" dist-cuda/licenses/cuda/EULA.txt
-        license_found=true
-        break
-    fi
-done
-if [ "$license_found" != true ]; then
-    echo "CUDA EULA.txt not found under $cuda_root; refusing an unlicensed bundle" >&2
-    exit 1
-fi
+# Preserve toolkit terms even when the official devel image omits EULA.txt.
+python3 scripts/preserve-cuda-license.py --cuda-root "${CUDA_HOME:-/usr/local/cuda}" --output dist-cuda/licenses/cuda
