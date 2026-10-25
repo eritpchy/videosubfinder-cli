@@ -16,6 +16,7 @@
 
 #include "OCVVideo.h"
 #include <chrono>
+#include <cstdio>
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -162,6 +163,10 @@ bool OCVVideo::OpenMovie(std::string csMovieName, void *pVideoWindow, int type)
 		if (m_cur_frame.empty())
 		{
 			APPEND_TO_REPORT_LOG("OCVVideo::OpenMovie(): ERROR: Cannot decode the first frame of video \"%s\"\n", csMovieName.c_str());
+#ifndef USE_GUI
+			// Keep a stable stderr diagnostic for CLI callers to classify decode failures.
+			std::fprintf(stderr, "ERROR: Cannot decode the first frame of video\n");
+#endif
 			m_ImageGeted = false;
 			CloseMovie();
 			return false;

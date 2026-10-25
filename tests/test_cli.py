@@ -11,18 +11,19 @@ import sys
 import tempfile
 
 
-def invoke(command, *, success=True, cwd=None):
+def invoke(command, *, success=True, cwd=None, separate_stderr=False):
     prefix = [arg.replace('{cwd}', str(cwd or Path.cwd()))
               for arg in shlex.split(os.environ.get('VSF_EXEC_PREFIX', ''))]
     if os.environ.get('VSF_TEST_CUDA') == '1' and any(str(arg) in ('-r','--run_search','-ccti','--create_cleared_text_images') for arg in command):
         command = [*command, '--use_cuda']
     result = subprocess.run(prefix + [str(x) for x in command], cwd=cwd, text=True, encoding="utf-8", errors="replace",
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=90)
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE if separate_stderr else subprocess.STDOUT, timeout=90)
+    combined = result.stdout + (result.stderr or "")
     if (result.returncode == 0) != success:
-        raise AssertionError(f"Exit {result.returncode}: {command}\n{result.stdout}")
-    if re.search(r"AddressSanitizer|runtime error:", result.stdout):
-        raise AssertionError(result.stdout)
-    return result.stdout
+        raise AssertionError(f"Exit {result.returncode}: {command}\n{combined}")
+    if re.search(r"AddressSanitizer|runtime error:", combined):
+        raise AssertionError(combined)
+    return result if separate_stderr else result.stdout
 
 
 def fixtures(root):
@@ -105,8 +106,10 @@ def main():
         (root/'broken.mkv').write_bytes(b'not a video')
         invoke([binary,'-r','-i',root/'broken.mkv','-o',root/'broken'],success=False,cwd=root)
         failed = invoke([binary,'-r','-i',root/'undecodable.mp4','-o',root/'undecodable',
-                         '-ces',root/'undecodable/sub.srt'],success=False,cwd=root)
-        assert 'FINISH' not in failed and 'Progress: 100%' not in failed, failed
+                         '-ces',root/'undecodable/sub.srt'],success=False,cwd=root,separate_stderr=True)
+        assert 'ERROR: Cannot decode the first frame of video' in failed.stderr, failed.stderr
+        failed_log = failed.stdout + failed.stderr
+        assert 'FINISH' not in failed_log and 'Progress: 100%' not in failed_log, failed_log
         assert not (root/'undecodable/sub.srt').exists(), 'Decode failure must not create a success SRT'
         (root/'bad.cfg').write_text('text_alignment = 99\n')
         invoke(base+['-gs',root/'bad.cfg'],success=False,cwd=root)

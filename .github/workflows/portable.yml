@@ -415,7 +415,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
   cuda:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 90
     container: nvidia/cuda:12.6.3-devel-ubuntu22.04
     steps:
       - name: Bootstrap source checkout
@@ -425,23 +425,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
-      - run: |
-          apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ ninja-build libopencv-dev python3-pip ffmpeg fonts-dejavu-core patchelf
-          python3 -m pip install cmake==3.31.6
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='61;75;80;86;89;90'
-          cmake --build build --parallel 4
-          ctest --test-dir build --output-on-failure
-      - name: Package CUDA 12 CLI with runtime libraries
+      - name: Build minimal media dependencies and CUDA CLI
         run: |
-          cmake --install build --prefix "$PWD/dist"
-          python3 scripts/bundle.py dist
-          python3 tests/test_cli.py "$PWD/dist/VideoSubFinderCli.run"
-          tar -C dist -czf videosubfinder-cli-linux-cuda12-x64.tar.gz .
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y g++ make ninja-build pkg-config nasm curl python3-pip ffmpeg fonts-dejavu-core patchelf
+          python3 -m pip install cmake==3.31.6 meson==1.7.2
+          python3 tests/test_cuda_package.py
+          sh scripts/build-cuda-linux.sh
+      - name: Package and audit CUDA 12 CLI
+        run: |
+          tar -C dist-cuda -czf videosubfinder-cli-linux-cuda12-x64.tar.gz .
+          python3 scripts/check-cuda-package.py dist-cuda videosubfinder-cli-linux-cuda12-x64.tar.gz > cuda-package-report.json
+          cat cuda-package-report.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: cuda12-package
           path: videosubfinder-cli-linux-cuda12-x64.tar.gz
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cuda12-size-report
+          path: cuda-package-report.json
           if-no-files-found: error
   source:
     runs-on: ubuntu-24.04
