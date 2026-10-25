@@ -664,8 +664,7 @@ public:
 					};
 					g_frame_found_callback(&frameDate);
 				}
-				fprintf(stderr, "Frame: %s\n", name.c_str());
-				fflush(stderr);
+				vsf::WriteConsoleRecord(stderr, "Frame: " + name);
 			});
 		});
 

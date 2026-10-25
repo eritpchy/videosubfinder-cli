@@ -321,6 +321,8 @@ jobs:
         run: |
           cmake --build build --config Release --parallel 4
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ctest --test-dir build -C Release --output-on-failure -R '^console-output-regression$'
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           cmake --install build --config Release --prefix "$pwd/dist"
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Test relocated Windows CLI binary

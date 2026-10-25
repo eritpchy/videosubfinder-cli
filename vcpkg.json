@@ -1,6 +1,6 @@
 {
   "name": "videosubfinder-cli",
-  "version": "6.10.6",
+  "version": "6.10.7",
   "builtin-baseline": "0c2a9ace1964b818b15f7ae50ba1c42404918a7b",
   "dependencies": [
     {

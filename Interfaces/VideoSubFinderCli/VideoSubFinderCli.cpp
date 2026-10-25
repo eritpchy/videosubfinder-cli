@@ -243,19 +243,20 @@ static int runCli(const std::vector<std::string>& argv) {
             auto now=std::chrono::steady_clock::now();
             if (now-last<std::chrono::seconds(1)) return;
             last=now;
-            std::cerr << "Progress: " << std::clamp(100*(current-begin)/(end-begin),0LL,99LL)
-                << "% elapsed=" << std::chrono::duration_cast<std::chrono::seconds>(now-started).count() << "s\n";
+            vsf::WriteConsoleRecord(stderr, "Progress: " +
+                std::to_string(std::clamp(100*(current-begin)/(end-begin),0LL,99LL)) +
+                "% elapsed=" + std::to_string(std::chrono::duration_cast<std::chrono::seconds>(now-started).count()) + "s");
         };
         g_file_names_vector.clear();
         g_RunSubSearch=1;
         FastSearchSubtitles(video,begin,end);
         g_progress_callback = {};
         video->CloseMovie();
-        std::cerr << "Progress: 100%\n";
+        vsf::WriteConsoleRecord(stderr, "Progress: 100%");
         if (options.count("create_empty_sub")) writeSubtitles(fs::u8path(options.at("create_empty_sub")));
     }
     if (options.count("create_cleared_text_images")) clearTextImages();
-    std::cerr << "FINISH\n";
+    vsf::WriteConsoleRecord(stderr, "FINISH");
     return 0;
 }
 
@@ -272,11 +273,11 @@ int wmain(int argc, wchar_t** argv) {
             arguments.push_back(std::move(argument));
         }
         return runCli(arguments);
-    } catch (const std::exception& error) { std::cerr << "ERROR: " << error.what() << '\n'; return 1; }
+    } catch (const std::exception& error) { vsf::WriteConsoleRecord(stderr, std::string("ERROR: ") + error.what()); return 1; }
 }
 #else
 int main(int argc, char** argv) {
     try { return runCli(std::vector<std::string>(argv,argv+argc)); }
-    catch (const std::exception& error) { std::cerr << "ERROR: " << error.what() << '\n'; return 1; }
+    catch (const std::exception& error) { vsf::WriteConsoleRecord(stderr, std::string("ERROR: ") + error.what()); return 1; }
 }
 #endif

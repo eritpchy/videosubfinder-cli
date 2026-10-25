@@ -52,24 +52,7 @@ typedef long long	                s64;
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
-extern std::string g_ReportFileName;
-#define APPEND_TO_REPORT_LOG(...) do { \
-	FILE* fp = fopen(g_ReportFileName.c_str(), "ab"); \
-    if (fp != NULL) { \
-	fprintf(fp, __VA_ARGS__); \
-        fclose(fp); \
-    } \
-    printf(__VA_ARGS__); \
-} while(0)
-
-#define OVERRIDE_TO_REPORT_LOG(...) do {  \
-	FILE* fp = fopen(g_ReportFileName.c_str(), "wb"); \
-    if (fp != NULL) { \
-	fprintf(fp, __VA_ARGS__); \
-        fclose(fp); \
-    } \
-    printf(__VA_ARGS__); \
-} while(0)
+#include "ConsoleOutput.h"
 
 extern int exception_filter(unsigned int code, struct _EXCEPTION_POINTERS* ep, char* det);
 

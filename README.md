@@ -17,10 +17,19 @@ placeholder text, not recognized dialogue.
 - [Build from source](#build-from-source)
 - [Donate](#donate)
 
-## Release policy and 6.10.6 codec fix
+## Release policy and recent fixes
 
-New fork releases follow `6.11.x` patch increments (see [project rules](AGENTS.md)).
-The historical tags remain immutable. Version 6.10.6 adds explicit software AV1
+New fork releases follow `6.10.x` patch increments (see [project rules](AGENTS.md)).
+Historical tags and published assets remain immutable.
+
+Version 6.10.7 synchronizes complete progress and frame records with report logs,
+and terminates end-of-video diagnostics with newlines. Parallel output can no
+longer merge these records and hide a subtitle event from line-based consumers.
+Event payloads, stdout/stderr destinations and subtitle detection settings are
+unchanged. Regression tests check concurrent output and require frame events to
+match generated images and SRT intervals.
+
+Version 6.10.6 adds explicit software AV1
 decoding to portable Linux and Windows builds and rejects inputs whose metadata
 opens but whose first frame cannot decode, instead of reporting successful empty
 subtitle output. All packaged runtimes are gated by a real AV1 subtitle-timing
@@ -230,7 +239,7 @@ Use `-ccti` or `--create_cleared_text_images`, including on Windows.
 The release's `--help` output is:
 
 ```text
-VideoSubFinderCli 6.10.6
+VideoSubFinderCli 6.10.7
 Usage: VideoSubFinderCli -r -i VIDEO -o OUTPUT [options]
   -c, --clear_dirs                 Clear generated image files
   -r, --run_search                 Search for hardcoded subtitles

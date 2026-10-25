@@ -82,6 +82,28 @@ def check_srt(path):
     return intervals
 
 
+def check_event_records(log, intervals, frames=None):
+    """Consumers must see every interval as a complete standalone Frame line."""
+    names = []
+    frame_intervals = []
+    for line in log.splitlines():
+        if 'Frame:' in line:
+            match = re.fullmatch(r'Frame: ((\d+)_(\d+)_(\d+)_(\d+)__(\d+)_(\d+)_(\d+)_(\d+)_\d+)', line)
+            assert match, f'Interleaved frame record: {line}'
+            names.append(match[1])
+            parts = match.groups()[1:]
+            frame_intervals.append(tuple(((int(parts[n])*60+int(parts[n+1]))*60+int(parts[n+2]))*1000+int(parts[n+3])
+                                         for n in (0, 4)))
+        if 'Progress:' in line:
+            assert re.fullmatch(r'Progress: (?:100%|\d{1,2}% elapsed=\d+s)', line), line
+        if 'Video ended or cannot read new frames.' in line:
+            assert line == 'Video ended or cannot read new frames.', line
+    assert sorted(frame_intervals) == sorted(intervals), (frame_intervals, intervals, log)
+    assert log.endswith('\n') and log.splitlines()[-2:] == ['Progress: 100%', 'FINISH'], log
+    if frames is not None:
+        assert sorted(names) == sorted(frame.stem for frame in frames), (names, frames)
+
+
 def main():
     binary = Path(sys.argv[1]).resolve()
     assert binary.is_file(), binary
@@ -123,6 +145,7 @@ def main():
             frames=list((output/'RGBImages').glob('*.jpeg'))
             assert frames, log
             assert all(':' not in f.name for f in frames), frames
+            check_event_records(log, results[media.name], frames)
             invoke([binary,'--create_cleared_text_images','-o',output],cwd=root)
             assert list((output/'TXTImages').glob('*.jpeg')), 'No cleared text images'
         output=root/'no images 字幕'
@@ -130,22 +153,22 @@ def main():
         log=invoke([binary,'--run_search','--input_video',mkv,'--output_dir',output,
                     '--create_empty_sub',output/'sub.srt','--dont_save_images',
                     '--top_video_image_percent_end=0.4','--num_threads=2'],cwd=root)
-        check_srt(output/'sub.srt')
+        check_event_records(log, check_srt(output/'sub.srt'))
         assert not list((output/'RGBImages').iterdir()), log
         # A relocated binary must use its own settings and retain caller-relative paths.
         unicode_video=root/'字幕 input.mkv'
         shutil.copy2(mkv,unicode_video)
         unicode_output=root/'Unicode 字幕'
-        invoke([binary,'-r','-i',unicode_video,'-o',unicode_output,'-ces',unicode_output/'字幕.srt',
+        log=invoke([binary,'-r','-i',unicode_video,'-o',unicode_output,'-ces',unicode_output/'字幕.srt',
                 '-te','0.4','-nthr','2'],cwd=root)
-        check_srt(unicode_output/'字幕.srt')
+        check_event_records(log, check_srt(unicode_output/'字幕.srt'), list((unicode_output/'RGBImages').glob('*.jpeg')))
         invoke([binary,'-ccti','-o',unicode_output],cwd=root)
         assert list((unicode_output/'TXTImages').glob('*.jpeg'))
         relative=root/'relative'
-        invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
+        log=invoke([binary,'-r','-i',mkv.name,'-o','relative','-ces','relative/sub.srt',
                 '-dsi','-te','0.4','-nthr','2'],cwd=root)
-        check_srt(relative/'sub.srt')
-        results['checks']='help, version, validation, MKV, MPEG-4, H.264, AV1, undecodable-payload rejection, SRT timing, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
+        check_event_records(log, check_srt(relative/'sub.srt'))
+        results['checks']='help, version, validation, MKV, MPEG-4, H.264, AV1, undecodable-payload rejection, SRT timing, standalone frame/progress records, frames, CCTI, no-images, Unicode, relative paths, runtime isolation'
         print(json.dumps(results,indent=2))
 
 

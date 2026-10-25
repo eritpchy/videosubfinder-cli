@@ -63,6 +63,17 @@ install(FILES 3rdparty/thread-pool/LICENSE.txt DESTINATION licenses RENAME threa
 include(CTest)
 if(BUILD_TESTING)
     find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
+    add_executable(console-output-fixture tests/console_output_fixture.cpp tests/console_output_producers.cpp)
+    target_compile_features(console-output-fixture PRIVATE cxx_std_17)
+    target_include_directories(console-output-fixture PRIVATE Components/Include)
+    target_link_libraries(console-output-fixture PRIVATE Threads::Threads)
+    if(VSF_SANITIZERS AND NOT MSVC)
+        target_compile_options(console-output-fixture PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+        target_link_options(console-output-fixture PRIVATE -fsanitize=address,undefined)
+    endif()
+    add_test(NAME console-output-regression COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/tests/test_console_output.py $<TARGET_FILE:console-output-fixture>)
+    set_tests_properties(console-output-regression PROPERTIES TIMEOUT 120)
     add_test(NAME cli-regression COMMAND ${Python3_EXECUTABLE}
         ${CMAKE_SOURCE_DIR}/tests/test_cli.py $<TARGET_FILE:VideoSubFinderCli>)
     set_tests_properties(cli-regression PROPERTIES TIMEOUT 180)

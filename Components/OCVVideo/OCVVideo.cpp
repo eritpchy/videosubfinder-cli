@@ -313,12 +313,12 @@ void OCVVideo::OneStep()
             }
 
             if (num_tries >= max_tries) {
-                APPEND_TO_REPORT_LOG("Failed to read a new frame after %d tries.", max_tries);
+                APPEND_TO_REPORT_LOG("Failed to read a new frame after %d tries.\n", max_tries);
                 break;
             }
 
             if (curPos == prevPos && curNumFrameToBeDecoded == prevNumFrameToBeDecoded) {
-                APPEND_TO_REPORT_LOG("Video ended or cannot read new frames.");
+                APPEND_TO_REPORT_LOG("Video ended or cannot read new frames.\n");
                 break;
             }
 
