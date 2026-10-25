@@ -219,7 +219,7 @@ Use `-ccti` or `--create_cleared_text_images`, including on Windows.
 The release's `--help` output is:
 
 ```text
-VideoSubFinderCli 6.10.3
+VideoSubFinderCli 6.10.4
 Usage: VideoSubFinderCli -r -i VIDEO -o OUTPUT [options]
   -c, --clear_dirs                 Clear generated image files
   -r, --run_search                 Search for hardcoded subtitles
