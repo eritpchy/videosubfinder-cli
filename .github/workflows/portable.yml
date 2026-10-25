@@ -25,7 +25,7 @@ jobs:
           fi
   fixtures:
     needs: version
-    timeout-minutes: 10
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -33,7 +33,7 @@ jobs:
         run: |
           if ! command -v ffmpeg >/dev/null || [ ! -f /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ]; then
             sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
-            sudo apt-get install -y ffmpeg fonts-dejavu-core
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends ffmpeg fonts-dejavu-core
           fi
           mkdir test-media
           python3 -c "import sys; from pathlib import Path; sys.path.insert(0, 'tests'); from test_cli import fixtures; fixtures(Path('test-media').resolve())"
